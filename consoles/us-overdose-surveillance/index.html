@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>U.S. Overdose Surveillance — fentanyl &amp; emerging synthetic opioids</title>
+<meta name="description" content="Descriptive public-health surveillance of U.S. drug-overdose deaths, centered on synthetic opioids (fentanyl), with the polydrug 'fourth wave', per-state rates, and an emerging synthetic-opioid (nitazene) early-warning panel. Built on CDC provisional data. Unofficial, descriptive, not a forecast.">
+<style>
+:root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+ --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
+ --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 56px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+#disc{background:#060f14;color:#bcd2da;font-size:12px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:24px 0 6px}
+h1{margin:0;font-size:25px;font-weight:740;letter-spacing:-.3px}
+h1 .sub{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin-top:5px;letter-spacing:0}
+.banner{margin:13px 0 0;background:rgba(38,198,218,.07);border:1px solid rgba(38,198,218,.25);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink2)}
+.banner b{color:var(--teal)}
+.strip{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0 2px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink2)}
+.chip b{color:var(--ink)}
+button.btn{background:linear-gradient(180deg,#1d6c79,#185863);border:1px solid #2a8593;color:#eaffff;border-radius:999px;padding:6px 14px;font-weight:600;font-size:12.5px;cursor:pointer}
+button.btn:hover{filter:brightness(1.1)}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:5px;vertical-align:1px;text-transform:uppercase}
+.b-meas{background:rgba(61,220,151,.16);color:#7fe9bd}.b-mod{background:rgba(245,185,69,.16);color:#f5cd85}.b-int{background:rgba(176,142,240,.16);color:#cdb6f5}
+.card{background:linear-gradient(180deg,var(--surf),var(--surf2));border:1px solid var(--line);border-radius:14px;margin-top:16px;overflow:hidden}
+.card>summary,.card .hd{padding:13px 16px;font-weight:650;display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+.card>summary::-webkit-details-marker{display:none}
+.card>summary .ico{color:var(--teal);font-weight:800}
+.card>summary .tools{margin-left:auto;display:flex;gap:8px;align-items:center}
+.body{padding:4px 16px 16px}
+.muted{color:var(--dim)}.small{font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.stat{background:var(--surf2);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-size:30px;font-weight:760;margin-top:3px;line-height:1.05}
+.stat .v small{font-size:13px;color:var(--ink2);font-weight:500}
+.stat .sub2{font-size:12px;color:var(--ink2);margin-top:5px}
+.delta{font-weight:700}.dn{color:var(--green)}.up{color:var(--orange)}
+.wave{display:flex;align-items:center;gap:12px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.wave:last-child{border-bottom:none}
+.wave .nm{flex:1;min-width:0}.wave .nm .t{font-weight:620}.wave .nm .c{font-size:11px;color:var(--dim)}
+.wave .val{width:78px;text-align:right;font-weight:720;font-variant-numeric:tabular-nums}
+.wave .ch{width:96px;text-align:right;font-size:12.5px;font-weight:600}
+.wave .sp{width:90px;flex:none}
+.lead{max-height:430px;overflow:auto;margin-top:4px}
+.row2{display:flex;align-items:center;gap:10px;padding:7px 3px;border-bottom:1px solid var(--line)}
+.row2 .rk{width:22px;color:var(--dim);font-size:12px;text-align:right}
+.row2 .nm{width:120px;font-weight:600}.row2 .nm small{color:var(--dim);font-weight:400}
+.row2 .meter{flex:1}.meter .tk{height:8px;background:#0a171d;border-radius:5px;overflow:hidden}.meter .fl{height:100%;border-radius:5px}
+.row2 .rate{width:96px;text-align:right;font-weight:720;font-variant-numeric:tabular-nums}
+.row2 .cnt{width:78px;text-align:right;font-size:12px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.em{display:flex;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line)}.em:last-child{border-bottom:none}
+.em .dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:none}
+.em .nm{font-weight:650}.em .cls{font-size:11.5px;color:var(--teal)}
+.em .note{font-size:12.5px;color:var(--ink2);margin-top:3px}.em .src{font-size:11px;color:var(--dim);margin-top:4px;font-family:var(--mono)}
+.st{font-size:9.5px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:5px;text-transform:uppercase;white-space:nowrap}
+.caveat{font-size:11.5px;color:var(--dim);margin-top:11px;padding:9px 12px;background:rgba(255,255,255,.02);border-left:2px solid var(--line2);border-radius:0 8px 8px 0}
+.intl{padding:10px 2px;border-bottom:1px solid var(--line)}.intl:last-child{border-bottom:none}
+.intl .r{font-weight:650}.intl .n{font-size:12.5px;color:var(--ink2);margin-top:3px}.intl .s{font-size:11px;color:var(--dim);font-family:var(--mono);margin-top:3px}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;border:none;color:var(--ink2);padding:4px 11px;font-size:12px;cursor:pointer}
+.seg button.on{background:var(--teal);color:#04181c;font-weight:700}
+footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}
+footer b{color:var(--ink2)}
+#splash{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50;color:var(--dim);font-size:13px}
+.demoflag{display:inline-block;font-size:9px;font-weight:800;color:#04181c;background:var(--amber);border-radius:4px;padding:1px 5px;margin-left:5px;letter-spacing:.4px}
+</style>
+</head>
+<body>
+<div id="splash">loading surveillance data…</div>
+<div id="disc"><b>Unofficial · descriptive surveillance, not a forecast.</b> Provisional CDC counts with a multi-month reporting lag. Not for individual, clinical, or policy decisions. If you or someone you know is in crisis, call or text <b>988</b>; for an overdose, call <b>911</b>.</div>
+<div class="wrap">
+  <header>
+    <h1>U.S. Overdose Surveillance<span class="sub">Synthetic opioids (fentanyl), the polydrug "fourth wave", and an emerging synthetic-opioid early-warning watch</span></h1>
+    <div class="banner"><b>How to read this.</b> Numbers are <b>12-month rolling totals</b> of drug-overdose deaths — they smooth seasonality and reflect the most recent provisional period, not "today". <b>Predicted</b> values are CDC's lag-adjusted estimates of the eventual final count; <b>reported</b> values are the provisional counts received so far (which under-count recent months). This is descriptive — it does not predict the future.</div>
+    <div class="strip">
+      <button class="btn" id="refresh">↻ Refresh from CDC</button>
+      <span class="chip" id="srcchip">—</span>
+      <span class="chip" id="vintchip">—</span>
+      <span class="chip"><span class="badge b-meas">measured</span> live/provisional CDC</span>
+      <span class="chip"><span class="badge b-mod">modeled</span> lag-adjusted</span>
+      <span class="chip"><span class="badge b-int">interpretive</span> curated watch</span>
+    </div>
+  </header>
+
+  <!-- NATIONAL HEADLINE -->
+  <details class="card" open id="c-nat">
+    <summary><span class="ico">●</span> National picture <span class="badge b-meas">measured</span><span class="badge b-mod">modeled</span></summary>
+    <div class="body">
+      <div class="grid2">
+        <div class="stat">
+          <div class="l">Total drug-overdose deaths · 12-mo ending <span id="vlab1">—</span></div>
+          <div class="v" id="totv">—</div>
+          <div class="sub2" id="tots">—</div>
+        </div>
+        <div class="stat">
+          <div class="l">Synthetic opioids (fentanyl &amp; analogs, T40.4)</div>
+          <div class="v" id="synv">—</div>
+          <div class="sub2" id="syns">—</div>
+        </div>
+      </div>
+      <div style="margin-top:13px;display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
+        <div><div class="small muted">Total overdose deaths, 12-mo rolling (2019→now)</div><div id="sparkTot"></div></div>
+        <div><div class="small muted">Synthetic opioids, 12-mo rolling</div><div id="sparkSyn"></div></div>
+      </div>
+      <div class="caveat" id="natcaveat">—</div>
+    </div>
+  </details>
+
+  <!-- DRUG WAVE BREAKDOWN -->
+  <details class="card" open id="c-wave">
+    <summary><span class="ico">▦</span> The drug landscape — what's rising, what's falling <span class="badge b-meas">measured</span><span class="badge b-mod">modeled</span></summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:6px">12-month rolling deaths by drug category, with change vs. 12 months earlier. Direction is the signal here, not the exact number.</div>
+      <div id="waves"></div>
+      <div class="caveat" id="wavenarr">—</div>
+    </div>
+  </details>
+
+  <!-- STATE LEADERBOARD -->
+  <details class="card" open id="c-state">
+    <summary><span class="ico">▤</span> By state <span class="badge b-meas">measured</span>
+      <span class="tools"><span class="seg" id="stsort"><button data-k="rate" class="on">per 100k</button><button data-k="syn">count</button><button data-k="tot">all drugs</button></span></span>
+    </summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:4px">Synthetic-opioid deaths per 100,000 residents (12-mo rolling). Small states with high per-capita burden rank above large states with bigger raw counts.</div>
+      <div class="lead" id="stlead"></div>
+      <div class="caveat">Rates use 2024 Census population estimates (demographic context, not the surveillance data). A few jurisdictions are suppressed by CDC for low counts / data quality and are omitted. Rank reflects the most recent reported period per state, which can differ slightly across states.</div>
+    </div>
+  </details>
+
+  <!-- EMERGING SUBSTANCES -->
+  <details class="card" open id="c-emerg">
+    <summary><span class="ico">⚠</span> Emerging synthetic-opioid early-warning <span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:4px">A curated watch list of substances reshaping the unregulated opioid supply. This is qualitative early-warning context — <b>not</b> a live count.</div>
+      <div id="emerg"></div>
+      <div class="caveat">These substances mostly fall under ICD-10 <b>T40.4</b> (synthetic opioids) or <b>T40.6</b> (other/unspecified narcotics) and are <b>not</b> separately broken out in the provisional death counts above. Granular identification comes from forensic-lab data (DEA NFLIS) and CDC SUDORS toxicology, which lag roughly a year. Compiled from public early-warning sources (CDC HAN, DEA, EMCDDA EU-EWS, UNODC EWA); reflects status as of the embed date below. Naloxone reverses opioids (including fentanyl and nitazenes) but <b>not</b> sedative adulterants like xylazine or medetomidine.</div>
+    </div>
+  </details>
+
+  <!-- INTERNATIONAL -->
+  <details class="card" id="c-intl">
+    <summary><span class="ico">◍</span> International context <span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:4px">The synthetic-opioid mortality crisis is concentrated in North America. There is <b>no</b> browser-accessible live international death-count feed (WHO, UNODC and EMCDDA data are not CORS-open and are largely report-based), so this is curated context, not live surveillance.</div>
+      <div id="intl"></div>
+      <div class="caveat">Sources are authoritative but reported with their own lags and methods; figures across countries are not directly comparable. Curated as of the embed date below.</div>
+    </div>
+  </details>
+
+  <footer>
+    <div><b>Data &amp; method.</b> Primary source: <a href="https://data.cdc.gov/NCHS/VSRR-Provisional-Drug-Overdose-Death-Counts/xkb8-kh2a" target="_blank" rel="noopener">CDC NCHS VSRR — Provisional Drug Overdose Death Counts</a> (dataset xkb8-kh2a), pulled live from the public Socrata API when reachable, otherwise from an embedded snapshot whose vintage is shown above. Values are 12-month-ending provisional counts; <b>predicted</b> = CDC's lag-adjusted model estimate (modeled), <b>reported</b> = counts received to date (measured, provisional and incomplete for recent months). Per-state rates use 2024 Census population estimates.</div>
+    <div style="margin-top:8px"><b>Honesty.</b> Provisional figures revise upward as data completes — recent months are under-counts. This tool is <b>descriptive, not predictive</b>; it does not forecast, advise, or rank causes. No personal or protected health information is used. Emerging-substance and international panels are interpretive context curated from public reports, not live feeds.</div>
+    <div style="margin-top:8px" class="muted">Embedded snapshot vintage: <span id="vintfoot">—</span>. If a live refresh succeeds, the source chip above switches to “live CDC”.</div>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const SOCRATA='https://data.cdc.gov/resource/xkb8-kh2a.json';
+const MO={January:1,February:2,March:3,April:4,May:5,June:6,July:7,August:8,September:9,October:10,November:11,December:12};
+const MON=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+let SNAP={"vintage":"2026-01","periods":["2019-01","2019-02","2019-03","2019-04","2019-05","2019-06","2019-07","2019-08","2019-09","2019-10","2019-11","2019-12","2020-01","2020-02","2020-03","2020-04","2020-05","2020-06","2020-07","2020-08","2020-09","2020-10","2020-11","2020-12","2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-07","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01"],"nat":{"total":[68187,68130,68235,68259,68320,68322,68562,68932,69324,69950,70942,71740,72732,73952,75273,77581,81163,83519,85861,87918,89504,90735,91847,93129,95418,96747,98876,100508,100427,101358,102288,103447,104962,106405,107460,108553,108795,109649,109622,108785,108429,108326,108538,108444,108407,108799,109431,110393,110751,110720,111058,111739,112357,112412,112360,112418,111700,110748,109576,107966,106587,105405,103192,101049,98685,96726,94100,91043,88406,85835,83512,81313,79621,78049,77282,76135,75031,74013,73085,72675,72086,71439,70865,70207,69147],"syn":[31797,31971,32242,32428,32635,32833,33278,33770,34318,35038,35953,36895,37873,39011,40301,42449,45744,48066,50133,51996,53590,54832,56038,57265,59270,60523,62585,64026,64085,64847,65789,66946,68237,69591,70603,71746,72185,73149,73248,72887,72780,72813,73135,73376,73458,74021,74649,75453,76033,76193,76619,77304,77979,78308,78327,78207,77839,77051,76044,74792,73402,72188,70272,68246,65997,63921,61334,58546,55833,53254,51045,48913,47227,45723,44768,43644,42607,41616,41010,40510,40077,39520,38953,38200,37488],"psy":[13259,13414,13688,13910,14188,14446,14749,15021,15400,15805,16177,16511,16812,17281,17834,18644,19567,20280,21052,22075,22621,23058,23668,24344,25343,26082,27073,27955,28588,29341,30060,30585,31359,32197,32789,33322,33574,34022,34156,33923,33863,34016,34252,34204,34292,34461,34674,35217,35550,35671,35920,36343,36710,36825,37044,37350,37270,37113,36901,36416,36035,35870,35383,34800,34202,33763,32979,32079,31391,30742,30272,29852,29537,29131,28950,28740,28448,28059,27653,27600,27314,26986,26647,26201,25756],"coc":[14831,14823,14783,14771,14766,14748,14840,15011,15193,15466,15835,16155,16491,16896,17357,18012,18786,19206,19477,19629,19812,19815,19756,19730,20098,20198,20566,20895,20911,21230,21727,22349,22928,23594,24246,24926,25225,25762,25983,26009,26195,26396,26597,26818,27051,27371,27716,28161,28575,28748,29083,29454,29872,30231,30486,30765,30751,30650,30490,30205,29872,29627,29091,28485,27827,27177,26469,25478,24694,23879,23100,22397,21882,21372,21103,20703,20377,20201,20026,19931,19869,19740,19678,19687,19574],"her":[15183,15155,15098,15003,14896,14739,14631,14510,14389,14279,14349,14220,14161,14108,14025,14147,14469,14503,14486,14339,14181,13910,13591,13333,13166,12822,12608,12241,11541,11083,10721,10405,10151,9944,9630,9336,9004,8803,8394,7996,7664,7431,7116,6842,6591,6342,6148,6004,5755,5578,5385,5243,5113,4999,4822,4658,4525,4395,4242,4098,3975,3856,3701,3598,3481,3312,3223,3102,2990,2924,2899,2808,2754,2695,2678,2593,2539,2499,2437,2387,2313,2234,2142,2060,1992],"rx":[12555,12432,12372,12282,12177,12063,12035,11985,11970,11985,12090,12056,12112,12214,12257,12433,12879,12997,13179,13340,13469,13541,13568,13623,13716,13769,13919,14036,13816,13872,13860,13874,13899,13871,13844,13815,13686,13607,13397,13100,12872,12707,12610,12410,12283,12243,12118,12055,11905,11773,11728,11674,11613,11461,11246,11110,10873,10683,10523,10298,10239,10104,9816,9600,9393,9220,9030,8856,8678,8453,8233,8082,7892,7743,7730,7637,7502,7437,7367,7286,7209,7158,7154,7079,6940],"opi":[47317,47353,47501,47507,47543,47583,47831,48144,48517,49049,49879,50587,51427,52409,53499,55569,58862,61027,63048,64814,66248,67331,68398,69520,71394,72525,74396,75690,75440,76021,76734,77655,78796,79939,80770,81699,81861,82649,82590,82007,81720,81619,81810,81874,81840,82320,82797,83557,83991,83977,84288,84884,85445,85657,85570,85380,84865,83972,82888,81501,80141,78946,76928,74835,72542,70408,67747,64930,62247,59676,57437,55296,53590,52076,51188,50049,48986,48065,47474,46971,46507,45939,45403,44708,43901]},"states":{"TX":{"syn":1405,"tot":4418},"MS":{"syn":182,"tot":431},"HI":{"syn":77,"tot":317},"YC":{"syn":1282,"tot":1976},"GA":{"syn":743,"tot":1646},"IN":{"syn":701,"tot":1376},"ME":{"syn":229,"tot":376},"MD":{"syn":910,"tot":1343},"WV":{"syn":453,"tot":664},"MI":{"syn":951,"tot":1748},"OH":{"syn":1330,"tot":2415},"UT":{"syn":264,"tot":660},"CO":{"syn":1054,"tot":1819},"TN":{"syn":1228,"tot":2072},"KY":{"syn":534,"tot":1154},"FL":{"syn":1939,"tot":4027},"DC":{"syn":219,"tot":348},"OK":{"syn":395,"tot":841},"DE":{"syn":218,"tot":310},"AR":{"syn":110,"tot":360},"CA":{"syn":4642,"tot":9014},"MT":{"syn":86,"tot":174},"WY":{"syn":23,"tot":84},"WI":{"syn":519,"tot":980},"NY":{"syn":976,"tot":1693},"AZ":{"syn":1996,"tot":2932},"MA":{"syn":855,"tot":1324},"IL":{"syn":1060,"tot":1938},"MN":{"syn":562,"tot":1017},"PA":{"syn":null,"tot":2822},"CT":{"syn":579,"tot":847},"NC":{"syn":1374,"tot":2067},"SD":{"syn":23,"tot":96},"NJ":{"syn":1076,"tot":1552},"OR":{"syn":863,"tot":1107},"WA":{"syn":2014,"tot":2811},"NM":{"syn":669,"tot":1010},"IA":{"syn":70,"tot":361},"VA":{"syn":689,"tot":1193},"ID":{"syn":114,"tot":289},"NE":{"syn":32,"tot":155},"RI":{"syn":136,"tot":214},"VT":{"syn":97,"tot":149},"LA":{"syn":null,"tot":1192},"ND":{"syn":53,"tot":125},"SC":{"syn":689,"tot":1312},"KS":{"syn":215,"tot":502},"MO":{"syn":629,"tot":1214},"PR":{"syn":293,"tot":447},"NV":{"syn":772,"tot":1454},"AL":{"syn":420,"tot":845},"AK":{"syn":218,"tot":329},"NH":{"syn":176,"tot":266}},"rep":{"coc":19195,"psy":25245,"opi":43113,"syn":36825,"total":67895,"rx":6796,"her":1963},"pctComplete":null,"embedded":"2026-06-27","pop":{"AL":5157000,"AK":741000,"AZ":7431000,"AR":3088000,"CA":38965000,"CO":5914000,"CT":3617000,"DE":1032000,"DC":679000,"FL":22975000,"GA":11064000,"HI":1435000,"ID":1965000,"IL":12549000,"IN":6862000,"IA":3207000,"KS":2940000,"KY":4545000,"LA":4574000,"ME":1402000,"MD":6181000,"MA":7001000,"MI":10037000,"MN":5788000,"MS":2940000,"MO":6196000,"MT":1132000,"NE":1988000,"NV":3194000,"NH":1402000,"NJ":9290000,"NM":2114000,"NY":19571000,"NC":10835000,"ND":783000,"OH":11785000,"OK":4054000,"OR":4233000,"PA":12961000,"RI":1095000,"SC":5374000,"SD":919000,"TN":7126000,"TX":30976000,"UT":3454000,"VT":647000,"VA":8716000,"WA":7812000,"WV":1770000,"WI":5911000,"WY":584000}};
+let LIVE=false;
+
+// ---- drug category metadata
+const WAVES=[
+ {k:'syn', t:'Synthetic opioids', c:'Fentanyl &amp; analogs · T40.4', col:'#ef5466'},
+ {k:'psy', t:'Psychostimulants', c:'Methamphetamine &amp; others · T43.6', col:'#f5b945'},
+ {k:'coc', t:'Cocaine', c:'T40.5', col:'#f3833b'},
+ {k:'her', t:'Heroin', c:'T40.1', col:'#b08ef0'},
+ {k:'rx',  t:'Prescription opioids', c:'Natural &amp; semi-synthetic · T40.2', col:'#26c6da'}
+];
+// ---- emerging substances (INTERPRETIVE watch list)
+const EMERGING=[
+ {n:'Nitazenes', cls:'Benzimidazole synthetic opioids', st:'expanding', col:'#ef5466',
+  note:'A family of non-fentanyl synthetic opioids (isotonitazene, metonitazene, protonitazene, etonitazepyne) — several more potent than fentanyl. Detections and associated deaths have risen in the U.S. and Europe.',
+  src:'CDC HAN · DEA · EMCDDA EU-EWS · UNODC EWA'},
+ {n:'Xylazine ("tranq")', cls:'Veterinary α2-sedative · adulterant', st:'established threat', col:'#ef5466',
+  note:'Not an opioid and not reversed by naloxone; widely mixed into the fentanyl supply and linked to severe skin wounds. Federally designated an emerging threat (2023).',
+  src:'CDC · DEA · ONDCP'},
+ {n:'Medetomidine / dexmedetomidine', cls:'Veterinary α2-sedative · adulterant', st:'emerging', col:'#f5b945',
+  note:'A newer, more potent sedative adulterant appearing in the fentanyl supply since ~2024, prompting localized overdose-cluster alerts.',
+  src:'DEA · state/local health alerts'},
+ {n:'Carfentanil', cls:'Ultra-potent fentanyl analog', st:'resurging', col:'#f5b945',
+  note:'Roughly 100× the potency of fentanyl. After years of decline, detections and deaths rose again in 2023–2024 in parts of the U.S.',
+  src:'CDC · DEA'},
+ {n:'Novel fentanyl analogs', cls:'Fentanyl-related substances', st:'ongoing', col:'#9fb4bd',
+  note:'The analog landscape shifts as scheduling changes. Most are captured under T40.4 and are not separately counted in provisional mortality data.',
+  src:'DEA NFLIS · CDC SUDORS'}
+];
+const STCOL={'expanding':'#ef5466','established threat':'#ef5466','emerging':'#f5b945','resurging':'#f5b945','ongoing':'#6b8290'};
+// ---- international context (INTERPRETIVE)
+const INTL=[
+ {r:'Canada', n:'A parallel fentanyl crisis (British Columbia especially). Apparent opioid-toxicity deaths also declined through 2024–2025 after the pandemic-era peak.', s:'Public Health Agency of Canada'},
+ {r:'Europe (EU / UK / Ireland)', n:'Historically lower synthetic-opioid prevalence, but the EU Early Warning System reports rising nitazene detections and associated deaths — notably the Baltic states, the UK and Ireland. A possible heroin-supply disruption from the 2022 Afghan opium ban is monitored as a synthetic-substitution risk.', s:'EMCDDA / EUDA EU-EWS'},
+ {r:'Global', n:'UNODC’s Early Warning Advisory tracks novel psychoactive substances worldwide; nitazenes are a global watch item. Quantitative overdose-mortality data outside North America is sparse and not available as a live feed.', s:'UNODC EWA · WHO'}
+];
+
+// ---- helpers
+const fmt=n=>n==null||!isFinite(n)?'—':Math.round(n).toLocaleString();
+function spark(arr,w,h,col,fill){
+ const v=arr.filter(x=>x!=null&&isFinite(x));if(v.length<2)return '<span class="muted small">—</span>';
+ const mn=Math.min(...v),mx=Math.max(...v),rng=(mx-mn)||1,n=arr.length;
+ let d='',started=false;
+ arr.forEach((x,i)=>{if(x==null||!isFinite(x))return;const X=(i/(n-1))*w,Y=h-((x-mn)/rng)*(h-3)-1.5;d+=(started?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1)+' ';started=true;});
+ const area=fill?'<path d="'+d+'L'+w+' '+h+' L0 '+h+' Z" fill="'+col+'1f"/>':'';
+ return '<svg viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" preserveAspectRatio="none" style="display:block">'+area+'<path d="'+d.trim()+'" fill="none" stroke="'+col+'" stroke-width="1.6"/></svg>';
+}
+function pctChange(arr){ // latest vs 12 periods earlier
+ const a=arr.filter(x=>x!=null);if(arr.length<13)return null;
+ const last=arr[arr.length-1],prev=arr[arr.length-13];
+ if(last==null||prev==null||!prev)return null;return (last-prev)/prev;
+}
+function chgHtml(ch){if(ch==null)return '<span class="muted">—</span>';const up=ch>0;const c=up?'up':'dn';const ar=up?'▲':'▼';return '<span class="delta '+c+'">'+ar+' '+(up?'+':'')+Math.round(ch*100)+'%</span>';}
+function vintLabel(v){if(!v)return '—';const [y,m]=v.split('-');return MON[+m]+' '+y;}
+
+// ---- render
+function render(){
+ const S=SNAP, P=S.periods, N=S.nat;
+ $('vlab1').textContent=vintLabel(S.vintage);
+ $('vintchip').innerHTML='<b>12-mo ending '+vintLabel(S.vintage)+'</b>';
+ $('vintfoot').textContent=vintLabel(S.vintage)+(S.embedded?' (embedded '+S.embedded+')':'');
+ $('srcchip').innerHTML=LIVE?'<span class="badge b-meas">live</span> CDC VSRR':'<span class="badge b-mod">snapshot</span> embedded';
+ // national stats
+ const totPv=N.total[N.total.length-1], totRep=S.rep&&S.rep.total;
+ const synPv=N.syn[N.syn.length-1], synRep=S.rep&&S.rep.syn;
+ $('totv').innerHTML=fmt(totPv)+' <small>predicted</small>';
+ $('tots').innerHTML='reported so far: <b>'+fmt(totRep)+'</b> · 12-mo change '+chgHtml(pctChange(N.total));
+ $('synv').innerHTML=fmt(synPv)+' <small>predicted</small>';
+ const synShare=totPv?Math.round(100*synPv/totPv):null;
+ $('syns').innerHTML='reported: <b>'+fmt(synRep)+'</b> · ~'+synShare+'% of all overdose deaths · 12-mo change '+chgHtml(pctChange(N.syn));
+ $('sparkTot').innerHTML=spark(N.total,240,46,'#9fb4bd',true);
+ $('sparkSyn').innerHTML=spark(N.syn,240,46,'#ef5466',true);
+ const ch=pctChange(N.total);
+ $('natcaveat').innerHTML='The 12-month total '+(ch!=null&&ch<0?'has been <b>declining</b> from its peak':(ch!=null&&ch>0?'has been rising':'is roughly flat'))+' — a real and important shift, but recent months are provisional and will revise as data completes. Synthetic opioids remain the largest single category. <span class="badge b-mod">modeled</span> predicted values are lag-adjusted estimates; <span class="badge b-meas">measured</span> reported values are incomplete for the latest months.';
+ // waves
+ $('waves').innerHTML=WAVES.map(w=>{const s=N[w.k];if(!s)return '';const cur=s[s.length-1];
+  return '<div class="wave"><div class="nm"><div class="t">'+w.t+'</div><div class="c">'+w.c+'</div></div>'+
+   '<div class="sp">'+spark(s,90,26,w.col,false)+'</div>'+
+   '<div class="val">'+fmt(cur)+'</div><div class="ch">'+chgHtml(pctChange(s))+'</div></div>';}).join('');
+ $('wavenarr').innerHTML='The pattern epidemiologists call the <b>"fourth wave"</b>: synthetic opioids rose then turned down from their peak, <b>heroin all but vanished</b> (displaced by fentanyl in the supply), and <b>stimulants</b> — methamphetamine and cocaine — are still rising and increasingly co-involved with fentanyl. "Change" is vs. 12 months earlier; <span class="up">▲ up</span> is worsening, <span class="dn">▼ down</span> is improving.';
+ renderStates();
+ // emerging
+ $('emerg').innerHTML=EMERGING.map(e=>'<div class="em"><div class="dot" style="background:'+e.col+'"></div><div><div class="nm">'+e.n+' <span class="st" style="background:'+(STCOLbg(e.st))+';color:'+STCOL[e.st]+'">'+e.st+'</span></div><div class="cls">'+e.cls+'</div><div class="note">'+e.note+'</div><div class="src">surveillance: '+e.src+'</div></div></div>').join('');
+ // international
+ $('intl').innerHTML=INTL.map(x=>'<div class="intl"><div class="r">'+x.r+'</div><div class="n">'+x.n+'</div><div class="s">source: '+x.s+'</div></div>').join('');
+}
+function hex2rgba(h,a){const n=parseInt(h.slice(1),16);return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
+function STCOLbg(st){return hex2rgba(STCOL[st]||'#6b8290',.16);}
+
+let STSORT='rate';
+function renderStates(){
+ const S=SNAP, rows=[];
+ Object.keys(S.states).forEach(st=>{const d=S.states[st],pop=S.pop&&S.pop[st];if(!pop||d.syn==null)return;
+  rows.push({st,syn:d.syn,tot:d.tot,pop,rate:d.syn/pop*1e5});});
+ const key=STSORT;rows.sort((a,b)=>(b[key]||0)-(a[key]||0));
+ const max=Math.max(...rows.map(r=>r[key]||0),1);
+ $('stlead').innerHTML=rows.map((r,i)=>{const v=r[key]||0;const col=r.rate>=30?'#ef5466':r.rate>=18?'#f3833b':r.rate>=10?'#f5b945':'#3ddc97';
+  const disp=key==='rate'?r.rate.toFixed(1)+' <small style="color:var(--dim)">/100k</small>':fmt(v);
+  const sec=key==='rate'?fmt(r.syn)+' deaths':r.rate.toFixed(1)+'/100k';
+  return '<div class="row2"><div class="rk">'+(i+1)+'</div><div class="nm">'+r.st+'</div>'+
+   '<div class="meter"><div class="tk"><div class="fl" style="width:'+(100*v/max).toFixed(1)+'%;background:'+col+'"></div></div></div>'+
+   '<div class="rate">'+disp+'</div><div class="cnt">'+sec+'</div></div>';}).join('')||'<div class="muted">No state data.</div>';
+}
+[...document.querySelectorAll('#stsort button')].forEach(b=>b.onclick=()=>{STSORT=b.dataset.k;[...document.querySelectorAll('#stsort button')].forEach(x=>x.classList.toggle('on',x===b));renderStates();});
+
+// ---- live fetch (graceful: keep embed on failure)
+function so(params){const u=new URL(SOCRATA);for(const[k,v]of params)u.searchParams.append(k,v);return fetch(u).then(r=>{if(!r.ok)throw r.status;return r.json();});}
+const RKEY={'Number of Drug Overdose Deaths':'total','Synthetic opioids, excl. methadone (T40.4)':'syn','Psychostimulants with abuse potential (T43.6)':'psy','Cocaine (T40.5)':'coc','Heroin (T40.1)':'her','Natural & semi-synthetic opioids (T40.2)':'rx','Opioids (T40.0-T40.4,T40.6)':'opi'};
+async function fetchCDC(){
+ $('srcchip').innerHTML='<span class="badge b-mod">…</span> contacting CDC';
+ try{
+  const nat=await so([['state','US'],['$where',"year>='2019'"],['$select','year,month,indicator,data_value,predicted_value'],['$order','year,month'],['$limit','6000']]);
+  // build periods + series
+  const seen=[],pset=new Set(),series={};Object.values(RKEY).forEach(k=>series[k]={});
+  nat.forEach(r=>{const k=RKEY[r.indicator];if(!k)return;const p=r.year+'-'+String(MO[r.month]).padStart(2,'0');pset.add(p);if(r.predicted_value!=null)series[k][p]=Math.round(+r.predicted_value);});
+  const periods=[...pset].sort();
+  const N={};Object.keys(series).forEach(k=>N[k]=periods.map(p=>series[k][p]!=null?series[k][p]:null));
+  // latest reported per indicator
+  const rep={};const repP={};nat.forEach(r=>{const k=RKEY[r.indicator];if(!k||r.data_value==null)return;const p=r.year+'-'+String(MO[r.month]).padStart(2,'0');if(!repP[k]||p>repP[k]){repP[k]=p;rep[k]=Math.round(+r.data_value);}});
+  // states (syn + total), latest per state
+  const stRows=await so([['$where',"state!='US' AND year>='2025'"],['$select','year,month,state,indicator,predicted_value'],['$limit','12000']]);
+  const states={};const bestP={};
+  stRows.forEach(r=>{const k=RKEY[r.indicator];if((k!=='syn'&&k!=='total')||r.predicted_value==null)return;const p=r.year+'-'+String(MO[r.month]).padStart(2,'0');const id=r.state+'|'+k;if(!bestP[id]||p>bestP[id]){bestP[id]=p;(states[r.state]=states[r.state]||{})[k]=Math.round(+r.predicted_value);}});
+  const stClean={};Object.keys(states).forEach(s=>stClean[s]={syn:states[s].syn,tot:states[s].total});
+  SNAP=Object.assign({},SNAP,{periods,nat:N,rep,states:stClean,vintage:periods[periods.length-1]});
+  LIVE=true;render();
+ }catch(e){LIVE=false;render();$('srcchip').innerHTML='<span class="badge b-mod">snapshot</span> embedded (live refresh unavailable)';}
+}
+
+// boot
+function boot(){$('splash').style.display='none';render();fetchCDC();}
+$('refresh').onclick=fetchCDC;
+if(document.readyState!=='loading')boot();else document.addEventListener('DOMContentLoaded',boot);
+</script>
+</body>
+</html>

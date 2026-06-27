@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Global Health Systems &amp; Financing — who can afford &amp; access care</title>
+<meta name="description" content="A descriptive global view of health systems and financing built on the World Bank's open Indicators API: health spending per capita and as a share of GDP, out-of-pocket burden, government health spending, and the health workforce (physicians, nurses, hospital beds) — for the world, income groups, regions and ~55 of the largest countries. Unofficial, descriptive, not a forecast.">
+<style>
+:root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+ --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
+ --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 56px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+#disc{background:#060f14;color:#bcd2da;font-size:12px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:24px 0 6px}
+h1{margin:0;font-size:25px;font-weight:740;letter-spacing:-.3px}
+h1 .sub{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin-top:5px;letter-spacing:0}
+.banner{margin:13px 0 0;background:rgba(38,198,218,.07);border:1px solid rgba(38,198,218,.25);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink2)}
+.banner b{color:var(--teal)}
+.strip{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0 2px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink2)}
+.chip b{color:var(--ink)}
+button.btn{background:linear-gradient(180deg,#1d6c79,#185863);border:1px solid #2a8593;color:#eaffff;border-radius:999px;padding:6px 14px;font-weight:600;font-size:12.5px;cursor:pointer}
+button.btn:hover{filter:brightness(1.1)}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:5px;vertical-align:1px;text-transform:uppercase}
+.b-meas{background:rgba(61,220,151,.16);color:#7fe9bd}.b-mod{background:rgba(245,185,69,.16);color:#f5cd85}.b-int{background:rgba(176,142,240,.16);color:#cdb6f5}
+.card{background:linear-gradient(180deg,var(--surf),var(--surf2));border:1px solid var(--line);border-radius:14px;margin-top:16px;overflow:hidden}
+.card>summary,.card .hd{padding:13px 16px;font-weight:650;display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+.card>summary::-webkit-details-marker{display:none}
+.card>summary .ico{color:var(--teal);font-weight:800}
+.card>summary .tools{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.body{padding:4px 16px 16px}
+.muted{color:var(--dim)}.small{font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}@media(max-width:760px){.grid3{grid-template-columns:1fr 1fr}}@media(max-width:480px){.grid3{grid-template-columns:1fr}}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}@media(max-width:880px){.grid4{grid-template-columns:1fr 1fr}}@media(max-width:480px){.grid4{grid-template-columns:1fr}}
+.stat{background:var(--surf2);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-size:30px;font-weight:760;margin-top:3px;line-height:1.05}
+.stat .v small{font-size:13px;color:var(--ink2);font-weight:500}
+.stat .sub2{font-size:12px;color:var(--ink2);margin-top:5px}
+.mini{background:var(--surf2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.mini .l{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;min-height:26px}
+.mini .v{font-size:21px;font-weight:740;margin-top:2px;line-height:1.05}
+.mini .v small{font-size:11.5px;color:var(--ink2);font-weight:500}
+.mini .y{font-size:10.5px;color:var(--dim);margin-top:3px;font-family:var(--mono)}
+.delta{font-weight:700}.dn{color:var(--green)}.up{color:var(--orange)}
+.lead{max-height:520px;overflow:auto;margin-top:4px}
+.row2{display:flex;align-items:center;gap:10px;padding:7px 3px;border-bottom:1px solid var(--line)}
+.row2:last-child{border-bottom:none}
+.row2 .rk{width:22px;color:var(--dim);font-size:12px;text-align:right}
+.row2 .nm{width:160px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.row2 .nm small{color:var(--dim);font-weight:400}
+.row2 .meter{flex:1;min-width:60px}.meter .tk{height:8px;background:#0a171d;border-radius:5px;overflow:hidden}.meter .fl{height:100%;border-radius:5px}
+.row2 .rate{width:120px;text-align:right;font-weight:720;font-variant-numeric:tabular-nums}
+.row2 .yr{width:50px;text-align:right;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.ineq{display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.ineq:last-child{border-bottom:none}
+.ineq .nm{flex:1;min-width:0}.ineq .nm .t{font-weight:620}.ineq .nm .c{font-size:11px;color:var(--dim)}
+.ineq .sp{width:96px;flex:none}
+.ineq .val{width:96px;text-align:right;font-weight:720;font-variant-numeric:tabular-nums}
+.ineq .ch{width:78px;text-align:right;font-size:12.5px;font-weight:600}
+.caveat{font-size:11.5px;color:var(--dim);margin-top:11px;padding:9px 12px;background:rgba(255,255,255,.02);border-left:2px solid var(--line2);border-radius:0 8px 8px 0}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{background:transparent;border:none;color:var(--ink2);padding:4px 10px;font-size:12px;cursor:pointer}
+.seg button.on{background:var(--teal);color:#04181c;font-weight:700}
+select{background:var(--surf2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:5px 10px;font-size:13px;font-family:var(--sans)}
+.peerbar{display:flex;align-items:center;gap:9px;padding:6px 2px}
+.peerbar .pl{width:130px;font-size:12px;color:var(--ink2)}
+.peerbar .pm{flex:1}.peerbar .pm .tk{height:9px;background:#0a171d;border-radius:5px;overflow:hidden}.peerbar .pm .fl{height:100%;border-radius:5px}
+.peerbar .pv{width:88px;text-align:right;font-weight:680;font-variant-numeric:tabular-nums;font-size:13px}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;background:rgba(255,255,255,.06);color:var(--ink2);margin-left:6px;letter-spacing:.3px}
+.gapbar{display:flex;align-items:stretch;gap:0;margin:10px 0 4px;border-radius:10px;overflow:hidden;border:1px solid var(--line);height:62px}
+.gapbar .seg2{display:flex;flex-direction:column;justify-content:center;align-items:center;color:#04181c;font-weight:760;font-size:13px;padding:4px 6px;min-width:0;text-align:center;overflow:hidden}
+.gapbar .seg2 small{font-size:10px;font-weight:600;opacity:.85;display:block;white-space:nowrap}
+.notebox{font-size:11.5px;color:var(--ink2);margin-top:12px;padding:10px 13px;background:rgba(176,142,240,.06);border:1px solid rgba(176,142,240,.22);border-radius:10px}
+.notebox b{color:var(--purple)}
+footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}
+footer b{color:var(--ink2)}
+#splash{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50;color:var(--dim);font-size:13px}
+.demoflag{display:inline-block;font-size:9px;font-weight:800;color:#04181c;background:var(--amber);border-radius:4px;padding:1px 5px;margin-left:5px;letter-spacing:.4px}
+.stale{display:inline-block;font-size:9.5px;font-weight:800;color:#04181c;background:var(--orange);border-radius:4px;padding:1px 6px;margin-left:6px;letter-spacing:.4px}
+</style>
+</head>
+<body>
+<div id="splash">loading health-system &amp; financing indicators…</div>
+<div id="disc"><b>Unofficial · descriptive view of health systems &amp; financing, not a forecast.</b> Built on the World Bank's open Indicators API. The latest available year differs by country and indicator, and many smaller countries have data gaps. Not for clinical, individual, or policy decisions.</div>
+<div class="wrap">
+  <header>
+    <h1>Global Health Systems &amp; Financing<span class="sub">Who can afford &amp; access care — health spending, out-of-pocket burden &amp; the workforce, for the world, income groups, regions &amp; ~55 of the largest countries</span></h1>
+    <div class="banner"><b>How to read this.</b> Every figure is a <b>World Bank reported value</b> for a specific year — always shown next to the number, because the latest available year varies (financing series often run 2021–2023; physicians, nurses and beds can be a few years older). This is <b>descriptive</b>: it shows where systems stand and how spending and capacity have moved since 2000. It does <b>not</b> predict the future, and cross-country comparisons carry real differences in measurement, accounting and completeness.</div>
+    <div class="strip">
+      <button class="btn" id="refresh">↻ Refresh from World Bank</button>
+      <span class="chip" id="srcchip">—</span>
+      <span class="chip" id="vintchip">—</span>
+      <span class="chip"><span class="badge b-meas">measured</span> World Bank reported</span>
+      <span class="chip"><span class="badge b-int">interpretive</span> framing &amp; selection</span>
+    </div>
+  </header>
+
+  <!-- (a) SPENDING HEADLINE -->
+  <details class="card" open id="c-spend">
+    <summary><span class="ico">●</span> Spending headline — what the world pays for health <span class="badge b-meas">measured</span><span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div class="grid3">
+        <div class="stat">
+          <div class="l">World health spending per person · <span id="pcyear">—</span></div>
+          <div class="v" id="pcv">—</div>
+          <div class="sub2" id="pcs">—</div>
+        </div>
+        <div class="stat">
+          <div class="l">World health spending · <span id="gdpyear">—</span></div>
+          <div class="v" id="gdpv">—</div>
+          <div class="sub2" id="gdps">—</div>
+        </div>
+        <div class="stat">
+          <div class="l">World government health spending · <span id="govyear">—</span></div>
+          <div class="v" id="govv">—</div>
+          <div class="sub2" id="govs">—</div>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="small muted" style="margin-bottom:4px">The spending divide — health spending <b>per person</b>, latest income-group values <span class="badge b-meas">measured</span> <span id="gapyears" class="mono"></span></div>
+        <div class="gapbar" id="gapbar"></div>
+        <div class="small muted" id="gaptext" style="margin-top:6px">—</div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap">
+        <div><div class="small muted">World spending per person (current US$), 2000→<span id="spkpcyr">—</span> <span class="badge b-meas">measured</span></div><div id="sparkPC"></div></div>
+        <div><div class="small muted">World health spending (% of GDP), 2000→<span id="spkgdpyr">—</span></div><div id="sparkGDP"></div></div>
+      </div>
+      <div class="caveat" id="spendcaveat">—</div>
+    </div>
+  </details>
+
+  <!-- (b) FINANCIAL PROTECTION: OUT-OF-POCKET -->
+  <details class="card" open id="c-oop">
+    <summary><span class="ico">◑</span> Financial protection — the out-of-pocket burden <span class="badge b-meas">measured</span><span class="badge b-int">interpretive</span>
+      <span class="tools">
+        <span class="seg" id="oopmode"><button data-m="cty" class="on">countries</button><button data-m="inc">income</button><button data-m="reg">region</button></span>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="grid2" style="margin-bottom:6px">
+        <div class="stat">
+          <div class="l">World out-of-pocket share · <span id="oopyear">—</span></div>
+          <div class="v" id="oopv">—</div>
+          <div class="sub2" id="oops">—</div>
+        </div>
+        <div class="stat">
+          <div class="l">High-income vs low-income OOP · latest</div>
+          <div class="v" id="oopgapv">—</div>
+          <div class="sub2" id="oopgaps">—</div>
+        </div>
+      </div>
+      <div class="small muted" id="oopdesc" style="margin:8px 0 4px">—</div>
+      <div class="lead" id="ooplist"></div>
+      <div class="caveat">High out-of-pocket share means households pay a large part of care directly at the point of use — a marker of <b>catastrophic-cost risk</b> for poorer families, not a quality measure. <b>Worst (highest) burden is at the top.</b> The <b>year</b> column is each country's latest reported value and can differ between rows. World Bank population-weighted aggregates are estimates, not simple country averages.</div>
+    </div>
+  </details>
+
+  <!-- (c) WORKFORCE & CAPACITY -->
+  <details class="card" open id="c-work">
+    <summary><span class="ico">▤</span> Workforce &amp; capacity — the thinnest systems <span class="badge b-meas">measured</span>
+      <span class="tools">
+        <span class="seg" id="workind">
+          <button data-k="phys" class="on">physicians</button><button data-k="nurse">nurses &amp; midwives</button><button data-k="beds">hospital beds</button>
+        </span>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="grid3" style="margin-bottom:8px">
+        <div class="mini"><div class="l">World physicians<br><span style="color:var(--dim)">per 1,000 people</span></div><div class="v" id="wphysv">—</div><div class="y" id="wphysy">—</div></div>
+        <div class="mini"><div class="l">World nurses &amp; midwives<br><span style="color:var(--dim)">per 1,000 people</span></div><div class="v" id="wnursev">—</div><div class="y" id="wnursey">—</div></div>
+        <div class="mini"><div class="l">World hospital beds<br><span style="color:var(--dim)">per 1,000 people</span></div><div class="v" id="wbedsv">—</div><div class="y" id="wbedsy">—</div></div>
+      </div>
+      <div class="small muted" id="workdesc" style="margin-bottom:4px">—</div>
+      <div class="lead" id="worklist"></div>
+      <div class="caveat">Health-workforce density is a coarse proxy for a system's capacity to deliver care. <b>Lowest density is at the top</b> — the thinnest systems, where each clinician or bed serves the most people. Densities reflect very different staffing models and counting rules across countries; physicians, nurses and beds are recorded in different years and updated infrequently, so the <b>year</b> shown can lag. Ranked across the ~55 most populous countries in this view.</div>
+    </div>
+  </details>
+
+  <!-- (d) COVERAGE + COUNTRY PROFILE -->
+  <details class="card" open id="c-profile">
+    <summary><span class="ico">◎</span> Country profile — spending, protection &amp; capacity <span class="badge b-meas">measured</span>
+      <span class="tools"><select id="cysel"></select></span>
+    </summary>
+    <div class="body">
+      <div class="small muted" id="profmeta" style="margin-bottom:8px">—</div>
+      <div class="grid4" id="profcards"></div>
+      <div style="margin-top:14px;display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap">
+        <div><div class="small muted">Health spending per person, 2000→latest <span class="badge b-meas">measured</span></div><div id="profSparkPC"></div></div>
+        <div><div class="small muted">Out-of-pocket share, 2000→latest</div><div id="profSparkOOP"></div></div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="small muted" style="margin-bottom:4px">How it compares — <b id="cmpindname">health spending per person</b>, latest value
+          <span class="seg" id="cmpind" style="margin-left:8px"><button data-k="pc" class="on">spend/person</button><button data-k="oop">out-of-pocket</button><button data-k="phys">physicians</button><button data-k="beds">beds</button></span>
+        </div>
+        <div id="cmpbars"></div>
+      </div>
+      <div class="notebox" id="uhcnote">—</div>
+      <div class="caveat" id="profcaveat">—</div>
+    </div>
+  </details>
+
+  <footer>
+    <div><b>Data &amp; method.</b> Source: <a href="https://data.worldbank.org" target="_blank" rel="noopener">World Bank Open Data — World Development Indicators / Global Health Expenditure</a>, pulled live from the public Indicators API v2 (<span class="mono">api.worldbank.org/v2</span>) when reachable, otherwise from an embedded snapshot whose vintage is shown above. Indicators: health spending per capita <span class="mono">SH.XPD.CHEX.PC.CD</span>; health spending % GDP <span class="mono">SH.XPD.CHEX.GD.ZS</span>; government health spending % GDP <span class="mono">SH.XPD.GHED.GD.ZS</span>; out-of-pocket share <span class="mono">SH.XPD.OOPC.CH.ZS</span>; physicians <span class="mono">SH.MED.PHYS.ZS</span>; nurses &amp; midwives <span class="mono">SH.MED.NUMW.P3</span>; hospital beds <span class="mono">SH.MED.BEDS.ZS</span>. The World Bank in turn compiles these from the WHO Global Health Expenditure Database, WHO/national workforce accounts and national statistics.</div>
+    <div style="margin-top:8px"><b>Honesty.</b> All numbers are <span class="badge b-meas">measured</span> World Bank reported values — but the latest available <b>year differs</b> by country and indicator, so it is always displayed; many smaller economies have gaps, and missing values are shown as "—" rather than guessed (never zero). Aggregates are the Bank's population-weighted estimates. The choice of which ~55 countries and 7 indicators to show, and the framing of "spending vs. outcomes", is <span class="badge b-int">interpretive</span>. The UHC service-coverage index (<span class="mono">SH.UHC.SRVS.CV.XD</span>) was retired from the API and is <b>not</b> embedded — see the country-profile note. This tool is <b>descriptive, not predictive</b>; it does not forecast. No personal or protected health information is used — only public country-level aggregates.</div>
+    <div style="margin-top:8px" class="muted">Embedded snapshot vintage: <span id="vintfoot">—</span>. If a live refresh succeeds, the source chip above switches to "live World Bank".</div>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const WB='https://api.worldbank.org/v2';
+
+// indicator id -> short key
+const IND2K={"SH.XPD.CHEX.PC.CD":"pc","SH.XPD.CHEX.GD.ZS":"gdp","SH.XPD.GHED.GD.ZS":"gov","SH.XPD.OOPC.CH.ZS":"oop","SH.MED.PHYS.ZS":"phys","SH.MED.NUMW.P3":"nurse","SH.MED.BEDS.ZS":"beds"};
+const COUNTRIES=["CHN","IND","USA","IDN","PAK","NGA","BRA","BGD","RUS","MEX","ETH","JPN","PHL","EGY","COD","VNM","IRN","TUR","DEU","THA","GBR","FRA","TZA","ZAF","ITA","MMR","KEN","COL","KOR","SDN","UGA","ESP","DZA","IRQ","ARG","AFG","YEM","CAN","POL","MAR","AGO","UKR","UZB","MYS","MOZ","GHA","PER","SAU","MDG","CIV","NPL","CMR","VEN","NER","AUS"];
+const AGG=["WLD","XD","XT","XN","XM","SSF","EAS","ECS","LCN","MEA","NAC","SAS"];
+const AGGREMAP={"XD":"HIC","XT":"UMC","XN":"LMC","XM":"LIC","1W":"WLD"};
+const INCOME=[["HIC","High income"],["UMC","Upper-middle income"],["LMC","Lower-middle income"],["LIC","Low income"]];
+const REGION=[["NAC","North America"],["ECS","Europe & Central Asia"],["EAS","East Asia & Pacific"],["LCN","Latin America & Caribbean"],["MEA","Middle East & North Africa"],["SAS","South Asia"],["SSF","Sub-Saharan Africa"]];
+
+let SNAP={"vintage":"2023","embedded":"2026-06-27","years":["2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023","2024"],"indMeta":{"pc":{"name":"Health spending per capita","unit":"current US$ / person","good":"high","dec":0,"ind":"SH.XPD.CHEX.PC.CD"},"gdp":{"name":"Health spending","unit":"% of GDP","good":"high","dec":1,"ind":"SH.XPD.CHEX.GD.ZS"},"gov":{"name":"Government health spending","unit":"% of GDP","good":"high","dec":1,"ind":"SH.XPD.GHED.GD.ZS"},"oop":{"name":"Out-of-pocket share","unit":"% of health spending","good":"low","dec":1,"ind":"SH.XPD.OOPC.CH.ZS"},"phys":{"name":"Physicians","unit":"per 1,000 people","good":"high","dec":2,"ind":"SH.MED.PHYS.ZS"},"nurse":{"name":"Nurses & midwives","unit":"per 1,000 people","good":"high","dec":2,"ind":"SH.MED.NUMW.P3"},"beds":{"name":"Hospital beds","unit":"per 1,000 people","good":"high","dec":1,"ind":"SH.MED.BEDS.ZS"}},"agg":{"WLD":{"name":"World","s":{"pc":[476,488,519,583,640,679,720,788,854,863,900,974,982,992,1016,975,992,1028,1067,1084,1160,1257,1266,1317,null],"gdp":[8.6,9.0,9.3,9.5,9.4,9.3,9.2,9.1,9.1,9.8,9.5,9.3,9.3,9.3,9.4,9.7,9.8,9.7,9.6,9.7,10.7,10.3,10.0,10.0,null],"gov":[4.9,5.2,5.4,5.5,5.5,5.4,5.4,5.3,5.4,5.9,5.7,5.7,5.6,5.6,5.7,5.8,5.9,5.8,5.8,5.8,6.8,6.5,6.2,6.1,null],"oop":[19.2,18.9,18.6,18.6,18.5,18.7,18.8,18.9,18.9,18.3,18.5,18.6,18.8,19.0,18.7,18.4,18.2,18.1,18.1,18.0,16.4,17.0,17.2,17.3,null],"phys":[1.52,null,null,null,null,null,null,null,null,null,1.49,null,null,null,null,null,null,null,null,null,null,null,1.86,null,null],"nurse":[3.03,null,null,null,null,null,null,null,null,null,2.87,null,null,null,null,null,null,null,null,null,null,null,3.93,null,null],"beds":[3.1,3.0,3.0,2.9,2.9,2.9,2.8,2.8,2.7,2.8,2.8,2.7,2.9,2.8,2.9,2.9,2.9,3.0,3.1,3.0,3.1,3.3,null,null,null]}},"HIC":{"name":"High income","s":{"pc":[2108,2189,2374,2699,2975,3145,3326,3622,3894,3939,4076,4389,4408,4437,4562,4379,4509,4676,4909,5008,5459,5898,5838,6101,null],"gdp":[9.4,9.8,10.2,10.4,10.3,10.3,10.4,10.3,10.4,11.4,11.3,11.2,11.3,11.3,11.5,12.0,12.1,12.0,12.0,12.2,13.6,13.1,12.5,12.5,null],"gov":[5.6,5.8,6.1,6.2,6.2,6.2,6.3,6.3,6.5,7.1,7.0,7.1,7.1,7.1,7.3,7.5,7.6,7.5,7.5,7.6,9.0,8.6,8.1,7.9,null],"oop":[16.3,15.8,15.7,15.8,15.7,15.6,15.6,15.6,15.5,14.9,15.0,14.9,14.9,14.9,14.8,14.4,14.2,14.2,14.2,14.0,12.5,13.0,13.2,13.4,null],"phys":[2.79,null,null,null,null,null,null,null,null,null,3.24,null,null,null,null,null,null,null,null,null,null,null,3.78,null,null],"nurse":[7.79,null,null,null,null,null,null,null,null,null,8.5,null,null,null,null,null,null,null,null,null,null,null,10.24,null,null],"beds":[6.8,6.7,6.6,6.5,6.3,6.2,6.1,6.1,6.0,5.9,5.8,5.7,5.7,5.6,5.6,5.5,5.5,5.5,5.4,5.4,5.3,5.3,5.2,null,null]}},"UMC":{"name":"Upper middle income","s":{"pc":[98,97,94,105,122,145,167,200,241,256,299,353,377,405,420,411,408,449,469,485,491,562,619,648,null],"gdp":[5.2,5.2,5.1,5.2,5.1,5.2,5.1,5.0,5.0,5.4,5.2,5.2,5.3,5.3,5.4,5.5,5.5,5.6,5.5,5.6,5.9,5.7,6.0,6.1,null],"gov":[2.2,2.2,2.1,2.2,2.2,2.3,2.3,2.4,2.5,2.8,2.7,2.7,2.8,2.9,3.0,3.2,3.1,3.1,3.0,3.1,3.3,3.1,3.4,3.4,null],"oop":[42.4,44.6,45.5,44.0,42.9,42.9,41.5,39.2,37.3,35.8,34.9,34.6,34.6,33.7,32.8,31.9,32.0,31.7,32.3,32.1,31.8,31.8,30.7,30.9,null],"phys":[1.38,null,null,null,null,null,null,null,null,null,1.5,null,null,null,null,null,null,null,null,null,null,null,2.53,null,null],"nurse":[1.74,null,null,null,null,null,null,null,null,null,2.0,null,null,null,null,null,null,null,null,null,null,null,3.81,null,null],"beds":[2.0,2.0,2.0,2.0,2.0,2.0,2.1,2.1,2.2,2.3,2.4,2.5,2.7,2.8,2.9,3.1,3.2,3.3,3.5,3.6,3.8,3.9,4.2,4.5,null]}},"LMC":{"name":"Lower middle income","s":{"pc":[23,23,24,26,30,34,38,44,49,50,56,62,65,71,73,74,73,71,73,76,79,92,94,93,null],"gdp":[3.9,4.1,4.0,4.1,4.0,4.0,3.9,3.8,3.8,3.9,3.8,3.7,3.8,4.0,3.9,3.9,3.9,3.6,3.5,3.5,3.8,4.0,3.9,3.8,null],"gov":[1.1,1.1,1.1,1.1,1.0,1.1,1.1,1.0,1.1,1.2,1.1,1.2,1.2,1.2,1.2,1.2,1.2,1.2,1.2,1.2,1.4,1.5,1.5,1.4,null],"oop":[60.0,61.2,61.3,62.3,60.8,61.1,60.5,60.2,59.2,57.2,57.1,55.4,55.6,57.9,56.6,56.4,55.9,52.0,51.5,50.7,49.2,46.6,47.0,46.5,null],"phys":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.73,null,null],"nurse":[1.1,null,null,null,null,null,null,null,null,null,1.06,null,null,null,null,null,null,null,null,null,null,null,1.79,null,null],"beds":[1.9,1.9,1.8,1.8,1.7,1.7,1.7,1.6,1.6,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.4,1.4,1.4,1.5,null,null,null]}},"LIC":{"name":"Low income","s":{"pc":[17,15,16,18,21,24,28,34,38,39,40,41,40,42,45,43,40,39,41,37,38,39,40,39,null],"gdp":[3.7,4.1,4.3,4.7,4.8,4.8,5.0,5.2,5.0,5.4,5.0,4.8,4.9,5.4,5.6,5.7,5.9,5.8,5.4,5.2,5.7,5.7,5.4,5.3,null],"gov":[1.2,1.4,1.4,1.5,1.5,1.4,1.4,1.4,1.3,1.4,1.2,1.1,1.1,1.0,1.1,1.0,1.1,1.1,1.1,1.1,1.3,1.2,1.1,1.1,null],"oop":[53.7,53.2,54.3,53.6,52.4,52.0,53.2,54.1,54.0,50.2,50.9,49.8,49.8,52.0,50.2,55.3,53.5,53.7,53.9,50.0,48.3,46.4,46.4,44.6,null],"phys":[null,null,null,null,null,null,null,null,null,null,0.4,null,null,null,null,null,null,null,null,null,null,null,0.38,null,null],"nurse":[null,null,null,null,null,null,null,null,null,null,0.83,null,null,null,null,null,null,null,null,null,null,null,1.11,null,null],"beds":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"SSF":{"name":"Sub-Saharan Africa","s":{"pc":[32,30,29,42,51,57,64,71,76,76,86,93,92,93,90,83,76,77,76,76,75,84,85,79,null],"gdp":[4.9,4.9,4.5,5.4,5.4,5.2,5.1,5.0,4.8,5.2,5.2,5.1,4.9,4.9,4.7,4.9,5.0,5.0,4.7,4.5,4.9,5.1,4.9,4.9,null],"gov":[1.6,1.6,1.4,1.8,1.9,1.8,1.8,1.8,1.7,1.9,1.9,1.9,1.8,1.7,1.7,1.8,1.8,1.9,1.9,1.7,2.0,2.0,1.9,1.9,null],"oop":[31.8,33.1,34.9,35.4,32.5,32.5,34.3,34.4,35.8,32.4,31.2,30.5,31.0,33.3,34.0,34.5,34.0,31.4,29.4,29.4,30.4,30.5,32.0,30.4,null],"phys":[0.13,null,null,null,null,null,null,null,null,null,0.18,null,null,null,null,null,null,null,null,null,null,null,0.25,null,null],"nurse":[null,null,null,null,null,null,null,null,null,null,0.73,null,null,null,null,null,null,null,null,null,null,null,1.62,null,null],"beds":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"EAS":{"name":"East Asia & Pacific","s":{"pc":[240,223,225,253,280,294,300,324,376,421,479,589,627,603,617,604,637,669,724,755,799,899,905,881,null],"gdp":[6.1,6.1,6.1,6.2,6.2,6.1,5.9,5.7,5.8,6.3,6.2,6.6,6.7,6.5,6.4,6.4,6.5,6.5,6.5,6.6,6.9,6.8,7.0,6.8,null],"gov":[4.3,4.3,4.2,4.2,4.2,4.2,4.0,3.8,4.0,4.4,4.3,4.7,4.7,4.4,4.4,4.4,4.4,4.3,4.3,4.4,4.6,4.5,4.6,4.4,null],"oop":[23.5,24.6,25.3,26.1,25.7,26.1,27.3,26.5,26.3,25.4,25.0,24.0,24.4,25.5,25.4,25.7,25.4,25.9,26.3,25.9,25.3,24.7,24.7,26.0,null],"phys":[1.21,null,null,null,null,null,null,null,null,null,1.28,null,null,null,null,null,null,null,null,null,null,null,2.4,null,null],"nurse":[1.9,null,null,null,null,null,null,null,null,null,2.41,null,null,null,null,null,null,null,null,null,null,null,4.35,null,null],"beds":[2.5,2.5,2.5,2.5,2.5,2.5,2.6,2.6,2.7,2.8,3.1,3.1,3.5,3.5,3.7,3.8,4.0,4.2,4.5,4.5,4.7,4.9,5.3,4.7,null]}},"ECS":{"name":"Europe & Central Asia","s":{"pc":[934,964,1088,1349,1565,1658,1776,2047,2291,2195,2183,2365,2273,2379,2432,2105,2096,2194,2347,2329,2527,2865,2812,2968,null],"gdp":[8.0,8.2,8.4,8.6,8.6,8.6,8.5,8.4,8.6,9.4,9.2,9.0,9.0,9.1,9.2,9.3,9.3,9.2,9.2,9.3,10.5,10.4,9.7,9.6,null],"gov":[5.8,6.0,6.2,6.3,6.3,6.3,6.2,6.1,6.3,6.9,6.7,6.6,6.5,6.6,6.6,6.7,6.8,6.7,6.7,6.8,7.9,7.8,7.3,7.0,null],"oop":[17.2,17.0,16.8,16.7,16.9,16.6,16.8,17.2,17.2,16.7,17.2,17.5,17.8,17.9,17.9,17.8,17.5,17.8,17.7,17.6,15.6,16.0,16.3,16.5,null],"phys":[3.1,null,null,null,null,null,null,null,null,null,3.44,null,null,null,null,null,null,null,null,null,null,null,3.9,null,null],"nurse":[6.72,null,null,null,null,null,null,null,null,null,7.29,null,null,null,null,null,null,null,null,null,null,null,8.05,null,null],"beds":[7.4,7.3,6.8,6.6,6.5,6.4,6.3,6.2,6.1,6.0,5.9,5.8,5.7,5.6,5.5,5.4,5.3,5.2,5.2,5.1,5.2,5.1,5.0,null,null]}},"LCN":{"name":"Latin America & Caribbean","s":{"pc":[282,274,236,248,281,340,396,472,542,538,638,727,726,760,765,682,656,739,678,662,591,674,732,816,null],"gdp":[6.4,6.4,6.3,6.5,6.6,6.7,6.7,6.9,6.9,7.5,7.2,7.1,7.1,7.3,7.4,7.8,7.9,8.1,7.8,7.9,8.4,8.3,8.0,7.9,null],"gov":[3.0,3.0,2.9,3.0,3.0,3.0,3.1,3.2,3.3,3.7,3.7,3.6,3.6,3.8,3.9,4.2,4.2,4.2,4.0,4.0,4.6,4.4,4.2,4.1,null],"oop":[38.2,39.9,41.5,41.5,40.7,40.7,39.3,37.4,34.9,33.3,31.5,30.7,30.9,29.9,29.8,28.2,28.1,27.0,28.1,28.1,27.4,29.0,29.8,29.7,null],"phys":[1.61,null,null,null,null,null,null,null,null,null,2.0,null,null,null,null,null,null,null,null,null,null,null,2.57,null,null],"nurse":[2.74,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,3.84,null,null],"beds":[null,null,null,null,null,2.0,1.9,1.9,2.0,2.0,1.9,2.0,2.0,2.1,2.0,1.9,2.0,1.9,1.9,1.9,1.9,2.0,null,null,null]}},"MEA":{"name":"Middle East, North Africa, Afghanistan & Pakistan","s":{"pc":[100,103,99,99,108,122,137,159,187,202,218,249,264,267,282,276,280,288,277,277,277,295,305,311,null],"gdp":[4.2,4.5,4.5,4.3,4.1,3.9,3.9,3.9,3.8,4.7,4.4,4.3,4.4,4.5,4.9,5.4,5.6,5.5,5.2,5.2,5.8,5.4,5.0,5.3,null],"gov":[2.3,2.5,2.4,2.3,2.1,2.0,2.1,2.0,2.0,2.5,2.3,2.3,2.3,2.5,2.8,3.0,3.2,3.2,2.9,3.0,3.6,3.4,3.0,3.3,null],"oop":[39.4,38.4,38.3,38.4,39.0,39.6,38.2,38.7,38.3,37.5,39.1,37.3,36.7,33.4,31.4,32.7,30.8,29.8,30.8,29.1,27.6,26.9,28.9,28.3,null],"phys":[0.84,null,null,null,null,null,null,null,null,null,0.96,null,null,null,null,null,null,null,null,null,null,null,1.3,null,null],"nurse":[null,null,null,null,null,null,null,null,null,null,1.48,null,null,null,null,null,null,null,null,null,null,null,1.87,null,null],"beds":[1.2,1.3,1.3,1.3,1.3,1.3,1.3,1.3,1.2,1.2,1.2,1.1,1.1,1.1,1.2,1.2,1.2,1.2,1.1,1.1,1.1,null,null,null,null]}},"NAC":{"name":"North America","s":{"pc":[4297,4621,5014,5418,5760,6118,6503,6862,7078,7293,7561,7756,7989,8118,8438,8747,9046,9327,9661,9993,11031,11505,11925,12698,null],"gdp":[12.2,12.9,13.7,14.1,14.1,14.1,14.2,14.4,14.7,15.7,15.7,15.5,15.6,15.4,15.6,16.0,16.3,16.2,16.1,16.1,18.1,17.0,16.1,16.3,null],"gov":[5.6,6.0,6.3,6.5,6.6,6.6,6.8,6.9,7.2,7.8,7.9,7.9,7.8,7.9,8.1,8.4,8.5,8.5,8.5,8.5,10.5,9.6,9.0,8.9,null],"oop":[15.2,14.5,14.4,14.2,14.0,14.0,13.8,13.7,13.5,12.8,12.6,12.5,12.5,12.4,12.1,11.9,11.8,11.6,11.5,11.5,10.3,10.9,11.2,11.1,null],"phys":[2.53,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,3.59,null,null],"nurse":[10.16,null,null,null,null,null,null,null,null,null,10.73,null,null,null,null,null,null,null,null,null,null,null,13.16,null,null],"beds":[3.5,3.5,3.4,3.3,3.3,3.2,3.2,3.1,3.1,3.0,3.0,2.9,2.9,2.8,2.8,2.7,2.7,2.8,2.7,2.7,2.7,2.7,2.7,null,null]}},"SAS":{"name":"South Asia","s":{"pc":[18,19,19,21,24,26,28,34,36,37,43,46,47,53,55,57,59,57,58,60,64,75,80,82,null],"gdp":[3.9,4.1,4.1,3.9,3.9,3.7,3.6,3.5,3.5,3.5,3.3,3.2,3.3,3.7,3.5,3.5,3.4,2.9,2.9,2.9,3.3,3.3,3.3,3.3,null],"gov":[0.9,0.8,0.8,0.8,0.7,0.8,0.8,0.8,0.8,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,1.0,1.0,1.2,1.3,1.3,1.2,null],"oop":[69.8,72.3,71.4,71.5,70.7,71.4,70.5,69.6,68.1,66.0,64.7,62.0,62.7,68.2,66.3,64.3,63.0,55.9,54.3,53.5,51.2,47.3,47.1,46.6,null],"phys":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.73,null,null],"nurse":[0.74,null,null,null,null,null,null,null,null,null,0.82,null,null,null,null,null,null,null,null,null,null,null,1.66,null,null],"beds":[2.1,2.1,2.0,2.0,2.0,1.9,1.9,1.7,1.7,1.7,1.7,1.7,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.5,null,null,null]}}},"cty":{"CHN":{"name":"China","income":"UMC","incomeName":"Upper-middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"pc":{"v":763,"y":"2023"},"gdp":{"v":5.9,"y":"2023"},"gov":{"v":3.4,"y":"2023"},"oop":{"v":32.2,"y":"2023"},"phys":{"v":3.11,"y":"2022"},"nurse":{"v":3.67,"y":"2022"},"beds":{"v":5.6,"y":"2023"}},"pc":[43,44,50,57,64,73,82,99,134,165,189,239,285,329,362,393,398,440,504,539,583,670,755,763,null],"oop":[60.1,64.2,62.9,60.7,58.8,57.7,56.0,51.3,47.4,43.5,40.8,40.3,39.2,38.2,36.6,35.1,35.9,36.1,35.8,35.2,34.8,34.4,31.6,32.2,null]},"IND":{"name":"India","income":"LMC","incomeName":"Lower-middle income","region":"SAS","regionName":"South Asia","latest":{"pc":{"v":85,"y":"2023"},"gdp":{"v":3.3,"y":"2023"},"gov":{"v":1.3,"y":"2023"},"oop":{"v":43.9,"y":"2023"},"phys":{"v":0.72,"y":"2020"},"nurse":{"v":1.72,"y":"2020"},"beds":{"v":1.6,"y":"2021"}},"pc":[18,20,20,22,25,27,29,36,38,38,45,48,48,55,56,58,60,57,57,61,64,76,82,85,null],"oop":[71.7,74.1,73.4,73.4,72.5,73.1,72.3,70.8,69.1,66.8,65.2,62.2,63.0,69.1,67.0,64.7,63.2,55.1,53.2,52.0,49.5,45.1,44.5,43.9,null]},"USA":{"name":"United States","income":"HIC","incomeName":"High income","region":"NAC","regionName":"North America","latest":{"pc":{"v":13473,"y":"2023"},"gdp":{"v":16.7,"y":"2023"},"gov":{"v":9.0,"y":"2023"},"oop":{"v":10.9,"y":"2023"},"phys":{"v":3.68,"y":"2022"},"nurse":{"v":13.38,"y":"2022"},"beds":{"v":2.7,"y":"2022"}},"pc":[4549,4902,5328,5732,6072,6429,6802,7154,7365,7615,7836,8016,8262,8412,8796,9201,9536,9823,10180,10550,11648,12080,12586,13473,null],"oop":[15.1,14.4,14.3,14.2,14.0,13.9,13.7,13.6,13.4,12.6,12.4,12.3,12.3,12.3,12.0,11.8,11.6,11.3,11.3,11.3,10.1,10.7,11.0,10.9,null]},"IDN":{"name":"Indonesia","income":"UMC","incomeName":"Upper-middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"pc":{"v":132,"y":"2023"},"gdp":{"v":2.7,"y":"2023"},"gov":{"v":1.4,"y":"2023"},"oop":{"v":31.1,"y":"2023"},"phys":{"v":0.52,"y":"2023"},"nurse":{"v":3.24,"y":"2023"},"beds":{"v":1.4,"y":"2023"}},"pc":[15,17,19,26,26,34,44,56,59,62,86,107,106,102,102,96,106,110,111,118,132,159,127,132,null],"oop":[45.2,40.5,46.4,46.0,45.9,55.3,53.4,49.5,49.4,49.2,60.6,56.2,53.6,50.9,45.2,42.7,38.1,36.2,35.2,34.6,31.2,27.2,33.0,31.1,null]},"PAK":{"name":"Pakistan","income":"LMC","incomeName":"Lower-middle income","region":"MEA","regionName":"Middle East & North Africa","latest":{"pc":{"v":30,"y":"2023"},"gdp":{"v":2.5,"y":"2023"},"gov":{"v":0.9,"y":"2023"},"oop":{"v":52.9,"y":"2023"},"phys":{"v":1.16,"y":"2021"},"nurse":{"v":0.52,"y":"2021"},"beds":{"v":0.6,"y":"2020"}},"pc":[15,13,15,14,16,20,24,26,24,23,24,25,26,28,32,34,36,42,40,36,37,43,39,30,null],"oop":[57.3,55.8,51.0,60.5,60.8,65.9,72.8,71.7,70.0,67.9,67.8,65.3,61.2,62.7,65.5,64.4,62.1,57.8,56.2,56.1,55.2,50.7,47.4,52.9,null]},"NGA":{"name":"Nigeria","income":"LMC","incomeName":"Lower-middle income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":67,"y":"2023"},"gdp":{"v":4.2,"y":"2023"},"gov":{"v":0.6,"y":"2023"},"oop":{"v":71.9,"y":"2023"},"phys":{"v":0.38,"y":"2023"},"nurse":{"v":1.65,"y":"2022"},"beds":{"v":0.5,"y":"2004"}},"pc":[17,18,18,38,43,52,64,67,77,66,73,80,88,97,102,93,76,70,64,68,68,82,90,67,null],"oop":[60.2,60.7,65.0,72.8,64.5,66.0,70.5,70.9,72.8,74.5,76.9,74.7,72.8,70.9,71.9,71.9,75.2,77.4,75.9,71.5,74.7,76.2,75.7,71.9,null]},"BRA":{"name":"Brazil","income":"UMC","incomeName":"Upper-middle income","region":"LCN","regionName":"Latin America & Caribbean","latest":{"pc":{"v":1010,"y":"2023"},"gdp":{"v":9.7,"y":"2023"},"gov":{"v":4.3,"y":"2023"},"oop":{"v":26.2,"y":"2023"},"phys":{"v":2.36,"y":"2023"},"nurse":{"v":5.5,"y":"2023"},"beds":{"v":2.5,"y":"2021"}},"pc":[314,272,248,253,298,388,490,608,714,729,906,1043,969,994,1031,796,810,955,880,868,681,768,871,1010,null],"oop":[36.6,37.8,36.4,35.5,35.4,35.9,34.4,33.1,30.9,31.2,29.4,29.3,29.7,28.2,28.2,24.7,24.4,24.5,24.8,24.9,26.1,25.3,27.3,26.2,null]},"BGD":{"name":"Bangladesh","income":"LMC","incomeName":"Lower-middle income","region":"SAS","regionName":"South Asia","latest":{"pc":{"v":53,"y":"2023"},"gdp":{"v":2.2,"y":"2023"},"gov":{"v":0.3,"y":"2023"},"oop":{"v":79.3,"y":"2023"},"phys":{"v":0.72,"y":"2023"},"nurse":{"v":0.66,"y":"2023"},"beds":{"v":0.9,"y":"2023"}},"pc":[8,8,9,10,11,11,12,14,16,18,21,23,23,27,30,33,39,42,45,45,49,56,57,53,null],"oop":[61.8,65.8,62.9,63.0,63.1,65.4,65.6,66.4,67.8,67.9,68.0,68.2,68.3,69.6,70.8,72.7,71.5,70.1,70.7,76.5,77.0,76.1,78.3,79.3,null]},"RUS":{"name":"Russian Federation","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"pc":{"v":1003,"y":"2023"},"gdp":{"v":7.0,"y":"2023"},"gov":{"v":4.9,"y":"2023"},"oop":{"v":28.4,"y":"2023"},"phys":{"v":5.11,"y":"2022"},"nurse":{"v":7.04,"y":"2022"},"beds":{"v":6.8,"y":"2023"}},"pc":[95,118,140,163,208,270,351,460,607,514,564,681,755,806,736,497,463,577,606,650,815,882,1083,1003,null],"oop":[30.2,30.8,31.2,33.3,33.8,31.9,31.1,31.4,31.5,34.6,35.3,34.2,33.4,34.8,35.8,38.6,40.5,40.5,38.3,36.6,24.9,28.7,27.6,28.4,null]},"MEX":{"name":"Mexico","income":"UMC","incomeName":"Upper-middle income","region":"LCN","regionName":"Latin America & Caribbean","latest":{"pc":{"v":761,"y":"2023"},"gdp":{"v":5.5,"y":"2023"},"gov":{"v":2.7,"y":"2023"},"oop":{"v":41.2,"y":"2023"},"phys":{"v":2.59,"y":"2022"},"nurse":{"v":3.03,"y":"2022"},"beds":{"v":1.0,"y":"2022"}},"pc":[319,364,386,412,446,484,514,558,573,493,534,565,582,626,610,554,490,513,528,550,535,606,651,761,null],"oop":[52.2,53.4,54.4,55.7,53.7,54.6,53.8,52.5,48.6,47.4,43.5,40.7,40.6,39.9,40.9,41.0,41.4,41.8,42.3,42.3,38.8,41.4,39.1,41.2,null]},"ETH":{"name":"Ethiopia","income":"INX","incomeName":"Not classified","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":35,"y":"2023"},"gdp":{"v":2.8,"y":"2023"},"gov":{"v":0.6,"y":"2023"},"oop":{"v":46.3,"y":"2023"},"phys":{"v":0.14,"y":"2023"},"nurse":{"v":1.22,"y":"2022"},"beds":{"v":0.3,"y":"2016"}},"pc":[5,6,5,6,6,6,8,12,13,15,16,15,20,19,22,23,24,24,24,26,28,26,27,35,null],"oop":[36.0,34.6,37.5,34.5,34.9,31.3,38.8,37.0,38.5,41.5,42.3,46.5,42.2,42.4,38.5,36.7,35.4,34.4,35.5,37.8,33.1,37.0,44.6,46.3,null]},"JPN":{"name":"Japan","income":"HIC","incomeName":"High income","region":"EAS","regionName":"East Asia & Pacific","latest":{"pc":{"v":3638,"y":"2023"},"gdp":{"v":10.7,"y":"2023"},"gov":{"v":9.1,"y":"2023"},"oop":{"v":12.2,"y":"2023"},"phys":{"v":2.65,"y":"2022"},"nurse":{"v":12.98,"y":"2022"},"beds":{"v":12.6,"y":"2022"}},"pc":[2751,2489,2412,2650,2885,2893,2764,2781,3223,3697,4072,5103,5232,4356,4121,3754,4194,4135,4266,4431,4582,4844,4202,3638,null],"oop":[15.9,15.8,16.0,16.9,16.6,15.7,16.4,15.5,15.2,15.2,14.6,13.1,13.0,12.7,12.9,12.9,12.9,12.7,13.0,12.9,11.6,10.8,11.1,12.2,null]},"PHL":{"name":"Philippines","income":"LMC","incomeName":"Lower-middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"pc":{"v":194,"y":"2023"},"gdp":{"v":5.1,"y":"2023"},"gov":{"v":2.2,"y":"2023"},"oop":{"v":44.4,"y":"2023"},"phys":{"v":0.79,"y":"2021"},"nurse":{"v":4.79,"y":"2021"},"beds":{"v":1.0,"y":"2021"}},"pc":[32,28,27,32,34,46,54,64,76,78,89,96,109,119,106,113,118,120,125,142,167,208,183,194,null],"oop":[41.2,44.6,47.8,47.7,47.8,52.1,54.0,56.0,57.4,55.6,54.8,58.9,58.3,57.6,52.4,51.2,50.5,50.1,50.4,48.8,44.6,41.2,44.6,44.4,null]},"EGY":{"name":"Egypt, Arab Rep.","income":"LMC","incomeName":"Lower-middle income","region":"MEA","regionName":"Middle East & North Africa","latest":{"pc":{"v":141,"y":"2023"},"gdp":{"v":4.9,"y":"2023"},"gov":{"v":1.6,"y":"2023"},"oop":{"v":57.2,"y":"2023"},"phys":{"v":0.67,"y":"2020"},"nurse":{"v":1.79,"y":"2018"},"beds":{"v":1.1,"y":"2021"}},"pc":[69,69,64,50,50,59,66,73,90,99,105,116,140,140,155,170,143,106,118,143,148,177,172,141,null],"oop":[62.5,63.8,63.8,65.4,64.6,64.6,60.4,60.3,61.8,60.4,62.6,60.5,60.9,57.9,55.1,58.8,59.0,56.4,62.6,62.5,59.3,54.9,53.7,57.2,null]},"COD":{"name":"Congo, Dem. Rep.","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":23,"y":"2023"},"gdp":{"v":3.7,"y":"2023"},"gov":{"v":0.7,"y":"2023"},"oop":{"v":38.0,"y":"2023"},"phys":{"v":0.21,"y":"2022"},"nurse":{"v":1.17,"y":"2022"},"beds":{"v":0.8,"y":"2006"}},"pc":[18,5,4,6,8,9,10,12,15,13,12,12,13,15,18,19,19,18,17,19,21,22,24,23,null],"oop":[54.0,72.4,71.3,68.0,72.1,69.4,68.5,63.9,49.7,45.4,37.1,38.8,40.3,39.4,38.7,37.4,37.3,40.1,41.6,38.5,39.7,39.1,37.1,38.0,null]},"VNM":{"name":"Viet Nam","income":"LMC","incomeName":"Lower-middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"pc":{"v":197,"y":"2023"},"gdp":{"v":4.6,"y":"2023"},"gov":{"v":2.0,"y":"2023"},"oop":{"v":39.2,"y":"2023"},"phys":{"v":1.11,"y":"2021"},"nurse":{"v":1.44,"y":"2016"},"beds":{"v":2.5,"y":"2017"}},"pc":[21,26,22,25,32,39,47,54,64,70,85,97,109,104,119,121,133,148,162,171,153,168,188,197,null],"oop":[34.6,29.7,34.5,34.5,34.7,34.6,34.7,34.7,34.6,34.6,34.7,34.7,40.8,41.6,41.0,42.1,41.4,42.6,44.6,45.1,42.4,40.5,39.6,39.2,null]},"IRN":{"name":"Iran, Islamic Rep.","income":"UMC","incomeName":"Upper-middle income","region":"MEA","regionName":"Middle East & North Africa","latest":{"pc":{"v":267,"y":"2023"},"gdp":{"v":6.0,"y":"2023"},"gov":{"v":2.8,"y":"2023"},"oop":{"v":43.1,"y":"2023"},"phys":{"v":1.81,"y":"2023"},"nurse":{"v":2.88,"y":"2023"},"beds":{"v":1.9,"y":"2019"}},"pc":[80,93,105,116,140,170,192,238,289,354,425,505,500,412,395,423,434,457,244,224,185,197,250,267,null],"oop":[59.6,59.2,54.7,54.1,56.6,56.1,51.7,53.2,55.5,56.0,59.4,57.5,55.0,47.9,40.1,39.0,36.6,32.8,40.0,39.1,37.4,41.7,41.6,43.1,null]},"TUR":{"name":"Turkiye","income":"UMC","incomeName":"Upper-middle income","region":"ECS","regionName":"Europe & Central Asia","latest":{"pc":{"v":548,"y":"2023"},"gdp":{"v":4.3,"y":"2023"},"gov":{"v":3.2,"y":"2023"},"oop":{"v":19.0,"y":"2023"},"phys":{"v":2.24,"y":"2022"},"nurse":{"v":3.48,"y":"2022"},"beds":{"v":3.0,"y":"2023"}},"pc":[193,149,181,233,293,357,409,504,562,492,532,526,520,548,520,445,456,432,380,389,386,431,386,548,null],"oop":[28.6,23.4,20.3,18.9,20.2,24.2,23.6,23.9,19.2,14.5,16.9,15.9,15.9,16.9,17.7,16.9,16.5,17.4,17.5,17.0,16.4,16.3,19.5,19.0,null]},"DEU":{"name":"Germany","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"pc":{"v":6849,"y":"2024"},"gdp":{"v":12.3,"y":"2024"},"gov":{"v":9.3,"y":"2023"},"oop":{"v":10.7,"y":"2024"},"phys":{"v":4.53,"y":"2022"},"nurse":{"v":12.25,"y":"2022"},"beds":{"v":7.5,"y":"2023"}},"pc":[2336,2338,2558,3139,3447,3545,3681,4163,4647,4655,4592,5016,4745,5081,5287,4606,4723,5039,5474,5447,5907,6654,6226,6395,6849],"oop":[11.8,11.8,12.0,12.3,13.5,13.6,13.9,13.8,13.5,13.3,13.3,13.3,13.5,12.7,12.4,12.4,12.2,12.0,12.2,12.4,11.3,11.4,10.4,11.1,10.7]},"THA":{"name":"Thailand","income":"UMC","incomeName":"Upper-middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"pc":{"v":327,"y":"2023"},"gdp":{"v":4.5,"y":"2023"},"gov":{"v":3.5,"y":"2023"},"oop":{"v":9.9,"y":"2023"},"phys":{"v":0.54,"y":"2021"},"nurse":{"v":3.57,"y":"2023"},"beds":{"v":2.4,"y":"2023"}},"pc":[62,57,70,76,83,91,103,125,149,150,169,192,202,208,214,219,230,247,275,288,304,364,370,327,null],"oop":[34.2,34.0,27.9,27.2,26.4,27.6,17.7,14.8,14.7,15.9,14.5,13.0,13.4,12.5,12.9,11.9,10.8,11.8,10.1,8.7,10.5,9.0,9.2,9.9,null]},"GBR":{"name":"United Kingdom","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"pc":{"v":5860,"y":"2024"},"gdp":{"v":11.1,"y":"2024"},"gov":{"v":9.0,"y":"2023"},"oop":{"v":14.6,"y":"2024"},"phys":{"v":3.3,"y":"2023"},"nurse":{"v":9.55,"y":"2023"},"beds":{"v":2.4,"y":"2022"}},"pc":[2021,2075,2364,2774,3362,3528,3803,4416,4280,3813,3876,4124,4204,4340,4733,4470,4043,3939,4234,4260,4866,5645,5112,5407,5860],"oop":[18.2,18.0,17.4,16.2,14.7,13.4,12.4,14.4,13.5,12.4,13.2,13.3,14.2,15.8,15.7,15.9,15.7,15.8,16.2,16.0,12.4,13.0,14.4,14.6,14.6]},"FRA":{"name":"France","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"pc":{"v":5327,"y":"2024"},"gdp":{"v":11.5,"y":"2024"},"gov":{"v":7.9,"y":"2024"},"oop":{"v":9.2,"y":"2024"},"phys":{"v":3.28,"y":"2022"},"nurse":{"v":9.42,"y":"2021"},"beds":{"v":5.7,"y":"2022"}},"pc":[2162,2193,2450,3006,3459,3575,3812,4312,4807,4738,4594,4937,4660,4885,5007,4227,4289,4437,4693,4520,4760,5365,4858,5149,5327],"oop":[7.3,7.3,7.1,7.4,7.2,7.4,9.4,9.5,10.0,10.2,11.4,11.5,11.3,10.2,11.1,11.0,10.7,10.6,10.4,10.3,9.4,9.2,9.2,9.3,9.2]},"TZA":{"name":"Tanzania","income":"LMC","incomeName":"Lower-middle income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":36,"y":"2023"},"gdp":{"v":3.1,"y":"2023"},"gov":{"v":1.0,"y":"2023"},"oop":{"v":27.9,"y":"2023"},"phys":{"v":0.13,"y":"2022"},"nurse":{"v":0.69,"y":"2023"},"beds":{"v":0.8,"y":"2022"}},"pc":[12,15,17,20,23,28,36,36,36,34,37,38,42,43,40,33,37,39,41,40,32,38,36,36,null],"oop":[38.5,40.9,42.5,40.0,37.4,33.7,25.8,28.5,32.6,34.6,31.9,28.0,24.7,24.1,26.0,25.8,21.9,21.3,20.8,21.8,29.0,25.4,28.0,27.9,null]},"ZAF":{"name":"South Africa","income":"UMC","incomeName":"Upper-middle income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":537,"y":"2023"},"gdp":{"v":8.9,"y":"2023"},"gov":{"v":5.5,"y":"2023"},"oop":{"v":6.7,"y":"2023"},"phys":{"v":0.79,"y":"2022"},"nurse":{"v":6.39,"y":"2022"},"beds":{"v":2.2,"y":"2010"}},"pc":[236,203,180,286,362,401,418,455,442,488,621,687,646,594,539,492,457,528,559,539,503,593,570,537,null],"oop":[14.5,14.1,13.6,12.3,11.8,11.3,10.6,9.7,8.8,8.1,8.0,7.8,7.7,7.6,5.7,5.7,5.8,5.8,5.8,5.7,6.4,6.6,6.7,6.7,null]},"ITA":{"name":"Italy","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"pc":{"v":3398,"y":"2024"},"gdp":{"v":8.4,"y":"2024"},"gov":{"v":6.1,"y":"2023"},"oop":{"v":22.3,"y":"2024"},"phys":{"v":4.19,"y":"2022"},"nurse":{"v":6.75,"y":"2022"},"beds":{"v":3.1,"y":"2022"}},"pc":[1524,1587,1762,2161,2560,2670,2822,3077,3483,3314,3191,3359,3071,3140,3190,2707,2735,2851,3031,2909,3059,3415,3155,3283,3398],"oop":[26.5,24.5,24.1,23.7,22.8,21.6,21.3,21.5,21.3,20.7,20.5,22.0,22.5,22.7,23.0,23.8,23.7,24.1,24.0,23.9,21.5,22.8,23.3,23.6,22.3]},"MMR":{"name":"Myanmar","income":"LMC","incomeName":"Lower-middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"pc":{"v":56,"y":"2023"},"gdp":{"v":4.5,"y":"2023"},"gov":{"v":0.5,"y":"2023"},"oop":{"v":71.1,"y":"2023"},"phys":{"v":0.76,"y":"2019"},"nurse":{"v":0.2,"y":"2022"},"beds":{"v":1.1,"y":"2020"}},"pc":[4,5,7,7,7,8,8,10,15,19,20,27,37,38,54,64,60,60,61,54,66,97,58,56,null],"oop":[85.7,85.9,82.2,83.2,78.9,82.5,75.0,82.2,82.5,82.3,80.7,77.3,76.7,72.2,66.0,70.5,76.7,75.7,76.4,76.6,72.6,54.1,65.1,71.1,null]},"KEN":{"name":"Kenya","income":"LMC","incomeName":"Lower-middle income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":85,"y":"2023"},"gdp":{"v":4.4,"y":"2023"},"gov":{"v":2.0,"y":"2023"},"oop":{"v":24.2,"y":"2023"},"phys":{"v":0.29,"y":"2023"},"nurse":{"v":2.27,"y":"2023"},"beds":{"v":1.3,"y":"2019"}},"pc":[22,22,22,26,28,31,40,49,54,55,59,57,64,68,73,71,74,66,75,86,87,94,91,85,null],"oop":[47.3,46.4,44.6,45.3,44.5,45.2,39.2,36.5,34.1,31.4,30.2,31.0,31.6,32.1,29.2,26.9,25.0,23.3,23.4,24.3,23.3,22.7,24.0,24.2,null]},"COL":{"name":"Colombia","income":"UMC","incomeName":"Upper-middle income","region":"LCN","regionName":"Latin America & Caribbean","latest":{"pc":{"v":644,"y":"2024"},"gdp":{"v":8.1,"y":"2024"},"gov":{"v":5.7,"y":"2024"},"oop":{"v":14.7,"y":"2024"},"phys":{"v":2.54,"y":"2023"},"nurse":{"v":1.54,"y":"2023"},"beds":{"v":1.7,"y":"2020"}},"pc":[135,138,132,130,160,210,240,310,379,384,452,502,547,581,588,470,449,498,526,507,464,569,507,571,644],"oop":[13.7,13.4,11.5,8.6,13.8,16.4,17.9,19.2,20.9,18.0,17.0,15.3,17.9,17.2,16.3,15.4,15.6,15.4,15.0,14.8,14.5,13.7,14.4,14.6,14.7]},"KOR":{"name":"Korea, Rep.","income":"HIC","incomeName":"High income","region":"EAS","regionName":"East Asia & Pacific","latest":{"pc":{"v":3137,"y":"2024"},"gdp":{"v":8.7,"y":"2024"},"gov":{"v":4.9,"y":"2024"},"oop":{"v":33.7,"y":"2024"},"phys":{"v":2.61,"y":"2022"},"nurse":{"v":9.09,"y":"2022"},"beds":{"v":12.8,"y":"2022"}},"pc":[475,503,537,685,764,945,1131,1256,1186,1151,1417,1571,1604,1739,1923,1951,2043,2258,2523,2602,2700,3126,3079,3044,3137],"oop":[43.3,41.3,40.8,45.2,44.8,44.4,42.5,40.6,41.6,39.2,38.8,39.0,38.7,38.3,37.6,37.7,36.5,35.8,34.7,32.8,31.8,29.7,29.3,31.8,33.7]},"SDN":{"name":"Sudan","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":21,"y":"2023"},"gdp":{"v":2.9,"y":"2023"},"gov":{"v":0.6,"y":"2023"},"oop":{"v":57.4,"y":"2023"},"phys":{"v":0.25,"y":"2017"},"nurse":{"v":1.08,"y":"2018"},"beds":{"v":0.7,"y":"2021"}},"pc":[14,15,17,23,29,37,55,82,83,80,74,80,75,97,89,94,89,68,34,32,23,22,26,21,null],"oop":[61.8,62.3,61.4,62.6,57.2,54.6,55.8,58.0,62.4,52.5,61.3,65.9,65.5,74.8,67.0,79.4,71.2,72.5,67.0,67.5,53.0,58.2,42.5,57.4,null]},"UGA":{"name":"Uganda","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":45,"y":"2023"},"gdp":{"v":4.2,"y":"2023"},"gov":{"v":0.9,"y":"2023"},"oop":{"v":32.2,"y":"2023"},"phys":{"v":0.19,"y":"2022"},"nurse":{"v":2.27,"y":"2022"},"beds":{"v":0.5,"y":"2010"}},"pc":[16,16,16,14,19,26,32,36,40,44,52,55,55,53,51,40,39,31,33,33,45,51,44,45,null],"oop":[43.0,43.4,44.0,45.4,38.4,48.6,54.1,54.5,52.7,42.8,37.4,33.0,37.5,42.5,40.1,39.5,40.6,38.1,35.6,38.3,29.9,27.4,33.8,32.2,null]},"ESP":{"name":"Spain","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"pc":{"v":3107,"y":"2023"},"gdp":{"v":9.2,"y":"2023"},"gov":{"v":6.7,"y":"2023"},"oop":{"v":20.9,"y":"2023"},"phys":{"v":4.29,"y":"2022"},"nurse":{"v":6.41,"y":"2022"},"beds":{"v":2.9,"y":"2023"}},"pc":[1005,1045,1175,1648,1932,2074,2257,2626,3020,2962,2817,2938,2621,2664,2717,2384,2378,2565,2784,2757,2942,3189,2949,3107,null],"oop":[24.3,24.9,24.6,23.1,22.9,22.6,22.0,21.9,21.8,20.2,21.4,21.7,23.2,24.2,24.7,23.9,22.0,24.1,24.1,23.8,21.7,21.3,21.0,20.9,null]},"DZA":{"name":"Algeria","income":"UMC","incomeName":"Upper-middle income","region":"MEA","regionName":"Middle East & North Africa","latest":{"pc":{"v":233,"y":"2023"},"gdp":{"v":4.4,"y":"2023"},"gov":{"v":2.3,"y":"2023"},"oop":{"v":45.0,"y":"2023"},"phys":{"v":1.66,"y":"2022"},"nurse":{"v":2.51,"y":"2022"},"beds":{"v":1.6,"y":"2017"}},"pc":[62,67,67,76,93,101,117,151,206,207,228,286,340,338,367,297,266,271,272,242,211,209,180,233,null],"oop":[25.8,21.7,22.5,21.1,26.1,28.1,29.1,28.1,26.1,27.4,28.9,27.9,27.2,29.3,28.6,30.2,32.9,33.9,33.8,37.9,39.6,40.5,50.1,45.0,null]},"IRQ":{"name":"Iraq","income":"UMC","incomeName":"Upper-middle income","region":"MEA","regionName":"Middle East & North Africa","latest":{"pc":{"v":333,"y":"2023"},"gdp":{"v":5.5,"y":"2023"},"gov":{"v":2.5,"y":"2023"},"oop":{"v":54.0,"y":"2023"},"phys":{"v":1.02,"y":"2022"},"nurse":{"v":2.65,"y":"2022"},"beds":{"v":1.1,"y":"2018"}},"pc":[null,null,null,27,52,53,57,101,139,140,145,162,174,187,179,149,200,197,233,242,248,252,283,333,null],"oop":[null,null,null,54.5,28.6,29.0,32.6,29.5,21.3,22.4,26.0,25.0,61.7,58.6,62.0,76.2,44.3,58.0,50.4,50.1,54.7,49.9,53.1,54.0,null]},"ARG":{"name":"Argentina","income":"UMC","incomeName":"Upper-middle income","region":"LCN","regionName":"Latin America & Caribbean","latest":{"pc":{"v":1457,"y":"2023"},"gdp":{"v":10.3,"y":"2023"},"gov":{"v":6.2,"y":"2023"},"oop":{"v":24.5,"y":"2023"},"phys":{"v":5.11,"y":"2023"},"nurse":{"v":4.75,"y":"2023"},"beds":{"v":3.4,"y":"2022"}},"pc":[702,661,220,261,303,396,456,569,745,788,980,1208,1363,1429,1291,1524,1277,1491,1196,1007,911,1182,1416,1457,null],"oop":[29.1,29.8,30.2,28.1,28.2,32.5,32.1,31.2,30.0,25.9,26.7,26.6,25.9,26.4,26.7,25.8,26.5,20.7,24.0,23.3,20.9,25.6,25.2,24.5,null]},"AFG":{"name":"Afghanistan","income":"LIC","incomeName":"Low income","region":"MEA","regionName":"Middle East & North Africa","latest":{"pc":{"v":59,"y":"2023"},"gdp":{"v":15.0,"y":"2023"},"gov":{"v":0.2,"y":"2023"},"oop":{"v":77.1,"y":"2023"},"phys":{"v":0.32,"y":"2023"},"nurse":{"v":0.55,"y":"2023"},"beds":{"v":0.3,"y":"2023"}},"pc":[null,null,17,18,21,25,29,33,40,43,46,52,52,56,60,60,61,67,71,74,80,82,81,59,null],"oop":[null,null,85.4,86.1,84.5,79.0,76.8,78.2,75.4,72.8,79.0,73.3,74.5,72.0,73.1,78.4,76.0,75.5,76.2,76.8,74.8,77.2,77.9,77.1,null]},"YEM":{"name":"Yemen, Rep.","income":"LIC","incomeName":"Low income","region":"MEA","regionName":"Middle East & North Africa","latest":{"pc":{"v":48,"y":"2023"},"gdp":{"v":9.7,"y":"2023"},"gov":{"v":0.8,"y":"2023"},"oop":{"v":69.1,"y":"2023"},"phys":{"v":0.1,"y":"2023"},"nurse":{"v":0.54,"y":"2023"},"beds":{"v":0.5,"y":"2023"}},"pc":[23,24,25,32,35,38,45,52,62,58,60,57,65,68,83,88,75,87,144,81,65,49,54,48,null],"oop":[43.5,44.6,46.7,54.3,60.5,64.8,65.9,69.2,68.6,74.2,74.0,72.5,71.6,74.6,80.0,86.9,83.7,87.9,81.9,75.3,78.8,68.8,71.4,69.1,null]},"CAN":{"name":"Canada","income":"HIC","incomeName":"High income","region":"NAC","regionName":"North America","latest":{"pc":{"v":6378,"y":"2024"},"gdp":{"v":11.3,"y":"2024"},"gov":{"v":7.9,"y":"2024"},"oop":{"v":15.3,"y":"2024"},"phys":{"v":2.82,"y":"2023"},"nurse":{"v":11.26,"y":"2023"},"beds":{"v":2.5,"y":"2022"}},"pc":[1988,2042,2135,2535,2896,3268,3758,4188,4454,4356,5061,5400,5519,5460,5210,4659,4647,4895,5053,5099,5646,6511,6252,6187,6378],"oop":[16.6,15.9,15.9,15.3,15.3,15.4,15.9,15.6,15.5,15.2,15.6,15.2,15.0,14.6,14.7,14.7,15.6,15.8,15.6,15.4,13.7,14.2,15.0,15.2,15.3]},"POL":{"name":"Poland","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"pc":{"v":2014,"y":"2024"},"gdp":{"v":8.1,"y":"2024"},"gov":{"v":5.5,"y":"2023"},"oop":{"v":16.2,"y":"2024"},"phys":{"v":4.03,"y":"2023"},"nurse":{"v":6.33,"y":"2022"},"beds":{"v":6.0,"y":"2022"}},"pc":[238,283,316,339,392,466,524,661,893,760,809,866,815,878,911,804,816,910,979,1014,1026,1183,1219,1578,2014],"oop":[31.1,29.0,26.4,27.6,29.4,27.7,27.1,26.3,24.4,24.4,23.7,24.0,24.3,23.6,22.7,23.0,22.7,22.7,20.4,20.1,19.5,19.8,18.4,15.8,16.2]},"MAR":{"name":"Morocco","income":"LMC","incomeName":"Lower-middle income","region":"MEA","regionName":"Middle East & North Africa","latest":{"pc":{"v":232,"y":"2023"},"gdp":{"v":6.1,"y":"2023"},"gov":{"v":3.4,"y":"2023"},"oop":{"v":37.3,"y":"2023"},"phys":{"v":0.74,"y":"2021"},"nurse":{"v":0.87,"y":"2023"},"beds":{"v":0.7,"y":"2023"}},"pc":[55,57,64,78,91,97,110,132,153,166,168,179,172,180,189,163,162,167,176,179,192,210,202,232,null],"oop":[53.9,53.3,53.8,56.2,57.4,59.7,58.7,57.2,56.4,54.5,55.6,54.2,52.7,51.7,49.2,49.0,48.8,48.0,47.0,46.6,43.4,41.8,40.5,37.3,null]},"AGO":{"name":"Angola","income":"LMC","incomeName":"Lower-middle income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":76,"y":"2023"},"gdp":{"v":2.5,"y":"2023"},"gov":{"v":1.1,"y":"2023"},"oop":{"v":32.5,"y":"2023"},"phys":{"v":0.24,"y":"2022"},"nurse":{"v":1.87,"y":"2022"},"beds":{"v":0.8,"y":"2019"}},"pc":[13,29,29,35,50,55,70,93,136,121,97,122,122,143,131,108,94,113,84,64,56,67,104,76,null],"oop":[27.3,45.1,49.7,48.5,46.9,42.3,30.7,28.4,21.7,15.5,19.3,18.0,17.6,21.3,26.9,33.5,35.2,34.1,36.2,33.1,28.6,26.1,30.0,32.5,null]},"UKR":{"name":"Ukraine","income":"UMC","incomeName":"Upper-middle income","region":"ECS","regionName":"Europe & Central Asia","latest":{"pc":{"v":370,"y":"2021"},"gdp":{"v":8.2,"y":"2021"},"gov":{"v":4.3,"y":"2021"},"oop":{"v":45.3,"y":"2021"},"phys":{"v":3.53,"y":"2023"},"nurse":{"v":6.08,"y":"2023"},"beds":{"v":6.1,"y":"2022"}},"pc":[35,44,52,68,83,115,146,183,213,166,199,240,271,276,209,155,155,184,218,243,265,370,null,null,null],"oop":[48.4,47.2,45.1,41.0,41.4,38.0,36.1,36.5,37.8,37.4,41.8,46.3,43.9,48.2,48.1,48.2,48.4,49.2,50.7,51.1,47.9,45.3,null,null,null]},"UZB":{"name":"Uzbekistan","income":"LMC","incomeName":"Lower-middle income","region":"ECS","regionName":"Europe & Central Asia","latest":{"pc":{"v":192,"y":"2023"},"gdp":{"v":6.7,"y":"2023"},"gov":{"v":2.4,"y":"2023"},"oop":{"v":64.1,"y":"2023"},"phys":{"v":2.81,"y":"2021"},"nurse":{"v":11.08,"y":"2020"},"beds":{"v":4.9,"y":"2023"}},"pc":[36,30,25,26,28,33,38,47,61,72,93,110,128,141,118,133,130,93,83,99,120,156,171,192,null],"oop":[60.6,60.8,62.1,59.3,59.6,57.6,56.9,58.1,57.3,56.4,58.0,58.2,56.2,56.1,45.4,48.4,54.7,56.7,60.3,57.7,53.1,60.3,65.5,64.1,null]},"MYS":{"name":"Malaysia","income":"UMC","incomeName":"Upper-middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"pc":{"v":450,"y":"2023"},"gdp":{"v":4.0,"y":"2023"},"gov":{"v":2.0,"y":"2023"},"oop":{"v":37.1,"y":"2023"},"phys":{"v":2.34,"y":"2023"},"nurse":{"v":4.05,"y":"2023"},"beds":{"v":2.0,"y":"2023"}},"pc":[112,115,122,142,154,162,201,231,264,246,286,343,372,382,414,369,351,366,410,419,407,477,458,450,null],"oop":[40.7,35.7,34.6,34.5,36.1,38.0,34.7,35.1,35.5,32.2,34.1,34.0,33.0,33.7,33.0,33.7,35.9,35.9,36.6,36.1,34.2,32.1,37.9,37.1,null]},"MOZ":{"name":"Mozambique","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":53,"y":"2023"},"gdp":{"v":8.5,"y":"2023"},"gov":{"v":2.2,"y":"2023"},"oop":{"v":10.4,"y":"2023"},"phys":{"v":0.17,"y":"2022"},"nurse":{"v":0.93,"y":"2022"},"beds":{"v":0.7,"y":"2021"}},"pc":[7,9,10,11,14,18,18,19,24,28,26,30,35,42,44,40,32,37,41,41,35,44,48,53,null],"oop":[38.9,26.7,28.0,21.2,15.6,12.3,12.7,12.0,11.2,8.2,7.1,6.7,5.6,8.0,10.4,11.3,10.5,9.7,9.3,9.7,10.3,9.4,10.4,10.4,null]},"GHA":{"name":"Ghana","income":"LMC","incomeName":"Lower-middle income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":70,"y":"2023"},"gdp":{"v":2.9,"y":"2023"},"gov":{"v":1.9,"y":"2023"},"oop":{"v":26.7,"y":"2023"},"phys":{"v":0.27,"y":"2023"},"nurse":{"v":4.11,"y":"2023"},"beds":{"v":0.7,"y":"2015"}},"pc":[10,12,14,19,24,39,49,57,63,62,81,92,82,105,78,78,65,54,53,71,97,94,82,70,null],"oop":[38.0,33.6,32.0,36.0,32.4,23.5,35.2,39.6,41.1,34.9,34.3,33.0,36.9,38.9,45.1,35.8,37.8,22.7,33.5,29.0,23.8,26.5,25.0,26.7,null]},"PER":{"name":"Peru","income":"UMC","incomeName":"Upper-middle income","region":"LCN","regionName":"Latin America & Caribbean","latest":{"pc":{"v":446,"y":"2023"},"gdp":{"v":5.6,"y":"2023"},"gov":{"v":3.6,"y":"2023"},"oop":{"v":27.0,"y":"2023"},"phys":{"v":1.69,"y":"2023"},"nurse":{"v":2.74,"y":"2023"},"beds":{"v":1.6,"y":"2023"}},"pc":[84,89,98,97,105,123,136,159,191,209,241,264,309,321,332,311,311,333,363,368,399,455,445,446,null],"oop":[40.3,40.7,39.9,37.5,36.7,34.0,40.3,42.5,43.4,40.3,39.5,40.3,38.9,35.3,31.8,30.1,29.6,28.9,29.7,28.3,22.5,25.1,27.0,27.0,null]},"SAU":{"name":"Saudi Arabia","income":"HIC","incomeName":"High income","region":"MEA","regionName":"Middle East & North Africa","latest":{"pc":{"v":1825,"y":"2023"},"gdp":{"v":5.7,"y":"2023"},"gov":{"v":4.4,"y":"2023"},"oop":{"v":14.1,"y":"2023"},"phys":{"v":3.41,"y":"2023"},"nurse":{"v":6.56,"y":"2023"},"beds":{"v":2.4,"y":"2023"}},"pc":[493,482,450,457,471,546,635,662,663,760,766,954,1093,1190,1364,1309,1353,1401,1489,1505,1575,1655,1831,1825,null],"oop":[18.5,18.0,18.5,17.9,18.2,16.5,15.4,16.7,19.4,18.4,18.9,15.6,15.2,14.4,13.1,14.4,14.5,14.3,15.9,11.4,10.1,10.2,12.8,14.1,null]},"MDG":{"name":"Madagascar","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":17,"y":"2023"},"gdp":{"v":3.4,"y":"2023"},"gov":{"v":1.0,"y":"2023"},"oop":{"v":27.4,"y":"2023"},"phys":{"v":0.17,"y":"2022"},"nurse":{"v":0.28,"y":"2022"},"beds":{"v":0.3,"y":"2014"}},"pc":[11,13,15,18,14,16,16,19,21,20,21,23,19,19,23,22,24,24,21,16,17,17,16,17,null],"oop":[43.3,38.8,37.6,34.5,30.6,33.0,31.7,32.7,37.2,37.7,36.2,28.0,32.5,35.6,28.2,25.2,23.1,25.6,29.3,34.2,30.9,32.7,30.4,27.4,null]},"CIV":{"name":"Cote d'Ivoire","income":"LMC","incomeName":"Lower-middle income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":88,"y":"2023"},"gdp":{"v":3.4,"y":"2023"},"gov":{"v":1.4,"y":"2023"},"oop":{"v":32.0,"y":"2023"},"phys":{"v":0.17,"y":"2023"},"nurse":{"v":0.79,"y":"2023"},"beds":{"v":0.4,"y":"2006"}},"pc":[30,31,33,44,47,47,47,56,65,71,70,68,70,67,74,58,62,64,66,68,79,92,85,88,null],"oop":[75.3,77.2,75.8,76.1,77.0,76.7,75.9,68.8,65.5,57.4,56.5,59.2,52.8,56.2,51.1,42.6,40.0,39.2,39.3,37.3,32.0,28.4,32.5,32.0,null]},"NPL":{"name":"Nepal","income":"LMC","incomeName":"Lower-middle income","region":"SAS","regionName":"South Asia","latest":{"pc":{"v":84,"y":"2023"},"gdp":{"v":6.2,"y":"2023"},"gov":{"v":1.9,"y":"2023"},"oop":{"v":59.4,"y":"2023"},"phys":{"v":1.01,"y":"2023"},"nurse":{"v":4.09,"y":"2023"},"beds":{"v":0.5,"y":"2023"}},"pc":[8,10,10,11,13,14,14,17,19,21,30,34,34,35,42,46,47,50,51,54,59,69,87,84,null],"oop":[55.8,51.3,52.0,53.8,51.6,49.2,42.5,61.0,61.6,57.6,56.2,58.4,56.1,63.5,60.0,59.4,55.4,57.4,57.7,57.9,54.2,53.1,55.4,59.4,null]},"CMR":{"name":"Cameroon","income":"LMC","incomeName":"Lower-middle income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":79,"y":"2023"},"gdp":{"v":4.6,"y":"2023"},"gov":{"v":0.7,"y":"2023"},"oop":{"v":67.7,"y":"2023"},"phys":{"v":0.14,"y":"2022"},"nurse":{"v":0.66,"y":"2022"},"beds":{"v":2.6,"y":"2016"}},"pc":[30,30,32,39,42,43,45,50,55,51,50,58,57,57,72,58,58,57,58,57,66,73,72,79,null],"oop":[78.5,75.1,70.2,71.5,73.9,74.3,74.4,75.6,74.2,76.8,76.0,69.6,66.8,69.7,69.0,73.8,73.4,78.5,72.3,72.2,71.9,70.6,67.8,67.7,null]},"VEN":{"name":"Venezuela, RB","income":"INX","incomeName":"Not classified","region":"LCN","regionName":"Latin America & Caribbean","latest":{"pc":{"v":186,"y":"2023"},"gdp":{"v":3.8,"y":"2023"},"gov":{"v":1.2,"y":"2023"},"oop":{"v":29.7,"y":"2023"},"phys":{"v":1.66,"y":"2017"},"nurse":{"v":2.0,"y":"2018"},"beds":{"v":1.0,"y":"2020"}},"pc":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,165,113,153,162,209,186,null],"oop":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,36.9,34.1,29.0,28.1,24.9,29.7,null]},"NER":{"name":"Niger","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa","latest":{"pc":{"v":26,"y":"2023"},"gdp":{"v":4.0,"y":"2023"},"gov":{"v":1.0,"y":"2023"},"oop":{"v":51.5,"y":"2023"},"phys":{"v":0.04,"y":"2023"},"nurse":{"v":0.42,"y":"2023"},"beds":{"v":0.3,"y":"2020"}},"pc":[9,10,11,13,14,19,20,21,25,25,23,25,23,25,25,26,23,29,31,32,36,35,27,26,null],"oop":[60.3,60.3,59.5,61.1,59.8,51.3,49.9,53.7,52.6,53.7,55.5,57.7,60.8,56.5,54.7,51.7,58.5,48.3,49.0,46.1,43.5,42.5,40.3,51.5,null]},"AUS":{"name":"Australia","income":"HIC","incomeName":"High income","region":"EAS","regionName":"East Asia & Pacific","latest":{"pc":{"v":6980,"y":"2023"},"gdp":{"v":10.4,"y":"2023"},"gov":{"v":7.7,"y":"2023"},"oop":{"v":15.8,"y":"2023"},"phys":{"v":4.09,"y":"2022"},"nurse":{"v":13.45,"y":"2022"},"beds":{"v":3.8,"y":"2016"}},"pc":[1627,1550,1753,2227,2744,2996,3175,3793,4083,3989,4948,5877,6039,5812,6098,5272,5418,5771,5844,5543,5968,7092,6724,6980,null],"oop":[21.0,20.4,19.9,19.1,19.2,19.6,19.7,19.0,19.0,19.1,19.7,19.2,19.9,19.5,17.8,16.9,16.6,16.3,16.5,15.0,15.2,14.5,15.1,15.8,null]}},"uhcRetired":true,"uhcNote":"SH.UHC.SRVS.CV.XD (UHC service coverage index) was retired from the World Bank Indicators API; no current values are served, so it is not embedded."};
+let LIVE=false;
+
+// ---- helpers
+function fmtVal(v,k){
+ if(v==null||!isFinite(v))return '—';
+ const dec=(SNAP.indMeta[k]&&SNAP.indMeta[k].dec)||0;
+ const pfx=(k==='pc')?'$':'';
+ return pfx+Number(v).toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+function unitOf(k){return SNAP.indMeta[k]?SNAP.indMeta[k].unit:'';}
+function nameOf(k){return SNAP.indMeta[k]?SNAP.indMeta[k].name:k;}
+function goodHigh(k){return SNAP.indMeta[k]&&SNAP.indMeta[k].good==='high';}
+function lastNonNull(arr){for(let i=arr.length-1;i>=0;i--){if(arr[i]!=null&&isFinite(arr[i]))return {v:arr[i],i};}return {v:null,i:-1};}
+function firstNonNull(arr){for(let i=0;i<arr.length;i++){if(arr[i]!=null&&isFinite(arr[i]))return {v:arr[i],i};}return {v:null,i:-1};}
+function yearAt(i){return SNAP.years[i]||'—';}
+function aggSeries(code,k){const a=SNAP.agg[code];return a&&a.s&&a.s[k]?a.s[k]:[];}
+function aggLatest(code,k){const s=aggSeries(code,k);const l=lastNonNull(s);return l;}
+function spark(arr,w,h,col,fill){
+ const v=arr.filter(x=>x!=null&&isFinite(x));if(v.length<2)return '<span class="muted small">—</span>';
+ const mn=Math.min(...v),mx=Math.max(...v),rng=(mx-mn)||1,n=arr.length;
+ let d='',started=false;
+ arr.forEach((x,i)=>{if(x==null||!isFinite(x))return;const X=(i/(n-1))*w,Y=h-((x-mn)/rng)*(h-3)-1.5;d+=(started?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1)+' ';started=true;});
+ const area=fill?'<path d="'+d+'L'+w+' '+h+' L0 '+h+' Z" fill="'+col+'1f"/>':'';
+ return '<svg viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" preserveAspectRatio="none" style="display:block">'+area+'<path d="'+d.trim()+'" fill="none" stroke="'+col+'" stroke-width="1.6"/></svg>';
+}
+// change latest-vs-2000 for a series; "improve" colored green by indicator polarity
+function changeHtml(arr,k){
+ const f=firstNonNull(arr),l=lastNonNull(arr);
+ if(f.v==null||l.v==null||l.i===f.i)return '<span class="muted">—</span>';
+ const diff=l.v-f.v;const better=goodHigh(k)?diff>0:diff<0;
+ const ar=diff>0?'▲':(diff<0?'▼':'■');
+ const cls=better?'dn':'up';
+ const dec=(SNAP.indMeta[k]&&SNAP.indMeta[k].dec)||0;
+ const mag=Math.abs(diff).toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});
+ return '<span class="delta '+cls+'">'+ar+' '+mag+'</span>';
+}
+// quality of a value for color (bar tint); thresholds per indicator
+function valColor(v,k){
+ if(v==null)return 'var(--dim)';
+ const t={pc:[100,500,2000],gdp:[4,6,9],gov:[2,4,6],oop:[60,40,20],phys:[0.5,1.5,3],nurse:[1,3,8],beds:[1,2.5,4]}[k];
+ if(!t)return 'var(--teal)';
+ const high=goodHigh(k);
+ let bucket;
+ if(high){bucket=v>=t[2]?3:v>=t[1]?2:v>=t[0]?1:0;}
+ else{bucket=v<=t[2]?3:v<=t[1]?2:v<=t[0]?1:0;}
+ return ['#ef5466','#f3833b','#f5b945','#3ddc97'][bucket];
+}
+
+// ---- (a) SPENDING HEADLINE
+function renderSpend(){
+ const pc=aggSeries('WLD','pc'),gdp=aggSeries('WLD','gdp'),gov=aggSeries('WLD','gov');
+ const pcL=lastNonNull(pc),pcF=firstNonNull(pc),gdpL=lastNonNull(gdp),govL=lastNonNull(gov);
+ $('pcyear').textContent=yearAt(pcL.i);$('gdpyear').textContent=yearAt(gdpL.i);$('govyear').textContent=yearAt(govL.i);
+ $('pcv').innerHTML=fmtVal(pcL.v,'pc')+' <small>per person</small>';
+ $('gdpv').innerHTML=fmtVal(gdpL.v,'gdp')+' <small>% of GDP</small>';
+ $('govv').innerHTML=fmtVal(govL.v,'gov')+' <small>% of GDP</small>';
+ const pcGain=(pcL.v!=null&&pcF.v!=null&&pcF.v>0)?Math.round(pcL.v/pcF.v*10)/10:null;
+ $('pcs').innerHTML='from '+fmtVal(pcF.v,'pc')+' in '+yearAt(pcF.i)+': <span class="delta up">▲ '+(pcGain!=null?pcGain+'×':'—')+'</span> (nominal $)';
+ const gdpF=firstNonNull(gdp);
+ $('gdps').innerHTML='since '+yearAt(gdpF.i)+': '+changeHtml(gdp,'gdp')+' pts of GDP';
+ $('govs').innerHTML='the publicly-funded share of all health spending';
+ // income-group gap bar
+ const groups=[['HIC','High income'],['UMC','Upper-mid'],['LMC','Lower-mid'],['LIC','Low income']];
+ const recs=groups.map(([c,l])=>{const x=aggLatest(c,'pc');return {c,l,v:x.v,y:yearAt(x.i)};}).filter(r=>r.v!=null);
+ const tot=recs.reduce((s,r)=>s+r.v,0)||1;
+ const cols={HIC:'#3ddc97',UMC:'#f5b945',LMC:'#f3833b',LIC:'#ef5466'};
+ $('gapbar').innerHTML=recs.map(r=>{
+  const wpct=Math.max(8,100*r.v/tot);
+  return '<div class="seg2" style="flex:'+r.v+' 1 0;min-width:64px;background:'+cols[r.c]+'">'+fmtVal(r.v,'pc')+'<small>'+r.l+'</small></div>';
+ }).join('');
+ const hi=recs.find(r=>r.c==='HIC'),lo=recs.find(r=>r.c==='LIC');
+ if(hi&&lo){
+  const ratio=Math.round(hi.v/lo.v);
+  $('gapyears').textContent='('+(hi.y===lo.y?hi.y:hi.y+' / '+lo.y+'…')+')';
+  $('gaptext').innerHTML='A high-income country spends about <b>'+fmtVal(hi.v,'pc')+'</b> per person on health; a low-income country about <b>'+fmtVal(lo.v,'pc')+'</b> — roughly a <b>'+ratio.toLocaleString()+'× difference</b>, orders of magnitude apart. Bar widths are proportional to spending.';
+ }
+ $('spkpcyr').textContent=yearAt(pcL.i);$('spkgdpyr').textContent=yearAt(gdpL.i);
+ $('sparkPC').innerHTML=spark(pc,250,46,'#26c6da',true);
+ $('sparkGDP').innerHTML=spark(gdp,250,46,'#b08ef0',true);
+ $('spendcaveat').innerHTML='Health spending has risen across the world since 2000, but the <b>level</b> remains extraordinarily uneven: the gap between high- and low-income countries is measured in orders of magnitude, not percentages. Spending per person is in <b>current US$</b> (not adjusted for price differences between countries), so it overstates the real-resource gap somewhat — yet the divide is still stark. <span class="badge b-meas">measured</span> World Bank / WHO values; latest year shown next to each figure.';
+}
+
+// ---- (b) FINANCIAL PROTECTION
+let OOPMODE='cty';
+function renderOOP(){
+ const oop=aggSeries('WLD','oop');const oL=lastNonNull(oop),oF=firstNonNull(oop);
+ $('oopyear').textContent=yearAt(oL.i);
+ $('oopv').innerHTML=fmtVal(oL.v,'oop')+' <small>% of health spending</small>';
+ $('oops').innerHTML='since '+yearAt(oF.i)+': '+changeHtml(oop,'oop')+' pts — paid directly by households';
+ const hi=aggLatest('HIC','oop'),lo=aggLatest('LIC','oop');
+ if(hi.v!=null&&lo.v!=null){
+  $('oopgapv').innerHTML=fmtVal(lo.v,'oop')+' <small>vs '+fmtVal(hi.v,'oop')+'</small>';
+  $('oopgaps').innerHTML='low-income vs high-income — households in the poorest countries pay a far larger direct share ('+yearAt(lo.i)+' / '+yearAt(hi.i)+')';
+ }
+ let recs;
+ if(OOPMODE==='cty'){
+  recs=[];COUNTRIES.forEach(iso=>{const c=SNAP.cty[iso];const d=c&&c.latest&&c.latest.oop;if(d)recs.push({nm:c.name,sub:'',v:d.v,y:d.y});});
+  $('oopdesc').innerHTML='Out-of-pocket share — <b>% of total health spending paid directly by households</b>, across the ~55 most populous countries. Worst (highest) burden at top.';
+ }else{
+  const groups=OOPMODE==='inc'?INCOME:REGION;
+  recs=groups.map(([code,label])=>{const x=aggLatest(code,'oop');return {nm:label,sub:'',v:x.v,y:yearAt(x.i)};}).filter(r=>r.v!=null);
+  $('oopdesc').innerHTML='Out-of-pocket share — <b>% of total health spending paid directly by households</b>, by World Bank '+(OOPMODE==='inc'?'income group':'region')+'. Worst (highest) burden at top.';
+ }
+ recs.sort((a,b)=>b.v-a.v);
+ const max=Math.max(...recs.map(r=>r.v),1);
+ $('ooplist').innerHTML=recs.map((r,i)=>{
+  const col=valColor(r.v,'oop');
+  return '<div class="row2"><div class="rk">'+(i+1)+'</div>'+
+   '<div class="nm">'+r.nm+'</div>'+
+   '<div class="meter"><div class="tk"><div class="fl" style="width:'+Math.max(2,(100*r.v/max)).toFixed(1)+'%;background:'+col+'"></div></div></div>'+
+   '<div class="rate">'+fmtVal(r.v,'oop')+'</div><div class="yr">'+r.y+'</div></div>';
+ }).join('')||'<div class="muted">No data.</div>';
+}
+[...document.querySelectorAll('#oopmode button')].forEach(b=>b.onclick=()=>{OOPMODE=b.dataset.m;[...document.querySelectorAll('#oopmode button')].forEach(x=>x.classList.toggle('on',x===b));renderOOP();});
+
+// ---- (c) WORKFORCE & CAPACITY
+let WORKK='phys';
+function renderWork(){
+ const pl=aggLatest('WLD','phys'),nl=aggLatest('WLD','nurse'),bl=aggLatest('WLD','beds');
+ $('wphysv').textContent=fmtVal(pl.v,'phys');$('wphysy').textContent='as of '+yearAt(pl.i);
+ $('wnursev').textContent=fmtVal(nl.v,'nurse');$('wnursey').textContent='as of '+yearAt(nl.i);
+ $('wbedsv').textContent=fmtVal(bl.v,'beds');$('wbedsy').textContent='as of '+yearAt(bl.i);
+ const k=WORKK,rows=[];
+ COUNTRIES.forEach(iso=>{const c=SNAP.cty[iso];const d=c&&c.latest&&c.latest[k];if(d)rows.push({name:c.name,v:d.v,y:d.y});});
+ rows.sort((a,b)=>a.v-b.v); // lowest density at top = thinnest systems
+ const max=Math.max(...rows.map(r=>r.v),1);
+ $('workdesc').innerHTML=nameOf(k)+' — <b>'+unitOf(k)+'</b>. Thinnest systems (lowest density) at top; the year is each country’s latest reported value.';
+ $('worklist').innerHTML=rows.map((r,i)=>{
+  const col=valColor(r.v,k);
+  return '<div class="row2"><div class="rk">'+(i+1)+'</div>'+
+   '<div class="nm">'+r.name+'</div>'+
+   '<div class="meter"><div class="tk"><div class="fl" style="width:'+Math.max(2,(100*r.v/max)).toFixed(1)+'%;background:'+col+'"></div></div></div>'+
+   '<div class="rate">'+fmtVal(r.v,k)+'</div><div class="yr">'+r.y+'</div></div>';
+ }).join('')||'<div class="muted">No data.</div>';
+}
+[...document.querySelectorAll('#workind button')].forEach(b=>b.onclick=()=>{WORKK=b.dataset.k;[...document.querySelectorAll('#workind button')].forEach(x=>x.classList.toggle('on',x===b));renderWork();});
+
+// ---- (d) COUNTRY PROFILE
+const PROFINDS=['pc','gdp','gov','oop','phys','nurse','beds'];
+let CMPK='pc';
+function fillCySelect(){
+ const sel=$('cysel');sel.innerHTML='';
+ const arr=COUNTRIES.map(iso=>({iso,name:(SNAP.cty[iso]||{}).name||iso})).sort((a,b)=>a.name.localeCompare(b.name));
+ arr.forEach(o=>{const op=document.createElement('option');op.value=o.iso;op.textContent=o.name;sel.appendChild(op);});
+ sel.value='USA';
+}
+function renderProfile(){
+ const iso=$('cysel').value;const c=SNAP.cty[iso];if(!c)return;
+ $('profmeta').innerHTML='<b style="color:var(--ink);font-size:14px">'+c.name+'</b> '+
+   '<span class="tag">'+(c.incomeName||'—')+'</span><span class="tag">'+(c.regionName||'—')+'</span>';
+ $('profcards').innerHTML=PROFINDS.map(k=>{
+  const d=c.latest&&c.latest[k];
+  const col=d?valColor(d.v,k):'var(--dim)';
+  return '<div class="mini"><div class="l">'+nameOf(k)+'<br><span style="color:var(--dim)">'+unitOf(k)+'</span></div>'+
+   '<div class="v" style="color:'+col+'">'+(d?fmtVal(d.v,k):'—')+'</div>'+
+   '<div class="y">'+(d?'as of '+d.y:'no data')+'</div></div>';
+ }).join('');
+ $('profSparkPC').innerHTML=spark(c.pc||[],230,46,'#26c6da',true);
+ $('profSparkOOP').innerHTML=spark(c.oop||[],230,46,'#f3833b',true);
+ renderCmp();
+ const pcL=lastNonNull(c.pc||[]),oopL=lastNonNull(c.oop||[]);
+ $('profcaveat').innerHTML=c.name+'’s health spending per person and out-of-pocket share are traced from 2000 to '+yearAt(Math.max(pcL.i,oopL.i))+'. The comparison bars place its latest value against its income-group peers, its region, and the world. <span class="badge b-meas">measured</span> World Bank values; "—" means no reported value (not zero). A country can spend heavily yet still leave households exposed, or spend little yet protect them — spending and protection are <b>not the same axis</b>.';
+ $('uhcnote').innerHTML='<b>On universal coverage.</b> A direct measure of access — the WHO/World Bank <span class="mono">UHC service-coverage index</span> (<span class="mono">SH.UHC.SRVS.CV.XD</span>) — was <b>retired from the World Bank Indicators API</b> and is not embedded here, so no coverage value is shown for '+c.name+'. The indicators above (government share of spending, out-of-pocket burden, and workforce density) describe <b>affordability and capacity</b>, which shape access, but they are not a coverage score. There is also a well-known <b>gap between spending and outcomes</b>: more dollars per person do not guarantee proportionally better access or health, and some lower-spending systems achieve broad coverage.';
+}
+function renderCmp(){
+ const iso=$('cysel').value;const c=SNAP.cty[iso];if(!c)return;
+ const k=CMPK;$('cmpindname').textContent=nameOf(k).toLowerCase();
+ const cd=c.latest&&c.latest[k];
+ const incCode=c.income, regCode=c.region;
+ const rows=[
+  {l:c.name,v:cd?cd.v:null,me:true},
+  {l:(c.incomeName||'Income peers'),v:aggLatest(incCode,k).v},
+  {l:(c.regionName||'Region'),v:aggLatest(regCode,k).v},
+  {l:'World',v:aggLatest('WLD',k).v}
+ ];
+ const vals=rows.map(r=>r.v).filter(v=>v!=null&&isFinite(v));
+ const max=Math.max(...vals,1);
+ $('cmpbars').innerHTML=rows.map(r=>{
+  const col=r.v==null?'var(--dim)':(r.me?'#26c6da':valColor(r.v,k));
+  const w=r.v==null?0:Math.max(2,100*r.v/max);
+  return '<div class="peerbar"><div class="pl"'+(r.me?' style="color:var(--teal);font-weight:700"':'')+'>'+r.l+'</div>'+
+   '<div class="pm"><div class="tk"><div class="fl" style="width:'+w.toFixed(1)+'%;background:'+col+'"></div></div></div>'+
+   '<div class="pv">'+(r.v==null?'—':fmtVal(r.v,k))+'</div></div>';
+ }).join('');
+}
+$('cysel').onchange=renderProfile;
+[...document.querySelectorAll('#cmpind button')].forEach(b=>b.onclick=()=>{CMPK=b.dataset.k;[...document.querySelectorAll('#cmpind button')].forEach(x=>x.classList.toggle('on',x===b));renderCmp();});
+
+// ---- master render
+function render(){
+ $('vintchip').innerHTML='<b>latest available '+SNAP.vintage+'</b>';
+ $('vintfoot').textContent=SNAP.vintage+(SNAP.embedded?' (embedded '+SNAP.embedded+')':'');
+ $('srcchip').innerHTML=LIVE?'<span class="badge b-meas">live</span> World Bank API':'<span class="badge b-mod">snapshot</span> embedded';
+ const embedYr=SNAP.embedded?+SNAP.embedded.slice(0,4):null;
+ const vintYr=+(''+SNAP.vintage).slice(0,4);
+ if(embedYr&&vintYr&&(embedYr-vintYr)>2){$('vintchip').innerHTML+=' <span class="stale">data lag '+(embedYr-vintYr)+'y</span>';}
+ renderSpend();renderOOP();renderWork();renderProfile();
+}
+
+// ---- LIVE FETCH (graceful: keep embed on failure)
+function wbUrl(codes,ind){return WB+'/country/'+codes.join(';')+'/indicator/'+ind+'?format=json&date=2000:2024&per_page=20000';}
+function wbFetch(codes,ind){return fetch(wbUrl(codes,ind)).then(r=>{if(!r.ok)throw r.status;return r.json();}).then(d=>{if(!d||d.length<2||!d[1])return [];return d[1];});}
+function keyOf(r){return r.countryiso3code||r.country.id;}
+
+async function fetchWB(){
+ $('srcchip').innerHTML='<span class="badge b-mod">…</span> contacting World Bank';
+ try{
+  const years=SNAP.years;const yIdx={};years.forEach((y,i)=>yIdx[y]=i);
+  const agg={};AGG.forEach(c=>{const rc=AGGREMAP[c]||c;agg[rc]={name:(SNAP.agg[rc]||{}).name||c,s:{}};});
+  const cty={};COUNTRIES.forEach(iso=>{cty[iso]=Object.assign({},SNAP.cty[iso],{latest:{},pc:years.map(()=>null),oop:years.map(()=>null)});});
+  for(const indId of Object.keys(IND2K)){
+   const k=IND2K[indId];
+   const [aRows,cRows]=await Promise.all([wbFetch(AGG,indId),wbFetch(COUNTRIES,indId)]);
+   aRows.forEach(r=>{let code=keyOf(r);code=AGGREMAP[code]||code;if(!agg[code])agg[code]={name:r.country.value,s:{}};if(!agg[code].s[k])agg[code].s[k]=years.map(()=>null);if(r.value!=null&&yIdx[r.date]!=null){const dec=(SNAP.indMeta[k]&&SNAP.indMeta[k].dec)||0;agg[code].s[k][yIdx[r.date]]=dec>0?Math.round(r.value*Math.pow(10,dec))/Math.pow(10,dec):Math.round(r.value);}});
+   const best={};
+   cRows.forEach(r=>{const iso=r.countryiso3code||r.country.id;if(!cty[iso])return;if(r.value==null)return;const dec=(SNAP.indMeta[k]&&SNAP.indMeta[k].dec)||0;const v=dec>0?Math.round(r.value*Math.pow(10,dec))/Math.pow(10,dec):Math.round(r.value),y=r.date;
+     if(!best[iso+k]||y>best[iso+k]){best[iso+k]=y;cty[iso].latest[k]={v,y};}
+     if((k==='pc'||k==='oop')&&yIdx[y]!=null)cty[iso][k][yIdx[y]]=v;});
+  }
+  SNAP=Object.assign({},SNAP,{agg,cty});
+  LIVE=true;
+  render();
+ }catch(e){
+  LIVE=false;render();
+  $('srcchip').innerHTML='<span class="badge b-mod">snapshot</span> embedded (live refresh unavailable)';
+ }
+}
+
+// ---- boot
+function boot(){
+ $('splash').style.display='none';
+ fillCySelect();
+ render();
+ fetchWB();
+}
+$('refresh').onclick=fetchWB;
+if(document.readyState!=='loading')boot();else document.addEventListener('DOMContentLoaded',boot);
+</script>
+</body>
+</html>

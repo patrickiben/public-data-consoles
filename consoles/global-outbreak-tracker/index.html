@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Global Outbreak &amp; Emerging-Threat Tracker</title>
+<meta name="description" content="Descriptive surveillance of active global outbreaks — mpox (incl. clade I in central/east Africa), the U.S. measles resurgence, and a curated WHO/CDC/Africa CDC emerging-threat watch list, with still-circulating COVID-19 context. Built on OWID, CDC and disease.sh public data. Unofficial, descriptive, not a forecast.">
+<style>
+:root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+ --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
+ --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 56px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+#disc{background:#060f14;color:#bcd2da;font-size:12px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:24px 0 6px}
+h1{margin:0;font-size:25px;font-weight:740;letter-spacing:-.3px}
+h1 .sub{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin-top:5px;letter-spacing:0}
+.banner{margin:13px 0 0;background:rgba(38,198,218,.07);border:1px solid rgba(38,198,218,.25);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink2)}
+.banner b{color:var(--teal)}
+.strip{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0 2px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink2)}
+.chip b{color:var(--ink)}
+button.btn{background:linear-gradient(180deg,#1d6c79,#185863);border:1px solid #2a8593;color:#eaffff;border-radius:999px;padding:6px 14px;font-weight:600;font-size:12.5px;cursor:pointer}
+button.btn:hover{filter:brightness(1.1)}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:5px;vertical-align:1px;text-transform:uppercase}
+.b-meas{background:rgba(61,220,151,.16);color:#7fe9bd}.b-mod{background:rgba(245,185,69,.16);color:#f5cd85}.b-int{background:rgba(176,142,240,.16);color:#cdb6f5}
+.card{background:linear-gradient(180deg,var(--surf),var(--surf2));border:1px solid var(--line);border-radius:14px;margin-top:16px;overflow:hidden}
+.card>summary,.card .hd{padding:13px 16px;font-weight:650;display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+.card>summary::-webkit-details-marker{display:none}
+.card>summary .ico{color:var(--teal);font-weight:800}
+.card>summary .tools{margin-left:auto;display:flex;gap:8px;align-items:center}
+.body{padding:4px 16px 16px}
+.muted{color:var(--dim)}.small{font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.stat{background:var(--surf2);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-size:30px;font-weight:760;margin-top:3px;line-height:1.05}
+.stat .v small{font-size:13px;color:var(--ink2);font-weight:500}
+.stat .sub2{font-size:12px;color:var(--ink2);margin-top:5px}
+.delta{font-weight:700}.dn{color:var(--green)}.up{color:var(--orange)}
+.row2{display:flex;align-items:center;gap:10px;padding:7px 3px;border-bottom:1px solid var(--line)}
+.row2:last-child{border-bottom:none}
+.row2 .rk{width:22px;color:var(--dim);font-size:12px;text-align:right}
+.row2 .nm{width:170px;font-weight:600}.row2 .nm small{color:var(--dim);font-weight:400}
+.row2 .meter{flex:1}.meter .tk{height:8px;background:#0a171d;border-radius:5px;overflow:hidden}.meter .fl{height:100%;border-radius:5px}
+.row2 .rate{width:84px;text-align:right;font-weight:720;font-variant-numeric:tabular-nums}
+.row2 .cnt{width:74px;text-align:right;font-size:12px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.lead{max-height:430px;overflow:auto;margin-top:4px}
+.em{display:flex;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line)}.em:last-child{border-bottom:none}
+.em .dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:none}
+.em .nm{font-weight:650}.em .cls{font-size:11.5px;color:var(--teal)}
+.em .note{font-size:12.5px;color:var(--ink2);margin-top:3px}.em .src{font-size:11px;color:var(--dim);margin-top:4px;font-family:var(--mono)}
+.st{font-size:9.5px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:5px;text-transform:uppercase;white-space:nowrap}
+.caveat{font-size:11.5px;color:var(--dim);margin-top:11px;padding:9px 12px;background:rgba(255,255,255,.02);border-left:2px solid var(--line2);border-radius:0 8px 8px 0}
+.bars{display:flex;align-items:flex-end;gap:9px;height:130px;margin:10px 2px 2px;padding-top:6px}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.bar .col{width:100%;max-width:46px;border-radius:5px 5px 0 0;transition:height .3s}
+.bar .yl{font-size:10.5px;color:var(--dim);margin-top:5px}
+.bar .vl{font-size:11px;color:var(--ink2);font-weight:700;margin-bottom:4px}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;border:none;color:var(--ink2);padding:4px 11px;font-size:12px;cursor:pointer}
+.seg button.on{background:var(--teal);color:#04181c;font-weight:700}
+footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}
+footer b{color:var(--ink2)}
+#splash{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50;color:var(--dim);font-size:13px}
+.demoflag{display:inline-block;font-size:9px;font-weight:800;color:#04181c;background:var(--amber);border-radius:4px;padding:1px 5px;margin-left:5px;letter-spacing:.4px}
+.stale{display:inline-block;font-size:9.5px;font-weight:800;color:#04181c;background:var(--orange);border-radius:4px;padding:1px 6px;margin-left:6px;letter-spacing:.4px}
+</style>
+</head>
+<body>
+<div id="splash">loading outbreak surveillance…</div>
+<div id="disc"><b>Unofficial · descriptive surveillance, not a forecast.</b> Public aggregate counts only, with large and uneven reporting lags. <b>Absence of data is not absence of disease</b> — many outbreaks are under-reported. Not for clinical, travel, or policy decisions. For exposure or illness concerns, consult your national/local health authority.</div>
+<div class="wrap">
+  <header>
+    <h1>Global Outbreak &amp; Emerging-Threat Tracker<span class="sub">Active outbreaks &amp; a curated watch list — mpox (incl. clade I in central/east Africa), the U.S. measles resurgence, and the WHO / CDC / Africa CDC emerging-threat set, with still-circulating COVID-19 context</span></h1>
+    <div class="banner"><b>How to read this.</b> Counts are <b>cumulative</b> case and death totals for the current outbreak/wave unless noted — they are not "today's" incidence. Trend arrows compare the latest period to an earlier one and show <i>direction</i>, not precise change. <b>Measured</b> panels carry a live source; the <b>watch list</b> is interpretive context curated from official outbreak bulletins, not a live count. This is descriptive — it does not predict the future.</div>
+    <div class="strip">
+      <button class="btn" id="refresh">↻ Refresh live feeds</button>
+      <span class="chip" id="srcchip">—</span>
+      <span class="chip" id="vintchip">—</span>
+      <span class="chip"><span class="badge b-meas">measured</span> live counts</span>
+      <span class="chip"><span class="badge b-mod">modeled</span> derived</span>
+      <span class="chip"><span class="badge b-int">interpretive</span> curated watch</span>
+    </div>
+  </header>
+
+  <!-- MPOX -->
+  <details class="card" open id="c-mpox">
+    <summary><span class="ico">●</span> Active outbreak — mpox (monkeypox), global <span class="badge b-meas">measured</span></summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:8px">Cumulative confirmed cases and deaths since the 2022 multi-country outbreak, with the current clade I outbreak centred on the <b>Democratic Republic of the Congo</b> and neighbouring central/east Africa. Source: Our World in Data mpox dataset (compiled from WHO &amp; national reports).</div>
+      <div class="grid2">
+        <div class="stat">
+          <div class="l">Cumulative confirmed cases · as of <span id="mpAsof">—</span></div>
+          <div class="v" id="mpCases">—</div>
+          <div class="sub2" id="mpCasesSub">—</div>
+        </div>
+        <div class="stat">
+          <div class="l">Cumulative reported deaths</div>
+          <div class="v" id="mpDeaths">—</div>
+          <div class="sub2" id="mpDeathsSub">—</div>
+        </div>
+      </div>
+      <div style="margin-top:13px"><div class="small muted">Cumulative global cases, monthly (2024 → latest) — slope is the signal, not the value</div><div id="sparkMp" style="margin-top:4px"></div></div>
+      <div style="margin-top:14px">
+        <div class="small muted" style="margin-bottom:4px">Most-affected countries by cumulative cases (current per-country latest)
+          <span class="tools" style="float:right"><span class="seg" id="mpsort"><button data-k="cases" class="on">cases</button><button data-k="deaths">deaths</button></span></span>
+        </div>
+        <div class="lead" id="mpLead"></div>
+      </div>
+      <div class="caveat" id="mpCaveat">—</div>
+    </div>
+  </details>
+
+  <!-- MEASLES -->
+  <details class="card" open id="c-meas">
+    <summary><span class="ico">▦</span> Active outbreak — U.S. measles resurgence <span class="badge b-meas">measured</span></summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:6px">Confirmed U.S. measles cases reported per year. After elimination was declared in 2000, 2025 saw the largest annual case count in decades, driven by under-vaccinated communities. Source: CDC measles surveillance (annual confirmed-case totals).</div>
+      <div class="grid2">
+        <div class="stat">
+          <div class="l">Confirmed cases · <span id="msYr">—</span> <span class="badge b-meas">measured</span></div>
+          <div class="v" id="msCases">—</div>
+          <div class="sub2" id="msSub">—</div>
+        </div>
+        <div class="stat">
+          <div class="l">vs. recent annual totals</div>
+          <div class="v" id="msCtx" style="font-size:20px">—</div>
+          <div class="sub2" id="msCtxSub">—</div>
+        </div>
+      </div>
+      <div class="bars" id="msBars"></div>
+      <div class="caveat" id="msCaveat">—</div>
+    </div>
+  </details>
+
+  <!-- WATCH LIST -->
+  <details class="card" open id="c-watch">
+    <summary><span class="ico">⚠</span> Emerging-threat watch list <span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:4px">A curated set of the current major outbreak / health-emergency threats tracked by WHO Disease Outbreak News, CDC and Africa CDC. This is qualitative early-warning context — <b>not</b> a live count — and reflects status as of the embed date below.</div>
+      <div id="watch"></div>
+      <div class="caveat">Compiled from public outbreak bulletins: WHO Disease Outbreak News (DON), CDC travel/health notices, Africa CDC, and PAHO. There is <b>no</b> single CORS-open live API for these, so entries are curated and dated, not streamed. Status labels (e.g. "active", "expanding", "watch") are editorial summaries of the cited authorities, not formal risk ratings. <b>Reporting lags are large and absence of data is not absence of disease</b> — surveillance is weakest exactly where outbreaks are often largest.</div>
+    </div>
+  </details>
+
+  <!-- COVID CONTEXT -->
+  <details class="card" id="c-covid">
+    <summary><span class="ico">◍</span> COVID-19 — still circulating (context) <span class="badge b-meas">measured</span><span class="badge b-mod">modeled</span></summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:8px">SARS-CoV-2 has not disappeared; it circulates endemically with seasonal waves and evolving variants. The figures below are <b>cumulative pandemic totals since 2020</b> — most countries wound down case-based surveillance in 2023–2024, so these are <b>not</b> current incidence and are best read as historical context. Source: disease.sh aggregator (JHU/WHO-derived).</div>
+      <div class="grid2">
+        <div class="stat">
+          <div class="l">Cumulative global cases (since 2020)</div>
+          <div class="v" id="cvCases">—</div>
+          <div class="sub2" id="cvCasesSub">—</div>
+        </div>
+        <div class="stat">
+          <div class="l">Cumulative global deaths (since 2020)</div>
+          <div class="v" id="cvDeaths">—</div>
+          <div class="sub2" id="cvDeathsSub">—</div>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="small muted" style="margin-bottom:4px">Highest cumulative reported case burden, by country</div>
+        <div class="lead" id="cvLead"></div>
+      </div>
+      <div class="caveat" id="cvCaveat">—</div>
+    </div>
+  </details>
+
+  <footer>
+    <div><b>Data &amp; method.</b>
+      <b>Mpox:</b> <a href="https://github.com/owid/monkeypox" target="_blank" rel="noopener">Our World in Data mpox dataset</a> (CSV, compiled from WHO &amp; national surveillance), pulled live in-browser when reachable, else from an embedded snapshot whose vintage is shown above; cumulative confirmed cases/deaths.
+      <b>Measles:</b> CDC measles surveillance annual confirmed-case totals (<a href="https://www.cdc.gov/measles/data-research/index.html" target="_blank" rel="noopener">cdc.gov/measles</a>) — embedded MEASURED snapshot (the per-year rollup has no clean CORS-open live API; the weekly NNDSS tables are split by year and lag).
+      <b>COVID-19:</b> <a href="https://disease.sh/" target="_blank" rel="noopener">disease.sh</a> aggregator (<code>/v3/covid-19/all</code> and <code>/countries</code>), live when reachable; cumulative pandemic totals, not current incidence.
+      <b>Watch list:</b> curated from WHO DON, CDC, Africa CDC &amp; PAHO bulletins.
+    </div>
+    <div style="margin-top:8px"><b>Honesty.</b> Cumulative counts grow monotonically and revise as reports arrive; recent periods under-count. Reporting is uneven across countries and <b>absence of data is not absence of disease</b>. Mpox per-country "latest" dates differ, so cumulative totals are not all current to the same day. COVID figures are largely frozen historical totals. The watch list and country comparisons are interpretive context, not live risk ratings. This tool is <b>descriptive, not predictive</b>; it does not forecast, advise, or rank threats. No personal or protected health information is used.</div>
+    <div style="margin-top:8px" class="muted">Embedded snapshot vintage: <span id="vintfoot">—</span>. If a live refresh succeeds, the source chip above switches to "live".</div>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const OWID_CSV='https://raw.githubusercontent.com/owid/monkeypox/main/owid-monkeypox-data.csv';
+const COVID_ALL='https://disease.sh/v3/covid-19/all';
+const COVID_CTY='https://disease.sh/v3/covid-19/countries?sort=cases';
+
+// epoch-days convention for any runtime timestamp
+const epochDays=()=>Math.floor(Date.now()/1000/86400)-10957;
+
+// ---------- EMBEDDED DATED SNAPSHOT (offline fallback) ----------
+// Pulled 2026-06-27 via curl from OWID mpox CSV, CDC measles surveillance, disease.sh.
+let SNAP={
+  embedded:"2026-06-27",
+  mpox:{
+    asof:"2026-04-27",          // World latest date in OWID
+    worldCases:180545, worldDeaths:506,
+    // monthly cumulative World cases, 2024-01 .. 2026-04 (end of month)
+    monthsLabels:["2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04"],
+    monthsCases:[95690,96718,97675,98695,99955,101436,103634,105950,109719,113099,116994,120907,125789,130142,135025,140102,147508,153635,158265,162926,167288,170533,173160,174793,176520,178051,179577,180545],
+    // top countries by cumulative cases (latest per-country in OWID), iso, asof, clade flag
+    countries:[
+      {n:"United States",iso:"USA",cases:37789,deaths:63,asof:"2026-04-27",clade1:false},
+      {n:"DR Congo",iso:"COD",cases:34054,deaths:80,asof:"2026-04-26",clade1:true},
+      {n:"Brazil",iso:"BRA",cases:15027,deaths:19,asof:"2026-04-27",clade1:false},
+      {n:"Spain",iso:"ESP",cases:9517,deaths:5,asof:"2026-04-15",clade1:false},
+      {n:"Uganda",iso:"UGA",cases:8512,deaths:52,asof:"2026-04-05",clade1:true},
+      {n:"Sierra Leone",iso:"SLE",cases:5442,deaths:60,asof:"2025-12-14",clade1:false},
+      {n:"Mexico",iso:"MEX",cases:5039,deaths:41,asof:"2026-04-27",clade1:false},
+      {n:"Colombia",iso:"COL",cases:4832,deaths:0,asof:"2026-04-27",clade1:false},
+      {n:"Germany",iso:"DEU",cases:4789,deaths:0,asof:"2026-04-15",clade1:false},
+      {n:"United Kingdom",iso:"GBR",cases:4754,deaths:0,asof:"2026-04-15",clade1:false},
+      {n:"Burundi",iso:"BDI",cases:4693,deaths:1,asof:"2026-04-05",clade1:true},
+      {n:"France",iso:"FRA",cases:4626,deaths:0,asof:"2026-04-15",clade1:false}
+    ]
+  },
+  measles:{
+    // CDC measles surveillance — confirmed U.S. cases per year. 2026 is partial (year to date).
+    years:[
+      {y:"2019",cases:1274},
+      {y:"2020",cases:13},
+      {y:"2021",cases:49},
+      {y:"2022",cases:121},
+      {y:"2023",cases:59},
+      {y:"2024",cases:285},
+      {y:"2025",cases:1319},
+      {y:"2026",cases:189,partial:true}
+    ]
+  },
+  covid:{
+    all:{cases:704753890,deaths:7010681,affectedCountries:231,updated:"2026-06"},
+    countries:[
+      {n:"USA",cases:111820082,deaths:1219487},
+      {n:"India",cases:45035393,deaths:533570},
+      {n:"France",cases:40138560,deaths:167642},
+      {n:"Germany",cases:38828995,deaths:183027},
+      {n:"Brazil",cases:38743918,deaths:711380},
+      {n:"S. Korea",cases:34571873,deaths:35934}
+    ]
+  }
+};
+let LIVE={mpox:false,covid:false};
+
+// ---------- WATCH LIST (INTERPRETIVE, curated 2026-06-27) ----------
+const WATCH=[
+ {n:'Clade I mpox (MPXV clade Ib)', cls:'Orthopoxvirus · sexual & household transmission', st:'active', col:'#ef5466',
+  note:'A more transmissible clade I lineage spreading from eastern DR Congo into Burundi, Uganda, Kenya, Rwanda and beyond, with exported cases on several continents. WHO has maintained its Public Health Emergency of International Concern (PHEIC) determination for the upsurge.',
+  src:'WHO DON · Africa CDC · CDC'},
+ {n:'H5N1 avian influenza', cls:'Influenza A(H5N1) · zoonotic spillover', st:'watch', col:'#f5b945',
+  note:'Highly pathogenic avian influenza is unusually widespread in wild birds and poultry and, since 2024, has infected U.S. dairy cattle herds with sporadic human cases (mostly mild, occupational). No sustained human-to-human transmission has been documented; pandemic risk to the public is assessed as low but is monitored closely.',
+  src:'WHO · CDC · USDA · WOAH'},
+ {n:'Cholera (multi-country surge)', cls:'Vibrio cholerae O1 · water/sanitation', st:'expanding', col:'#ef5466',
+  note:'A protracted multi-country upsurge across parts of Africa, the Middle East and South Asia, strained by conflict, displacement, climate shocks and a constrained oral-cholera-vaccine supply. WHO has graded the global situation a high-priority emergency.',
+  src:'WHO DON · GTFCC · UNICEF'},
+ {n:'Marburg virus disease', cls:'Filovirus · viral haemorrhagic fever', st:'recent outbreaks', col:'#f3833b',
+  note:'High-fatality filovirus with recent declared outbreaks in East Africa (e.g. Rwanda 2024–25, Tanzania 2025). Outbreaks have been contained but recur; there is no licensed vaccine, though candidates are in trials.',
+  src:'WHO DON · Africa CDC'},
+ {n:'Ebola virus disease', cls:'Filovirus · viral haemorrhagic fever', st:'watch', col:'#f5b945',
+  note:'Recurrent localized outbreaks in central Africa (Sudan and Zaire ebolavirus species). Licensed vaccine and therapeutics exist for the Zaire species; rapid response has shortened recent outbreaks.',
+  src:'WHO DON · Africa CDC'},
+ {n:'Oropouche virus', cls:'Arbovirus (Culicoides midge) · "sloth fever"', st:'expanding', col:'#f5b945',
+  note:'A midge-borne arbovirus spreading beyond its historical Amazon range across South America and the Caribbean since 2024, with travel-associated cases reported elsewhere and signals of possible vertical transmission under investigation.',
+  src:'PAHO · CDC · WHO'},
+ {n:'Measles (global resurgence)', cls:'Morbillivirus · airborne, vaccine-preventable', st:'expanding', col:'#ef5466',
+  note:'Cases are rising worldwide, including the largest U.S. annual count in decades (see panel above), tied to immunization gaps that widened during the pandemic. Highly contagious but preventable with MMR vaccine.',
+  src:'WHO · CDC · UNICEF'}
+];
+const STCOL={'active':'#ef5466','expanding':'#ef5466','watch':'#f5b945','recent outbreaks':'#f3833b','recurrent':'#f5b945'};
+
+// ---------- helpers ----------
+const fmt=n=>n==null||!isFinite(n)?'—':Math.round(n).toLocaleString();
+const fmtBig=n=>{if(n==null||!isFinite(n))return '—';if(n>=1e9)return (n/1e9).toFixed(2)+'B';if(n>=1e6)return (n/1e6).toFixed(1)+'M';if(n>=1e3)return Math.round(n).toLocaleString();return String(n);};
+function spark(arr,w,h,col,fill){
+ const v=arr.filter(x=>x!=null&&isFinite(x));if(v.length<2)return '<span class="muted small">—</span>';
+ const mn=Math.min(...v),mx=Math.max(...v),rng=(mx-mn)||1,n=arr.length;
+ let d='',started=false;
+ arr.forEach((x,i)=>{if(x==null||!isFinite(x))return;const X=(i/(n-1))*w,Y=h-((x-mn)/rng)*(h-3)-1.5;d+=(started?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1)+' ';started=true;});
+ const area=fill?'<path d="'+d+'L'+w+' '+h+' L0 '+h+' Z" fill="'+col+'1f"/>':'';
+ return '<svg viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" preserveAspectRatio="none" style="display:block">'+area+'<path d="'+d.trim()+'" fill="none" stroke="'+col+'" stroke-width="1.6"/></svg>';
+}
+function pctChangeArr(arr,back){ // latest vs `back` periods earlier
+ if(arr.length<back+1)return null;
+ const last=arr[arr.length-1],prev=arr[arr.length-1-back];
+ if(last==null||prev==null||!prev)return null;return (last-prev)/prev;
+}
+function chgHtml(ch,label){if(ch==null)return '<span class="muted">—</span>';const up=ch>0;const c=up?'up':'dn';const ar=up?'▲':'▼';return '<span class="delta '+c+'">'+ar+' '+(up?'+':'')+Math.round(ch*100)+'%</span>'+(label?' <span class="muted">'+label+'</span>':'');}
+function hex2rgba(h,a){const n=parseInt(h.slice(1),16);return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
+function staleFlag(asof){ // flag if latest data older than ~120 days vs runtime
+ try{const ad=Math.floor(new Date(asof+'T00:00:00Z').getTime()/1000/86400)-10957;const age=epochDays()-ad;if(age>120)return '<span class="stale">data '+Math.round(age/30)+ ' mo old</span>';}catch(e){}return '';}
+
+// ---------- render ----------
+let MPSORT='cases';
+function render(){
+ const S=SNAP;
+ $('vintchip').innerHTML='<b>snapshot '+S.embedded+'</b>';
+ $('vintfoot').textContent=S.embedded;
+ const live=LIVE.mpox||LIVE.covid;
+ $('srcchip').innerHTML=live?'<span class="badge b-meas">live</span> '+(LIVE.mpox?'OWID':'')+(LIVE.mpox&&LIVE.covid?' + ':'')+(LIVE.covid?'disease.sh':''):'<span class="badge b-mod">snapshot</span> embedded';
+
+ // --- mpox ---
+ const M=S.mpox;
+ $('mpAsof').textContent=M.asof;
+ $('mpCases').innerHTML=fmt(M.worldCases);
+ const mpCh=pctChangeArr(M.monthsCases,12);
+ $('mpCasesSub').innerHTML='global cumulative since 2022 · 12-mo change '+chgHtml(mpCh)+' '+staleFlag(M.asof);
+ $('mpDeaths').innerHTML=fmt(M.worldDeaths);
+ const cfr=M.worldCases?(100*M.worldDeaths/M.worldCases):null;
+ $('mpDeathsSub').innerHTML='apparent crude case-fatality ~'+(cfr!=null?cfr.toFixed(2):'—')+'% <span class="muted">(reported deaths ÷ reported cases — not a true CFR)</span>';
+ $('sparkMp').innerHTML=spark(M.monthsCases,560,52,'#f3833b',true);
+ renderMpCountries();
+ const clade=M.countries.filter(c=>c.clade1);
+ const cladeCases=clade.reduce((a,c)=>a+c.cases,0);
+ $('mpCaveat').innerHTML='Cumulative cases keep rising because the count never decreases — the <b>slope</b> (new cases per month) is what matters, and it has been '+(mpCh!=null&&mpCh>0.05?'still climbing':'flattening')+'. The clade I outbreak in central/east Africa ('+clade.map(c=>c.n).join(', ')+') accounts for roughly '+fmt(cladeCases)+' cumulative cases here and carries a higher fatality burden than the 2022 clade II wave. Per-country totals are current to <b>different</b> dates (see each row), so they are not all up to the same day. <span class="badge b-meas">measured</span> from OWID; <b>absence of data is not absence of disease</b> — many African cases go unconfirmed for lack of testing.';
+
+ // --- measles ---
+ const ME=S.measles, ys=ME.years;
+ const cur=ys[ys.length-1], prev=ys.slice().reverse().find(y=>!y.partial && y!==cur) || ys[ys.length-2];
+ const peakHist=Math.max(...ys.filter(y=>+y.y<2025).map(y=>y.cases));
+ // headline = most recent FULL year if current is partial, else current
+ const headline = cur.partial ? ys[ys.length-2] : cur;
+ $('msYr').innerHTML=headline.y+(headline.partial?' <span class="demoflag">partial / YTD</span>':'');
+ $('msCases').innerHTML=fmt(headline.cases);
+ const y2024=ys.find(y=>y.y==='2024');
+ $('msSub').innerHTML=(y2024?('vs '+fmt(y2024.cases)+' in 2024 · '+chgHtml((headline.cases-y2024.cases)/y2024.cases)):'')+' <span class="badge b-meas">measured</span>';
+ $('msCtx').innerHTML='× '+(peakHist?(headline.cases/peakHist).toFixed(1):'—')+' the 2019 spike';
+ $('msCtxSub').innerHTML='2019 ('+fmt(peakHist)+') had been the post-elimination high; '+headline.y+' '+(headline.cases>peakHist?'exceeded it':'is below it')+'. '+(cur.partial?'<b>'+cur.y+'</b> shown as year-to-date ('+fmt(cur.cases)+').':'');
+ renderMeaslesBars();
+ $('msCaveat').innerHTML='The U.S. declared measles eliminated (no continuous transmission) in 2000. The '+headline.y+' total is the highest in roughly three decades and is concentrated in <b>under-vaccinated communities</b>; most cases are unvaccinated. Counts are confirmed cases reported to CDC and revise as investigations close. Any year marked <span class="demoflag">partial / YTD</span> is incomplete. <span class="badge b-meas">measured</span> from CDC measles surveillance.';
+
+ // --- watch list ---
+ $('watch').innerHTML=WATCH.map(w=>'<div class="em"><div class="dot" style="background:'+w.col+'"></div><div><div class="nm">'+w.n+' <span class="st" style="background:'+hex2rgba(STCOL[w.st]||'#6b8290',.16)+';color:'+(STCOL[w.st]||'#9fb4bd')+'">'+w.st+'</span></div><div class="cls">'+w.cls+'</div><div class="note">'+w.note+'</div><div class="src">authorities: '+w.src+'</div></div></div>').join('');
+
+ // --- covid ---
+ const C=S.covid;
+ $('cvCases').innerHTML=fmtBig(C.all.cases);
+ $('cvCasesSub').innerHTML=fmt(C.all.cases)+' across '+C.all.affectedCountries+' countries/territories';
+ $('cvDeaths').innerHTML=fmtBig(C.all.deaths);
+ const gcfr=C.all.cases?(100*C.all.deaths/C.all.cases):null;
+ $('cvDeathsSub').innerHTML=fmt(C.all.deaths)+' · crude reported case-fatality ~'+(gcfr!=null?gcfr.toFixed(2):'—')+'%';
+ $('cvLead').innerHTML=(()=>{const mx=Math.max(...C.countries.map(c=>c.cases),1);return C.countries.map((c,i)=>'<div class="row2"><div class="rk">'+(i+1)+'</div><div class="nm">'+c.n+'</div><div class="meter"><div class="tk"><div class="fl" style="width:'+(100*c.cases/mx).toFixed(1)+'%;background:#26c6da"></div></div></div><div class="rate">'+fmtBig(c.cases)+'</div><div class="cnt">'+fmtBig(c.deaths)+' d</div></div>').join('');})();
+ $('cvCaveat').innerHTML='These are <b>cumulative totals since early 2020</b>, not current activity. Most countries stopped case-based reporting in 2023–2024, so the aggregator is largely <b>frozen historical data</b>; true ongoing circulation is now tracked via wastewater, hospitalizations and variant genomics rather than case counts. <span class="badge b-meas">measured</span> totals from disease.sh; <span class="badge b-mod">modeled</span> case-fatality is a crude reported ratio, not infection-fatality. Reported-case CFR overstates severity because most infections were never counted.';
+}
+
+function renderMpCountries(){
+ const rows=SNAP.mpox.countries.slice();
+ rows.sort((a,b)=>(b[MPSORT]||0)-(a[MPSORT]||0));
+ const max=Math.max(...rows.map(r=>r[MPSORT]||0),1);
+ $('mpLead').innerHTML=rows.map((r,i)=>{
+  const v=r[MPSORT]||0;
+  const col=r.clade1?'#ef5466':'#26c6da';
+  const disp=MPSORT==='cases'?fmt(r.cases):fmt(r.deaths)+' <small style="color:var(--dim)">deaths</small>';
+  const sec=MPSORT==='cases'?fmt(r.deaths)+' d':fmt(r.cases)+' cases';
+  const tag=r.clade1?' <small style="color:#ef9aa4">clade I</small>':'';
+  return '<div class="row2"><div class="rk">'+(i+1)+'</div><div class="nm">'+r.n+tag+'<br><small>as of '+r.asof+'</small></div>'+
+   '<div class="meter"><div class="tk"><div class="fl" style="width:'+(100*v/max).toFixed(1)+'%;background:'+col+'"></div></div></div>'+
+   '<div class="rate">'+disp+'</div><div class="cnt">'+sec+'</div></div>';}).join('')||'<div class="muted">No data.</div>';
+}
+[...document.querySelectorAll('#mpsort button')].forEach(b=>b.onclick=()=>{MPSORT=b.dataset.k;[...document.querySelectorAll('#mpsort button')].forEach(x=>x.classList.toggle('on',x===b));renderMpCountries();});
+
+function renderMeaslesBars(){
+ const ys=SNAP.measles.years;
+ const mx=Math.max(...ys.map(y=>y.cases),1);
+ $('msBars').innerHTML=ys.map(y=>{
+  const h=Math.max(2,Math.round(100*y.cases/mx));
+  const col=+y.y>=2025?'#ef5466':(y.cases>=200?'#f3833b':(y.cases>=50?'#f5b945':'#3ddc97'));
+  const op=y.partial?'opacity:.55':'';
+  return '<div class="bar"><div class="vl">'+fmt(y.cases)+'</div><div class="col" style="height:'+h+'%;background:'+col+';'+op+'"></div><div class="yl">'+y.y+(y.partial?'*':'')+'</div></div>';
+ }).join('')+'<div style="position:absolute"></div>';
+}
+
+// ---------- live fetch (graceful) ----------
+function parseCSV(text){
+ // robust enough for OWID: handles quoted fields with commas
+ const lines=text.split(/\r?\n/).filter(l=>l.length);
+ const head=splitCSVLine(lines[0]);
+ const idx={};head.forEach((h,i)=>idx[h.trim()]=i);
+ const out=[];
+ for(let i=1;i<lines.length;i++){const c=splitCSVLine(lines[i]);if(c.length<head.length)continue;out.push(c);}
+ return {idx,rows:out};
+}
+function splitCSVLine(line){
+ const res=[];let cur='',q=false;
+ for(let i=0;i<line.length;i++){const ch=line[i];
+  if(q){if(ch==='"'){if(line[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}
+  else{if(ch===','){res.push(cur);cur='';}else if(ch==='"')q=true;else cur+=ch;}}
+ res.push(cur);return res;
+}
+const AGG=new Set(['World','Africa','Asia','Europe','North America','South America','Oceania','European Union (27)','High-income countries','Low-income countries','Lower-middle-income countries','Upper-middle-income countries']);
+const CLADE1=new Set(['COD','BDI','UGA','KEN','RWA','CAF','TZA','ZMB','COG']);
+async function fetchMpox(){
+ const txt=await fetch(OWID_CSV).then(r=>{if(!r.ok)throw r.status;return r.text();});
+ const {idx,rows}=parseCSV(txt);
+ const iL=idx['location'],iD=idx['date'],iIso=idx['iso_code'],iC=idx['total_cases'],iDe=idx['total_deaths'];
+ const num=x=>{const f=parseFloat(x);return isFinite(f)?f:0;};
+ // latest row per location; world monthly
+ const latest={};const worldMonthly={};
+ rows.forEach(c=>{const loc=c[iL],d=c[iD];
+  if(!latest[loc]||d>latest[loc][iD])latest[loc]=c;
+  if(loc==='World'){const ym=d.slice(0,7);if(!worldMonthly[ym]||d>worldMonthly[ym].d)worldMonthly[ym]={d,cases:num(c[iC]),deaths:num(c[iDe])};}});
+ const w=latest['World'];if(!w)throw 'no world row';
+ const mKeys=Object.keys(worldMonthly).filter(k=>k>='2024-01').sort();
+ const monthsCases=mKeys.map(k=>Math.round(worldMonthly[k].cases));
+ // countries
+ const countries=[];
+ Object.keys(latest).forEach(loc=>{if(AGG.has(loc))return;const c=latest[loc];const iso=c[iIso];if(!iso||iso.startsWith('OWID'))return;
+  countries.push({n:loc==='Democratic Republic of Congo'?'DR Congo':loc,iso,cases:Math.round(num(c[iC])),deaths:Math.round(num(c[iDe])),asof:c[iD],clade1:CLADE1.has(iso)});});
+ countries.sort((a,b)=>b.cases-a.cases);
+ SNAP.mpox={asof:w[iD],worldCases:Math.round(num(w[iC])),worldDeaths:Math.round(num(w[iDe])),monthsLabels:mKeys,monthsCases,countries:countries.slice(0,12)};
+ LIVE.mpox=true;
+}
+async function fetchCovid(){
+ const all=await fetch(COVID_ALL).then(r=>{if(!r.ok)throw r.status;return r.json();});
+ const cty=await fetch(COVID_CTY).then(r=>{if(!r.ok)throw r.status;return r.json();});
+ SNAP.covid={all:{cases:all.cases,deaths:all.deaths,affectedCountries:all.affectedCountries,updated:new Date(all.updated).toISOString().slice(0,7)},
+   countries:cty.slice(0,6).map(c=>({n:c.country,cases:c.cases,deaths:c.deaths}))};
+ LIVE.covid=true;
+}
+async function refresh(){
+ $('srcchip').innerHTML='<span class="badge b-mod">…</span> contacting live feeds';
+ const tasks=[fetchMpox().catch(e=>{LIVE.mpox=false;}),fetchCovid().catch(e=>{LIVE.covid=false;})];
+ await Promise.all(tasks);
+ render();
+ if(!LIVE.mpox&&!LIVE.covid)$('srcchip').innerHTML='<span class="badge b-mod">snapshot</span> embedded (live refresh unavailable)';
+}
+
+// boot
+function boot(){$('splash').style.display='none';render();refresh();}
+$('refresh').onclick=refresh;
+if(document.readyState!=='loading')boot();else document.addEventListener('DOMContentLoaded',boot);
+</script>
+</body>
+</html>

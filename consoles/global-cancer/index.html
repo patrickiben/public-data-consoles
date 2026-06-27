@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Global Cancer Burden — GLOBOCAN</title>
+<meta name="description" content="The global burden of cancer from the IARC GLOBOCAN 2022 estimates — new cases, deaths, the most common vs the deadliest cancers, the survival inequity between rich and poor countries, and prevention. Modeled estimates, dated and cited. Descriptive, not a forecast.">
+<style>
+:root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+ --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
+ --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 56px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+#disc{background:#060f14;color:#bcd2da;font-size:12px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:24px 0 6px}
+h1{margin:0;font-size:25px;font-weight:740;letter-spacing:-.3px}
+h1 .sub{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin-top:5px}
+.banner{margin:13px 0 0;background:rgba(245,185,69,.07);border:1px solid rgba(245,185,69,.28);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink2)}
+.banner b{color:var(--amber)}
+.strip{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0 2px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink2)}.chip b{color:var(--ink)}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:5px;vertical-align:1px;text-transform:uppercase}
+.b-meas{background:rgba(61,220,151,.16);color:#7fe9bd}.b-mod{background:rgba(245,185,69,.16);color:#f5cd85}.b-int{background:rgba(176,142,240,.16);color:#cdb6f5}
+.card{background:linear-gradient(180deg,var(--surf),var(--surf2));border:1px solid var(--line);border-radius:14px;margin-top:16px;overflow:hidden}
+.card>summary{padding:13px 16px;font-weight:650;display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+.card>summary::-webkit-details-marker{display:none}
+.card>summary .ico{color:var(--teal);font-weight:800}
+.body{padding:4px 16px 16px}
+.muted{color:var(--dim)}.small{font-size:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}@media(max-width:760px){.grid3{grid-template-columns:1fr}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.stat{background:var(--surf2);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-size:27px;font-weight:760;margin-top:3px;line-height:1.05}.stat .v small{font-size:12.5px;color:var(--ink2);font-weight:500}
+.stat .sub2{font-size:11.5px;color:var(--ink2);margin-top:5px}
+.bar{display:flex;align-items:center;gap:10px;padding:5px 2px}
+.bar .nm{width:150px;font-size:13px}.bar .tk{flex:1;height:9px;background:#0a171d;border-radius:5px;overflow:hidden}.bar .fl{height:100%;border-radius:5px}
+.bar .vv{width:120px;text-align:right;font-weight:680;font-size:12.5px;font-variant-numeric:tabular-nums}
+.colhd{display:flex;gap:10px;font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:2px 0 4px}
+.colhd .a{width:150px}.colhd .b{flex:1}.colhd .c{width:120px;text-align:right}
+.caveat{font-size:11.5px;color:var(--dim);margin-top:12px;padding:9px 12px;background:rgba(255,255,255,.02);border-left:2px solid var(--line2);border-radius:0 8px 8px 0}
+.drv{padding:9px 2px;border-bottom:1px solid var(--line)}.drv:last-child{border-bottom:none}
+.drv .t{font-weight:640}.drv .d{font-size:12.5px;color:var(--ink2);margin-top:2px}
+footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}footer b{color:var(--ink2)}
+</style>
+</head>
+<body>
+<div id="disc"><b>Unofficial · descriptive, not a forecast.</b> Cancer burden is tracked through <b>periodic modeled estimates</b> (IARC GLOBOCAN), not a live feed — figures are for 2022, dated and cited. Not for clinical or screening decisions; consult clinicians and your national guidance.</div>
+<div class="wrap">
+  <header>
+    <h1>Global Cancer Burden<span class="sub">The worldwide toll of cancer — the most common vs. the deadliest, and the survival gap between rich and poor countries — from IARC GLOBOCAN 2022</span></h1>
+    <div class="banner"><b>How to read this.</b> Numbers are <span class="badge b-mod">modeled</span> estimates from <b>IARC's GLOBOCAN 2022</b> — the standard global cancer reference, compiled from national registries with varying completeness. "New cases" = incidence; "deaths" = mortality in 2022. Comparisons across countries reflect both true differences and differences in registry coverage and diagnosis.</div>
+    <div class="strip">
+      <span class="chip"><b>Source:</b> IARC GLOBOCAN 2022</span>
+      <span class="chip"><b>Vintage:</b> 2022 estimates</span>
+      <span class="chip"><span class="badge b-mod">modeled</span> registry-based estimate</span>
+      <span class="chip"><span class="badge b-int">interpretive</span> framing</span>
+    </div>
+  </header>
+
+  <details class="card" open>
+    <summary><span class="ico">●</span> The global toll, 2022 <span class="badge b-mod">modeled</span></summary>
+    <div class="body">
+      <div class="grid3">
+        <div class="stat"><div class="l">New cancer cases · 2022</div><div class="v">~20 <small>million</small></div><div class="sub2">incidence (all cancers, both sexes)</div></div>
+        <div class="stat"><div class="l">Cancer deaths · 2022</div><div class="v">~9.7 <small>million</small></div><div class="sub2">roughly 1 in 6 deaths worldwide</div></div>
+        <div class="stat"><div class="l">Lifetime risk of developing cancer</div><div class="v">~1 <small>in 5</small></div><div class="sub2">~1 in 9 men &amp; ~1 in 12 women die of it</div></div>
+      </div>
+      <div class="caveat">By 2050, new cases are projected to rise to <b>~35 million</b> (a ~77% increase from 2022), driven mostly by population growth and aging — <span class="badge b-mod">modeled</span> projection (IARC). Cancer is already among the leading causes of death in nearly every country.</div>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="ico">▦</span> Most common vs. deadliest <span class="badge b-mod">modeled</span></summary>
+    <div class="body">
+      <div class="grid2">
+        <div>
+          <div class="small muted" style="margin-bottom:3px">Most common (new cases, 2022)</div>
+          <div class="colhd"><span class="a">Cancer</span><span class="b"></span><span class="c">new cases</span></div>
+          <div id="incidence"></div>
+        </div>
+        <div>
+          <div class="small muted" style="margin-bottom:3px">Deadliest (deaths, 2022)</div>
+          <div class="colhd"><span class="a">Cancer</span><span class="b"></span><span class="c">deaths</span></div>
+          <div id="mortality"></div>
+        </div>
+      </div>
+      <div class="caveat"><b>Common ≠ deadliest.</b> Lung cancer is both the most common and by far the deadliest. Breast and prostate cancers are very common but far more survivable when caught early; liver, pancreatic and stomach cancers are less common but highly lethal. The gap between a cancer's incidence and its mortality reflects how treatable and how early-detected it is.</div>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="ico">◍</span> The survival divide <span class="badge b-mod">modeled</span> <span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div class="grid2">
+        <div class="stat"><div class="l">Share of cancer deaths in low- &amp; middle-income countries</div><div class="v">~70<small>%</small></div><div class="sub2">though they have a smaller share of cases — diagnosis is later and treatment scarcer</div></div>
+        <div class="stat"><div class="l">The pattern</div><div class="v" style="font-size:18px;line-height:1.35">Richer countries: more cases, better survival.<br>Poorer countries: fewer cases, worse survival.</div></div>
+      </div>
+      <div style="margin-top:12px" class="small muted">Illustrative mortality-to-incidence ratio by development level — higher = a larger share of those diagnosed die (a proxy for survival; lower is better):</div>
+      <div id="mir" style="margin-top:6px"></div>
+      <div class="caveat">The mortality-to-incidence ratio is an <span class="badge b-int">interpretive</span> proxy for survival, not a measured survival rate, and is sensitive to registry completeness (under-counted cases inflate it). The headline message — that survival depends heavily on where you live — is robust and consistent across sources (IARC, WHO).</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="ico">◆</span> Prevention &amp; early detection <span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:4px">A substantial share of cancers — by common estimates roughly 30–50% — are preventable by reducing known, modifiable causes; many more are curable when found early.</div>
+      <div id="prevent"></div>
+      <div class="caveat">Interpretive synthesis of WHO / IARC guidance. Vaccination (HPV against cervical cancer; hepatitis B against liver cancer), tobacco control, and screening (cervical, breast, colorectal) are among the highest-impact measures, especially in lower-income settings where the survival gap is largest.</div>
+    </div>
+  </details>
+
+  <footer>
+    <div><b>Source &amp; method.</b> <a href="https://gco.iarc.fr/" target="_blank" rel="noopener">IARC Global Cancer Observatory — GLOBOCAN 2022</a> (estimated incidence &amp; mortality, all cancers; figures published 2024) and WHO. Estimates are <span class="badge b-mod">modeled</span> from national cancer registries with differing coverage; prevention figures and framing are <span class="badge b-int">interpretive</span>. Numbers are rounded to the precision the estimates support.</div>
+    <div style="margin-top:8px"><b>Honesty.</b> There is no live global cancer feed; this is the standard periodic estimate, embedded with its 2022 vintage. Descriptive, not predictive; not for clinical or screening decisions; no personal or protected health information.</div>
+    <div style="margin-top:8px" class="muted">Data vintage: <b>GLOBOCAN 2022</b> (published 2024). Compiled 2026-06-27.</div>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const M=n=>n>=1e6?(n/1e6).toFixed(2).replace(/\.?0+$/,'')+'M':(n/1e3).toFixed(0)+'k';
+// GLOBOCAN 2022 — leading cancers (both sexes). New cases & deaths.
+const INC=[['Lung',2480000],['Breast',2310000],['Colorectal',1930000],['Prostate',1470000],['Stomach',970000],['Liver',870000],['Thyroid',820000],['Cervix',660000]];
+const MORT=[['Lung',1820000],['Colorectal',900000],['Liver',760000],['Breast',670000],['Stomach',660000],['Pancreas',470000],['Esophagus',450000],['Cervix',350000]];
+function bars(el,rows,col){const max=Math.max(...rows.map(r=>r[1]));
+ $(el).innerHTML=rows.map(r=>'<div class="bar"><div class="nm">'+r[0]+'</div><div class="tk"><div class="fl" style="width:'+(100*r[1]/max).toFixed(1)+'%;background:'+col+'"></div></div><div class="vv">'+M(r[1])+'</div></div>').join('');}
+bars('incidence',INC,'#26c6da');
+bars('mortality',MORT,'#ef5466');
+// mortality:incidence ratio (illustrative, by development level) — lower is better survival
+const MIR=[['High-income / very-high HDI',0.34],['Upper-middle / high HDI',0.52],['Lower-middle / medium HDI',0.64],['Low-income / low HDI',0.72]];
+const maxmir=Math.max(...MIR.map(r=>r[1]));
+$('mir').innerHTML=MIR.map(r=>{const col=r[1]>=0.65?'#ef5466':r[1]>=0.5?'#f3833b':r[1]>=0.4?'#f5b945':'#3ddc97';
+ return '<div class="bar"><div class="nm" style="width:230px">'+r[0]+'</div><div class="tk"><div class="fl" style="width:'+(100*r[1]/maxmir).toFixed(0)+'%;background:'+col+'"></div></div><div class="vv">'+r[1].toFixed(2)+'</div></div>';}).join('');
+// prevention drivers
+const PREV=[
+ ['Tobacco','The single largest preventable cause — responsible for roughly a quarter of all cancer deaths, above all lung cancer.'],
+ ['Infections','Vaccine- or treatment-preventable infections cause a large share of cancers in lower-income settings: HPV (cervical), hepatitis B &amp; C (liver), <i>H. pylori</i> (stomach).'],
+ ['Alcohol, diet &amp; obesity','Alcohol, excess weight and physical inactivity raise the risk of several common cancers (colorectal, breast, liver and more).'],
+ ['Early detection &amp; screening','Cervical, breast and colorectal screening, plus prompt diagnosis, turn many cancers from fatal into curable — the biggest lever on the survival gap.']
+];
+$('prevent').innerHTML=PREV.map(d=>'<div class="drv"><div class="t">'+d[0]+'</div><div class="d">'+d[1]+'</div></div>').join('');
+</script>
+</body>
+</html>
