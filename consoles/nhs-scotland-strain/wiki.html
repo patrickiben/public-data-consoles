@@ -1,0 +1,125 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NHS Scotland Hospital Strain Console — Field Guide</title>
+<style>
+:root{--bg:#071018;--surf:#0e1c2b;--tx:#eaf2fb;--dim:#9fb6cf;--nhs:#41b6e6;--nhsd:#005eb6;--ok:#2bb673;--amber:#e0a020;--orange:#e8702a;--red:#e24b4a;--bd:rgba(255,255,255,.10);--bd2:rgba(255,255,255,.22)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.6}
+a{color:var(--nhs);text-decoration:none}a:hover{text-decoration:underline}
+header.top{padding:20px 28px;border-bottom:1px solid var(--bd);background:linear-gradient(180deg,#0a1828,#071018)}
+header.top h1{margin:0;font-size:22px}header.top .sub{color:var(--dim);font-size:13px;margin-top:3px}
+.honest{margin:16px 28px;padding:13px 16px;border:1px solid var(--bd2);border-left:3px solid var(--nhs);border-radius:8px;background:#08131f;color:#cfe1f4;font-size:13.5px}
+.honest b{color:var(--nhs)}
+.wrap{display:flex;gap:26px;padding:8px 28px 60px;align-items:flex-start}
+nav.toc{position:sticky;top:14px;flex:none;width:290px;border:1px solid var(--bd);border-radius:10px;background:var(--surf);padding:14px;max-height:calc(100vh - 28px);overflow:auto}
+nav.toc h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim)}
+nav.toc ol{margin:0;padding-left:20px}nav.toc li{margin:5px 0;font-size:13px}
+main{flex:1;min-width:0;max-width:860px}
+section{background:var(--surf);border:1px solid var(--bd);border-radius:12px;padding:20px 24px;margin-bottom:18px}
+section h2{margin:0 0 12px;font-size:20px;scroll-margin-top:14px}
+section h3{font-size:15.5px;margin:15px 0 5px;color:var(--nhs)}
+p{margin:9px 0}ul{margin:9px 0;padding-left:22px}li{margin:4px 0}
+.bdg{font-size:10px;font-weight:800;padding:1px 6px;border-radius:5px}
+.bdg.M{background:rgba(43,182,115,.16);color:#6fe0a8;border:1px solid rgba(43,182,115,.5)}
+.bdg.C{background:rgba(65,182,230,.16);color:#9fd8f4;border:1px solid rgba(65,182,230,.5)}
+code{background:#06101a;border:1px solid var(--bd);border-radius:4px;padding:1px 5px;font-size:13px}
+pre{background:#06101a;border:1px solid var(--bd);border-radius:8px;padding:12px;overflow:auto;font-size:12.5px;color:#bcd2e8}
+.chip{font-size:12.5px;padding:7px 11px;border-radius:7px;margin:4px 0;border:1px solid var(--bd)}
+.chip.read{background:rgba(65,182,230,.08);border-left:3px solid var(--nhs)}
+.chip.warn{background:rgba(226,75,74,.08);border-left:3px solid var(--red)}
+table{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0}
+th,td{border:1px solid var(--bd);padding:6px 9px;text-align:left}th{color:var(--dim);font-weight:600}
+@media(max-width:900px){.wrap{flex-direction:column;padding:8px 14px 40px}nav.toc{position:static;width:100%;max-height:none}main{max-width:100%}}
+</style></head><body>
+<header class="top"><h1>NHS Scotland Hospital Strain Console — Field Guide</h1>
+<div class="sub">how to read the A&amp;E / beds / delayed-discharge console · companion to <code>NHS_Scotland_Strain_Console.html</code></div></header>
+<div class="honest"><b>REAL DATA, descriptive — not predictive.</b> Every number on the console is a real figure published by <b>Public Health Scotland</b> (opendata.nhs.scot), badged <span class="bdg M">MEASURED</span>. The only exception is the England comparator, which is <span class="bdg C">CITED</span> context. The console is a near-real-time situational read (weekly to quarterly cadence), <b>not</b> a live monitor and <b>not</b> a forecast.</div>
+<div class="wrap">
+<nav class="toc"><h3>Contents</h3><ol>
+<li><a href="#s1">What this is — and why NHS, not VA</a></li>
+<li><a href="#s2">The data &amp; its cadence</a></li>
+<li><a href="#s3">System strain index</a></li>
+<li><a href="#s4">A&amp;E 4-hour performance</a></li>
+<li><a href="#s5">ED strain ranking</a></li>
+<li><a href="#s6">The acute-harm signal — long waits</a></li>
+<li><a href="#s7">Bed occupancy</a></li>
+<li><a href="#s8">Delayed discharges — the real cause</a></li>
+<li><a href="#s9">Scenario sandbox</a></li>
+<li><a href="#s10">England comparator</a></li>
+<li><a href="#s11">Refreshing the data (CKAN)</a></li>
+<li><a href="#s12">Honest limits &amp; appropriate use</a></li>
+</ol></nav>
+<main>
+<section id="s1"><h2>1 · What this is — and why NHS, not VA</h2>
+<div class="chip read"><b>Is:</b> a hospital-system strain console for NHS Scotland, running on <em>real, published</em> A&amp;E, bed-occupancy and delayed-discharge data — the same early-warning engine as the St. Petersburg water and VA consoles, but on live public data.</div>
+<div class="chip warn"><b>Is NOT:</b> a live bedside monitor, a hospital league table for blame, or a prediction of future performance.</div>
+<p>The companion <strong>VA strain console</strong> had to ship with demo data because U.S. VA real-time strain (bed census, ED boarding, staffing) is internal and not public. The question "is NHS data more available?" has a clear answer: <strong>yes</strong>. NHS England publishes operational strain by named trust; NHS Scotland goes further and offers a genuine open <strong>API</strong>. This console is built on that — so the figures are real, current, and traceable to source.</p></section>
+
+<section id="s2"><h2>2 · The data &amp; its cadence</h2>
+<p>All operational data comes from <a href="https://www.opendata.nhs.scot/" target="_blank">opendata.nhs.scot</a>, the Public Health Scotland CKAN open-data portal. Four datasets feed the console:</p>
+<table><tr><th>Panel</th><th>Dataset</th><th>Cadence</th><th>Snapshot</th></tr>
+<tr><td>A&amp;E performance</td><td>Weekly A&amp;E activity &amp; waiting times (Type 1 EDs)</td><td>Weekly</td><td>w/e 7 Jun 2026</td></tr>
+<tr><td>Bed occupancy</td><td>Beds by board &amp; specialty</td><td>Quarterly</td><td>2025 Q4</td></tr>
+<tr><td>Delayed discharge</td><td>Census delays by health board</td><td>Monthly</td><td>Apr 2026</td></tr>
+<tr><td>Hospital names</td><td>A&amp;E sites lookup</td><td>Reference</td><td>—</td></tr></table>
+<p><strong>Why a snapshot, not a live fetch?</strong> The CKAN API is keyless and returns JSON, but it sends <em>no CORS header</em>, so a browser opening a local file is blocked from calling it directly. The console therefore embeds a <strong>dated real snapshot</strong> (the same pattern the markets console uses for equities) and documents how to refresh it (Section 11). Given the data only updates weekly at best, a dated snapshot loses almost nothing and gains reliability and offline use.</p></section>
+
+<section id="s3"><h2>3 · System strain index <span class="bdg M">MEASURED</span></h2>
+<p>A single 0–100 read of unscheduled-care pressure, built <em>only</em> from the real figures on the page — no hidden model, no fitted weights to past crises:</p>
+<ul>
+<li><strong>A&amp;E gap (40%)</strong> — how far national Type-1 4-hour performance sits below the 95% standard.</li>
+<li><strong>Long-wait share (20%)</strong> — patients over 12 hours as a share of attendances.</li>
+<li><strong>Bed occupancy (15%)</strong> — mean board occupancy above the safe-flow threshold.</li>
+<li><strong>Delayed discharge (25%)</strong> — the census backlog of patients who can't leave.</li>
+</ul>
+<p>Bands: <strong>Normal</strong> (&lt;40), <strong>Elevated</strong> (40–57), <strong>High pressure</strong> (58–73), <strong>Severe</strong> (≥74). On the real baseline it reads <strong>High pressure (~60)</strong> — an honest reflection that Scottish unscheduled care has run well below standard for the whole period shown. The component chips show each driver, so you can see <em>why</em> the index is where it is.</p></section>
+
+<section id="s4"><h2>4 · A&amp;E 4-hour performance <span class="bdg M">MEASURED</span></h2>
+<p>The headline NHS pressure metric: the share of attendances at <strong>major (Type 1)</strong> emergency departments dealt with within four hours. The Scottish Government standard is <strong>95%</strong> (the blue line). The trend shows the last 30 weeks; the orange line sitting persistently around 60–65% — far below the blue line and barely moving — is the clearest single picture of <em>chronic</em> rather than acute strain.</p></section>
+
+<section id="s5"><h2>5 · ED strain ranking <span class="bdg M">MEASURED</span></h2>
+<p>The trust-ranking equivalent: every major (Type 1) ED, <strong>worst first</strong> by 4-hour performance for the latest week, with the 95% standard marked by a blue tick and the count of patients who waited <strong>over 12 hours</strong> alongside. This identifies <em>where</em> the pressure concentrates. Treat it as a focus tool, not a judgment: small/rural EDs and large urban majors face very different case-mix, and a single week is noisy — read it with the national trend.</p></section>
+
+<section id="s6"><h2>6 · The acute-harm signal — long waits <span class="bdg M">MEASURED</span></h2>
+<p>Averages hide harm. This panel surfaces the count of patients waiting <strong>over 8</strong> and <strong>over 12 hours</strong> in major EDs. Long ED waits are independently associated with increased 30-day mortality (the evidence base behind the move to report 12-hour waits at all), so this — not the 4-hour average — is the number to watch when judging patient safety.</p></section>
+
+<section id="s7"><h2>7 · Bed occupancy <span class="bdg M">MEASURED · 2025 Q4</span></h2>
+<p>Average occupancy of staffed acute beds, by health board. Rules of thumb: above <strong>~85%</strong> (amber) patient flow slows and waits grow; above <strong>~92%</strong> (red) infection control and safety degrade sharply. Scotland's system-wide mean sits lower than England's, so occupancy is a <em>moderate</em> contributor here — which is itself an honest finding, not a downplaying.</p></section>
+
+<section id="s8"><h2>8 · Delayed discharges — the real cause <span class="bdg M">MEASURED</span></h2>
+<p>This is the upstream driver of everything above. At the monthly census, these are patients <strong>clinically ready to leave hospital but unable to</strong> — the "no criteria to reside" backlog, usually waiting on social care or a care-home place. They occupy beds that admitted ED patients need, which is why a full ward and a gridlocked A&amp;E are usually a <em>social-care</em> problem wearing a hospital costume. Shown by board, worst first, with the Scotland total.</p></section>
+
+<section id="s9"><h2>9 · Scenario sandbox</h2>
+<p>Pressure-test the response plan against the <em>real</em> baseline. Four what-ifs adjust the inputs and recompute the strain index: <strong>winter surge</strong> (4-hour −15pp, occupancy +5, delays +15%), <strong>norovirus bed closures</strong>, <strong>staffing shortfall</strong>, <strong>discharge gridlock</strong> (delays +40%). These are clearly labelled as what-ifs, never forecasts — they exist to rehearse decisions, e.g. "a winter surge tips us from High pressure to Severe; is the escalation plan ready for that?"</p></section>
+
+<section id="s10"><h2>10 · England comparator <span class="bdg C">CITED — context, not live</span></h2>
+<p>For context, England runs the <strong>same 4-hour standard (95%)</strong>, with an interim operational target of <strong>78%</strong>. The latest reported figures (<strong>May 2026</strong>): <strong>75.7%</strong> of all-types A&amp;E attendances within 4 hours, and roughly <strong>50,000</strong> patients waiting over 12 hours from decision-to-admit that month (<a href="https://www.kingsfund.org.uk/insight-and-analysis/data-and-charts/accident-emergency-waiting-times" target="_blank">King's Fund</a> / <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/ae-waiting-times-and-activity/" target="_blank">NHS England</a>). England has <em>no equivalent open-data API</em>, so these are <strong>cited, not shown live</strong>.</p>
+<div class="chip warn"><b>Do not read this as a league table.</b> England's 75.7% is <strong>all-types</strong>; the console's Scottish figure (~64%) is <strong>major (Type-1) EDs only</strong>, which run lower in every system. England's own Type-1 performance is well below its all-types number. The two are <em>not</em> directly comparable — the console shows England to give a sense of scale and shared standards, not to rank the nations.</div></section>
+
+<section id="s11"><h2>11 · Refreshing the data (CKAN)</h2>
+<p>To update the embedded snapshot, re-query the Public Health Scotland CKAN API (keyless) and rebuild. The console's own "Data health → How to refresh" panel carries the exact query; the core call is:</p>
+<pre>BASE=https://www.opendata.nhs.scot/api/3/action
+
+# latest A&amp;E week, by major (Type 1) ED:
+GET $BASE/datastore_search_sql?sql=
+  SELECT "TreatmentLocation",
+         SUM("NumberOfAttendancesEpisode"),
+         SUM("NumberWithin4HoursEpisode"),
+         SUM("NumberOver12HoursEpisode")
+  FROM "a5f7ca94-c810-41b5-a7c9-25c18d43e5a4"
+  WHERE "WeekEndingDate" = (SELECT max("WeekEndingDate")
+                            FROM "a5f7ca94-c810-41b5-a7c9-25c18d43e5a4")
+    AND "DepartmentType" = 'Type 1'
+    AND "AttendanceCategory" = 'All'
+  GROUP BY "TreatmentLocation"</pre>
+<p>Resource IDs: A&amp;E <code>a5f7ca94…</code> · sites lookup <code>1a4e3f48…</code> · beds <code>f272bb7d…</code> · delayed discharges <code>49ca8a39…</code>. The same <code>datastore_search_sql</code> endpoint serves all four. (If you ever want a truly live in-browser feed, route the CKAN call through a small CORS proxy — e.g. a Cloudflare Worker, the same approach used for live equities elsewhere.)</p></section>
+
+<section id="s12"><h2>12 · Honest limits &amp; appropriate use</h2>
+<ul>
+<li><strong>Cadence, not real-time.</strong> Weekly (A&amp;E) to quarterly (beds). This is a situational read, not a live operational monitor.</li>
+<li><strong>Descriptive, not predictive.</strong> No figure forecasts future performance; the scenarios are rehearsals, not predictions.</li>
+<li><strong>One week is noisy.</strong> Always read a single ED's week against the national trend.</li>
+<li><strong>Definitions matter.</strong> Type-1 (major ED) figures differ from all-types; cross-board and cross-country comparisons carry caveats.</li>
+<li><strong>Snapshot vintage.</strong> The console states its data dates; refresh per Section 11 for current figures.</li>
+</ul>
+<div class="chip read"><b>Appropriate use:</b> situational awareness and planning support for system, board and operational leaders, and a public-facing, fully-sourced picture of unscheduled-care pressure. Because it's built only on already-published PHS open data, it carries no confidentiality constraint.</div>
+</section>
+</main></div></body></html>

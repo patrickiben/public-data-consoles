@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hazards Near You — live U.S. local hazard lookup</title>
+<meta name="description" content="Enter a ZIP code or town to see live local hazards anywhere in the United States: National Weather Service warnings &amp; forecast, severe-weather outlook, air quality, FEMA flood risk, wildfires, earthquakes, drought, tide &amp; river levels, tropical systems and volcanoes — from public federal data. Unofficial; not for emergency decisions.">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<style>
+:root{
+ --bg:#0f1b2a;--bg2:#12233a;--panel:#16273d;--panel2:#1b3050;--ink:#eaf1f8;--ink2:#aebfd2;--dim:#7e93ad;
+ --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+ --sea:#3fa9f5;--sea2:#1f7fd6;--ok:#34c98a;--info:#5b9bd5;--watch:#f0b429;--high:#f97316;--alert:#ef5350;--purple:#b46ff0;
+ --r:16px;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#1a3252 0%,#0f1b2a 55%) fixed,#0f1b2a;color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1280px;margin:0 auto;padding:0 18px}
+#disc{background:#0a1422;color:#c6d6e8;font-size:12.5px;text-align:center;padding:8px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}#disc a{color:var(--sea)}
+header{padding:30px 0 22px;text-align:center}
+header h1{margin:0;font-size:30px;font-weight:760;letter-spacing:-.4px;background:linear-gradient(90deg,#eaf1f8,#9fd0ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
+.searchbar{display:flex;gap:9px;max-width:600px;margin:20px auto 0;background:var(--panel);border:1px solid var(--line2);border-radius:999px;padding:7px 7px 7px 18px;box-shadow:0 10px 30px -12px rgba(0,0,0,.6)}
+.searchbar i.lead{color:var(--sea);font-size:20px;align-self:center}
+#q{flex:1;min-width:0;background:transparent;border:none;color:var(--ink);font-size:16px;font-family:inherit;outline:none}
+#q::placeholder{color:var(--dim)}
+#go{border:none;border-radius:999px;padding:11px 22px;font-size:15px;font-weight:650;cursor:pointer;background:linear-gradient(135deg,#3fa9f5,#1f7fd6);color:#06223c;white-space:nowrap}
+#go:hover{filter:brightness(1.07)}
+#loc{border:1px solid var(--line2);background:var(--panel2);color:var(--ink);border-radius:999px;width:42px;font-size:18px;cursor:pointer}
+#loc:hover{background:#22406a}
+#place{text-align:center;margin:14px auto 0;font-size:15px;min-height:20px;color:var(--ink2)}#place b{color:var(--ink)}
+#chips{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:14px auto 0;max-width:1000px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600}
+.chip .dot{width:9px;height:9px;border-radius:50%}
+.chip small{color:var(--dim);font-weight:500}
+#map{height:46vh;min-height:380px;border-radius:var(--r);margin:20px 0;border:1px solid var(--line2);box-shadow:0 18px 50px -22px rgba(0,0,0,.7);background:#0c1726}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;padding-bottom:40px}
+.card{background:linear-gradient(180deg,var(--panel),#14253b);border:1px solid var(--line);border-radius:var(--r);padding:16px 17px;box-shadow:0 8px 24px -16px rgba(0,0,0,.6)}
+.card.wide{grid-column:1/-1}
+.ch{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+.ch .ic{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
+.ch h2{margin:0;font-size:15.5px;font-weight:680}.ch .sub{font-size:11.5px;color:var(--dim);margin-top:1px}
+.lvl{margin-left:auto;font-size:12px;font-weight:700;padding:3px 11px;border-radius:999px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px}.row:last-child{border:none}
+.row .l{color:var(--ink2)}.row .v{font-weight:650;text-align:right}
+.big{font-size:24px;font-weight:740;line-height:1.15}
+.al{border-left:3px solid var(--watch);background:rgba(240,180,41,.08);border-radius:9px;padding:9px 11px;margin-bottom:8px}
+.al.sev{border-color:var(--alert);background:rgba(239,83,80,.1)}.al .t{font-weight:650}.al .m{font-size:12px;color:var(--ink2);margin-top:2px}
+.muted{color:var(--dim);font-size:12.5px}.small{font-size:12.5px}
+.res{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:9px}
+.res a{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:11px;color:var(--ink);font-weight:600;font-size:13.5px;background:rgba(255,255,255,.02)}
+.res a:hover{border-color:var(--sea2);background:rgba(63,169,245,.08);text-decoration:none}
+.res a .ti{color:var(--sea);font-size:19px}.res a small{display:block;color:var(--dim);font-weight:400;font-size:11.5px}
+#foot{color:var(--dim);font-size:12px;padding:0 0 36px}
+#foot .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--sea2);border-radius:11px;padding:12px 15px;margin-bottom:12px;color:var(--ink2)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#16273d;color:#eaf1f8}.leaflet-popup-content{font-family:var(--sans);font-size:13px}.leaflet-control-attribution{background:rgba(15,27,42,.7)!important;color:#7e93ad!important}.leaflet-control-attribution a{color:#9fb6cf!important}
+.legend{background:#16273d;color:#dce8f5;padding:8px 11px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.4);font-size:12px;line-height:1.7}.legend i{width:12px;height:12px;display:inline-block;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line2);border-top-color:var(--sea);border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px}@keyframes s{to{transform:rotate(360deg)}}
+@media(max-width:640px){header h1{font-size:24px}.searchbar{margin-left:0;margin-right:0}#map{height:42vh}}
+</style>
+</head>
+<body>
+<div id="disc"><b>Unofficial.</b> Built from public federal data — <b>not</b> an official source and not for emergency decisions. Follow the <a href="https://www.weather.gov" target="_blank" rel="noopener">National Weather Service</a> and your local officials. <b>In an emergency, call 911.</b></div>
+<div class="wrap">
+  <header>
+    <h1>Hazards Near You</h1>
+    <div class="s">Type a ZIP code or town anywhere in the U.S. — see live weather warnings, air quality, flood &amp; fire risk, earthquakes, drought and more for that spot.</div>
+    <div class="searchbar">
+      <i class="ti ti-search lead" aria-hidden="true"></i>
+      <input id="q" type="search" placeholder="ZIP code or town, e.g. 33701 or Boulder, CO" autocomplete="postal-code" aria-label="ZIP code or town">
+      <button id="loc" title="Use my location" aria-label="Use my location"><i class="ti ti-current-location" aria-hidden="true"></i></button>
+      <button id="go">Search</button>
+    </div>
+    <div id="place"></div>
+    <div id="chips"></div>
+  </header>
+  <div id="map"></div>
+  <div id="grid" class="grid"></div>
+  <div id="foot">
+    <div class="note"><b>About.</b> A volunteer, <b>unofficial</b> tool that pulls openly available U.S. federal hazard data for the place you enter. It can lag, have gaps or be briefly offline and is <b>not</b> a substitute for official warnings. Always follow the National Weather Service and your local emergency management, and <b>call 911 in an emergency.</b></div>
+    <div id="src"></div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+/* =========================================================================
+   CONFIG — add a free AirNow API key to enable the live Air Quality panel:
+   get one in ~1 min at https://docs.airnowapi.org/account/request/ and paste below.
+   (Everything else needs no key.)  ======================================= */
+const AIRNOW_KEY=''; /* scrubbed for public repo — paste your own free EPA AirNow key to enable the live AQ panel */
+
+const $=id=>document.getElementById(id);
+const C={ok:'#34c98a',info:'#5b9bd5',watch:'#f0b429',high:'#f97316',alert:'#ef5350',purple:'#b46ff0',dim:'#7e93ad'};
+const UA={'User-Agent':'hazards-near-you (public open-data lookup)','Accept':'application/geo+json'};
+let here=null, coops=null, mode='national';
+const fmtAgo=t=>{const d=(Date.now()-t)/3600000;return d<1?Math.round(d*60)+'m ago':d<48?Math.round(d)+'h ago':Math.round(d/24)+'d ago';};
+function pip(pt,geom){if(!geom)return false;const rings=geom.type==='MultiPolygon'?geom.coordinates.flat():geom.coordinates;let inside=false;
+ for(const r of rings){for(let i=0,j=r.length-1;i<r.length;j=i++){const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];
+  if(((yi>pt[1])!=(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi))inside=!inside;}}return inside;}
+
+const map=L.map('map',{zoomControl:true,worldCopyJump:true}).setView([39,-98],4);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+const G={pt:L.layerGroup().addTo(map),flood:L.layerGroup().addTo(map),poly:L.layerGroup().addTo(map),nat:L.layerGroup().addTo(map)};
+
+/* ---------- card scaffold ---------- */
+const CARDS=[
+ ['alerts','ti-alert-triangle','Active warnings','National Weather Service'],
+ ['wx','ti-cloud','Weather now','NWS forecast'],
+ ['spc','ti-bolt','Severe weather outlook','NOAA SPC, today'],
+ ['air','ti-lungs','Air quality','EPA AirNow'],
+ ['water','ti-ripple','Flood &amp; water','FEMA · NOAA'],
+ ['fire','ti-flame','Wildfire','NIFC'],
+ ['quake','ti-activity-heartbeat','Earthquakes','USGS, 30 days'],
+ ['drought','ti-droplet-off','Drought','U.S. Drought Monitor'],
+ ['tropics','ti-hurricane','Tropical systems','NOAA NHC'],
+ ['volcano','ti-mountain','Volcanoes','USGS, elevated alerts'],
+];
+const ICOL={alerts:C.alert,wx:C.info,spc:C.high,air:C.ok,water:C.info,fire:C.high,quake:C.purple,drought:C.watch,tropics:C.alert,volcano:C.high};
+function buildCards(){$('grid').innerHTML=CARDS.map(c=>`<div class="card" id="card-${c[0]}"><div class="ch"><div class="ic" style="background:${ICOL[c[0]]}22;color:${ICOL[c[0]]}"><i class="ti ${c[1]}" aria-hidden="true"></i></div><div><h2>${c[2]}</h2><div class="sub">${c[3]}</div></div><span class="lvl" id="lvl-${c[0]}" style="display:none"></span></div><div id="${c[0]}"><div class="muted"><span class="spin"></span> loading…</div></div></div>`).join('')
+ +`<div class="card wide res-card"><div class="ch"><div class="ic" style="background:#3fa9f522;color:#3fa9f5"><i class="ti ti-shield-half"></i></div><div><h2>Your local resources</h2><div class="sub">official sources for this place</div></div></div><div class="res" id="res"></div></div>`;}
+function lvl(id,txt,col){const e=$('lvl-'+id);if(!e)return;if(!txt){e.style.display='none';return;}e.style.display='';e.textContent=txt;e.style.background=col+'22';e.style.color=col;}
+
+/* ================= NATIONAL DEFAULT VIEW ================= */
+async function loadNational(){mode='national';G.nat.clearLayers();
+ $('grid').innerHTML=`<div class="card wide" id="natcard"><div class="ch"><div class="ic" style="background:#3fa9f522;color:#3fa9f5"><i class="ti ti-flag"></i></div><div><h2>The U.S. right now</h2><div class="sub">significant hazards nationwide · search above for your local detail</div></div></div><div id="natbody"><div class="muted"><span class="spin"></span> loading national hazards…</div></div></div>`;
+ const out={};
+ const tasks=[
+  fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson').then(r=>r.json()).then(j=>{out.quakes=(j.features||[]);
+    out.quakes.forEach(f=>{const c=f.geometry.coordinates;L.circleMarker([c[1],c[0]],{radius:3+f.properties.mag,fillColor:C.purple,color:'#fff',weight:.6,fillOpacity:.55}).bindPopup('<b>M '+f.properties.mag+'</b><br>'+f.properties.place).addTo(G.nat);});}).catch(()=>{}),
+  fetch('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/0/query?where=DailyAcres>1000&outFields=IncidentName,DailyAcres,PercentContained&returnGeometry=true&outSR=4326&f=geojson&resultRecordCount=200').then(r=>r.json()).then(j=>{out.fires=(j.features||[]);
+    out.fires.forEach(f=>{if(!f.geometry)return;const c=f.geometry.coordinates;L.circleMarker([c[1],c[0]],{radius:5,fillColor:C.high,color:'#fff',weight:.6,fillOpacity:.7}).bindPopup('<b>'+(f.properties.IncidentName||'Wildfire')+'</b><br>'+Math.round(f.properties.DailyAcres||0).toLocaleString()+' acres · '+(f.properties.PercentContained||0)+'% contained').addTo(G.nat);});}).catch(()=>{}),
+  fetch('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Active_Hurricanes_v1/FeatureServer/1/query?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=geojson').then(r=>r.json()).then(j=>{out.storms=(j.features||[]);out.stormN=new Set(out.storms.map(f=>f.properties.STORMNAME||f.properties.stormName).filter(Boolean)).size;
+    out.storms.forEach(f=>{if(f.geometry&&f.geometry.type==='Point'){const c=f.geometry.coordinates;L.circleMarker([c[1],c[0]],{radius:7,fillColor:C.alert,color:'#fff',weight:1.2,fillOpacity:.85}).bindPopup('<b>'+(f.properties.STORMNAME||f.properties.stormName||'Tropical system')+'</b>').addTo(G.nat);}});}).catch(()=>{}),
+  fetch('https://www.spc.noaa.gov/products/outlook/day1otlk_cat.nolyr.geojson').then(r=>r.json()).then(j=>{out.spc=(j.features||[]).filter(f=>(f.properties.DN||0)>=3);
+    (j.features||[]).forEach(f=>{const fill=f.properties.fill||'#888';L.geoJSON(f,{style:{color:fill,weight:.5,fillColor:fill,fillOpacity:.18}}).bindPopup('SPC outlook: '+(f.properties.LABEL2||f.properties.LABEL||'')).addTo(G.nat);});}).catch(()=>{}),
+  fetch('https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes').then(r=>r.json()).then(j=>{out.volc=Array.isArray(j)?j:(j.features||[]);}).catch(()=>{})
+ ];
+ await Promise.all(tasks);
+ const nb=$('natbody');if(!nb)return;
+ const bigq=(out.quakes||[]).slice(0,3).map(f=>`<div class="small"><b>M ${f.properties.mag}</b> ${f.properties.place} <span class="muted">${fmtAgo(f.properties.time)}</span></div>`).join('');
+ const bigf=(out.fires||[]).sort((a,b)=>(b.properties.DailyAcres||0)-(a.properties.DailyAcres||0)).slice(0,3).map(f=>`<div class="small"><b>${f.properties.IncidentName||'Fire'}</b> ${Math.round(f.properties.DailyAcres||0).toLocaleString()} ac <span class="muted">${f.properties.PercentContained||0}% contained</span></div>`).join('');
+ nb.innerHTML=
+  `<div class="row"><span class="l">Active tropical systems (worldwide)</span><span class="v">${out.storms?out.stormN:'—'}</span></div>`+
+  `<div class="row"><span class="l">Significant earthquakes (M4.5+, 7 days)</span><span class="v">${out.quakes?out.quakes.length:'—'}</span></div>`+(bigq?`<div style="margin:4px 0 8px">${bigq}</div>`:'')+
+  `<div class="row"><span class="l">Large active wildfires (1,000+ ac)</span><span class="v">${out.fires?out.fires.length:'—'}</span></div>`+(bigf?`<div style="margin:4px 0 8px">${bigf}</div>`:'')+
+  `<div class="row"><span class="l">SPC areas at Enhanced+ severe risk today</span><span class="v">${out.spc?out.spc.length:'—'}</span></div>`+
+  `<div class="row"><span class="l">U.S. volcanoes at elevated alert</span><span class="v">${out.volc?out.volc.length:'—'}</span></div>`+
+  `<div class="muted" style="margin-top:10px"><i class="ti ti-arrow-up"></i> Enter your <b>ZIP or town</b> above for warnings, air quality, flood zone, fire, quake, drought &amp; more right where you are.</div>`+
+  `<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line)"><span class="muted">River-flood tools: </span><a href="../river-flood-network/"><i class="ti ti-git-fork"></i> which tributary is the driver</a> · <a href="../river-flood-propagation/"><i class="ti ti-arrow-down"></i> downstream lead times</a></div>`;
+}
+
+/* ================= GEOCODING ================= */
+async function geocode(qq){const q=qq.trim();if(!q)return null;
+ if(/^\d{5}$/.test(q)){try{const r=await fetch('https://api.zippopotam.us/us/'+q);if(r.ok){const j=await r.json();const p=j.places[0];return {lat:+p.latitude,lon:+p.longitude,name:p['place name']+', '+p['state abbreviation']+' '+q};}}catch(e){}}
+ try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}});const j=await r.json();
+  if(j&&j.length)return {lat:+j[0].lat,lon:+j[0].lon,name:j[0].display_name.split(',').slice(0,3).join(',')};}catch(e){}
+ return null;}
+
+/* ================= LOCAL FEEDS ================= */
+async function loadAlerts(lat,lon){const el=$('alerts');try{
+ const j=await(await fetch('https://api.weather.gov/alerts/active?point='+lat+','+lon,{headers:UA})).json();
+ const sev={Extreme:'alert',Severe:'alert',Moderate:'watch',Minor:'watch'};const fs=j.features||[];
+ fs.forEach(f=>{if(f.geometry)L.geoJSON(f.geometry,{style:{color:C.alert,weight:1,fillColor:C.alert,fillOpacity:.1}}).addTo(G.poly);});
+ if(fs.length){const worst=fs.some(f=>['Extreme','Severe'].includes(f.properties.severity));lvl('alerts',fs.length+' active',worst?C.alert:C.watch);}
+ else lvl('alerts','clear',C.ok);
+ here.redflag=fs.some(f=>/red flag|fire weather/i.test(f.properties.event));
+ el.innerHTML=fs.length?fs.slice(0,8).map(f=>{const p=f.properties,t=sev[p.severity]||'watch';return `<div class="al${t==='alert'?' sev':''}"><div class="t">${p.event}</div><div class="m">${p.headline||''}</div></div>`;}).join(''):'<div class="muted">No active National Weather Service watches or warnings here right now.</div>';
+}catch(e){el.innerHTML='<div class="muted">Alert feed unavailable — see weather.gov.</div>';}}
+
+async function loadWX(lat,lon){const el=$('wx');try{
+ const pt=(await(await fetch('https://api.weather.gov/points/'+lat.toFixed(4)+','+lon.toFixed(4),{headers:UA})).json()).properties;
+ here.office=pt.cwa;here.rel=(pt.relativeLocation&&pt.relativeLocation.properties)||{};
+ let cur=null;try{cur=((await(await fetch(pt.forecast,{headers:UA})).json()).properties.periods||[])[0];}catch(e){}
+ el.innerHTML=cur?`<div class="big">${cur.temperature}°${cur.temperatureUnit} · ${cur.shortForecast}</div><div class="row"><span class="l">Wind</span><span class="v">${cur.windSpeed||'—'} ${cur.windDirection||''}</span></div><div class="muted" style="margin-top:6px">${(cur.detailedForecast||'').slice(0,170)}</div>`:'<div class="muted">Forecast unavailable — see weather.gov.</div>';
+ buildResources(lat,lon);
+}catch(e){el.innerHTML='<div class="muted">Forecast unavailable.</div>';}}
+
+async function loadSPC(lat,lon){const el=$('spc');try{
+ const j=await(await fetch('https://www.spc.noaa.gov/products/outlook/day1otlk_cat.nolyr.geojson')).json();
+ let hit=null;(j.features||[]).forEach(f=>{if(pip([lon,lat],f.geometry)){if(!hit||(f.properties.DN||0)>(hit.DN||0))hit=f.properties;}});
+ if(hit&&(hit.DN||0)>0){const col=hit.fill||C.watch;lvl('spc',(hit.LABEL2||hit.LABEL||'risk'),(hit.DN>=4?C.alert:hit.DN>=3?C.high:C.watch));
+  el.innerHTML=`<div class="big" style="color:${col}">${hit.LABEL2||hit.LABEL}</div><div class="muted" style="margin-top:4px">NOAA Storm Prediction Center categorical outlook for severe thunderstorms today at your location.</div>`;}
+ else{lvl('spc','none',C.ok);el.innerHTML='<div class="muted">No severe-thunderstorm risk area over your location in today\'s SPC outlook.</div>';}
+}catch(e){el.innerHTML='<div class="muted">SPC outlook unavailable.</div>';}}
+
+async function loadAir(lat,lon){const el=$('air');
+ if(!AIRNOW_KEY){lvl('air','key needed',C.dim);el.innerHTML='<div class="muted">Live air quality needs a free EPA <b>AirNow</b> API key. Get one at <a href="https://docs.airnowapi.org/account/request/" target="_blank" rel="noopener">airnowapi.org</a> and paste it into <code>AIRNOW_KEY</code> at the top of the file. Air-quality <em>alerts</em> still show in Active warnings.</div>';return;}
+ try{const j=await(await fetch('https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude='+lat+'&longitude='+lon+'&distance=60&API_KEY='+AIRNOW_KEY)).json();
+  if(j&&j.length){const w=j.reduce((a,b)=>b.AQI>a.AQI?b:a,j[0]);const cat=w.Category.Name;const col=w.AQI<=50?C.ok:w.AQI<=100?C.watch:w.AQI<=150?C.high:C.alert;
+   lvl('air',cat,col);el.innerHTML=`<div class="big" style="color:${col}">AQI ${w.AQI} · ${cat}</div><div class="muted" style="margin-top:4px">Worst current pollutant: ${w.ParameterName}. Reporting area: ${w.ReportingArea}, ${w.StateCode}.</div>`;}
+  else{lvl('air','—',C.dim);el.innerHTML='<div class="muted">No AirNow station reporting near this location.</div>';}
+ }catch(e){el.innerHTML='<div class="muted">Air-quality feed unavailable.</div>';}}
+
+function fzText(z){return z?({A:'a high-risk 100-year flood zone (A)',AE:'a high-risk flood zone (AE) — insurance typically required',AO:'a high-risk shallow-flooding zone (AO)',V:'a high-risk COASTAL flood zone (V) — wave hazard',VE:'a high-risk coastal flood zone (VE) — wave hazard',X:'a minimal-risk zone (X)'})[z]||('flood zone '+z):null;}
+async function loadWater(lat,lon){const el=$('water');let flood=null,tide=null,gauges=0;
+ try{const a=((await(await fetch('https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry='+lon+','+lat+'&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE,SFHA_TF&returnGeometry=false&f=json')).json()).features||[])[0];
+  if(a)flood={z:a.attributes.FLD_ZONE,sfha:a.attributes.SFHA_TF==='T'};
+  const dd=0.05;const g=await(await fetch('https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry='+(lon-dd)+','+(lat-dd)+','+(lon+dd)+','+(lat+dd)+'&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE&returnGeometry=true&outSR=4326&f=geojson&resultRecordCount=250')).json();
+  (g.features||[]).forEach(f=>{const z=f.properties.FLD_ZONE,c=/V/.test(z||'')?C.alert:/A/.test(z||'')?C.high:'#3a5a78';L.geoJSON(f,{style:{color:c,weight:.3,fillColor:c,fillOpacity:.2}}).bindPopup('FEMA flood zone '+(z||'?')).addTo(G.flood);});
+ }catch(e){}
+ try{if(!coops)coops=(await(await fetch('https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=waterlevels')).json()).stations||[];
+  let best=null,bd=1e9;coops.forEach(s=>{const d=Math.hypot((s.lat-lat)*69,(s.lng-lon)*55);if(d<bd){bd=d;best=s;}});
+  if(best&&bd<55){const o=await(await fetch('https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=latest&station='+best.id+'&product=water_level&datum=MLLW&units=english&time_zone=lst_ldt&format=json&application=hazards_near_you')).json();
+   const v=o.data&&o.data.length?parseFloat(o.data[0].v):null;tide={name:best.name,v:v,mi:Math.round(bd)};
+   L.circleMarker([best.lat,best.lng],{radius:6,fillColor:'#1f7fd6',color:'#fff',weight:1.3,fillOpacity:.9}).bindPopup('<b>NOAA tide gauge — '+best.name+'</b>'+(v!=null?'<br>'+v.toFixed(1)+' ft MLLW now':'')).addTo(G.pt);}
+ }catch(e){}
+ try{const d=0.4;const j=await(await fetch('https://api.water.noaa.gov/nwps/v1/gauges?srid=EPSG_4326&bbox.xmin='+(lon-d)+'&bbox.xmax='+(lon+d)+'&bbox.ymin='+(lat-d)+'&bbox.ymax='+(lat+d))).json();
+  gauges=(j.gauges||[]).length;(j.gauges||[]).slice(0,40).forEach(g=>{if(g.latitude)L.circleMarker([g.latitude,g.longitude],{radius:4,fillColor:'#26a69a',color:'#fff',weight:.6,fillOpacity:.85}).bindPopup('<b>River/flood gauge '+(g.lid||'')+'</b><br>'+(g.name||'')).addTo(G.pt);});
+ }catch(e){}
+ lvl('water',flood?flood.z:(tide?'coastal':'—'),flood&&flood.sfha?C.alert:flood?C.ok:C.dim);
+ el.innerHTML=`<div class="row"><span class="l">FEMA flood zone</span><span class="v">${flood?flood.z:'—'}</span></div>`+
+  (flood?`<div class="muted" style="margin:2px 0 8px">Your point is in ${fzText(flood.z)}.${flood.sfha?' This is a Special Flood Hazard Area.':''} Confirm on the official FEMA map (below).</div>`:'<div class="muted" style="margin-bottom:8px">No FEMA flood-zone result at this point.</div>')+
+  (tide?`<div class="row"><span class="l">Nearest tide gauge</span><span class="v">${tide.v!=null?tide.v.toFixed(1)+' ft':'—'}</span></div><div class="muted">${tide.name} · ~${tide.mi} mi (NOAA)</div>`:'<div class="muted">No coastal tide gauge nearby (inland).</div>')+
+  (gauges?`<div class="row" style="margin-top:6px"><span class="l">River/flood gauges nearby</span><span class="v">${gauges}</span></div>`:'')+
+  `<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line)"><div class="muted" style="margin-bottom:6px">Trace a river flood upstream:</div>`+
+  `<a href="../river-flood-network/" style="display:flex;gap:9px;align-items:flex-start;padding:8px 0"><i class="ti ti-git-fork" style="color:var(--sea);font-size:17px;transform:rotate(180deg)"></i><span style="font-weight:600;color:var(--ink)">River Flood Network <small style="display:block;color:var(--dim);font-weight:400">Which upstream tributary is driving this flood — main stem or a branch?</small></span></a>`+
+  `<a href="../river-flood-propagation/" style="display:flex;gap:9px;align-items:flex-start;padding:8px 0"><i class="ti ti-arrow-down" style="color:var(--sea);font-size:17px"></i><span style="font-weight:600;color:var(--ink)">River Flood Propagation <small style="display:block;color:var(--dim);font-weight:400">Walk the main stem downstream for each community's flood lead time.</small></span></a></div>`;
+}
+
+async function loadFire(lat,lon){const el=$('fire');try{const d=1.2;
+ const j=await(await fetch('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/0/query?geometry='+(lon-d)+','+(lat-d)+','+(lon+d)+','+(lat+d)+'&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=IncidentName,DailyAcres,PercentContained&returnGeometry=true&outSR=4326&f=geojson')).json();
+ const fs=(j.features||[]).sort((a,b)=>(b.properties.DailyAcres||0)-(a.properties.DailyAcres||0));
+ fs.forEach(f=>{if(!f.geometry)return;const c=f.geometry.coordinates;L.circleMarker([c[1],c[0]],{radius:5,fillColor:C.high,color:'#fff',weight:.6,fillOpacity:.75}).bindPopup('<b>'+(f.properties.IncidentName||'Wildfire')+'</b><br>'+Math.round(f.properties.DailyAcres||0).toLocaleString()+' acres · '+(f.properties.PercentContained||0)+'% contained').addTo(G.pt);});
+ lvl('fire',fs.length?fs.length+' nearby':(here.redflag?'red flag':'none'),fs.length?C.high:(here.redflag?C.watch:C.ok));
+ el.innerHTML=(here.redflag?'<div class="al"><div class="t">Fire Weather / Red Flag Warning in effect</div><div class="m">elevated fire danger — see Active warnings</div></div>':'')+
+  (fs.length?'<div class="row"><span class="l">Active wildfires within ~80 mi</span><span class="v">'+fs.length+'</span></div>'+fs.slice(0,3).map(f=>`<div class="small"><b>${f.properties.IncidentName||'Fire'}</b> ${Math.round(f.properties.DailyAcres||0).toLocaleString()} ac · ${f.properties.PercentContained||0}% contained</div>`).join(''):'<div class="muted">No active wildfires reported near you (NIFC).</div>');
+}catch(e){el.innerHTML='<div class="muted">Wildfire feed unavailable.</div>';}}
+
+async function loadQuake(lat,lon){const el=$('quake');try{const t=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+ const j=await(await fetch('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude='+lat+'&longitude='+lon+'&maxradiuskm=300&minmagnitude=2.5&starttime='+t+'&orderby=time&limit=8')).json();
+ const fs=j.features||[];fs.forEach(f=>{const c=f.geometry.coordinates;L.circleMarker([c[1],c[0]],{radius:3+f.properties.mag,fillColor:C.purple,color:'#fff',weight:.6,fillOpacity:.65}).bindPopup('<b>M '+f.properties.mag+'</b><br>'+f.properties.place).addTo(G.pt);});
+ const big=fs.filter(f=>f.properties.mag>=4).length;lvl('quake',fs.length?fs.length:'none',big?C.high:fs.length?C.watch:C.ok);
+ el.innerHTML=`<div class="row"><span class="l">M2.5+ within ~190 mi, 30 days</span><span class="v">${fs.length}</span></div>`+
+  (fs.length?fs.slice(0,4).map(f=>`<div class="small"><b>M ${f.properties.mag}</b> ${f.properties.place} <span class="muted">${fmtAgo(f.properties.time)}</span></div>`).join(''):'<div class="muted">No recent earthquakes near you — USGS.</div>');
+}catch(e){el.innerHTML='<div class="muted">Earthquake feed unavailable.</div>';}}
+
+async function loadDrought(lat,lon){const el=$('drought');try{
+ const fips=(await(await fetch('https://geo.fcc.gov/api/census/area?lat='+lat+'&lon='+lon+'&format=json')).json()).results[0].county_fips;
+ const mdy=d=>{d=new Date(d);return (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear();};
+ const j=await(await fetch('https://usdmdataservices.unl.edu/api/CountyStatistics/GetDroughtSeverityStatisticsByAreaPercent?aoi='+fips+'&startdate='+mdy(Date.now()-9*864e5)+'&enddate='+mdy(Date.now())+'&statisticsType=1',{headers:{'Accept':'application/json'}})).json();
+ const r=(j&&j.length)?j[j.length-1]:null;
+ if(r){const cats=[['d4','D4 Exceptional',C.alert],['d3','D3 Extreme',C.alert],['d2','D2 Severe',C.high],['d1','D1 Moderate',C.watch],['d0','D0 Abnormally Dry',C.watch]];
+  let worst=null;for(const[k,lab,col]of cats){if(parseFloat(r[k])>0){worst=[lab,col,parseFloat(r[k])];break;}}
+  lvl('drought',worst?worst[0].split(' ')[0]:'none',worst?worst[1]:C.ok);
+  el.innerHTML=worst?`<div class="big" style="color:${worst[1]}">${worst[0]}</div><div class="muted" style="margin-top:4px">Affecting ~${Math.round(worst[2])}% of ${r.county}, ${r.state}, as of ${String(r.mapDate).slice(0,10)} (U.S. Drought Monitor).</div>`:`<div class="big" style="color:${C.ok}">No drought</div><div class="muted" style="margin-top:4px">${r.county}, ${r.state} — none designated (U.S. Drought Monitor).</div>`;}
+ else el.innerHTML='<div class="muted">No drought data for this county.</div>';
+}catch(e){el.innerHTML='<div class="muted">Drought feed unavailable.</div>';}}
+
+async function loadVolcano(lat,lon){const el=$('volcano');try{
+ const j=await(await fetch('https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes')).json();
+ const arr=Array.isArray(j)?j:[];const near=arr.map(v=>({v,d:Math.hypot(((v.latitude||v.lat)-lat)*69,((v.longitude||v.lon)-lon)*55)})).filter(x=>isFinite(x.d)).sort((a,b)=>a.d-b.d);
+ const close=near.filter(x=>x.d<300);
+ lvl('volcano',arr.length?(close.length?close.length+' near':arr.length+' US'):'none',close.length?C.high:C.dim);
+ el.innerHTML=close.length?close.slice(0,3).map(x=>`<div class="small"><b>${x.v.volcanoName||x.v.name}</b> — ${x.v.alertLevel||x.v.colorCode||'elevated'} <span class="muted">~${Math.round(x.d)} mi</span></div>`).join(''):
+  (arr.length?`<div class="muted">${arr.length} U.S. volcano(es) at elevated alert (mostly Alaska/Hawaii/Cascades) — none within ~300 mi of you. <a href="https://volcanoes.usgs.gov" target="_blank" rel="noopener">USGS</a>.</div>`:'<div class="muted">No U.S. volcanoes at elevated alert right now (USGS).</div>');
+}catch(e){el.innerHTML='<div class="muted">Volcano feed unavailable.</div>';}}
+
+async function loadTropics(lat,lon){const el=$('tropics');try{
+ const j=await(await fetch('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Active_Hurricanes_v1/FeatureServer/1/query?where=1%3D1&outFields=*&returnGeometry=false&f=json')).json();
+ const n=new Set((j.features||[]).map(f=>f.properties.STORMNAME||f.properties.stormName).filter(Boolean)).size;lvl('tropics',n?n+' active':'none',n?C.watch:C.ok);
+ el.innerHTML=n?`<div class="row"><span class="l">Active systems (worldwide)</span><span class="v">${n}</span></div><div class="muted" style="margin-top:4px">See the <a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">National Hurricane Center</a> for tracks, cones &amp; coastal watches/warnings.</div>`:'<div class="muted">No active tropical systems right now (NOAA NHC).</div>';
+}catch(e){el.innerHTML='<div class="muted">NHC feed unavailable.</div>';}}
+
+function lk(href,icon,t,s){return `<a href="${href}" target="_blank" rel="noopener"><i class="ti ${icon}"></i><span>${t}<small>${s}</small></span></a>`;}
+function buildResources(lat,lon){const off=(here.office||'').toLowerCase(),rel=here.rel||{};
+ $('res').innerHTML=
+  lk('https://www.weather.gov/'+off+'/','ti-cloud-storm','Your NWS office'+(here.office?' ('+here.office+')':''),'Official forecasts &amp; warnings')+
+  lk('https://forecast.weather.gov/MapClick.php?lat='+lat+'&lon='+lon,'ti-temperature','Full local forecast','National Weather Service')+
+  lk('https://msc.fema.gov/portal/search?AddressQuery='+encodeURIComponent(here.name),'ti-map','Official FEMA flood map','Look up your property')+
+  lk('https://www.airnow.gov/?city='+encodeURIComponent(rel.city||'')+'&state='+encodeURIComponent(rel.state||''),'ti-lungs','AirNow air quality','EPA — current &amp; forecast')+
+  lk('https://www.ready.gov/','ti-shield-check','Ready.gov','Make a plan, build a kit')+
+  lk('https://www.google.com/search?q='+encodeURIComponent((rel.city?rel.city+' ':'')+(rel.state||'')+' emergency management'),'ti-urgent','Your local emergency management','County / city office')+
+  lk('River_Flood_Network.html','ti-git-fork','River Flood Network','Which upstream tributary drives a flood')+
+  lk('River_Flood_Propagation.html','ti-arrow-down','River Flood Propagation','Downstream flood lead times along a river');
+}
+
+/* ================= ORCHESTRATION ================= */
+function chips(){const items=[
+  ['alerts','Warnings'],['air','Air'],['water','Flood'],['fire','Fire'],['spc','Storms'],['quake','Quakes'],['drought','Drought'],['tropics','Tropics']];
+ $('chips').innerHTML=items.map(([id,lab])=>{const e=$('lvl-'+id);const t=e&&e.style.display!=='none'?e.textContent:'…';const col=e?e.style.color:C.dim;
+  return `<span class="chip"><span class="dot" style="background:${col||C.dim}"></span>${lab} <small>${t}</small></span>`;}).join('');}
+async function loadLocation(loc){mode='local';here={name:loc.name,lat:loc.lat,lon:loc.lon};
+ G.nat.clearLayers();G.pt.clearLayers();G.flood.clearLayers();G.poly.clearLayers();
+ $('place').innerHTML='<i class="ti ti-map-pin"></i> Showing hazards near <b>'+loc.name+'</b>';
+ buildCards();
+ map.setView([loc.lat,loc.lon],10);
+ L.circleMarker([loc.lat,loc.lon],{radius:8,fillColor:C.sea,color:'#fff',weight:2,fillOpacity:.95}).addTo(G.pt).bindPopup('<b>'+loc.name+'</b>');
+ const jobs=[loadAlerts,loadWX,loadSPC,loadAir,loadWater,loadFire,loadQuake,loadDrought,loadVolcano,loadTropics].map(fn=>fn(loc.lat,loc.lon).then(chips).catch(()=>{}));
+ await Promise.all(jobs);chips();
+}
+async function go(){const q=$('q').value;if(!q.trim())return;$('place').innerHTML='<span class="muted"><span class="spin"></span> finding '+q+'…</span>';
+ const loc=await geocode(q);if(!loc){$('place').innerHTML='<span style="color:'+C.alert+'">Couldn\'t find that. Try a 5-digit ZIP, or "Town, ST".</span>';return;}
+ loadLocation(loc);}
+$('go').onclick=go;$('q').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+$('loc').onclick=function(){if(!navigator.geolocation)return;$('place').innerHTML='<span class="muted"><span class="spin"></span> locating…</span>';
+ navigator.geolocation.getCurrentPosition(p=>loadLocation({lat:p.coords.latitude,lon:p.coords.longitude,name:'your location'}),()=>{$('place').innerHTML='<span style="color:'+C.alert+'">Location denied — type a ZIP or town.</span>';});};
+$('src').innerHTML='Sources (all public, no account): NWS api.weather.gov (warnings, forecast), NOAA SPC severe-weather outlook, EPA AirNow (key), FEMA National Flood Hazard Layer, NOAA Tides &amp; Currents, NOAA National Water Prediction Service, NIFC/Esri wildfire incidents, USGS earthquakes &amp; volcano alerts, U.S. Drought Monitor, NOAA National Hurricane Center. Geocoding: Zippopotam.us &amp; OpenStreetMap Nominatim. Lookups run in your browser; nothing is stored.';
+loadNational();
+})();
+</script>
+</body>
+</html>

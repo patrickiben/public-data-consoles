@@ -1,0 +1,134 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resilience Telemetry — Mastery Roadmap</title>
+<style>
+:root{--bg:#081319;--surf2:#0d1c24;--surf:#13262f;--tx:#e9eff3;--dim:#9fb2c0;--green:#1d9e75;--green2:#3cc28e;--amber:#c98a1a;--red:#e24b4a;--blue:#378add;--teal:#26c6da;--bd:rgba(255,255,255,.10);--bd2:rgba(255,255,255,.22);--r:10px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:0 0 60px}
+header{padding:22px 20px 14px;border-bottom:1px solid var(--bd);background:linear-gradient(180deg,#0a1820,transparent)}
+h1{margin:0;font-size:23px;letter-spacing:.4px}
+.sub{color:var(--dim);font-size:12.5px;margin-top:4px}
+.wrap{max-width:920px;margin:0 auto;padding:0 18px}
+.lede{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:15px 17px;margin:18px 0;font-size:13.5px;line-height:1.65}
+.lede b{color:var(--teal)}
+.prog{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 8px;border-bottom:1px solid var(--bd);margin-bottom:6px}
+.bar{height:9px;background:var(--surf2);border-radius:6px;overflow:hidden;border:1px solid var(--bd)}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--teal));width:0;transition:width .3s}
+.proglab{font-size:11.5px;color:var(--dim);margin-top:5px;display:flex;justify-content:space-between}
+.stage{background:var(--surf);border:1px solid var(--bd);border-left:4px solid var(--accent,var(--teal));border-radius:var(--r);padding:15px 17px;margin:14px 0}
+.stage .h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.badge{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--bg);background:var(--accent,var(--teal));border-radius:5px;padding:2px 8px;letter-spacing:.3px}
+.stage h2{margin:0;font-size:16px;flex:1;min-width:0}
+.row{margin:9px 0 0;display:flex;gap:9px}
+.row .k{flex:0 0 118px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);padding-top:2px}
+.row .v{flex:1;font-size:13px}
+.v i.lib{color:var(--teal);font-style:normal}
+.mile{margin-top:13px;padding-top:11px;border-top:1px dashed var(--bd);display:flex;align-items:flex-start;gap:9px;cursor:pointer;user-select:none}
+.mile input{margin-top:3px;accent-color:var(--green);width:16px;height:16px;flex:0 0 auto}
+.mile .t{font-size:12.5px}
+.mile .t b{color:var(--green2)}
+.cap{background:var(--surf2);border:1px solid var(--bd2);border-radius:var(--r);padding:16px 18px;margin:20px 0}
+.cap h2{margin:0 0 7px;font-size:17px;color:var(--teal)}
+.cap p{margin:8px 0;font-size:13.5px}
+.cap .wall{border-left:3px solid var(--red);padding-left:10px;margin-top:12px;color:var(--tx)}
+.read{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:15px 17px;margin:16px 0}
+.read h2{margin:0 0 8px;font-size:16px}
+.read ul{margin:6px 0 0;padding-left:18px}
+.read li{margin:4px 0;font-size:12.5px}
+.read li b{color:var(--tx)}
+.read li span{color:var(--dim)}
+.foot{color:var(--dim);font-size:11px;text-align:center;margin-top:26px;line-height:1.6}
+.reset{background:none;border:1px solid var(--bd);color:var(--dim);border-radius:5px;font-size:11px;padding:3px 9px;cursor:pointer}
+</style></head>
+<body>
+<header><div class="wrap"><h1>Resilience Telemetry — Mastery Roadmap</h1>
+<div class="sub">How to truly master this dashboard, and through it, how to succeed. Mastery here is mostly <b style="color:var(--teal)">unlearning</b>, then <b style="color:var(--teal)">discipline</b>.</div></div></header>
+<div class="wrap">
+
+<div class="lede">The paradox to hold from the start: <b>mastery of this dashboard looks like using it less.</b> You'll check it less often, act rarely, and feel calmer. This is a risk‑and‑behavior instrument — fully mastered, it produces <i>serenity, not activity</i>. Work through the six stages below; check off each milestone when you genuinely own it (your progress is saved on this device). The reading list and the capstone are at the bottom.</div>
+
+<div class="prog"><div class="bar"><i id="pbar"></i></div><div class="proglab"><span id="plab">0 of 6 milestones reached</span><button class="reset" id="reset">reset progress</button></div></div>
+
+<div class="stage" style="--accent:#9fb2c0">
+  <div class="h"><span class="badge">STAGE 0</span><h2>Unlearn prediction — the foundation</h2></div>
+  <div class="row"><div class="k">Internalize</div><div class="v">Direction is unforecastable from where you sit, and it's <b>structural</b>, not a tooling gap. We proved it six ways: direction R²≈0; the cross‑sectional edge collapsing to zero net; BDS showing "chaos" is just volatility; geopolitical/sentiment data at ~0; the breadth lever <i>backfiring</i> (+0.02 → −0.00 as the universe grew); and the canon agreeing. Reflexivity makes it deeper than physics — the market contains its own forecaster, so the law changes the moment it's known.</div></div>
+  <div class="row"><div class="k">On the dashboard</div><div class="v">Read every "<b>Does NOT mean</b>" caveat. Study the <b>Cross‑sectional factor demo</b> exhibit (Predictive tab) — your permanent proof that even doing exactly what quants do, honestly, returns nothing.</div></div>
+  <div class="row"><div class="k">Read</div><div class="v"><i class="lib">Malkiel — A Random Walk Down Wall Street.</i> Plus the console's "why it borrows the water dashboard's lenses but not its foresight" box.</div></div>
+  <label class="mile"><input type="checkbox" data-m="0"><span class="t"><b>Mastery sign:</b> the itch to find a signal is gone — you can explain <i>why</i> to someone without hedging.</span></label>
+</div>
+
+<div class="stage" style="--accent:#26c6da">
+  <div class="h"><span class="badge">STAGE 1</span><h2>Read the Diagnostic tab fluently — what <i>is</i></h2></div>
+  <div class="row"><div class="k">Internalize</div><div class="v">These are coincident thermometers — fragility, coupling, turbulence, the directed network, the cascade. They rise <b>during</b> 2008/2020/2022, not before. Your 51 names are really ~5 effective bets.</div></div>
+  <div class="row"><div class="k">On the dashboard</div><div class="v">Switch to <b>Backtest</b> and scrub through 2018 / COVID / 2022. Watch the panels <i>react</i>, not anticipate — confirm it with your own eyes. Study the factor baskets.</div></div>
+  <div class="row"><div class="k">Read</div><div class="v"><i class="lib">Mandelbrot — The (Mis)behavior of Markets</i> (fat tails &amp; clustering). The operator‑wiki panel sections.</div></div>
+  <label class="mile"><input type="checkbox" data-m="1"><span class="t"><b>Mastery sign:</b> you can narrate the current stress regime accurately <i>and</i> state plainly what it does not imply about next week.</span></label>
+</div>
+
+<div class="stage" style="--accent:#378add">
+  <div class="h"><span class="badge">STAGE 2</span><h2>Know the Predictive tab's honest ceiling — what's <i>barely</i> knowable</h2></div>
+  <div class="row"><div class="k">Internalize</div><div class="v">The <b>horizon map</b>: sub‑second = microstructure (real, inaccessible); days = noise; months = harvested factor premia; years = valuation/discount rates (weak, OOS‑fragile). Volatility is learnable (R²≈0.4); direction isn't (~0).</div></div>
+  <div class="row"><div class="k">On the dashboard</div><div class="v">The vol lab + meta layer (vol forecastable, direction not, more so in stress); the valuation thermometer as a <i>decade</i> expected‑return gauge with huge error bars and the Goyal‑Welch failure badge — never a timing tool.</div></div>
+  <div class="row"><div class="k">Read</div><div class="v"><i class="lib">Cochrane — Discount Rates;</i> <i class="lib">Shiller — Irrational Exuberance;</i> <i class="lib">Goyal &amp; Welch</i> (the indispensable out‑of‑sample‑failure counterweight); <i class="lib">Ilmanen — Expected Returns.</i></div></div>
+  <label class="mile"><input type="checkbox" data-m="2"><span class="t"><b>Mastery sign:</b> you can state what's forecastable at each horizon and why — and never confuse "expected return over years" with "where it goes next."</span></label>
+</div>
+
+<div class="stage" style="--accent:#3cc28e">
+  <div class="h"><span class="badge">STAGE 3</span><h2>Master the Risk tab — where the controllable money lives</h2></div>
+  <div class="row"><div class="k">Internalize</div><div class="v">This is where you actually <b>act</b> — by sizing and diversifying, not predicting. Down‑sizing in high vol genuinely shallowed drawdowns (−36% → −21% on SPY). Diversification is fair‑weather: it collapses exactly when you need it.</div></div>
+  <div class="row"><div class="k">On the dashboard</div><div class="v">The vol‑sizing dial (down‑only), diversification reality (effective bets), crash‑context, the scenario stress‑test (FHS — synthetic crises to size against), drift/rebalance as a <i>rule</i>, and the ballast read (bonds are currently moving <i>with</i> stocks — not ballast).</div></div>
+  <div class="row"><div class="k">Read</div><div class="v"><i class="lib">Pedersen — Efficiently Inefficient;</i> the vol‑targeting debate (Moreira‑Muir vs Cederburg, both sides).</div></div>
+  <label class="mile"><input type="checkbox" data-m="3"><span class="t"><b>Mastery sign:</b> you've written a one‑page <b>risk policy</b> — target‑vol band, rebalance rule, diversification target — and can defend each with its honest evidence <i>and</i> its caveat.</span></label>
+</div>
+
+<div class="stage" style="--accent:#26c6da">
+  <div class="h"><span class="badge">STAGE 4</span><h2>Master yourself — the behavioral guardrail, the only real edge</h2></div>
+  <div class="row"><div class="k">Internalize</div><div class="v">Your own behavior is the biggest determinant of your outcome. Kahneman/Tversky/Thaler: loss‑domain panic, <b>representativeness</b> (the bias behind the entire prediction quest — we are pattern‑seeking animals forecasting randomness), recency, FOMO. Thaler's fix: architect the defaults, don't argue with the wiring.</div></div>
+  <div class="row"><div class="k">On the dashboard</div><div class="v">Actually <b>use</b> the behavioral guardrail. Write your if‑then pre‑commitments. Log decisions. Let the friction pause catch you. And — counter‑intuitively — check the console <i>less</i>.</div></div>
+  <div class="row"><div class="k">Read</div><div class="v"><i class="lib">Kahneman — Thinking, Fast and Slow;</i> <i class="lib">Thaler — Nudge / Misbehaving;</i> <i class="lib">Barber &amp; Odean — Trading Is Hazardous to Your Wealth.</i></div></div>
+  <label class="mile"><input type="checkbox" data-m="4"><span class="t"><b>Mastery sign:</b> you have working pre‑commitments, you monitor less, and you can catch yourself <i>mid‑bias</i>. This is the stage that actually compounds.</span></label>
+</div>
+
+<div class="stage" style="--accent:#c98a1a">
+  <div class="h"><span class="badge">STAGE 5</span><h2>Integrate into a durable strategy — how to truly succeed</h2></div>
+  <div class="row"><div class="k">Internalize</div><div class="v">The synthesis: <b>own the premia</b> (be invested, broadly, cheaply), diversify across true factors, size to risk, rebalance on a rule, govern your behavior, and accept the martingale. Bogle + Ilmanen + Kahneman, operationalized. You win not by being right about the future, but by capturing the premia you're entitled to and not blowing up while compounding works.</div></div>
+  <div class="row"><div class="k">On the dashboard</div><div class="v">Every tab now serves the policy: Diagnostic for situational awareness, Predictive for honest expectations, Risk for sizing and behavior. The console informs the policy; it never overrides it.</div></div>
+  <div class="row"><div class="k">Read</div><div class="v"><i class="lib">Bogle — The Little Book of Common Sense Investing;</i> revisit <i class="lib">Ilmanen.</i> Methodology throughout: <i class="lib">López de Prado — Advances in Financial ML;</i> <i class="lib">Bouchaud et al. — Trades, Quotes and Prices.</i></div></div>
+  <label class="mile"><input type="checkbox" data-m="5"><span class="t"><b>Mastery sign:</b> you have a complete written <b>Investment Policy Statement</b>, and you measure success by <i>adherence, risk‑adjusted outcomes, and mistakes avoided</i> — never by predictions made.</span></label>
+</div>
+
+<div class="read">
+  <h2>The canon — the reading list, ranked</h2>
+  <ul>
+    <li><b>Antti Ilmanen — Expected Returns</b> <span>· the single best synthesis of what actually drives returns.</span></li>
+    <li><b>John Cochrane — Discount Rates (2011) + Asset Pricing</b> <span>· the deepest result on what moves direction (it's risk premia, at long horizons).</span></li>
+    <li><b>Robert Shiller — Irrational Exuberance + the CAPE work</b> <span>· home of the one free, weakly‑predictive long‑horizon signal.</span></li>
+    <li><b>Goyal &amp; Welch — A Comprehensive Look at Equity Premium Prediction</b> <span>· the honesty counterweight: most predictors fail out‑of‑sample.</span></li>
+    <li><b>Lasse Pedersen — Efficiently Inefficient</b> <span>· the honest practitioner equilibrium (inefficient enough to pay skill, no more).</span></li>
+    <li><b>Kahneman; Thaler; Barber &amp; Odean</b> <span>· the behavioral core — the only edge you can actually control.</span></li>
+    <li><b>Bouchaud et al. — Trades, Quotes and Prices · López de Prado — Advances in Financial ML</b> <span>· why price is a response to flow, and why most "edges" are overfit.</span></li>
+    <li><b>Malkiel — A Random Walk · Mandelbrot — The (Mis)behavior of Markets</b> <span>· the start and the temperament: efficiency, and fat‑tailed humility.</span></li>
+  </ul>
+</div>
+
+<div class="cap">
+  <h2>The capstone — what mastery actually looks like</h2>
+  <p>You'll know you've mastered this not by what you predict, but by how little you need to. <b>Fully mastered, this dashboard is used less, not more</b> — you check rarely, act rarely, and stay calm through stress that used to feel like a reason to do something. A risk‑and‑behavior instrument, mastered, produces serenity, not activity.</p>
+  <p>The redefinition of success <i>is</i> the final lesson, and the hardest: you don't win by being right about the future. You win by being <b>invested, diversified, low‑cost, correctly sized, and behaviorally disciplined</b> — and by not blowing up while compounding does the work.</p>
+  <p class="wall"><b>The hard wall, never crossed:</b> no market gauge on this console may ever justify a trade. The Risk tab describes the weather and brakes your hand — it never tells you to act on a forecast, because there is no forecast.</p>
+</div>
+
+<div class="foot">Companion to <b>Resilience_Telemetry_Console.html</b> · descriptive, not predictive · educational, not investment advice.<br>Your milestone progress is saved locally in this browser only.</div>
+</div>
+<script>
+const KEY='rt_mastery_v1';
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
+function save(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
+function refresh(){const s=load();let n=0;document.querySelectorAll('.mile input').forEach(c=>{const on=!!s[c.dataset.m];c.checked=on;if(on)n++;});
+  document.getElementById('pbar').style.width=(n/6*100)+'%';
+  const lab=n===6?'All 6 milestones reached — mastery is using it less.':(n+' of 6 milestones reached');
+  document.getElementById('plab').textContent=lab;}
+document.querySelectorAll('.mile input').forEach(c=>c.addEventListener('change',()=>{const s=load();s[c.dataset.m]=c.checked;save(s);refresh();}));
+document.getElementById('reset').addEventListener('click',()=>{save({});refresh();});
+refresh();
+</script>
+</body></html>

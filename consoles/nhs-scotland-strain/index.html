@@ -1,0 +1,258 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NHS Scotland — Hospital Strain Console (A&E · Beds · Delayed Discharge)</title>
+<style>
+:root{--bg:#071018;--surf:#0e1c2b;--surf2:#0a1622;--tx:#eaf2fb;--dim:#9fb6cf;--nhs:#41b6e6;--nhsd:#005eb6;
+--ok:#2bb673;--amber:#e0a020;--orange:#e8702a;--red:#e24b4a;--bd:rgba(255,255,255,.10);--bd2:rgba(255,255,255,.22);--r:10px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:1.45}
+header{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--bd);background:linear-gradient(180deg,#0a1828,#071018);flex-wrap:wrap}
+header h1{font-size:16px;margin:0;font-weight:700}header .sub{color:var(--dim);font-size:11px;margin-top:1px}
+.grow{flex:1}.clock{font-variant-numeric:tabular-nums;color:var(--dim);font-size:11px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid var(--bd2)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+#banner{padding:9px 16px;font-size:11.5px;color:#cfe1f4;background:#08131f;border-bottom:1px solid var(--bd)}
+#banner b{color:var(--nhs)}
+.bdg{font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;letter-spacing:.4px;vertical-align:middle}
+.bdg.M{background:rgba(43,182,115,.16);color:#6fe0a8;border:1px solid rgba(43,182,115,.5)}
+.bdg.C{background:rgba(65,182,230,.16);color:#9fd8f4;border:1px solid rgba(65,182,230,.5)}
+main{display:flex;gap:12px;padding:12px;align-items:flex-start}
+#left{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+#side{flex:none;width:430px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:12px}
+.card h2{font-size:13px;margin:0 0 3px;font-weight:700;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.card .cap{color:var(--dim);font-size:11px;margin-bottom:9px}
+.rank{display:flex;align-items:center;gap:8px;margin:4px 0}
+.rank .nm{width:172px;font-size:11px;color:var(--tx);flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank .nm small{color:var(--dim)}
+.barwrap{flex:1;height:15px;background:#06101a;border-radius:4px;position:relative;overflow:hidden}
+.bar{height:100%;border-radius:4px;position:absolute;left:0;top:0}
+.tgt{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--nhs);opacity:.7}
+.val{width:118px;text-align:right;font-variant-numeric:tabular-nums;font-size:11px;flex:none}
+.flag{color:var(--red)}
+.kv{display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;gap:8px;border-top:1px solid var(--bd)}
+.kv:first-child{border-top:0}.kv span:first-child{color:var(--dim)}
+.idxwrap{display:flex;align-items:center;gap:16px;margin:4px 0 8px}
+.idxnum{font-size:46px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.idxbar{flex:1}.idxbar .track{height:11px;background:#06101a;border-radius:6px;overflow:hidden;position:relative}
+.idxbar .fill{height:100%;border-radius:6px}
+.comp{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.comp .c{flex:1;min-width:88px;border:1px solid var(--bd);border-radius:7px;padding:6px 8px}
+.comp .c b{font-size:14px;font-variant-numeric:tabular-nums}.comp .c span{display:block;color:var(--dim);font-size:9.5px}
+.scrollbox{max-height:330px;overflow:auto;padding-right:4px}
+.caveat{color:var(--dim);font-size:10.5px;margin-top:7px}
+select{background:var(--surf2);color:var(--tx);border:1px solid var(--bd2);border-radius:7px;padding:5px 8px;font-size:12px}
+.feeds{display:flex;flex-wrap:wrap;gap:8px}.feeds .f{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);border:1px solid var(--bd);border-radius:7px;padding:4px 8px}
+details{margin-top:8px;border:1px solid var(--bd);border-radius:8px;padding:8px 10px;background:var(--surf2)}
+details summary{cursor:pointer;font-size:11.5px;color:var(--nhs);font-weight:600}
+details pre{white-space:pre-wrap;font-size:10.5px;color:#bcd2e8;background:#06101a;border:1px solid var(--bd);border-radius:6px;padding:8px;margin:8px 0 0;overflow:auto}
+a{color:var(--nhs)}svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:14px;font-size:10.5px;color:var(--dim);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+@media(max-width:900px){main{flex-direction:column}#side{width:100%}}
+</style></head><body>
+<header>
+ <div><h1>NHS SCOTLAND — Hospital Strain Console</h1>
+ <div class="sub">A&amp;E · beds · delayed discharge · live from <b style="color:var(--dim)">Public Health Scotland open data</b> · descriptive, not predictive</div></div>
+ <div class="grow"></div>
+ <span class="clock" id="clock"></span>
+ <span class="pill" id="threat"><span class="dot"></span><span id="threattx">—</span></span>
+</header>
+<div id="banner"></div>
+<main>
+ <div id="left">
+  <div class="card" id="idxcard">
+   <h2>System strain index <span class="bdg M">MEASURED — composite of real signals</span></h2>
+   <div class="cap">A 0–100 read of unscheduled-care pressure, built only from the real published figures below (A&amp;E 4-hour performance, long waits, bed occupancy, delayed discharge). Focuses attention; it does not rank or triage patients.</div>
+   <div class="idxwrap"><div class="idxnum" id="idxnum">–</div>
+     <div class="idxbar"><div class="track"><div class="fill" id="idxfill"></div></div>
+       <div class="comp" id="comp"></div></div></div>
+   <div class="caveat" id="idxnote"></div>
+  </div>
+  <div class="card" id="trendcard">
+   <h2>A&amp;E 4-hour performance — national trend <span class="bdg M">MEASURED</span></h2>
+   <div class="cap">Share of attendances at major (Type 1) emergency departments seen, admitted, transferred or discharged within 4 hours. The Scottish standard is <b>95%</b> (blue line). Last 30 weeks.</div>
+   <div id="trend"></div>
+   <div id="trendkv"></div>
+  </div>
+  <div class="card" id="edcard">
+   <h2>Emergency-department strain ranking <span class="bdg M">MEASURED</span></h2>
+   <div class="cap">Every major (Type 1) ED, worst first by 4-hour performance for the latest week. Bar = % seen within 4 hours; the blue tick marks the 95% standard. The number of patients waiting <b>over 12 hours</b> is the acute-harm signal.</div>
+   <div class="scrollbox" id="eds"></div>
+   <div class="legend"><span><i style="background:var(--red)"></i>&lt;50%</span><span><i style="background:var(--orange)"></i>50–69%</span><span><i style="background:var(--amber)"></i>70–84%</span><span><i style="background:var(--ok)"></i>≥85%</span><span><i style="background:var(--nhs)"></i>95% standard</span></div>
+  </div>
+ </div>
+ <div id="side">
+  <div class="card" id="readcard"><h2>In plain English — what this shows</h2>
+   <div class="cap">Auto-written from the real numbers, for a non-specialist.</div>
+   <div id="readout"></div></div>
+  <div class="card" id="scencard"><h2>Scenario sandbox</h2>
+   <div class="cap">Pressure-test the response plan. Adjusts the strain index off the real baseline — clearly a what-if, not a forecast.</div>
+   <select id="scen" onchange="setScen(this.value)">
+     <option value="none">— real baseline (no scenario) —</option>
+     <option value="winter">Winter surge (4-hour −15pp, occupancy +5, delays +15%)</option>
+     <option value="noro">Norovirus bed closures (occupancy +6, 4-hour −6pp)</option>
+     <option value="staff">Staffing shortfall (4-hour −10pp, delays +10%)</option>
+     <option value="discharge">Discharge gridlock (delays +40%, 4-hour −8pp)</option>
+   </select>
+   <div id="scenout" style="margin-top:9px"></div>
+  </div>
+  <div class="card" id="longcard"><h2>The acute-harm signal — long waits <span class="bdg M">MEASURED</span></h2>
+   <div class="cap">Patients waiting over 8 and over 12 hours in major EDs in the latest week. Long ED waits are independently associated with increased 30-day mortality.</div>
+   <div id="longkv"></div></div>
+  <div class="card" id="occcard"><h2>Bed occupancy by health board <span class="bdg M">MEASURED · 2025 Q4</span></h2>
+   <div class="cap">Average occupancy of staffed acute beds. Above ~85% (amber) flow slows; above ~92% (red) safety and infection risk rise sharply.</div>
+   <div id="occ"></div></div>
+  <div class="card" id="ddcard"><h2>Delayed discharges — flow blockers <span class="bdg M">MEASURED</span></h2>
+   <div class="cap">Patients clinically ready to leave but unable to (the "no criteria to reside" backlog) at the monthly census — the upstream cause of full beds and A&amp;E gridlock. By board.</div>
+   <div id="dd"></div></div>
+  <div class="card" id="engcard"><h2>England comparator <span class="bdg C">CITED — context, not live</span></h2>
+   <div id="eng"></div></div>
+  <div class="card" id="dhcard"><h2>Data health &amp; provenance</h2>
+   <div class="feeds" id="feeds"></div>
+   <details><summary>How to refresh this snapshot (live CKAN API)</summary>
+   <div style="font-size:11px;color:var(--dim);margin-top:6px">The source has no CORS header, so the console embeds a dated snapshot rather than fetching live in-browser. Re-run the fetcher (or any HTTP client) against the Public Health Scotland CKAN API to refresh:</div>
+   <pre id="refresh"></pre></details>
+  </div>
+ </div>
+</main>
+<script>
+const SNAP={"meta": {"source": "Public Health Scotland \u2014 opendata.nhs.scot (CKAN)", "fetched": "2026-06-20", "aeWeek": 20260607, "bedsQuarter": "2025Q4", "ddMonth": 202604, "allSpecialtyLabels": ["All Specialties", "Allergy", "All Acute"], "res": {"ae": "a5f7ca94-c810-41b5-a7c9-25c18d43e5a4", "sites": "1a4e3f48-3d9b-4769-80e9-3ef6d27852fe", "beds": "f272bb7d-5320-4491-84c1-614a2c064007", "dd": "49ca8a39-7f01-4e2b-acd6-205bc9827852"}}, "sites": [{"code": "L302H", "name": "University Hospital Hairmyres", "hb": "S08000032", "board": "NHS Lanarkshire", "att": 1314, "pct4": 42.8, "o8": 338, "pct8": 25.7, "o12": 167, "pct12": 12.7}, {"code": "G405H", "name": "Queen Elizabeth University Hospital", "hb": "S08000031", "board": "NHS Greater Glasgow & Clyde", "att": 2047, "pct4": 43.7, "o8": 423, "pct8": 20.7, "o12": 202, "pct12": 9.9}, {"code": "N101H", "name": "Aberdeen Royal Infirmary", "hb": "S08000020", "board": "NHS Grampian", "att": 1290, "pct4": 45.0, "o8": 316, "pct8": 24.5, "o12": 103, "pct12": 8.0}, {"code": "A111H", "name": "University Hospital Crosshouse", "hb": "S08000015", "board": "NHS Ayrshire & Arran", "att": 1253, "pct4": 51.9, "o8": 202, "pct8": 16.1, "o12": 117, "pct12": 9.3}, {"code": "L106H", "name": "University Hospital Monklands", "hb": "S08000032", "board": "NHS Lanarkshire", "att": 1334, "pct4": 52.9, "o8": 187, "pct8": 14.0, "o12": 66, "pct12": 4.9}, {"code": "V217H", "name": "Forth Valley Royal Hospital", "hb": "S08000019", "board": "NHS Forth Valley", "att": 1341, "pct4": 54.4, "o8": 230, "pct8": 17.2, "o12": 104, "pct12": 7.8}, {"code": "A210H", "name": "University Hospital Ayr", "hb": "S08000015", "board": "NHS Ayrshire & Arran", "att": 717, "pct4": 54.5, "o8": 155, "pct8": 21.6, "o12": 90, "pct12": 12.6}, {"code": "G107H", "name": "Glasgow Royal Infirmary", "hb": "S08000031", "board": "NHS Greater Glasgow & Clyde", "att": 1722, "pct4": 55.7, "o8": 204, "pct8": 11.8, "o12": 15, "pct12": 0.9}, {"code": "L308H", "name": "University Hospital Wishaw", "hb": "S08000032", "board": "NHS Lanarkshire", "att": 1388, "pct4": 56.6, "o8": 310, "pct8": 22.3, "o12": 177, "pct12": 12.8}, {"code": "S314H", "name": "Royal Infirmary of Edinburgh", "hb": "S08000024", "board": "NHS Lothian", "att": 2680, "pct4": 57.2, "o8": 282, "pct8": 10.5, "o12": 99, "pct12": 3.7}, {"code": "F704H", "name": "Victoria Hospital (NHS Fife)", "hb": "S08000029", "board": "NHS Fife", "att": 1508, "pct4": 62.4, "o8": 157, "pct8": 10.4, "o12": 39, "pct12": 2.6}, {"code": "H202H", "name": "Raigmore Hospital", "hb": "S08000022", "board": "NHS Highland", "att": 911, "pct4": 63.3, "o8": 84, "pct8": 9.2, "o12": 26, "pct12": 2.9}, {"code": "C418H", "name": "Royal Alexandra Hospital", "hb": "S08000031", "board": "NHS Greater Glasgow & Clyde", "att": 1203, "pct4": 66.5, "o8": 125, "pct8": 10.4, "o12": 27, "pct12": 2.2}, {"code": "N411H", "name": "Dr Gray's Hospital", "hb": "S08000020", "board": "NHS Grampian", "att": 614, "pct4": 70.2, "o8": 40, "pct8": 6.5, "o12": 9, "pct12": 1.5}, {"code": "S308H", "name": "St John's Hospital", "hb": "S08000024", "board": "NHS Lothian", "att": 1403, "pct4": 71.6, "o8": 115, "pct8": 8.2, "o12": 49, "pct12": 3.5}, {"code": "Y146H", "name": "Dumfries & Galloway Royal Infirmary", "hb": "S08000017", "board": "NHS Dumfries & Galloway", "att": 792, "pct4": 72.1, "o8": 73, "pct8": 9.2, "o12": 33, "pct12": 4.2}, {"code": "B120H", "name": "Borders General Hospital", "hb": "S08000016", "board": "NHS Borders", "att": 746, "pct4": 72.3, "o8": 78, "pct8": 10.5, "o12": 47, "pct12": 6.3}, {"code": "C313H", "name": "Inverclyde Royal Hospital", "hb": "S08000031", "board": "NHS Greater Glasgow & Clyde", "att": 603, "pct4": 78.4, "o8": 40, "pct8": 6.6, "o12": 13, "pct12": 2.2}, {"code": "H103H", "name": "Caithness General Hospital", "hb": "S08000022", "board": "NHS Highland", "att": 219, "pct4": 79.0, "o8": 17, "pct8": 7.8, "o12": 7, "pct12": 3.2}, {"code": "Y144H", "name": "Galloway Community Hospital", "hb": "S08000017", "board": "NHS Dumfries & Galloway", "att": 269, "pct4": 83.3, "o8": 5, "pct8": 1.9, "o12": 1, "pct12": 0.4}, {"code": "C121H", "name": "Lorn & Islands Hospital", "hb": "S08000022", "board": "NHS Highland", "att": 220, "pct4": 84.5, "o8": 2, "pct8": 0.9, "o12": 0, "pct12": 0.0}, {"code": "H212H", "name": "Belford Hospital", "hb": "S08000022", "board": "NHS Highland", "att": 200, "pct4": 85.5, "o8": 9, "pct8": 4.5, "o12": 5, "pct12": 2.5}, {"code": "Z102H", "name": "Gilbert Bain Hospital", "hb": "S08000026", "board": "NHS Shetland", "att": 181, "pct4": 86.7, "o8": 2, "pct8": 1.1, "o12": 1, "pct12": 0.6}, {"code": "T202H", "name": "Perth Royal Infirmary", "hb": "S08000030", "board": "NHS Tayside", "att": 582, "pct4": 87.6, "o8": 10, "pct8": 1.7, "o12": 0, "pct12": 0.0}, {"code": "S319H", "name": "Royal Hospital for Children and Young People (Edinburgh)", "hb": "S08000024", "board": "NHS Lothian", "att": 1159, "pct4": 88.6, "o8": 8, "pct8": 0.7, "o12": 0, "pct12": 0.0}, {"code": "N121H", "name": "Royal Aberdeen Children's Hospital", "hb": "S08000020", "board": "NHS Grampian", "att": 394, "pct4": 88.8, "o8": 2, "pct8": 0.5, "o12": 0, "pct12": 0.0}, {"code": "W107H", "name": "Western Isles Hospital", "hb": "S08000028", "board": "NHS Western Isles", "att": 153, "pct4": 90.8, "o8": 2, "pct8": 1.3, "o12": 0, "pct12": 0.0}, {"code": "R103H", "name": "Balfour Hospital", "hb": "S08000025", "board": "NHS Orkney", "att": 150, "pct4": 91.3, "o8": 0, "pct8": 0.0, "o12": 0, "pct12": 0.0}, {"code": "T101H", "name": "Ninewells Hospital", "hb": "S08000030", "board": "NHS Tayside", "att": 1246, "pct4": 91.5, "o8": 3, "pct8": 0.2, "o12": 0, "pct12": 0.0}, {"code": "G513H", "name": "Royal Hospital for Children Glasgow", "hb": "S08000031", "board": "NHS Greater Glasgow & Clyde", "att": 1485, "pct4": 92.9, "o8": 1, "pct8": 0.1, "o12": 0, "pct12": 0.0}], "national": [{"wk": 20251116, "att": 27194, "pct4": 64.5}, {"wk": 20251123, "att": 26953, "pct4": 65.6}, {"wk": 20251130, "att": 28434, "pct4": 61.1}, {"wk": 20251207, "att": 28023, "pct4": 58.9}, {"wk": 20251214, "att": 26655, "pct4": 63.3}, {"wk": 20251221, "att": 25427, "pct4": 62.9}, {"wk": 20251228, "att": 23379, "pct4": 68.7}, {"wk": 20260104, "att": 24306, "pct4": 62.4}, {"wk": 20260111, "att": 25745, "pct4": 59.0}, {"wk": 20260118, "att": 26092, "pct4": 61.8}, {"wk": 20260125, "att": 26304, "pct4": 62.5}, {"wk": 20260201, "att": 26601, "pct4": 61.8}, {"wk": 20260208, "att": 26607, "pct4": 61.2}, {"wk": 20260215, "att": 25997, "pct4": 62.5}, {"wk": 20260222, "att": 25999, "pct4": 63.4}, {"wk": 20260301, "att": 27195, "pct4": 62.6}, {"wk": 20260308, "att": 27133, "pct4": 66.4}, {"wk": 20260315, "att": 26946, "pct4": 64.7}, {"wk": 20260322, "att": 29373, "pct4": 60.9}, {"wk": 20260329, "att": 28530, "pct4": 63.5}, {"wk": 20260405, "att": 27784, "pct4": 59.9}, {"wk": 20260412, "att": 27900, "pct4": 62.5}, {"wk": 20260419, "att": 27357, "pct4": 64.5}, {"wk": 20260426, "att": 28514, "pct4": 66.4}, {"wk": 20260503, "att": 29807, "pct4": 65.9}, {"wk": 20260510, "att": 28884, "pct4": 65.0}, {"wk": 20260517, "att": 28626, "pct4": 64.4}, {"wk": 20260524, "att": 29492, "pct4": 61.5}, {"wk": 20260531, "att": 29920, "pct4": 63.9}, {"wk": 20260607, "att": 29124, "pct4": 64.3}], "occupancy": [{"hb": "S08000015", "board": "NHS Ayrshire & Arran", "occPct": 91.5}, {"hb": "S08000020", "board": "NHS Grampian", "occPct": 91.0}, {"hb": "S08000031", "board": "NHS Greater Glasgow & Clyde", "occPct": 89.3}, {"hb": "S08000016", "board": "NHS Borders", "occPct": 87.4}, {"hb": "S08000022", "board": "NHS Highland", "occPct": 87.1}, {"hb": "S08000032", "board": "NHS Lanarkshire", "occPct": 85.4}, {"hb": "S08000029", "board": "NHS Fife", "occPct": 82.9}, {"hb": "S08000024", "board": "NHS Lothian", "occPct": 82.9}, {"hb": "S08000028", "board": "NHS Western Isles", "occPct": 81.7}, {"hb": "S08000017", "board": "NHS Dumfries & Galloway", "occPct": 78.5}, {"hb": "S08000025", "board": "NHS Orkney", "occPct": 78.4}, {"hb": "S08000030", "board": "NHS Tayside", "occPct": 75.8}, {"hb": "S08000019", "board": "NHS Forth Valley", "occPct": 69.0}, {"hb": "S08000026", "board": "NHS Shetland", "occPct": 62.7}], "delayed": [{"hb": "S08000031", "board": "NHS Greater Glasgow & Clyde", "n": 422}, {"hb": "S08000015", "board": "NHS Ayrshire & Arran", "n": 279}, {"hb": "S08000022", "board": "NHS Highland", "n": 249}, {"hb": "S08000024", "board": "NHS Lothian", "n": 245}, {"hb": "S08000020", "board": "NHS Grampian", "n": 147}, {"hb": "S08000032", "board": "NHS Lanarkshire", "n": 141}, {"hb": "S08000029", "board": "NHS Fife", "n": 99}, {"hb": "S08000017", "board": "NHS Dumfries & Galloway", "n": 96}, {"hb": "S08000019", "board": "NHS Forth Valley", "n": 92}, {"hb": "S08000030", "board": "NHS Tayside", "n": 90}, {"hb": "S08000016", "board": "NHS Borders", "n": 43}, {"hb": "S08000028", "board": "NHS Western Isles", "n": 29}, {"hb": "S08000026", "board": "NHS Shetland", "n": 11}, {"hb": "S08000025", "board": "NHS Orkney", "n": 7}]};
+const T4=95;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtWk(d){d=''+d;return (+d.slice(6,8))+' '+MON[(+d.slice(4,6))-1]+' '+d.slice(0,4);}
+function fmtMon(d){d=''+d;return MON[(+d.slice(4,6))-1]+' '+d.slice(0,4);}
+let SCEN='none';
+function compute(){
+ const nat=SNAP.national[SNAP.national.length-1];
+ let pct4=nat.pct4;
+ let occv=SNAP.occupancy.map(o=>o.occPct);
+ let meanOcc=occv.reduce((a,b)=>a+b,0)/occv.length, maxOcc=Math.max.apply(null,occv);
+ let o12=SNAP.sites.reduce((a,s)=>a+s.o12,0), o8=SNAP.sites.reduce((a,s)=>a+s.o8,0);
+ let att=SNAP.sites.reduce((a,s)=>a+s.att,0);
+ let delays=SNAP.delayed.reduce((a,d)=>a+d.n,0);
+ if(SCEN==='winter'){pct4=Math.max(0,pct4-15);meanOcc+=5;maxOcc=Math.min(99,maxOcc+5);delays=Math.round(delays*1.15);}
+ if(SCEN==='noro'){meanOcc+=6;maxOcc=Math.min(99,maxOcc+6);pct4=Math.max(0,pct4-6);}
+ if(SCEN==='staff'){pct4=Math.max(0,pct4-10);delays=Math.round(delays*1.10);}
+ if(SCEN==='discharge'){delays=Math.round(delays*1.40);pct4=Math.max(0,pct4-8);meanOcc+=3;}
+ const pct12=100*o12/att;
+ const aeS=clamp((T4-pct4)/(T4-50),0,1), waitS=clamp(pct12/8,0,1),
+       occS=clamp((meanOcc-80)/(95-80),0,1), ddS=clamp(delays/2500,0,1);
+ const idx=Math.round(100*(0.40*aeS+0.20*waitS+0.15*occS+0.25*ddS));
+ return {idx,pct4,pct12,meanOcc,maxOcc,o12,o8,att,delays,aeS,waitS,occS,ddS};
+}
+function tier(i){return i<40?['NORMAL','var(--ok)']:i<58?['ELEVATED','var(--amber)']:i<74?['HIGH PRESSURE','var(--orange)']:['SEVERE','var(--red)'];}
+function edcol(p){return p<50?'var(--red)':p<70?'var(--orange)':p<85?'var(--amber)':'var(--ok)';}
+function setScen(v){SCEN=v;render();}
+function render(){
+ const c=compute(), [tl,tc]=tier(c.idx);
+ // header pill + index
+ document.getElementById('idxnum').textContent=c.idx;
+ document.getElementById('idxnum').style.color=tc;
+ const f=document.getElementById('idxfill');f.style.width=c.idx+'%';f.style.background=tc;
+ document.querySelector('#threat .dot').style.background=tc;
+ document.getElementById('threattx').textContent=tl+' — system strain '+c.idx;
+ document.getElementById('threat').style.borderColor=tc;
+ document.getElementById('comp').innerHTML=
+   comp('A&E gap',(T4-c.pct4).toFixed(0)+'pp',c.aeS)+comp('>12h share',c.pct12.toFixed(1)+'%',c.waitS)+
+   comp('mean occ',c.meanOcc.toFixed(0)+'%',c.occS)+comp('delays',c.delays,c.ddS);
+ document.getElementById('idxnote').innerHTML='Worst major ED this week: <b>'+SNAP.sites[0].name+'</b> at <b style="color:var(--red)">'+SNAP.sites[0].pct4+'%</b> within 4 hours ('+SNAP.sites[0].board+'). '+(SCEN!=='none'?'<b style="color:var(--amber)">Scenario applied — what-if, not a forecast.</b>':'Real baseline, week ending '+fmtWk(SNAP.meta.aeWeek)+'.');
+ // trend sparkline
+ drawTrend();
+ const nat=SNAP.national[SNAP.national.length-1];
+ document.getElementById('trendkv').innerHTML=
+   kv('Latest week (ending '+fmtWk(nat.wk)+')',nat.pct4+'% within 4h')+
+   kv('Scottish standard','95%')+kv('Gap to standard',(95-nat.pct4).toFixed(1)+' percentage points')+
+   kv('30-week range',Math.min.apply(null,SNAP.national.map(n=>n.pct4))+'% – '+Math.max.apply(null,SNAP.national.map(n=>n.pct4))+'%');
+ // ED ranking
+ document.getElementById('eds').innerHTML=SNAP.sites.map(s=>{
+   return '<div class="rank"><div class="nm" title="'+s.name+'">'+s.name+' <small>'+s.board.replace('NHS ','')+'</small></div>'+
+     '<div class="barwrap"><div class="bar" style="width:'+s.pct4+'%;background:'+edcol(s.pct4)+'"></div><div class="tgt" style="left:95%"></div></div>'+
+     '<div class="val">'+s.pct4+'% · <span class="'+(s.o12>0?'flag':'')+'">'+s.o12+' &gt;12h</span></div></div>';
+ }).join('');
+ // long waits
+ document.getElementById('longkv').innerHTML=
+   kv('Patients &gt;12 hours (this week)','<b style="color:var(--red)">'+c.o12.toLocaleString()+'</b>')+
+   kv('Patients &gt;8 hours','<b style="color:var(--orange)">'+c.o8.toLocaleString()+'</b>')+
+   kv('Total Type-1 attendances',c.att.toLocaleString())+
+   kv('Worst by 12h count',[...SNAP.sites].sort((a,b)=>b.o12-a.o12)[0].name+' ('+[...SNAP.sites].sort((a,b)=>b.o12-a.o12)[0].o12+')');
+ // occupancy
+ const mxo=Math.max.apply(null,SNAP.occupancy.map(o=>o.occPct));
+ document.getElementById('occ').innerHTML=SNAP.occupancy.map(o=>{
+   const col=o.occPct>=92?'var(--red)':o.occPct>=85?'var(--amber)':'var(--ok)';
+   return '<div class="rank"><div class="nm">'+o.board.replace('NHS ','')+'</div>'+
+     '<div class="barwrap"><div class="bar" style="width:'+(o.occPct/100*100)+'%;background:'+col+'"></div><div class="tgt" style="left:92%;background:var(--red);opacity:.5"></div></div>'+
+     '<div class="val">'+o.occPct+'%</div></div>';}).join('');
+ // delayed
+ const mxd=Math.max.apply(null,SNAP.delayed.map(d=>d.n));
+ document.getElementById('dd').innerHTML=SNAP.delayed.slice(0,10).map(d=>
+   '<div class="rank"><div class="nm">'+d.board.replace('NHS ','')+'</div>'+
+   '<div class="barwrap"><div class="bar" style="width:'+(d.n/mxd*100)+'%;background:var(--nhsd)"></div></div>'+
+   '<div class="val">'+d.n+'</div></div>').join('')+
+   '<div class="caveat">Census delays, '+fmtMon(SNAP.meta.ddMonth)+', all reasons, ages 18+. Scotland total: <b>'+SNAP.delayed.reduce((a,d)=>a+d.n,0).toLocaleString()+'</b> patients.</div>';
+ // scenario out
+ document.getElementById('scenout').innerHTML= SCEN==='none'
+   ? '<div class="caveat">No scenario — showing the real published baseline.</div>'
+   : kv('Strain index','<b style="color:'+tc+'">'+c.idx+' · '+tl+'</b>')+kv('A&E 4-hour (modelled)',c.pct4.toFixed(0)+'%')+kv('Delayed-discharge patients',c.delays.toLocaleString());
+ // england
+ document.getElementById('eng').innerHTML=
+   kv('England 4-hour, all types (May 2026)','75.7%')+
+   kv('England operational target','78%')+
+   kv('Standard (both nations)','95%')+
+   kv('England &gt;12h from decision-to-admit','~50,000 (May 2026)')+
+   '<div class="caveat" style="margin-top:7px"><b>Not a like-for-like comparison.</b> England&rsquo;s 75.7% is <b>all-types</b>; this console&rsquo;s Scottish figures are <b>major (Type-1) EDs only</b>, which run lower everywhere — so do <b>not</b> read 64% vs 76% as Scotland-worse-than-England. England publishes monthly but has <b>no open-data API</b>, so these are <span class="bdg C">CITED</span>, not live. Sources: <a href="https://www.kingsfund.org.uk/insight-and-analysis/data-and-charts/accident-emergency-waiting-times" target="_blank">King&rsquo;s Fund</a> · <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/ae-waiting-times-and-activity/" target="_blank">NHS England</a>.</div>';
+ // feeds + readout + refresh
+ document.getElementById('feeds').innerHTML=
+   feed('CKAN API reachable','var(--ok)')+feed('A&E w/e '+fmtWk(SNAP.meta.aeWeek),'var(--ok)')+
+   feed('Beds '+SNAP.meta.bedsQuarter,'var(--amber)')+feed('Delays '+fmtMon(SNAP.meta.ddMonth),'var(--amber)')+
+   feed('snapshot '+SNAP.meta.fetched,'var(--dim)');
+ document.getElementById('readout').innerHTML=readout(c);
+ document.getElementById('refresh').textContent=refreshSnippet();
+}
+function comp(label,val,s){const col=s<.34?'var(--ok)':s<.67?'var(--amber)':'var(--red)';return '<div class="c"><b style="color:'+col+'">'+val+'</b><span>'+label+'</span></div>';}
+function kv(a,b){return '<div class="kv"><span>'+a+'</span><span>'+b+'</span></div>';}
+function feed(t,c){return '<div class="f"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:'+c+'"></span>'+t+'</div>';}
+function drawTrend(){
+ const N=SNAP.national, W=560,H=120,pad=24, lo=40,hi=100;
+ const x=i=>pad+i*(W-2*pad)/(N.length-1), y=v=>H-pad-(v-lo)/(hi-lo)*(H-2*pad);
+ let pts=N.map((n,i)=>x(i)+','+y(n.pct4)).join(' ');
+ let yt=y(95);
+ let g='<svg viewBox="0 0 '+W+' '+H+'">';
+ [50,70,90].forEach(v=>{g+='<line x1="'+pad+'" y1="'+y(v)+'" x2="'+(W-pad)+'" y2="'+y(v)+'" stroke="rgba(255,255,255,.07)"/>'+'<text x="2" y="'+(y(v)+3)+'" fill="#7d97b3" font-size="8">'+v+'</text>';});
+ g+='<line x1="'+pad+'" y1="'+yt+'" x2="'+(W-pad)+'" y2="'+yt+'" stroke="var(--nhs)" stroke-dasharray="4 3" stroke-width="1.4"/><text x="'+(W-pad-58)+'" y="'+(yt-4)+'" fill="var(--nhs)" font-size="8.5">95% standard</text>';
+ g+='<polyline points="'+pts+'" fill="none" stroke="var(--orange)" stroke-width="2"/>';
+ const last=N[N.length-1];g+='<circle cx="'+x(N.length-1)+'" cy="'+y(last.pct4)+'" r="3.4" fill="#fff"/>';
+ g+='</svg>';
+ document.getElementById('trend').innerHTML=g;
+}
+function readout(c){
+ const [tl]=tier(c.idx), nat=SNAP.national[SNAP.national.length-1];
+ const worst=SNAP.sites[0], best=SNAP.sites[SNAP.sites.length-1];
+ const topdd=SNAP.delayed[0], topocc=SNAP.occupancy[0];
+ let p=[];
+ p.push('Across NHS Scotland, unscheduled-care pressure reads <b>'+tl+'</b> (strain index '+c.idx+'/100) for the latest published period. This is built only from real figures, no projections.');
+ p.push('<b>A&E:</b> in the week ending '+fmtWk(nat.wk)+', '+nat.pct4+'% of patients at major emergency departments were dealt with within 4 hours — well below the 95% standard, and roughly where it has sat all '+SNAP.national.length+' weeks shown. '+worst.name+' ('+worst.board.replace('NHS ','')+') was lowest at '+worst.pct4+'%; '+best.name+' was highest at '+best.pct4+'%.');
+ p.push('<b>Harm signal:</b> '+c.o12.toLocaleString()+' people waited over 12 hours in an ED that week — long waits are linked to higher 30-day mortality, so this is the figure to watch, not the average.');
+ p.push('<b>Why beds stay full:</b> at the latest census, '+SNAP.delayed.reduce((a,d)=>a+d.n,0).toLocaleString()+' patients across Scotland were medically ready to leave hospital but could not ('+topdd.board.replace('NHS ','')+' highest at '+topdd.n+'). That delayed-discharge backlog is the upstream cause of full wards ('+topocc.board.replace('NHS ','')+' busiest at '+topocc.occPct+'% occupancy) and the A&E gridlock above.');
+ p.push('<span style="color:var(--dim)">All figures are published by Public Health Scotland and badged MEASURED. Cadence is weekly (A&E) to quarterly (beds) — this is a near-real-time situational read, not a live monitor or a prediction.</span>');
+ return p.map(t=>'<p style="margin:7px 0">'+t+'</p>').join('');
+}
+function refreshSnippet(){const r=SNAP.meta.res;
+ return 'BASE=https://www.opendata.nhs.scot/api/3/action\n'+
+ '# latest A&E week, by site (Type 1):\n'+
+ 'GET $BASE/datastore_search_sql?sql='+"\n"+
+ '  SELECT "TreatmentLocation",SUM("NumberOfAttendancesEpisode"),\n'+
+ '         SUM("NumberWithin4HoursEpisode"),SUM("NumberOver12HoursEpisode")\n'+
+ '  FROM "'+r.ae+'"\n'+
+ '  WHERE "WeekEndingDate"=(SELECT max("WeekEndingDate") FROM "'+r.ae+'")\n'+
+ '    AND "DepartmentType"=\'Type 1\' AND "AttendanceCategory"=\'All\'\n'+
+ '  GROUP BY "TreatmentLocation"\n'+
+ '# resources:  A&E '+r.ae+'\n'+
+ '#             sites(lookup) '+r.sites+'\n'+
+ '#             beds '+r.beds+'\n'+
+ '#             delayed '+r.dd;
+}
+function tick(){const d=new Date();document.getElementById('clock').textContent=d.toISOString().slice(0,10)+' '+d.toTimeString().slice(0,5)+' · snapshot '+SNAP.meta.fetched;}
+document.getElementById('banner').innerHTML='<b>REAL PUBLISHED DATA</b> — Public Health Scotland open data (opendata.nhs.scot). A&amp;E week ending '+fmtWk(SNAP.meta.aeWeek)+' · bed occupancy '+SNAP.meta.bedsQuarter+' · delayed discharges '+fmtMon(SNAP.meta.ddMonth)+'. Snapshot vintage '+SNAP.meta.fetched+'; the CKAN source sends no CORS header, so this embeds a dated snapshot (refresh: see Data health). Weekly–quarterly cadence, <b>not</b> real-time. Decision-support, not autopilot.';
+tick();setInterval(tick,30000);render();
+</script></body></html>

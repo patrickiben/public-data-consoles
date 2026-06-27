@@ -1,0 +1,26 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*~
+.vscode/
+.idea/
+
+# Never publish large binaries or local data to the public showcase
+*.mp4
+*.mov
+*.zip
+*.csv
+*.parquet
+snapshot.json
+
+# Local notes / transcripts that may contain sensitive context
+*_AI_Transcript.*
+*_transcript.*
+NOTES.local.*
+
+# Secrets — belt and suspenders (no real keys should ever live here)
+*.key
+*.pem
+.env
+.env.*
+secrets.*
