@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maternal, Newborn &amp; Child Health — a global atlas</title>
+<meta name="description" content="A descriptive global atlas of maternal, newborn and child health built on the World Bank's open Indicators API: maternal mortality, neonatal and under-5 mortality, skilled birth attendance, antenatal care, adolescent and total fertility, and child stunting — for the world, income groups, regions and ~55 of the largest countries. Unofficial, descriptive, not a forecast.">
+<style>
+:root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+ --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
+ --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 56px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+#disc{background:#060f14;color:#bcd2da;font-size:12px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:24px 0 6px}
+h1{margin:0;font-size:25px;font-weight:740;letter-spacing:-.3px}
+h1 .sub{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin-top:5px;letter-spacing:0}
+.banner{margin:13px 0 0;background:rgba(38,198,218,.07);border:1px solid rgba(38,198,218,.25);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink2)}
+.banner b{color:var(--teal)}
+.strip{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0 2px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink2)}
+.chip b{color:var(--ink)}
+button.btn{background:linear-gradient(180deg,#1d6c79,#185863);border:1px solid #2a8593;color:#eaffff;border-radius:999px;padding:6px 14px;font-weight:600;font-size:12.5px;cursor:pointer}
+button.btn:hover{filter:brightness(1.1)}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:5px;vertical-align:1px;text-transform:uppercase}
+.b-meas{background:rgba(61,220,151,.16);color:#7fe9bd}.b-mod{background:rgba(245,185,69,.16);color:#f5cd85}.b-int{background:rgba(176,142,240,.16);color:#cdb6f5}
+.card{background:linear-gradient(180deg,var(--surf),var(--surf2));border:1px solid var(--line);border-radius:14px;margin-top:16px;overflow:hidden}
+.card>summary,.card .hd{padding:13px 16px;font-weight:650;display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+.card>summary::-webkit-details-marker{display:none}
+.card>summary .ico{color:var(--teal);font-weight:800}
+.card>summary .tools{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.body{padding:4px 16px 16px}
+.muted{color:var(--dim)}.small{font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}@media(max-width:760px){.grid3{grid-template-columns:1fr 1fr}}@media(max-width:480px){.grid3{grid-template-columns:1fr}}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}@media(max-width:880px){.grid4{grid-template-columns:1fr 1fr}}@media(max-width:480px){.grid4{grid-template-columns:1fr}}
+.stat{background:var(--surf2);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-size:30px;font-weight:760;margin-top:3px;line-height:1.05}
+.stat .v small{font-size:13px;color:var(--ink2);font-weight:500}
+.stat .sub2{font-size:12px;color:var(--ink2);margin-top:5px}
+.mini{background:var(--surf2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.mini .l{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;min-height:26px}
+.mini .v{font-size:21px;font-weight:740;margin-top:2px;line-height:1.05}
+.mini .v small{font-size:11.5px;color:var(--ink2);font-weight:500}
+.mini .y{font-size:10.5px;color:var(--dim);margin-top:3px;font-family:var(--mono)}
+.delta{font-weight:700}.dn{color:var(--green)}.up{color:var(--orange)}
+.lead{max-height:520px;overflow:auto;margin-top:4px}
+.row2{display:flex;align-items:center;gap:10px;padding:7px 3px;border-bottom:1px solid var(--line)}
+.row2:last-child{border-bottom:none}
+.row2 .rk{width:22px;color:var(--dim);font-size:12px;text-align:right}
+.row2 .nm{width:160px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.row2 .nm small{color:var(--dim);font-weight:400}
+.row2 .meter{flex:1;min-width:60px}.meter .tk{height:8px;background:#0a171d;border-radius:5px;overflow:hidden}.meter .fl{height:100%;border-radius:5px}
+.row2 .rate{width:128px;text-align:right;font-weight:720;font-variant-numeric:tabular-nums}
+.row2 .yr{width:50px;text-align:right;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.ineq{display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.ineq:last-child{border-bottom:none}
+.ineq .nm{flex:1;min-width:0}.ineq .nm .t{font-weight:620}.ineq .nm .c{font-size:11px;color:var(--dim)}
+.ineq .sp{width:96px;flex:none}
+.ineq .val{width:108px;text-align:right;font-weight:720;font-variant-numeric:tabular-nums}
+.ineq .yy{width:46px;text-align:right;font-size:10.5px;color:var(--dim);font-family:var(--mono)}
+.ineq .ch{width:78px;text-align:right;font-size:12.5px;font-weight:600}
+.caveat{font-size:11.5px;color:var(--dim);margin-top:11px;padding:9px 12px;background:rgba(255,255,255,.02);border-left:2px solid var(--line2);border-radius:0 8px 8px 0}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{background:transparent;border:none;color:var(--ink2);padding:4px 10px;font-size:12px;cursor:pointer}
+.seg button.on{background:var(--teal);color:#04181c;font-weight:700}
+select{background:var(--surf2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:5px 10px;font-size:13px;font-family:var(--sans)}
+.peerbar{display:flex;align-items:center;gap:9px;padding:6px 2px}
+.peerbar .pl{width:150px;font-size:12px;color:var(--ink2)}
+.peerbar .pm{flex:1}.peerbar .pm .tk{height:9px;background:#0a171d;border-radius:5px;overflow:hidden}.peerbar .pm .fl{height:100%;border-radius:5px}
+.peerbar .pv{width:96px;text-align:right;font-weight:680;font-variant-numeric:tabular-nums;font-size:13px}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;background:rgba(255,255,255,.06);color:var(--ink2);margin-left:6px;letter-spacing:.3px}
+footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}
+footer b{color:var(--ink2)}
+#splash{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50;color:var(--dim);font-size:13px}
+.stale{display:inline-block;font-size:9.5px;font-weight:800;color:#04181c;background:var(--orange);border-radius:4px;padding:1px 6px;margin-left:6px;letter-spacing:.4px}
+.note{font-size:11px;color:var(--dim);font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div id="splash">loading maternal &amp; child health indicators…</div>
+<div id="disc"><b>Unofficial · descriptive atlas of maternal, newborn &amp; child health — not a forecast.</b> Built on the World Bank's open Indicators API. The latest available year differs by country and indicator, and many smaller countries have data gaps. Not for clinical, individual, or policy decisions.</div>
+<div class="wrap">
+  <header>
+    <h1>Maternal, Newborn &amp; Child Health<span class="sub">Maternal &amp; neonatal mortality, skilled birth attendance, antenatal care, fertility &amp; child stunting — for the world, income groups, regions &amp; ~55 of the largest countries</span></h1>
+    <div class="banner"><b>How to read this.</b> Every figure is a <b>World Bank reported value</b> for a specific year — always shown next to the number, because the latest available year varies (often 2023–2024 for mortality, but typically 2018–2019 for skilled birth attendance, antenatal care and stunting, which come from periodic household surveys). This is <b>descriptive</b>: it shows where things stand and how they have moved since 2000. It does <b>not</b> predict the future, and cross-country comparisons carry differences in survey timing, measurement and completeness. Maternal mortality figures are <b>modeled estimates</b> (UN MMEIG).</div>
+    <div class="strip">
+      <button class="btn" id="refresh">↻ Refresh from World Bank</button>
+      <span class="chip" id="srcchip">—</span>
+      <span class="chip" id="vintchip">—</span>
+      <span class="chip"><span class="badge b-meas">measured</span> reported value</span>
+      <span class="chip"><span class="badge b-mod">modeled</span> MMR &amp; survey estimates</span>
+      <span class="chip"><span class="badge b-int">interpretive</span> framing &amp; selection</span>
+    </div>
+  </header>
+
+  <!-- (a) HEADLINE -->
+  <details class="card" open id="c-global">
+    <summary><span class="ico">●</span> The long decline — a major global-health success <span class="badge b-meas">measured</span><span class="badge b-mod">modeled</span><span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div class="grid3">
+        <div class="stat">
+          <div class="l">World maternal mortality · <span id="mmryear">—</span></div>
+          <div class="v" id="mmrv">—</div>
+          <div class="sub2" id="mmrs">—</div>
+        </div>
+        <div class="stat">
+          <div class="l">World neonatal mortality · <span id="nmryear">—</span></div>
+          <div class="v" id="nmrv">—</div>
+          <div class="sub2" id="nmrs">—</div>
+        </div>
+        <div class="stat">
+          <div class="l">World under-5 mortality · <span id="u5year">—</span></div>
+          <div class="v" id="u5v">—</div>
+          <div class="sub2" id="u5s">—</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap">
+        <div><div class="small muted">Maternal mortality / 100k, 2000→<span id="spkmmryr">—</span> <span class="badge b-mod">modeled</span></div><div id="sparkMMR"></div></div>
+        <div><div class="small muted">Neonatal mortality / 1,000, 2000→<span id="spknmryr">—</span> <span class="badge b-meas">measured</span></div><div id="sparkNMR"></div></div>
+        <div><div class="small muted">Under-5 mortality / 1,000, 2000→<span id="spku5yr">—</span></div><div id="sparkU5"></div></div>
+      </div>
+      <div class="caveat" id="globalcaveat">—</div>
+    </div>
+  </details>
+
+  <!-- (b) WHERE MOST AT RISK — country leaderboard -->
+  <details class="card" open id="c-lead">
+    <summary><span class="ico">▤</span> Where mothers &amp; newborns are most at risk <span class="badge b-meas">measured</span><span class="badge b-mod">modeled</span>
+      <span class="tools">
+        <span class="seg" id="leadind">
+          <button data-k="mmr" class="on">maternal</button><button data-k="nmr">neonatal</button><button data-k="u5">under-5</button><button data-k="stnt">stunting</button><button data-k="adol">adol. fertility</button><button data-k="tfr">fertility</button>
+        </span>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="small muted" id="leaddesc" style="margin-bottom:4px">—</div>
+      <div class="lead" id="leadlist"></div>
+      <div class="caveat">Highest burden is at the <b>top</b>. Ranked across the ~55 most populous countries in this atlas (not all 200+ World Bank economies). The <b>year</b> column is the latest available reported value for each country and indicator, which can differ between rows — so rank reflects recency as well as level. Bar length is relative to the highest value shown. Maternal mortality is a <span class="badge b-mod">modeled</span> UN MMEIG estimate; stunting comes from periodic surveys, so its year is often older.</div>
+    </div>
+  </details>
+
+  <!-- (c) DRIVERS / COVERAGE — income & region -->
+  <details class="card" open id="c-ineq">
+    <summary><span class="ico">◑</span> Coverage &amp; drivers — by income group &amp; region <span class="badge b-meas">measured</span><span class="badge b-mod">modeled</span>
+      <span class="tools">
+        <select id="ineqind"></select>
+        <span class="seg" id="ineqmode"><button data-m="inc" class="on">income</button><button data-m="reg">region</button></span>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="small muted" id="ineqdesc" style="margin-bottom:6px">—</div>
+      <div id="ineqlist"></div>
+      <div class="caveat" id="ineqcaveat">—</div>
+    </div>
+  </details>
+
+  <!-- (d) COUNTRY PROFILE -->
+  <details class="card" open id="c-profile">
+    <summary><span class="ico">◎</span> Country profile <span class="badge b-meas">measured</span><span class="badge b-mod">modeled</span>
+      <span class="tools"><select id="cysel"></select></span>
+    </summary>
+    <div class="body">
+      <div class="small muted" id="profmeta" style="margin-bottom:8px">—</div>
+      <div class="grid4" id="profcards"></div>
+      <div style="margin-top:14px;display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap">
+        <div><div class="small muted">Maternal mortality, 2000→latest <span class="badge b-mod">modeled</span></div><div id="profSparkMMR"></div></div>
+        <div><div class="small muted">Neonatal mortality, 2000→latest <span class="badge b-meas">measured</span></div><div id="profSparkNMR"></div></div>
+        <div><div class="small muted">Under-5 mortality, 2000→latest</div><div id="profSparkU5"></div></div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="small muted" style="margin-bottom:4px">How it compares — <b id="cmpindname">maternal mortality</b>, latest value
+          <span class="seg" id="cmpind" style="margin-left:8px"><button data-k="mmr" class="on">maternal</button><button data-k="nmr">neonatal</button><button data-k="u5">under-5</button><button data-k="sba">skilled birth</button><button data-k="adol">adol. fertility</button></span>
+        </div>
+        <div id="cmpbars"></div>
+      </div>
+      <div class="caveat" id="profcaveat">—</div>
+    </div>
+  </details>
+
+  <footer>
+    <div><b>Data &amp; method.</b> Source: <a href="https://data.worldbank.org" target="_blank" rel="noopener">World Bank Open Data — World Development Indicators</a>, pulled live from the public Indicators API v2 (<span class="note">api.worldbank.org/v2</span>) when reachable, otherwise from an embedded snapshot whose vintage is shown above. Indicators: maternal mortality ratio <span class="note">SH.STA.MMRT</span>; neonatal mortality <span class="note">SH.DYN.NMRT</span>; under-5 mortality <span class="note">SH.DYN.MORT</span>; skilled birth attendance <span class="note">SH.STA.BRTC.ZS</span>; antenatal care 1+ visit <span class="note">SH.STA.ANVC.ZS</span>; adolescent fertility <span class="note">SP.ADO.TFRT</span>; total fertility <span class="note">SP.DYN.TFRT.IN</span>; child stunting <span class="note">SH.STA.STNT.ZS</span>. The World Bank in turn compiles these from UN agencies (UN MMEIG for maternal mortality; UN IGME for child &amp; neonatal mortality; WHO/UNICEF and DHS/MICS surveys for coverage and stunting; UN Population Division for fertility) and national statistics.</div>
+    <div style="margin-top:8px"><b>Honesty.</b> Mortality, fertility and coverage figures are <span class="badge b-meas">measured</span> World Bank reported values, with maternal mortality and survey-based coverage shown as <span class="badge b-mod">modeled</span> estimates (UN MMEIG / household surveys). The latest available <b>year differs</b> by country and indicator, so it is always displayed; many economies have gaps, and missing values are shown as "—" rather than guessed. World Bank aggregates are population-weighted estimates. <b>Child stunting has no World Bank world/income/region aggregate</b>, so the regional figure shown is an <span class="badge b-mod">unweighted mean</span> computed across this atlas's countries with data — clearly labeled, and not a World Bank aggregate. The choice of which ~55 countries and 8 indicators to show is <span class="badge b-int">interpretive</span> framing. This tool is <b>descriptive, not predictive</b>; it does not forecast. No personal or protected health information is used — only public country-level aggregates.</div>
+    <div style="margin-top:8px" class="muted">Embedded snapshot vintage: <span id="vintfoot">—</span>. If a live refresh succeeds, the source chip above switches to "live World Bank".</div>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const WB='https://api.worldbank.org/v2';
+
+let SNAP={"vintage":"2024","embedded":"2026-06-27","years":["2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023","2024"],"indMeta":{"mmr":{"name":"Maternal mortality ratio","unit":"per 100,000 live births","ind":"SH.STA.MMRT","good":"low","dec":0},"nmr":{"name":"Neonatal mortality","unit":"per 1,000 live births","ind":"SH.DYN.NMRT","good":"low","dec":1},"u5":{"name":"Under-5 mortality","unit":"per 1,000 live births","ind":"SH.DYN.MORT","good":"low","dec":1},"sba":{"name":"Skilled birth attendance","unit":"% of births","ind":"SH.STA.BRTC.ZS","good":"high","dec":1},"anc":{"name":"Antenatal care (1+ visit)","unit":"% of pregnant women","ind":"SH.STA.ANVC.ZS","good":"high","dec":1},"adol":{"name":"Adolescent fertility","unit":"births / 1,000 women 15-19","ind":"SP.ADO.TFRT","good":"low","dec":1},"tfr":{"name":"Total fertility","unit":"births per woman","ind":"SP.DYN.TFRT.IN","good":"low","dec":2},"stnt":{"name":"Child stunting","unit":"% under-5","ind":"SH.STA.STNT.ZS","good":"low","dec":1}},"agg":{"EAS":{"name":"East Asia & Pacific","s":{"mmr":[119,117,112,108,106,101,99,95,92,88,86,83,78,76,71,70,66,62,64,63,72,94,72,66,null],"nmr":[19.9,18.9,17.9,16.8,15.8,14.8,13.9,13,12.2,11.4,10.8,10.2,9.5,9.1,8.6,8.3,7.8,7.4,7.4,7.1,7.2,7.1,7.1,6.9,6.7],"u5":[39.6,37.5,35.5,32.6,31.5,28.7,27,25.4,24.9,22.5,21.4,20.3,19.1,18.2,17.2,16.6,15.7,15,14.8,14.3,14.4,14.2,14,13.7,13.2],"sba":[85.2665,null,null,null,null,null,null,null,null,null,92.2983,null,null,null,null,null,null,null,null,95.5556,null,null,null,null,null],"anc":[86.5632,null,null,null,null,null,null,null,null,null,93.648,null,null,null,null,null,null,null,null,97.4697,null,null,null,null,null],"adol":[18.5683,18.3311,17.8623,17.6708,16.7697,17.0464,18.4791,19.348,20.9815,22.1623,22.9962,23.2008,23.7671,23.4088,23.0386,21.9475,20.993,19.8566,18.2119,17.2614,15.879,15.1973,14.8004,14.5658,14.2816],"tfr":[1.8703,1.8139,1.8036,1.7966,1.8123,1.8162,1.8345,1.8547,1.8739,1.8782,1.8603,1.8558,1.9385,1.8708,1.899,1.8343,1.8766,1.8701,1.6992,1.6621,1.4967,1.4168,1.3627,1.3356,1.3409]}},"ECS":{"name":"Europe & Central Asia","s":{"mmr":[25,24,24,23,22,21,19,19,18,17,16,16,15,14,14,14,13,13,12,12,16,18,14,11,null],"nmr":[10.2,9.7,9.2,8.7,8.4,8,7.6,7.3,6.8,6.4,6.1,5.9,5.7,5.5,5.3,5.1,4.9,4.8,4.7,4.6,4.5,4.4,4.3,4.2,4.1],"u5":[20.9,19.7,18.5,17.4,16.4,15.5,14.6,13.8,13,12.3,11.7,11.2,10.8,10.4,10,9.6,9.2,8.8,8.6,8.5,8.3,8.1,8,8.4,7.8],"sba":[95.4375,null,null,null,null,null,null,null,null,null,98.3174,null,null,null,null,null,null,null,null,98.4411,null,null,null,null,null],"adol":[24.9249,23.725,23.003,22.569,22.617,22.3702,22.4276,22.5138,23.0576,23.0659,22.0914,21.4561,21.2484,20.2523,19.7976,18.5716,17.4006,15.7143,14.6199,13.6943,12.7098,12.4281,11.8517,11.7294,11.3518],"tfr":[1.5597,1.5428,1.5462,1.5635,1.5924,1.5883,1.6184,1.6602,1.7166,1.7182,1.7257,1.7095,1.7442,1.736,1.7721,1.7731,1.7793,1.7366,1.7163,1.6882,1.6708,1.6838,1.617,1.578,1.5534]}},"HIC":{"name":"High income","s":{"mmr":[16,16,16,15,15,14,13,13,13,13,12,12,12,11,11,11,11,11,11,11,14,18,13,10,null],"nmr":[4.7,4.6,4.5,4.4,4.2,4.1,4,3.8,3.7,3.5,3.5,3.4,3.4,3.4,3.3,3.2,3.1,3.1,3,3,2.9,2.8,2.8,2.8,2.8],"u5":[9.2,8.9,8.6,8.4,8.1,7.8,7.5,7.3,7,6.8,6.6,6.5,6.3,6.2,6,5.8,5.7,5.5,5.4,5.2,5.2,5.1,5.1,5.1,5.1],"sba":[99.0263,null,null,null,null,null,null,null,null,null,99.0738,null,null,null,null,null,null,null,null,98.5802,null,null,null,null,null],"adol":[25.4564,24.6731,24.0828,23.6315,23.4823,23.1597,23.4599,23.8387,23.9331,23.1279,21.5372,20.093,19.1561,17.7064,16.6463,15.4244,14.3216,13.1194,12.1369,11.2576,10.295,9.539,9.3029,9.0901,8.6612],"tfr":[1.6352,1.6062,1.5995,1.6103,1.6213,1.6139,1.6502,1.6865,1.705,1.6873,1.6761,1.6626,1.6834,1.6564,1.675,1.6766,1.6731,1.6294,1.599,1.5589,1.5144,1.5221,1.4749,1.4349,1.425]}},"LCN":{"name":"Latin America & Caribbean","s":{"mmr":[92,90,87,87,87,85,85,84,84,83,81,77,75,74,74,74,75,76,77,76,94,140,93,77,null],"nmr":[15.8,15.1,14.4,13.8,13.2,12.7,12.2,11.9,11.6,11.3,11,10.7,10.5,10.2,10,10,10.1,9.8,9.8,9.7,9.6,9.4,9,8.6,8.3],"u5":[32.7,31,29.5,28.1,26.8,25.6,24.6,23.6,22.7,21.8,22.7,20.4,19.8,19.2,18.7,18.3,18.5,17.8,17.4,17,16.7,16.4,16,15.7,15.4],"sba":[86.3801,null,null,null,null,null,null,null,null,null,91.8829,null,null,null,null,null,null,null,null,94.6286,null,null,null,null,null],"anc":[null,null,null,null,null,null,null,null,null,null,96.4062,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"adol":[83.0892,81.6858,79.8573,77.8542,77.0416,76.4719,75.5632,75.1045,74.8321,74.3107,73.3739,73.2627,72.8734,71.7268,69.9122,67.259,64.0893,62.1003,60.1082,57.6566,54.7794,53.2574,51.6839,51.2453,50.3613],"tfr":[2.609,2.5422,2.4812,2.4214,2.3792,2.3404,2.2953,2.2574,2.2317,2.2067,2.1789,2.16,2.1295,2.108,2.0906,2.0595,2.0069,1.9822,1.9639,1.9183,1.8588,1.8337,1.8121,1.7951,1.7856]}},"LIC":{"name":"Low income","s":{"mmr":[747,719,696,669,647,636,623,609,592,581,566,547,525,508,504,491,472,454,421,408,396,418,364,346,null],"nmr":[39.2,38.1,37.1,36.1,35.2,34.2,33.3,32.5,31.6,31,30.3,29.8,29.2,28.7,28.4,28.1,27.7,27.4,27,26.7,26.3,26.1,25.8,25.3,24.9],"u5":[150,147.4,138.7,131.5,126.9,116.7,110.8,105.8,101.1,102.3,94.8,98.5,88.9,85.4,86.2,84.9,83.6,83.5,77.9,76.9,73.9,73.3,76.7,70.5,68.8],"sba":[40.0784,null,null,null,null,null,null,null,null,null,55.7171,null,null,null,null,null,null,null,null,69.2656,null,null,null,null,null],"anc":[66.6136,null,null,null,null,null,null,null,null,null,80.506,null,null,null,null,null,null,null,null,82.7249,null,null,null,null,null],"adol":[126.0414,124.9204,123.4128,122.5287,120.668,119.4374,118.8909,117.5921,116.4785,115.2193,114.1999,113.3805,112.8357,111.6408,110.1087,108.4924,106.5515,104.8047,103.231,101.5504,100.1404,98.8168,97.7249,96.7045,95.328],"tfr":[5.961,5.905,5.8469,5.7921,5.7441,5.6947,5.6519,5.5978,5.5574,5.5156,5.456,5.3864,5.3294,5.2784,5.2254,5.171,5.1103,5.0527,4.9842,4.9105,4.8422,4.7767,4.7139,4.6504,4.5811]}},"LMC":{"name":"Lower middle income","s":{"mmr":[433,421,405,389,375,362,351,343,338,330,322,315,308,304,298,291,283,274,266,257,251,289,238,235,null],"nmr":[40.3,39.1,38,36.8,35.7,34.8,33.9,33,32.2,31.4,30.6,29.8,29,28.3,27.5,26.9,26.2,25.7,25.1,24.5,23.9,23.3,22.7,22.2,21.6],"u5":[97.8,94.1,90.4,86.8,83.5,80.2,77.2,74.2,71.9,68.7,66.4,63.7,61.3,59.1,57.1,55.3,53.5,52,50.6,49.3,48.1,47,46,44.9,43.8],"sba":[42.4218,null,null,null,null,null,null,null,null,null,54.4611,null,null,null,null,null,null,null,null,77.5966,null,null,null,null,null],"anc":[62.358,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,85.1326,null,null,null,null,null],"adol":[101.7438,99.8265,95.3809,91.2975,83.9206,73.956,69.3354,67.5447,68.2625,64.7583,62.41,61.2394,60.6595,58.7837,54.7919,48.8435,45.9623,45.08,44.1943,43.2951,42.6035,42.2804,42.066,41.9969,41.1781],"tfr":[3.757,3.7054,3.6322,3.5574,3.487,3.4165,3.3597,3.3022,3.2603,3.2271,3.1709,3.1174,3.0681,3.0167,2.948,2.9275,2.8895,2.8196,2.7781,2.7201,2.6627,2.6288,2.6072,2.586,2.5632]}},"MEA":{"name":"Middle East, North Africa, Afghanistan & Pakistan","s":{"mmr":[103,97,91,87,83,78,75,71,67,65,63,61,59,57,55,54,53,52,51,51,60,74,50,47,null],"nmr":[38.3,37.4,36.6,35.8,34.9,34.2,33.5,32.7,32,31.4,30.7,29.9,29,28.3,27.5,26.9,26.3,25.8,25.6,25.3,24.9,24.5,24,23.3,22.7],"u5":[75,72.4,69.9,67.7,65.4,63.2,61.3,59.4,57.6,55.9,54.2,52.5,51.1,49.4,47.6,46.2,44.6,43.5,42.7,41.9,40.8,39.8,38.7,37.8,36.4],"sba":[47.2076,null,null,null,null,null,null,null,null,null,62.6185,null,null,null,null,null,null,null,null,80.0656,null,null,null,null,null],"anc":[52.9369,null,null,null,null,null,null,null,null,null,70.9757,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"adol":[57.584,55.4673,53.8436,53.2664,52.1184,51.3337,51.0762,50.9566,50.8406,50.6068,50.4851,49.4239,49.3815,49.2498,48.4044,47.4391,46.0348,45.2791,43.7357,42.3986,41.4412,40.3239,39.548,38.8081,37.8295],"tfr":[4.0148,3.9009,3.794,3.7263,3.6307,3.5781,3.5638,3.545,3.5242,3.5091,3.4963,3.4774,3.471,3.4546,3.4377,3.4047,3.3443,3.3182,3.2337,3.1621,3.1169,3.073,3.0334,3.0081,2.976]}},"NAC":{"name":"North America","s":{"mmr":[12,12,13,13,13,13,13,13,14,14,14,15,15,16,16,17,17,17,17,17,22,30,20,16,null],"nmr":[4.6,4.6,4.6,4.6,4.5,4.4,4.4,4.3,4.2,4.1,4.1,4,4,4,3.9,3.9,3.8,3.7,3.7,3.7,3.6,3.5,3.5,3.5,3.6],"u5":[8.3,8.2,8.1,8,7.9,7.8,7.7,7.6,7.5,7.3,7.2,7,6.9,6.8,6.7,6.6,6.6,6.5,6.4,6.4,6.4,6.4,6.4,6.4,6.4],"sba":[99.3925,null,null,null,null,null,null,null,null,null,99.3221,null,null,null,null,null,null,null,null,99.001,null,null,null,null,null],"adol":[44.6323,42.2376,40.009,38.4967,37.7027,37.0247,37.8353,38.2934,37.6377,35.883,32.8322,29.911,27.7679,25.1211,22.9419,20.9077,19.0517,17.5401,16.2483,15.3222,13.9223,12.9772,12.8531,12.3865,11.6758],"tfr":[2.001,1.9811,1.97,1.9973,2.002,2.0089,2.0598,2.0746,2.0344,1.9703,1.9024,1.8675,1.855,1.8323,1.8369,1.8189,1.7973,1.7437,1.7071,1.6818,1.6176,1.6409,1.6234,1.5795,1.5855]}},"SAS":{"name":"South Asia","s":{"mmr":[415,396,376,357,338,318,296,278,259,243,229,215,203,192,182,173,163,155,148,142,145,194,130,120,null],"nmr":[43.3,41.9,40.5,39.1,37.8,36.6,35.5,34.3,33.2,32.1,31,29.9,28.7,27.6,26.5,25.4,24.4,23.4,22.4,21.2,20.1,19.1,18.2,17.4,16.6],"u5":[90,86.1,82.4,78.9,75.6,72,68.7,65.5,62.4,59.4,56.3,53.4,50.5,47.7,45.1,42.6,40.3,38.1,36,34.1,32.4,30.8,29.3,28,26.8],"sba":[38.8377,null,null,null,null,null,null,null,null,null,49.2046,null,null,null,null,null,null,null,null,85.7084,null,null,null,null,null],"anc":[58.0502,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,84.1825,null,null,null,null,null],"adol":[117.7491,115.1936,108.5569,101.6437,89.5293,72.0534,64.0469,60.9617,61.9745,54.9932,50.5676,48.6938,47.5894,43.8488,37.2018,27.8728,24.5682,24.3986,24.0953,23.6389,23.3138,22.8285,22.4058,22.2345,20.982],"tfr":[3.334,3.2831,3.1983,3.1034,3.0254,2.9369,2.847,2.7567,2.6891,2.6444,2.5657,2.5002,2.4418,2.3783,2.284,2.2789,2.2733,2.1916,2.1813,2.1241,2.0602,2.031,2.014,1.9956,1.981]}},"SSF":{"name":"Sub-Saharan Africa","s":{"mmr":[744,726,709,685,666,658,656,654,656,652,643,633,620,610,604,593,575,554,526,507,486,501,455,448,null],"nmr":[39,38.1,37.1,36.1,35.2,34.4,33.6,33,32.3,31.8,31.2,30.7,30.2,29.8,29.5,29.2,28.9,28.6,28.3,28.1,27.8,27.6,27.3,26.9,26.6],"u5":[150.4,146.3,138.9,133,127.7,119.8,114,109.1,104.5,102.8,97.2,97.1,90.7,87.6,86.8,85,83.4,82.5,79,78,75.9,77.1,78.3,73.2,71.2],"sba":[41.4772,null,null,null,null,null,null,null,null,null,51.2551,null,null,null,null,null,null,null,null,64.3891,null,null,null,null,null],"anc":[67.5638,null,null,null,null,null,null,null,null,null,73.247,null,null,null,null,null,null,null,null,82.1004,null,null,null,null,null],"adol":[128.3619,128.1299,126.8009,125.9184,124.3276,123.684,122.3686,120.5926,119.8357,118.3865,117.2741,117.1819,115.6191,114.2678,112.7594,109.3541,105.9435,102.9545,100.8144,98.861,96.8414,95.6812,94.4197,93.3848,91.91],"tfr":[5.7377,5.6962,5.6515,5.6132,5.5865,5.5587,5.5218,5.4761,5.4457,5.3858,5.3248,5.2545,5.1779,5.0969,5.0236,4.9431,4.8596,4.7802,4.6967,4.6133,4.5297,4.4644,4.3965,4.3325,4.2641]}},"UMC":{"name":"Upper middle income","s":{"mmr":[97,94,91,90,90,87,86,83,82,78,76,73,69,66,63,61,58,55,56,55,67,93,66,57,null],"nmr":[19.3,18.2,17.2,16.2,15.3,14.4,13.5,12.8,12,11.3,10.7,10.2,9.6,9.1,8.7,8.3,8,7.6,7.6,7.4,7.5,7.4,7.2,7,6.8],"u5":[37.6,35.6,33.6,31.7,30.7,28.3,26.7,25.1,23.5,22.1,20.8,19.7,18.6,17.8,16.9,16.2,15.5,14.7,14.5,14.1,14.1,13.9,13.8,13.7,13.1],"sba":[89.4417,null,null,null,null,null,null,null,null,null,95.0924,null,null,null,null,null,null,null,null,97.9528,null,null,null,null,null],"anc":[87.7808,null,null,null,null,null,null,null,null,null,94.514,null,null,null,null,null,null,null,null,97.9295,null,null,null,null,null],"adol":[33.9139,32.786,31.7926,31.062,29.9514,29.7509,30.6426,31.2729,32.9338,34.0025,34.6127,35.3935,36.1246,35.8595,35.4878,33.8702,32.2793,30.8095,29.0042,27.6967,25.7612,24.8095,23.7872,23.3841,22.7842],"tfr":[1.98,1.9207,1.9004,1.8896,1.9055,1.9128,1.9197,1.9286,1.9474,1.9479,1.9319,1.9288,2.0,1.9496,1.9772,1.913,1.9449,1.9397,1.7988,1.7592,1.6147,1.5495,1.4976,1.4748,1.4778]}},"WLD":{"name":"World","s":{"mmr":[328,321,311,301,291,283,276,269,264,258,253,247,239,235,231,228,220,215,211,207,211,242,203,197,null],"nmr":[30.3,29.5,28.5,27.6,26.7,25.8,24.9,24.1,23.4,22.7,22.1,21.5,20.8,20.3,19.7,19.4,18.9,18.6,18.5,18.3,18.2,18,17.9,17.6,17.2],"u5":[76.7,74.3,71.3,68.3,65.8,62.3,59.6,57,54.7,52.9,50.6,49.5,46.7,45.1,43.9,42.9,41.7,40.9,40,39.6,39.2,39.6,40,38.3,37.4],"sba":[61.9641,null,null,null,null,null,null,null,null,null,69.4324,null,null,null,null,null,null,null,null,83.268,null,null,null,null,null],"anc":[69.3416,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,87.6327,null,null,null,null,null],"adol":[66.3199,65.2538,63.1096,61.1656,57.8619,53.9176,52.6305,52.4843,53.7129,52.7704,52.2243,52.1941,52.2021,51.1439,49.2489,45.9619,44.0303,43.0468,42.0389,41.1769,40.2201,39.7327,39.2867,39.0628,38.3458],"tfr":[2.7299,2.6886,2.6601,2.6381,2.628,2.6107,2.6063,2.602,2.6034,2.593,2.5682,2.5481,2.5645,2.5251,2.5176,2.4901,2.4914,2.4599,2.3918,2.3533,2.2764,2.2457,2.2152,2.1959,2.1885]}}},"cty":{"CHN":{"name":"China","income":"UMC","incomeName":"Upper middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"mmr":{"v":16,"y":"2023"},"nmr":{"v":2.6,"y":"2024"},"u5":{"v":5.7,"y":"2024"},"sba":{"v":99.9,"y":"2016"},"anc":{"v":99.6,"y":"2018"},"adol":{"v":5.202,"y":"2024"},"tfr":{"v":1.013,"y":"2024"},"stnt":{"v":4.8,"y":"2017"}},"mmr":[56,52,50,47,45,42,40,38,38,35,34,33,32,30,28,26,25,24,22,21,20,21,18,16,null],"nmr":[21.4,19.9,18.4,16.8,15.3,13.9,12.5,11.3,10.2,9.2,8.4,7.6,7,6.4,5.8,5.3,4.9,4.5,4.1,3.8,3.5,3.2,3,2.8,2.6],"u5":[36.6,34.1,31.4,28.8,26.3,24,21.9,20.1,18.5,17.1,15.7,14.6,13.5,12.5,11.6,10.7,10,9.3,8.6,8,7.5,7,6.6,6.1,5.7]},"IND":{"name":"India","income":"LMC","incomeName":"Lower middle income","region":"SAS","regionName":"South Asia","latest":{"mmr":{"v":80,"y":"2023"},"nmr":{"v":16.7,"y":"2024"},"u5":{"v":26.6,"y":"2024"},"sba":{"v":89.4,"y":"2021"},"anc":{"v":85.1,"y":"2021"},"adol":{"v":13.036,"y":"2024"},"tfr":{"v":1.962,"y":"2024"},"stnt":{"v":35.5,"y":"2020"}},"mmr":[362,349,330,313,296,277,258,240,223,205,188,173,160,148,137,129,121,113,107,101,101,155,90,80,null],"nmr":[43.8,42.5,41.1,39.8,38.6,37.4,36.2,35.1,34,32.8,31.7,30.5,29.4,28.2,27.1,26,25,24,23,21.8,20.6,19.5,18.5,17.5,16.7],"u5":[91.8,88.1,84.6,81.1,77.7,74.3,71,67.8,64.5,61.2,58.1,55,52,49.1,46.4,43.7,41.3,39,36.9,34.9,33,31.2,29.5,28,26.6]},"USA":{"name":"United States","income":"HIC","incomeName":"High income","region":"NAC","regionName":"North America","latest":{"mmr":{"v":17,"y":"2023"},"nmr":{"v":3.7,"y":"2024"},"u5":{"v":6.5,"y":"2024"},"sba":{"v":99.1,"y":"2020"},"adol":{"v":12.412,"y":"2024"},"tfr":{"v":1.6265,"y":"2024"},"stnt":{"v":3.8,"y":"2022"}},"mmr":[12,13,13,13,13,13,13,13,14,15,15,15,16,16,17,17,18,18,18,18,22,31,20,17,null],"nmr":[4.6,4.7,4.7,4.6,4.5,4.5,4.4,4.3,4.2,4.1,4.1,4.1,4.1,4,4,3.9,3.8,3.8,3.8,3.7,3.6,3.5,3.5,3.6,3.7],"u5":[8.4,8.3,8.2,8.1,8.1,8,7.9,7.7,7.6,7.5,7.3,7.2,7,6.9,6.8,6.8,6.7,6.6,6.5,6.5,6.5,6.5,6.5,6.5,6.5]},"IDN":{"name":"Indonesia","income":"UMC","incomeName":"Upper middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"mmr":{"v":140,"y":"2023"},"nmr":{"v":9.2,"y":"2024"},"u5":{"v":17.7,"y":"2024"},"sba":{"v":94.7,"y":"2019"},"anc":{"v":97.5,"y":"2017"},"adol":{"v":25.646,"y":"2024"},"tfr":{"v":2.115,"y":"2024"},"stnt":{"v":22,"y":"2023"}},"mmr":[311,300,283,279,283,268,264,257,251,246,242,230,220,208,198,190,182,173,168,161,184,226,148,140,null],"nmr":[22.5,21.7,21.1,20.5,20,19.5,19,18.6,18,17.3,16.6,16,15.3,14.7,14,13.4,12.8,12.3,11.8,11.3,10.8,10.3,9.9,9.5,9.2],"u5":[51.4,49,46.7,44.6,48.6,40.7,38.9,37.2,35.6,34.1,32.6,31.2,29.9,28.6,27.3,26.1,25,23.8,22.8,21.8,20.8,19.9,19.1,18.4,17.7]},"PAK":{"name":"Pakistan","income":"LMC","incomeName":"Lower middle income","region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","latest":{"mmr":{"v":155,"y":"2023"},"nmr":{"v":36.1,"y":"2024"},"u5":{"v":56,"y":"2024"},"sba":{"v":68,"y":"2020"},"anc":{"v":91.2,"y":"2019"},"adol":{"v":39.856,"y":"2024"},"tfr":{"v":3.547,"y":"2024"},"stnt":{"v":37.6,"y":"2018"}},"mmr":[419,400,380,358,333,316,284,265,254,246,240,234,227,220,211,202,193,184,178,173,178,193,160,155,null],"nmr":[57.1,56,55.1,54.2,53.4,52.7,52,51.3,50.7,50.1,49.4,48.6,47.7,46.8,45.8,44.8,43.8,42.8,41.8,40.8,39.9,38.9,37.9,37,36.1],"u5":[107.9,105.1,102.5,100.1,98,96,94.2,92.3,90.5,88.5,86.5,84.3,82,79.6,77.2,74.8,72.4,70.1,67.9,65.8,63.7,61.7,59.7,57.8,56]},"NGA":{"name":"Nigeria","income":"LMC","incomeName":"Lower middle income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":993,"y":"2023"},"nmr":{"v":39,"y":"2024"},"u5":{"v":115.6,"y":"2024"},"sba":{"v":50.7,"y":"2022"},"anc":{"v":67,"y":"2018"},"adol":{"v":83.959,"y":"2024"},"tfr":{"v":4.382,"y":"2024"},"stnt":{"v":33.8,"y":"2021"}},"mmr":[1136,1130,1117,1090,1075,1060,1067,1063,1081,1088,1094,1108,1124,1146,1155,1168,1155,1142,1118,1091,1065,1046,1016,993,null],"nmr":[46.1,44.8,43.4,42.1,40.9,40,39.3,38.8,38.4,38.1,37.9,37.7,37.6,37.7,37.8,38,38.2,38.5,38.7,39,39.2,39.3,39.3,39.2,39],"u5":[177.3,170.5,163.9,157.4,151.4,145.8,140.9,136.5,132.5,129.2,126.3,123.8,121.6,119.9,118.7,117.8,117.4,117.2,117.2,117.4,117.4,117.6,117.5,116.8,115.6]},"BRA":{"name":"Brazil","income":"UMC","incomeName":"Upper middle income","region":"LCN","regionName":"Latin America & Caribbean ","latest":{"mmr":{"v":67,"y":"2023"},"nmr":{"v":7.1,"y":"2024"},"u5":{"v":14.2,"y":"2024"},"sba":{"v":98.4,"y":"2020"},"anc":{"v":97.2,"y":"2015"},"adol":{"v":41.459,"y":"2024"},"tfr":{"v":1.614,"y":"2024"},"stnt":{"v":8,"y":"2019"}},"mmr":[69,66,66,67,70,71,72,73,71,69,66,62,60,61,63,63,64,61,62,65,85,128,104,67,null],"nmr":[18.1,17.2,16.3,15.4,14.6,13.9,13.2,12.6,12,11.5,11.1,10.7,10.3,10,9.7,9.5,10.1,9.2,9.1,9.2,9.2,8.9,8.3,7.6,7.1],"u5":[34.4,32.2,30.1,28.2,26.3,24.6,23.1,21.7,20.5,19.5,18.6,17.9,17.2,16.7,16.3,16,16.8,15.4,15.2,15,14.9,14.7,14.6,14.4,14.2]},"BGD":{"name":"Bangladesh","income":"LMC","incomeName":"Lower middle income","region":"SAS","regionName":"South Asia","latest":{"mmr":{"v":115,"y":"2023"},"nmr":{"v":17.9,"y":"2024"},"u5":{"v":30.5,"y":"2024"},"sba":{"v":59,"y":"2019"},"anc":{"v":75.2,"y":"2019"},"adol":{"v":70.813,"y":"2024"},"tfr":{"v":2.138,"y":"2024"},"stnt":{"v":23.6,"y":"2022"}},"mmr":[523,495,465,436,406,378,352,334,310,293,275,258,244,230,217,204,191,179,168,157,152,194,131,115,null],"nmr":[43.4,41.3,39.5,37.8,36.3,34.9,33.5,32.3,31.1,29.9,28.8,27.7,26.6,25.6,24.6,23.5,22.4,21.2,20.1,19.3,18.6,18.2,18,18,17.9],"u5":[85.5,80.2,75.3,70.8,66.8,63,59.6,56.5,53.6,51.1,48.7,46.5,44.4,42.4,40.5,38.5,36.7,35,33.5,32.3,31.4,30.9,30.7,30.6,30.5]},"RUS":{"name":"Russian Federation","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"mmr":{"v":9,"y":"2023"},"nmr":{"v":2,"y":"2024"},"u5":{"v":5.2,"y":"2024"},"sba":{"v":99.6,"y":"2020"},"adol":{"v":12.157,"y":"2024"},"tfr":{"v":1.418,"y":"2024"}},"mmr":[51,48,47,45,41,38,32,29,27,24,23,19,18,16,16,15,14,12,12,12,19,21,13,9,null],"nmr":[9,8.5,8,7.4,6.8,6.3,5.9,5.4,4.9,4.5,4.5,4.7,4.8,4.7,4.5,4.2,4,3.7,3.4,3.1,2.8,2.6,2.4,2.2,2],"u5":[19.4,18.4,17.3,16.1,15,13.9,12.8,12,11.3,10.7,10.4,10.2,9.9,9.5,8.9,8.2,7.5,6.9,6.4,6,5.7,5.5,5.4,5.3,5.2]},"MEX":{"name":"Mexico","income":"UMC","incomeName":"Upper middle income","region":"LCN","regionName":"Latin America & Caribbean ","latest":{"mmr":{"v":42,"y":"2023"},"nmr":{"v":8.2,"y":"2024"},"u5":{"v":13.1,"y":"2024"},"sba":{"v":96.6,"y":"2017"},"anc":{"v":98.5,"y":"2015"},"adol":{"v":59.316,"y":"2024"},"tfr":{"v":1.892,"y":"2024"},"stnt":{"v":12.5,"y":"2022"}},"mmr":[56,55,55,54,53,52,51,50,51,51,50,47,46,45,44,43,43,44,44,43,61,104,45,42,null],"nmr":[13.9,13,12,11,10.1,9.5,9.1,9,9,9,8.9,8.8,8.7,8.6,8.5,8.5,8.6,9,9.3,9.5,9.4,9.1,8.8,8.5,8.2],"u5":[27.4,26.2,25,23.9,23,22.1,21.3,20.7,20,19.5,18.9,18.4,17.9,17.5,17,16.6,16.2,15.8,15.4,15,14.6,14.2,13.8,13.4,13.1]},"ETH":{"name":"Ethiopia","income":null,"incomeName":"Not classified","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":195,"y":"2023"},"nmr":{"v":25.2,"y":"2024"},"u5":{"v":44.5,"y":"2024"},"sba":{"v":49.8,"y":"2019"},"anc":{"v":73.6,"y":"2019"},"adol":{"v":68.198,"y":"2024"},"tfr":{"v":3.909,"y":"2024"},"stnt":{"v":36.8,"y":"2019"}},"mmr":[870,856,826,797,764,754,729,704,678,649,619,588,545,494,444,401,364,327,297,269,244,250,207,195,null],"nmr":[48.1,47,46.1,45.1,44.2,43.2,42.2,41,39.9,38.7,37.6,36.4,35.3,34.3,33.3,32.3,31.3,30.4,29.5,28.7,27.9,27.6,26.9,25.9,25.2],"u5":[140.1,133.8,127.4,121,114.6,108.3,102.4,96.9,91.8,87.1,82.7,78.6,74.8,71.2,67.7,64.4,61.3,58.4,55.8,53.6,51.5,70.4,68.1,51.5,44.5]},"JPN":{"name":"Japan","income":"HIC","incomeName":"High income","region":"EAS","regionName":"East Asia & Pacific","latest":{"mmr":{"v":3,"y":"2023"},"nmr":{"v":0.9,"y":"2024"},"u5":{"v":2.4,"y":"2024"},"sba":{"v":99.8,"y":"2021"},"adol":{"v":1.631,"y":"2024"},"tfr":{"v":1.15,"y":"2024"},"stnt":{"v":7.1,"y":"2010"}},"mmr":[9,8,8,8,7,7,7,6,6,6,6,6,6,5,5,5,5,5,5,5,4,4,5,3,null],"nmr":[1.8,1.7,1.7,1.6,1.5,1.4,1.3,1.3,1.2,1.2,1.1,1.1,1,1,1,0.9,0.9,0.9,0.9,0.8,0.8,0.8,0.8,0.8,0.9],"u5":[4.5,4.3,4.1,4,3.9,3.7,3.6,3.5,3.4,3.4,3.3,3.3,3.1,3,2.9,2.8,2.7,2.6,2.5,2.5,2.4,2.4,2.4,2.4,2.4]},"PHL":{"name":"Philippines","income":"LMC","incomeName":"Lower middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"mmr":{"v":84,"y":"2023"},"nmr":{"v":13.6,"y":"2024"},"u5":{"v":26.5,"y":"2024"},"sba":{"v":84.4,"y":"2017"},"anc":{"v":93.8,"y":"2017"},"adol":{"v":31.316,"y":"2024"},"tfr":{"v":1.894,"y":"2024"},"stnt":{"v":26.7,"y":"2021"}},"mmr":[127,132,126,127,122,118,129,123,123,122,117,115,110,110,106,104,98,86,92,92,88,153,92,84,null],"nmr":[16.6,16.4,16.1,15.9,15.5,15.2,14.8,14.4,14.1,13.8,13.6,13.4,13.4,13.3,13.4,13.5,13.7,13.9,14.1,14.3,14.4,14.3,14.2,13.9,13.6],"u5":[36.8,36,35.2,34.4,33.6,32.8,32,31.3,30.7,30.1,29.5,29,28.6,28.3,28,27.9,27.8,27.8,27.9,28,28,27.9,27.5,27,26.5]},"EGY":{"name":"Egypt, Arab Rep.","income":"LMC","incomeName":"Lower middle income","region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","latest":{"mmr":{"v":17,"y":"2023"},"nmr":{"v":13.9,"y":"2024"},"u5":{"v":22.4,"y":"2024"},"sba":{"v":97.1,"y":"2021"},"anc":{"v":90.3,"y":"2014"},"adol":{"v":41.126,"y":"2024"},"tfr":{"v":2.735,"y":"2024"},"stnt":{"v":12.8,"y":"2021"}},"mmr":[53,50,48,45,43,41,40,38,36,34,32,31,29,27,26,24,23,21,20,19,31,42,24,17,null],"nmr":[22.8,22.2,21.6,21.1,20.6,20.1,19.4,18.7,17.9,17.3,16.7,16.3,15.9,15.6,15.5,15.3,15.3,15.2,15.2,15.2,15.1,14.9,14.6,14.2,13.9],"u5":[47.3,44.8,42.5,40.4,38.6,37,35.6,34.2,32.8,31.6,30.5,29.5,28.6,27.8,27.1,26.5,26,25.6,25.2,24.8,24.4,24,23.5,22.9,22.4]},"COD":{"name":"Congo, Dem. Rep.","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":427,"y":"2023"},"nmr":{"v":23.6,"y":"2024"},"u5":{"v":89.7,"y":"2024"},"sba":{"v":85.2,"y":"2018"},"anc":{"v":82.4,"y":"2018"},"adol":{"v":105.224,"y":"2024"},"tfr":{"v":5.981,"y":"2024"},"stnt":{"v":44.7,"y":"2023"}},"mmr":[585,588,601,605,607,613,619,631,620,608,601,589,578,567,558,545,526,519,508,493,489,507,456,427,null],"nmr":[34.1,33.5,32.8,32,31.2,29.8,28.9,28.1,27.3,26.7,26,25.5,25,24.5,24.2,24,23.9,23.9,23.9,24,24.1,24.1,24,23.9,23.6],"u5":[184.6,178.4,172.2,165.9,159.4,124.4,118.9,113.8,109.2,105,101.4,98.3,95.9,94.1,92.7,91.9,91.5,91.5,91.7,92.2,92.7,92.9,92.5,91.3,89.7]},"VNM":{"name":"Viet Nam","income":"LMC","incomeName":"Lower middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"mmr":{"v":48,"y":"2023"},"nmr":{"v":8.8,"y":"2024"},"u5":{"v":17.3,"y":"2024"},"sba":{"v":96.1,"y":"2021"},"anc":{"v":97,"y":"2021"},"adol":{"v":33.948,"y":"2024"},"tfr":{"v":1.895,"y":"2024"},"stnt":{"v":18.2,"y":"2023"}},"mmr":[83,78,74,71,72,69,67,66,65,64,62,61,60,60,59,58,56,55,53,52,51,52,49,48,null],"nmr":[15.3,14.6,14,13.5,13.1,12.8,12.5,12.3,12.1,11.9,11.8,11.7,11.5,11.4,11.2,11.1,10.9,10.7,10.5,10.2,10,9.7,9.4,9.1,8.8],"u5":[30.3,29,27.9,26.9,26.1,25.4,24.8,24.3,23.8,23.4,23.1,22.8,22.5,22.3,22,21.6,21.3,20.9,20.5,20,19.5,18.9,18.4,17.8,17.3]},"IRN":{"name":"Iran, Islamic Rep.","income":"UMC","incomeName":"Upper middle income","region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","latest":{"mmr":{"v":16,"y":"2023"},"nmr":{"v":7.2,"y":"2024"},"u5":{"v":11.3,"y":"2024"},"sba":{"v":99,"y":"2014"},"anc":{"v":96.9,"y":"2010"},"adol":{"v":25.787,"y":"2024"},"tfr":{"v":1.684,"y":"2024"},"stnt":{"v":4.8,"y":"2017"}},"mmr":[43,40,38,37,34,33,32,31,30,28,27,26,25,24,23,22,21,20,19,18,34,51,21,16,null],"nmr":[19.5,18.8,18.2,17.5,16.8,16.1,15.5,14.8,14.1,13.3,12.6,12,11.4,10.9,10.5,10,9.6,9.3,8.9,8.6,8.3,8,7.7,7.5,7.2],"u5":[36.4,34.3,32.3,30.3,28.3,26.5,24.7,23.1,21.7,20.4,19.3,18.3,17.5,16.8,16.1,15.5,14.9,14.4,13.9,13.4,13,12.6,12.1,11.7,11.3]},"TUR":{"name":"Turkiye","income":"UMC","incomeName":"Upper middle income","region":"ECS","regionName":"Europe & Central Asia","latest":{"mmr":{"v":15,"y":"2023"},"nmr":{"v":4.6,"y":"2024"},"u5":{"v":9.6,"y":"2024"},"sba":{"v":97,"y":"2019"},"anc":{"v":96.4,"y":"2018"},"adol":{"v":11.182,"y":"2024"},"tfr":{"v":1.48,"y":"2024"},"stnt":{"v":6,"y":"2018"}},"mmr":[32,31,30,29,28,27,26,25,24,23,23,23,21,20,20,19,19,18,17,17,19,20,21,15,null],"nmr":[18.1,16.9,15.6,14.5,13.5,12.6,11.7,10.8,10,9.2,8.5,7.9,7.4,7,6.7,6.5,6.3,6.1,5.9,5.9,5.7,5.4,5,4.8,4.6],"u5":[37.2,34.5,32,29.6,27.4,25.3,23.5,21.8,20.3,18.9,17.6,16.6,15.6,14.7,14,13.3,12.7,12.2,11.7,11.3,10.9,10.6,10.2,13.8,9.6]},"DEU":{"name":"Germany","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"mmr":{"v":4,"y":"2023"},"nmr":{"v":2.3,"y":"2024"},"u5":{"v":3.7,"y":"2024"},"sba":{"v":96.2,"y":"2019"},"anc":{"v":100,"y":"2004"},"adol":{"v":5.237,"y":"2024"},"tfr":{"v":1.36,"y":"2024"},"stnt":{"v":1.3,"y":"2016"}},"mmr":[7,6,6,6,6,6,6,5,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,4,null],"nmr":[2.8,2.7,2.7,2.7,2.6,2.6,2.6,2.5,2.4,2.4,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3],"u5":[5.4,5.2,5.1,5,4.9,4.7,4.6,4.5,4.4,4.3,4.2,4.1,4,4,4,3.9,3.9,3.8,3.8,3.7,3.7,3.7,3.7,3.7,3.7]},"THA":{"name":"Thailand","income":"UMC","incomeName":"Upper middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"mmr":{"v":34,"y":"2023"},"nmr":{"v":5.1,"y":"2024"},"u5":{"v":9,"y":"2024"},"sba":{"v":99.1,"y":"2019"},"anc":{"v":98.6,"y":"2019"},"adol":{"v":25.045,"y":"2024"},"tfr":{"v":1.204,"y":"2024"},"stnt":{"v":12.4,"y":"2022"}},"mmr":[49,47,44,42,44,40,38,38,37,37,37,37,36,35,34,34,34,34,34,34,36,38,112,34,null],"nmr":[12.2,11.6,11,10.5,10.1,9.6,9.2,8.8,8.5,8.2,7.9,7.6,7.3,7.1,6.8,6.6,6.4,6.2,6.1,5.9,5.7,5.6,5.4,5.3,5.1],"u5":[21.7,20.7,19.7,18.9,18,17.2,16.5,15.9,15.2,14.7,14.1,13.6,13.1,12.7,12.3,11.9,11.5,11.1,10.8,10.4,10.1,9.8,9.5,9.2,9]},"GBR":{"name":"United Kingdom","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"mmr":{"v":8,"y":"2023"},"nmr":{"v":3,"y":"2024"},"u5":{"v":4.7,"y":"2024"},"adol":{"v":7.817,"y":"2024"},"tfr":{"v":1.551,"y":"2024"},"stnt":{"v":2,"y":"2019"}},"mmr":[12,13,13,14,13,12,12,11,11,11,10,10,9,9,9,9,9,9,9,9,14,13,15,8,null],"nmr":[3.8,3.7,3.6,3.6,3.5,3.5,3.4,3.3,3.2,3.1,3,2.9,2.8,2.7,2.6,2.6,2.7,2.7,2.7,2.7,2.8,2.8,2.9,3,3],"u5":[6.5,6.4,6.3,6.2,6.1,6,5.9,5.8,5.6,5.4,5.2,5,4.8,4.6,4.5,4.5,4.4,4.4,4.4,4.4,4.4,4.4,4.5,4.6,4.7]},"FRA":{"name":"France","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"mmr":{"v":7,"y":"2023"},"nmr":{"v":2.8,"y":"2024"},"u5":{"v":4.3,"y":"2024"},"sba":{"v":98.2,"y":"2020"},"anc":{"v":99.8,"y":"2004"},"adol":{"v":3.302,"y":"2024"},"tfr":{"v":1.61,"y":"2024"}},"mmr":[9,9,9,9,9,9,9,9,10,10,9,9,9,9,9,9,9,8,9,8,9,9,9,7,null],"nmr":[2.7,2.7,2.7,2.6,2.5,2.4,2.4,2.4,2.4,2.4,2.3,2.3,2.3,2.3,2.4,2.4,2.5,2.5,2.6,2.6,2.6,2.6,2.7,2.8,2.8],"u5":[5.4,5.2,5.1,4.9,4.8,4.6,4.5,4.4,4.4,4.3,4.2,4.2,4.1,4.1,4.1,4.2,4.2,4.2,4.2,4.2,4.2,4.3,4.3,4.3,4.3]},"TZA":{"name":"Tanzania","income":"LMC","incomeName":"Lower middle income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":276,"y":"2023"},"nmr":{"v":19.9,"y":"2024"},"u5":{"v":37,"y":"2024"},"sba":{"v":63.5,"y":"2016"},"anc":{"v":98,"y":"2017"},"adol":{"v":112.612,"y":"2024"},"tfr":{"v":4.541,"y":"2024"},"stnt":{"v":30,"y":"2022"}},"mmr":[568,493,454,397,365,350,366,453,511,502,486,475,448,479,454,433,396,345,319,292,160,162,152,276,null],"nmr":[32.6,31.6,30.5,29.4,28.4,27.6,26.8,26.2,25.6,25.1,24.6,24.2,23.9,23.7,23.5,23.4,23.4,23.3,23.1,22.7,22.3,21.7,21.2,20.6,19.9],"u5":[128,120.3,112.4,105,98.3,92.2,86.7,81.3,76.6,72,68.2,64.6,61.7,59,56.3,54.3,52,49.8,47.6,45.6,43.8,41.7,40.1,38.5,37]},"ZAF":{"name":"South Africa","income":"UMC","incomeName":"Upper middle income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":118,"y":"2023"},"nmr":{"v":12.4,"y":"2024"},"u5":{"v":35.1,"y":"2024"},"sba":{"v":96.7,"y":"2016"},"anc":{"v":93.7,"y":"2016"},"adol":{"v":51.844,"y":"2024"},"tfr":{"v":2.205,"y":"2024"},"stnt":{"v":21.3,"y":"2017"}},"mmr":[175,192,225,245,259,279,283,272,272,241,226,202,194,180,162,150,141,134,128,119,118,191,129,118,null],"nmr":[13.5,13,12.7,12.6,12.6,12.8,13.1,13.3,13.4,13.3,13,12.5,12.1,11.9,11.7,11.7,11.6,11.5,11.4,11.5,11.6,11.7,12,12.2,12.4],"u5":[71.4,74.5,77,79.2,80.7,79.8,76.9,71.2,63.7,56.9,50.3,45.6,43.1,41.4,39.7,38.2,36.8,35.7,34.9,34.3,33.9,34,34.3,34.8,35.1]},"ITA":{"name":"Italy","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"mmr":{"v":6,"y":"2023"},"nmr":{"v":1.8,"y":"2024"},"u5":{"v":2.7,"y":"2024"},"sba":{"v":99.8,"y":"2020"},"anc":{"v":99,"y":"2004"},"adol":{"v":2.871,"y":"2024"},"tfr":{"v":1.18,"y":"2024"}},"mmr":[11,10,10,8,8,8,7,7,7,8,8,8,8,8,8,8,8,8,7,7,8,7,10,6,null],"nmr":[3.5,3.3,3.1,2.9,2.8,2.7,2.6,2.5,2.5,2.4,2.4,2.4,2.3,2.2,2.2,2.1,2.1,2,1.9,1.8,1.8,1.8,1.8,1.8,1.8],"u5":[5.6,5.3,5.1,4.8,4.6,4.5,4.3,4.2,4.1,4.1,4,3.9,3.8,3.7,3.6,3.5,3.4,3.3,3.2,3.1,3,2.9,2.8,2.8,2.7]},"MMR":{"name":"Myanmar","income":"LMC","incomeName":"Lower middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"mmr":{"v":185,"y":"2023"},"nmr":{"v":19.6,"y":"2024"},"u5":{"v":36.9,"y":"2024"},"sba":{"v":60.2,"y":"2016"},"anc":{"v":80.7,"y":"2016"},"adol":{"v":33.193,"y":"2024"},"tfr":{"v":2.098,"y":"2024"},"stnt":{"v":26.7,"y":"2018"}},"mmr":[375,361,347,335,324,312,301,290,286,268,259,249,243,237,228,222,215,209,201,195,198,231,193,185,null],"nmr":[36.8,35.8,34.9,34.1,33.2,32.4,31.5,30.7,30.4,29,28.1,27.2,26.4,25.7,25,24.4,23.8,23.1,22.6,22.1,21.6,21.1,20.6,20.1,19.6],"u5":[88.9,86.5,84.1,81.6,79.1,76.3,73.6,70.8,101.7,65.1,62.4,59.7,57,54.6,52.4,50.5,48.7,46.8,45.2,43.6,42.1,40.8,39.5,38.1,36.9]},"KEN":{"name":"Kenya","income":"LMC","incomeName":"Lower middle income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":149,"y":"2023"},"nmr":{"v":20.7,"y":"2024"},"u5":{"v":38.8,"y":"2024"},"sba":{"v":70.2,"y":"2016"},"anc":{"v":92.8,"y":"2020"},"adol":{"v":54.498,"y":"2024"},"tfr":{"v":3.167,"y":"2024"},"stnt":{"v":17.6,"y":"2022"}},"mmr":[206,188,182,177,177,178,188,198,197,208,210,209,214,206,203,203,196,186,183,176,184,183,155,149,null],"nmr":[26.3,26.1,25.8,25.5,25.1,24.7,24.3,24,23.7,23.5,23.4,23.3,23.3,23.3,23.3,23.2,23.1,22.8,22.6,22.3,22,21.7,21.4,21.1,20.7],"u5":[95.2,90.5,85.6,80.8,76.1,71.2,66.8,62.9,58,55.2,53.1,51.7,50.7,49.4,48.3,46.8,45.5,44.7,43.7,42.7,42.1,41.3,40.5,39.6,38.8]},"COL":{"name":"Colombia","income":"UMC","incomeName":"Upper middle income","region":"LCN","regionName":"Latin America & Caribbean ","latest":{"mmr":{"v":59,"y":"2023"},"nmr":{"v":6.3,"y":"2024"},"u5":{"v":11.5,"y":"2024"},"sba":{"v":98.8,"y":"2019"},"anc":{"v":97.2,"y":"2016"},"adol":{"v":58.393,"y":"2024"},"tfr":{"v":1.634,"y":"2024"},"stnt":{"v":12.7,"y":"2016"}},"mmr":[95,94,91,87,84,82,81,80,78,77,76,75,73,72,71,70,69,68,67,66,94,147,74,59,null],"nmr":[13.5,13.1,12.7,12.3,12,11.7,11.3,11,10.6,10.3,10,9.6,9.3,9,8.7,8.5,8.2,7.9,7.7,7.4,7.2,6.9,6.7,6.5,6.3],"u5":[25,24.2,23.5,22.7,22.1,21.4,20.7,20.1,19.5,18.8,18.2,17.6,17.1,16.5,16,15.5,15,14.5,14,13.5,13.1,12.7,12.3,11.9,11.5]},"KOR":{"name":"Korea, Rep.","income":"HIC","incomeName":"High income","region":"EAS","regionName":"East Asia & Pacific","latest":{"mmr":{"v":4,"y":"2023"},"nmr":{"v":1.2,"y":"2024"},"u5":{"v":2.8,"y":"2024"},"sba":{"v":100,"y":"2015"},"adol":{"v":0.532,"y":"2024"},"tfr":{"v":0.748,"y":"2024"},"stnt":{"v":0.9,"y":"2020"}},"mmr":[15,14,13,13,12,11,10,10,9,9,8,8,8,7,7,6,6,6,5,5,12,5,7,4,null],"nmr":[3.4,3.2,3,2.8,2.6,2.4,2.2,2,1.9,1.8,1.8,1.7,1.7,1.7,1.7,1.6,1.6,1.6,1.5,1.5,1.4,1.3,1.2,1.2,1.2],"u5":[7.6,7.2,6.8,6.4,6,5.6,5.2,4.8,4.5,4.3,4.1,4,3.8,3.7,3.6,3.5,3.4,3.3,3.2,3.1,3.1,3,2.9,2.9,2.8]},"SDN":{"name":"Sudan","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":256,"y":"2023"},"nmr":{"v":23.7,"y":"2024"},"u5":{"v":61.6,"y":"2024"},"sba":{"v":77.7,"y":"2014"},"anc":{"v":79.1,"y":"2014"},"adol":{"v":64.535,"y":"2024"},"tfr":{"v":4.264,"y":"2024"},"stnt":{"v":38.2,"y":"2014"}},"mmr":[645,616,588,593,536,506,485,445,426,382,370,357,340,327,309,298,288,277,268,262,273,305,263,256,null],"nmr":[36.3,35.7,35,34.3,33.9,33.3,32.6,32.1,31.6,31.1,30.7,30.2,29.7,29.3,28.7,28.2,27.6,27.1,26.6,26.1,25.6,25.1,24.5,24.2,23.7],"u5":[102,98.6,95.2,91.9,101.1,98.8,83,80.4,77.9,75.5,73.4,71.3,69.3,67.3,65.4,63.5,61.6,59.7,57.8,56.1,54.3,52.7,51,63.1,61.6]},"UGA":{"name":"Uganda","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":170,"y":"2023"},"nmr":{"v":21.3,"y":"2024"},"u5":{"v":48.7,"y":"2024"},"sba":{"v":74.2,"y":"2016"},"anc":{"v":95.1,"y":"2019"},"adol":{"v":104.733,"y":"2024"},"tfr":{"v":4.165,"y":"2024"},"stnt":{"v":24.4,"y":"2022"}},"mmr":[475,440,416,395,384,417,409,345,324,322,304,295,285,308,311,299,272,246,232,219,209,216,184,170,null],"nmr":[32.3,31.5,30.6,29.7,28.9,28.3,27.7,27.2,26.6,26.2,25.7,25.3,24.8,24.3,23.8,23.3,22.9,22.6,22.3,22,21.8,21.6,21.6,21.5,21.3],"u5":[143.9,137.2,129.9,122.1,114.2,106.5,99.2,92.5,86.4,81.2,76,70.9,66.5,62.8,60.2,57.9,55.6,54,52.7,51.6,50.9,50.2,50,49.4,48.7]},"ESP":{"name":"Spain","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"mmr":{"v":3,"y":"2023"},"nmr":{"v":1.7,"y":"2024"},"u5":{"v":3.2,"y":"2024"},"sba":{"v":99.9,"y":"2020"},"adol":{"v":4.85,"y":"2024"},"tfr":{"v":1.1,"y":"2024"}},"mmr":[5,5,5,4,5,5,4,4,4,4,4,4,4,4,4,4,3,3,3,3,4,4,4,3,null],"nmr":[2.8,2.8,2.7,2.6,2.5,2.4,2.3,2.2,2.2,2.1,2.1,2.1,2.1,2,2,1.9,1.9,1.9,1.9,1.9,1.8,1.8,1.8,1.7,1.7],"u5":[5.4,5.3,5.1,5,4.9,4.7,4.5,4.4,4.2,4,3.8,3.7,3.6,3.5,3.4,3.3,3.3,3.2,3.2,3.2,3.2,3.2,3.2,3.2,3.2]},"DZA":{"name":"Algeria","income":"UMC","incomeName":"Upper middle income","region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","latest":{"mmr":{"v":62,"y":"2023"},"nmr":{"v":15,"y":"2024"},"u5":{"v":21.6,"y":"2024"},"sba":{"v":98.8,"y":"2019"},"anc":{"v":95.3,"y":"2019"},"adol":{"v":8.582,"y":"2024"},"tfr":{"v":2.723,"y":"2024"},"stnt":{"v":9.8,"y":"2019"}},"mmr":[123,113,102,101,91,87,84,83,83,83,82,81,81,81,80,79,79,77,75,73,97,79,64,62,null],"nmr":[22.6,22.3,21.8,21.4,20.8,20.2,19.7,19.1,18.6,18.2,17.9,17.6,17.1,16.4,15.6,15.2,15.1,15.2,15.5,15.9,15.9,15.9,15.6,15.3,15],"u5":[41.7,40.2,38.6,37,35.4,33.9,32.5,31.2,30.1,29,28.1,27.3,26.6,25.9,25.4,24.9,24.5,24,23.7,23.3,22.9,22.6,22.3,22,21.6]},"IRQ":{"name":"Iraq","income":"UMC","incomeName":"Upper middle income","region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","latest":{"mmr":{"v":66,"y":"2023"},"nmr":{"v":12.5,"y":"2024"},"u5":{"v":21.8,"y":"2024"},"sba":{"v":95.6,"y":"2018"},"anc":{"v":87.6,"y":"2018"},"adol":{"v":57.308,"y":"2024"},"tfr":{"v":3.221,"y":"2024"},"stnt":{"v":12.6,"y":"2018"}},"mmr":[146,137,128,125,122,118,120,117,109,107,107,105,100,96,90,86,87,81,76,74,63,77,59,66,null],"nmr":[23.9,23.6,23.2,22.9,22.5,22.2,21.7,21.3,20.8,20.2,19.6,19,18.4,17.9,17.3,16.7,16.2,15.6,15.1,14.7,14.2,13.7,13.3,12.9,12.5],"u5":[44.3,43.4,42.5,41.6,40.7,39.7,38.8,37.7,36.7,35.6,34.5,33.4,32.4,31.3,30.3,29.3,28.4,27.5,26.5,25.7,24.9,24,23.3,22.5,21.8]},"ARG":{"name":"Argentina","income":"UMC","incomeName":"Upper middle income","region":"LCN","regionName":"Latin America & Caribbean ","latest":{"mmr":{"v":33,"y":"2023"},"nmr":{"v":5.1,"y":"2024"},"u5":{"v":9.5,"y":"2024"},"sba":{"v":98.8,"y":"2020"},"anc":{"v":95,"y":"2020"},"adol":{"v":25.56,"y":"2024"},"tfr":{"v":1.504,"y":"2024"},"stnt":{"v":8.7,"y":"2018"}},"mmr":[58,60,59,61,58,57,60,62,59,62,55,48,49,47,43,39,40,38,38,36,40,76,39,33,null],"nmr":[11,11,10.8,10.2,9.6,9.1,8.8,8.5,8.1,7.8,7.6,7.5,7.4,7.3,7.1,6.8,6.5,6.3,6.2,6.1,6,5.9,5.7,5.4,5.1],"u5":[19.4,18.8,18.3,17.8,17.3,16.7,16.2,15.8,15.4,15,14.4,13.9,13.3,12.7,12.2,11.7,11.4,11,10.7,10.5,10.3,10.1,9.9,9.7,9.5]},"AFG":{"name":"Afghanistan","income":"LIC","incomeName":"Low income","region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","latest":{"mmr":{"v":521,"y":"2023"},"nmr":{"v":33.1,"y":"2024"},"u5":{"v":53,"y":"2024"},"sba":{"v":61.8,"y":"2020"},"anc":{"v":65.2,"y":"2018"},"adol":{"v":61.501,"y":"2024"},"tfr":{"v":4.761,"y":"2024"},"stnt":{"v":44.6,"y":"2022"}},"mmr":[1372,1311,1263,1201,1166,1108,1069,1032,955,925,893,838,810,778,755,741,702,659,629,601,634,660,551,521,null],"nmr":[62.2,60.9,59.6,58.2,56.8,55.4,53.9,52.4,50.9,49.4,48,46.5,45.2,43.9,42.7,41.5,40.4,39.4,38.4,37.4,36.5,35.6,34.7,33.9,33.1],"u5":[131.7,127.5,123.1,118.5,113.9,109.3,104.8,100.4,96.1,91.9,88,84.3,80.8,77.6,74.6,71.9,69.4,67.1,64.8,62.7,60.7,58.7,56.8,54.9,53]},"YEM":{"name":"Yemen, Rep.","income":"LIC","incomeName":"Low income","region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","latest":{"mmr":{"v":118,"y":"2023"},"nmr":{"v":20.9,"y":"2024"},"u5":{"v":38.1,"y":"2024"},"sba":{"v":44.7,"y":"2013"},"anc":{"v":59.8,"y":"2013"},"adol":{"v":73.887,"y":"2024"},"tfr":{"v":4.499,"y":"2024"},"stnt":{"v":48.5,"y":"2022"}},"mmr":[241,231,218,205,194,181,171,161,153,149,144,140,137,135,134,135,134,142,134,131,135,156,125,118,null],"nmr":[36.7,35.7,34.5,33.4,32.3,31.2,30.2,29.2,28.3,27.5,26.7,26.1,25.5,25,24.6,24.2,23.8,23.5,23.2,22.8,22.5,22.1,21.8,21.3,20.9],"u5":[92.9,88.2,83.5,79,74.7,70.6,66.9,63.4,60.2,57.5,55,53.1,51.6,49.6,48.7,49.3,47.9,47.5,47.3,46.1,43.4,42.6,41.1,39.5,38.1]},"CAN":{"name":"Canada","income":"HIC","incomeName":"High income","region":"NAC","regionName":"North America","latest":{"mmr":{"v":12,"y":"2023"},"nmr":{"v":3.4,"y":"2024"},"u5":{"v":5.4,"y":"2024"},"sba":{"v":98,"y":"2020"},"anc":{"v":100,"y":"2007"},"adol":{"v":4.501,"y":"2024"},"tfr":{"v":1.25,"y":"2024"}},"mmr":[9,10,10,10,10,11,11,11,12,12,11,11,11,11,12,11,12,12,13,12,17,14,15,12,null],"nmr":[3.7,3.8,3.9,3.9,4,3.9,3.9,3.8,3.8,3.8,3.8,3.7,3.7,3.6,3.6,3.5,3.5,3.5,3.5,3.5,3.5,3.5,3.4,3.4,3.4],"u5":[6.2,6.2,6.2,6.2,6.1,6.1,6,6,5.9,5.8,5.7,5.6,5.6,5.5,5.4,5.3,5.3,5.2,5.2,5.2,5.2,5.2,5.3,5.4,5.4]},"POL":{"name":"Poland","income":"HIC","incomeName":"High income","region":"ECS","regionName":"Europe & Central Asia","latest":{"mmr":{"v":2,"y":"2023"},"nmr":{"v":2.5,"y":"2024"},"u5":{"v":4.2,"y":"2024"},"sba":{"v":99.6,"y":"2021"},"adol":{"v":5.849,"y":"2024"},"tfr":{"v":1.14,"y":"2024"},"stnt":{"v":1,"y":"2018"}},"mmr":[7,6,5,5,4,4,4,3,3,3,3,2,2,2,2,2,2,2,2,2,3,2,2,2,null],"nmr":[5.8,5.4,5.2,5,4.8,4.6,4.4,4.2,4,3.8,3.6,3.4,3.2,3.1,3,2.9,2.8,2.8,2.8,2.7,2.7,2.7,2.6,2.6,2.5],"u5":[9.3,8.8,8.4,8.1,7.8,7.6,7.3,7,6.7,6.3,6,5.7,5.4,5.2,5,4.9,4.8,4.6,4.5,4.5,4.4,4.4,4.3,4.3,4.2]},"MAR":{"name":"Morocco","income":"LMC","incomeName":"Lower middle income","region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","latest":{"mmr":{"v":70,"y":"2023"},"nmr":{"v":9.6,"y":"2024"},"u5":{"v":15.7,"y":"2024"},"sba":{"v":86.6,"y":"2018"},"anc":{"v":88.5,"y":"2018"},"adol":{"v":24.763,"y":"2024"},"tfr":{"v":2.208,"y":"2024"},"stnt":{"v":14.2,"y":"2019"}},"mmr":[271,254,238,224,213,196,182,169,158,148,140,130,121,113,106,100,94,88,83,79,81,92,71,70,null],"nmr":[28.4,27.7,26.9,26.1,25.3,24.5,23.5,22.6,21.4,20.2,19,17.9,16.9,15.9,15,14.2,13.4,12.8,12.2,11.7,11.2,10.8,10.4,10,9.6],"u5":[52.4,50.2,48,45.8,43.6,41.4,39.2,36.9,34.8,32.8,30.9,29.2,27.5,26,24.5,23.1,21.9,20.8,19.9,19.1,18.3,17.6,17,16.3,15.7]},"AGO":{"name":"Angola","income":"LMC","incomeName":"Lower middle income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":183,"y":"2023"},"nmr":{"v":18.1,"y":"2024"},"u5":{"v":49,"y":"2024"},"sba":{"v":49.6,"y":"2016"},"anc":{"v":81.6,"y":"2016"},"adol":{"v":139.388,"y":"2024"},"tfr":{"v":5.048,"y":"2024"},"stnt":{"v":37.6,"y":"2015"}},"mmr":[659,629,602,538,499,462,437,401,372,348,321,301,278,267,262,249,236,220,208,202,195,211,185,183,null],"nmr":[39.1,38.1,37,35.9,34.5,33,31.4,30,28.7,27.3,26.1,24.8,23.6,22.5,21.6,20.9,20.4,20,19.7,19.4,19.2,19,18.7,18.4,18.1],"u5":[185,176.3,166.4,155.5,143.7,131.5,119.8,109,99.2,90.7,83.4,77.2,72,67.9,64.5,61.8,59.6,57.9,56.5,55.3,54.2,53.2,51.9,50.5,49]},"UKR":{"name":"Ukraine","income":"UMC","incomeName":"Upper middle income","region":"ECS","regionName":"Europe & Central Asia","latest":{"mmr":{"v":15,"y":"2023"},"nmr":{"v":4.5,"y":"2024"},"u5":{"v":7.9,"y":"2024"},"sba":{"v":99.9,"y":"2014"},"anc":{"v":98.6,"y":"2012"},"adol":{"v":10.939,"y":"2024"},"tfr":{"v":0.988,"y":"2024"},"stnt":{"v":22.9,"y":"2000"}},"mmr":[32,30,28,28,27,27,27,27,26,24,21,20,20,20,19,17,17,16,16,16,18,26,16,15,null],"nmr":[10.9,10.4,9.8,9.3,8.9,8.5,8.2,7.9,7.6,7.2,6.9,6.6,6.3,6,5.8,5.6,5.4,5.2,5.1,5,4.9,4.8,4.8,4.7,4.5],"u5":[18.2,17.4,16.6,15.8,15.1,14.5,14,13.4,12.9,12.3,11.7,11.2,10.7,10.2,9.8,9.5,9.1,8.9,8.7,8.5,8.4,8.2,8.5,8,7.9]},"UZB":{"name":"Uzbekistan","income":"LMC","incomeName":"Lower middle income","region":"ECS","regionName":"Europe & Central Asia","latest":{"mmr":{"v":26,"y":"2023"},"nmr":{"v":7.7,"y":"2024"},"u5":{"v":13.4,"y":"2024"},"sba":{"v":99,"y":"2022"},"anc":{"v":99.4,"y":"2015"},"adol":{"v":34.138,"y":"2024"},"tfr":{"v":3.486,"y":"2024"},"stnt":{"v":6.5,"y":"2021"}},"mmr":[42,42,41,40,39,39,38,37,35,34,34,33,33,32,32,31,31,30,29,29,29,28,27,26,null],"nmr":[28.1,27.3,26.4,25.3,24.2,23.1,21.9,20.8,19.4,17.8,16.3,15,13.8,12.7,11.8,11,10.3,9.7,9.3,8.9,8.5,8.3,8,7.8,7.7],"u5":[60.7,58,55,51.9,48.6,45.2,41.9,38.6,35.5,32.6,29.8,27.3,25,23,21.3,19.7,18.4,17.3,16.4,15.7,15.1,14.6,14.1,13.7,13.4]},"MYS":{"name":"Malaysia","income":"UMC","incomeName":"Upper middle income","region":"EAS","regionName":"East Asia & Pacific","latest":{"mmr":{"v":26,"y":"2023"},"nmr":{"v":4.3,"y":"2024"},"u5":{"v":8.3,"y":"2024"},"sba":{"v":99.6,"y":"2019"},"anc":{"v":97.2,"y":"2014"},"adol":{"v":5.72,"y":"2024"},"tfr":{"v":1.543,"y":"2024"},"stnt":{"v":21.2,"y":"2022"}},"mmr":[37,36,34,34,33,31,30,30,29,29,29,29,29,29,30,30,30,29,29,28,29,52,38,26,null],"nmr":[4.9,4.6,4.5,4.3,4.3,4.3,4.3,4.3,4.3,4.3,4.3,4.2,4.2,4.1,4.1,4.2,4.2,4.2,4.3,4.3,4.3,4.3,4.2,4.2,4.3],"u5":[9.9,9.3,8.8,8.6,8.4,8.3,8.3,8.3,8.2,8.2,8.1,8.1,8,8,8.1,8.2,8.2,8.2,8.2,8.2,8.2,8.2,8.2,8.3,8.3]},"MOZ":{"name":"Mozambique","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":99,"y":"2023"},"nmr":{"v":25.1,"y":"2024"},"u5":{"v":59.4,"y":"2024"},"sba":{"v":73,"y":"2015"},"anc":{"v":94,"y":"2018"},"adol":{"v":151.875,"y":"2024"},"tfr":{"v":4.69,"y":"2024"},"stnt":{"v":36.7,"y":"2022"}},"mmr":[547,473,398,360,321,301,298,327,365,352,305,268,218,196,210,216,202,187,159,134,123,180,104,99,null],"nmr":[44.3,41.8,39.5,37.4,35.6,34,32.6,31.5,30.4,29.4,28.6,27.8,27.2,26.9,26.6,26.6,26.6,26.7,26.7,26.6,26.5,26.3,26,25.6,25.1],"u5":[164.6,155.7,147.5,139.8,132.5,125.7,118.8,110.7,104.4,98.3,95.6,91.1,86.5,82.9,79.7,75.8,73.3,72,70.2,68.6,67.6,65.5,63.9,61.7,59.4]},"GHA":{"name":"Ghana","income":"LMC","incomeName":"Lower middle income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":234,"y":"2023"},"nmr":{"v":18.1,"y":"2024"},"u5":{"v":35.9,"y":"2024"},"sba":{"v":78.9,"y":"2018"},"anc":{"v":97.4,"y":"2019"},"adol":{"v":57.447,"y":"2024"},"tfr":{"v":3.344,"y":"2024"},"stnt":{"v":17.4,"y":"2022"}},"mmr":[472,460,434,410,403,390,385,377,380,369,363,356,351,338,317,310,296,287,276,260,253,264,239,234,null],"nmr":[35.2,34.4,33.7,33.1,32.5,32.1,31.6,31.1,30.6,29.9,29,28.1,27.1,26.1,25.2,24.3,23.4,22.6,21.8,21,20.4,19.7,19.2,18.7,18.1],"u5":[99.9,95.8,91.9,88.2,85,82,79.1,76.2,73.1,69.8,66.5,63.3,60.3,57.5,54.9,52.5,50.3,48.2,46.1,44.1,42.2,40.3,38.6,37.2,35.9]},"PER":{"name":"Peru","income":"UMC","incomeName":"Upper middle income","region":"LCN","regionName":"Latin America & Caribbean ","latest":{"mmr":{"v":51,"y":"2023"},"nmr":{"v":6.5,"y":"2024"},"u5":{"v":12.9,"y":"2024"},"sba":{"v":94.9,"y":"2021"},"anc":{"v":98.1,"y":"2020"},"adol":{"v":42.926,"y":"2024"},"tfr":{"v":1.965,"y":"2024"},"stnt":{"v":11.5,"y":"2023"}},"mmr":[115,109,106,104,107,103,99,94,91,89,86,83,79,75,73,71,69,67,66,60,75,141,81,51,null],"nmr":[16.1,15.2,14.3,13.6,12.9,12.3,11.7,11.1,10.6,10.1,9.7,9.3,9,8.6,8.4,8.2,8,7.8,7.7,7.5,7.3,7.1,6.9,6.7,6.5],"u5":[38.3,35.3,32.7,30.4,28.4,26.6,25,23.6,22.3,21.2,20.2,19.3,18.5,17.8,17.2,16.6,16.1,15.7,15.3,14.9,14.5,14.1,13.7,13.3,12.9]},"SAU":{"name":"Saudi Arabia","income":"HIC","incomeName":"High income","region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","latest":{"mmr":{"v":7,"y":"2023"},"nmr":{"v":2.9,"y":"2024"},"u5":{"v":6,"y":"2024"},"sba":{"v":94.8,"y":"2019"},"anc":{"v":97,"y":"2008"},"adol":{"v":11.076,"y":"2024"},"tfr":{"v":2.308,"y":"2024"},"stnt":{"v":10.8,"y":"2020"}},"mmr":[20,19,18,16,16,15,14,13,12,11,11,10,9,9,8,8,8,8,8,8,11,12,9,7,null],"nmr":[11.5,10.9,10.2,9.6,9,8.5,8,7.6,7.1,6.7,6.3,5.9,5.6,5.2,4.9,4.5,4.2,3.9,3.7,3.5,3.3,3.2,3.1,3,2.9],"u5":[21.9,20.6,19.4,18.4,17.3,16.3,15.4,14.5,13.7,12.9,12.1,11.4,10.8,10.1,9.6,9,8.5,8,7.6,7.2,6.9,6.7,6.4,6.2,6]},"MDG":{"name":"Madagascar","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":445,"y":"2023"},"nmr":{"v":23.1,"y":"2024"},"u5":{"v":62.4,"y":"2024"},"sba":{"v":45.8,"y":"2021"},"anc":{"v":88.9,"y":"2021"},"adol":{"v":128.691,"y":"2024"},"tfr":{"v":3.912,"y":"2024"},"stnt":{"v":39.8,"y":"2021"}},"mmr":[638,611,593,571,555,540,528,522,510,507,500,492,487,481,477,474,470,469,466,462,447,467,439,445,null],"nmr":[31,30.2,29.5,28.8,28.2,27.5,26.9,26.3,25.8,25.3,24.8,24.5,24.2,24,23.8,23.7,23.6,23.6,23.6,23.6,23.7,23.6,23.5,23.3,23.1],"u5":[104.4,99.8,95.6,91.6,87.8,84.1,80.8,77.6,74.8,72.4,70.3,68.6,67.3,66.4,65.7,65.3,64.9,64.9,64.9,65,65.1,65,64.5,63.6,62.4]},"CIV":{"name":"Cote d'Ivoire","income":"LMC","incomeName":"Lower middle income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":359,"y":"2023"},"nmr":{"v":27.4,"y":"2024"},"u5":{"v":64.5,"y":"2024"},"sba":{"v":84,"y":"2021"},"anc":{"v":93.2,"y":"2016"},"adol":{"v":90.556,"y":"2024"},"tfr":{"v":4.23,"y":"2024"},"stnt":{"v":23.4,"y":"2021"}},"mmr":[378,405,427,451,456,492,544,567,562,588,592,569,566,544,522,505,488,465,449,429,447,459,409,359,null],"nmr":[40.7,40.2,39.7,39.2,38.7,38.2,37.7,37.1,36.5,36,35.3,34.7,34.1,33.4,32.8,32.2,31.7,31.1,30.6,30,29.5,29,28.5,27.9,27.4],"u5":[140.4,136.9,133.1,129.2,125.3,121.2,117.4,113.5,109,105.2,101.6,98.4,95.3,92,88.6,85.5,83,80.5,77.9,75.3,73,70.8,68.7,66.5,64.5]},"NPL":{"name":"Nepal","income":"LMC","incomeName":"Lower middle income","region":"SAS","regionName":"South Asia","latest":{"mmr":{"v":142,"y":"2023"},"nmr":{"v":15.3,"y":"2024"},"u5":{"v":25.1,"y":"2024"},"sba":{"v":77.2,"y":"2019"},"anc":{"v":88.8,"y":"2019"},"adol":{"v":66.489,"y":"2024"},"tfr":{"v":1.961,"y":"2024"},"stnt":{"v":24.8,"y":"2022"}},"mmr":[480,443,414,387,364,344,318,309,302,299,297,286,272,258,245,236,214,197,183,170,153,173,139,142,null],"nmr":[39.7,38.1,36.7,35.3,34,32.9,31.8,30.7,29.7,28.7,27.7,26.7,25.7,24.7,23.8,22.9,21.9,20.8,19.8,18.9,18,17.2,16.5,15.8,15.3],"u5":[78.7,74.3,70.2,66.5,63.1,60,57.3,54.7,52.4,50.1,47.9,45.8,43.7,41.7,39.7,37.8,36,34.2,32.6,31,29.6,28.3,27.1,26.1,25.1]},"CMR":{"name":"Cameroon","income":"LMC","incomeName":"Lower middle income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":258,"y":"2023"},"nmr":{"v":24.8,"y":"2024"},"u5":{"v":64.8,"y":"2024"},"sba":{"v":69,"y":"2018"},"anc":{"v":87,"y":"2018"},"adol":{"v":105.389,"y":"2024"},"tfr":{"v":4.261,"y":"2024"},"stnt":{"v":28.9,"y":"2018"}},"mmr":[678,672,658,645,633,629,615,605,592,579,562,541,500,469,440,417,393,372,354,336,316,342,276,258,null],"nmr":[35.4,34.5,34,33.6,33.3,33.1,32.9,32.6,32.3,31.9,31.6,31.2,30.8,30.4,30,29.5,28.9,28.4,27.8,27.3,26.8,26.3,25.7,25.2,24.8],"u5":[143.9,141,137.6,134.3,130.9,127.6,124.2,120.8,117.2,113.7,109.5,105.2,100.8,96.5,92.4,88.5,85.1,81.9,78.9,76.6,74.4,71.9,69.4,67,64.8]},"VEN":{"name":"Venezuela, RB","income":null,"incomeName":"Not classified","region":"LCN","regionName":"Latin America & Caribbean ","latest":{"mmr":{"v":227,"y":"2023"},"nmr":{"v":15,"y":"2024"},"u5":{"v":24.2,"y":"2024"},"sba":{"v":98.7,"y":"2018"},"anc":{"v":97.5,"y":"2013"},"adol":{"v":73.189,"y":"2024"},"tfr":{"v":2.077,"y":"2024"},"stnt":{"v":13.4,"y":"2009"}},"mmr":[86,101,87,97,94,93,96,92,103,109,110,104,113,123,133,136,162,195,205,202,207,251,219,227,null],"nmr":[10.8,10.3,9.9,9.9,10.2,10.3,10.2,10.1,10.2,10.4,10.7,10.9,11.1,11.3,11.5,14.6,15,15,15,15,15,15,15,15,15],"u5":[21.5,20.9,20.3,19.8,19.2,18.5,17.9,17.4,17.2,17.1,17.2,17.4,17.6,17.9,18.3,19.1,24.2,24.2,24.2,24.2,24.2,24.2,24.2,24.2,24.2]},"NER":{"name":"Niger","income":"LIC","incomeName":"Low income","region":"SSF","regionName":"Sub-Saharan Africa ","latest":{"mmr":{"v":350,"y":"2023"},"nmr":{"v":32.8,"y":"2024"},"u5":{"v":110.7,"y":"2024"},"sba":{"v":43.7,"y":"2021"},"anc":{"v":83.5,"y":"2021"},"adol":{"v":141.551,"y":"2024"},"tfr":{"v":5.935,"y":"2024"},"stnt":{"v":47.7,"y":"2022"}},"mmr":[845,843,835,813,790,764,737,704,669,647,621,585,554,526,497,473,450,433,420,406,388,396,361,350,null],"nmr":[44.1,42.6,41.1,39.8,38.6,37.5,36.6,35.9,35.2,34.8,34.4,34.2,34.2,34.3,34.4,34.5,34.4,34.4,34.3,34.3,34.2,33.9,33.6,33.2,32.8],"u5":[227.9,217.4,205.9,194.1,182.4,171.4,161.6,153.1,146,140.3,136,132.7,130.3,128.3,126.8,125.4,124.3,123.1,121.9,120.8,119.5,118,116,113.5,110.7]},"AUS":{"name":"Australia","income":"HIC","incomeName":"High income","region":"EAS","regionName":"East Asia & Pacific","latest":{"mmr":{"v":2,"y":"2023"},"nmr":{"v":2.3,"y":"2024"},"u5":{"v":3.6,"y":"2024"},"sba":{"v":96,"y":"2020"},"anc":{"v":98.3,"y":"2008"},"adol":{"v":6.419,"y":"2024"},"tfr":{"v":1.481,"y":"2024"},"stnt":{"v":1.9,"y":"2007"}},"mmr":[7,6,6,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,5,5,5,4,4,2,null],"nmr":[3.5,3.5,3.4,3.4,3.3,3.3,3.2,3.1,3,2.9,2.8,2.6,2.5,2.4,2.4,2.4,2.3,2.3,2.3,2.4,2.4,2.4,2.3,2.3,2.3],"u5":[6.2,6.1,6,5.9,5.8,5.7,5.6,5.4,5.2,5,4.8,4.5,4.3,4.1,4,3.9,3.8,3.8,3.8,3.8,3.8,3.7,3.7,3.7,3.6]}}};
+let LIVE=false;
+
+// indicator id -> short key
+const IND2K={"SH.STA.MMRT":"mmr","SH.DYN.NMRT":"nmr","SH.DYN.MORT":"u5","SH.STA.BRTC.ZS":"sba","SH.STA.ANVC.ZS":"anc","SP.ADO.TFRT":"adol","SP.DYN.TFRT.IN":"tfr","SH.STA.STNT.ZS":"stnt"};
+const SERIESK=["mmr","nmr","u5"]; // indicators with a full embedded time series
+const COUNTRIES=["CHN","IND","USA","IDN","PAK","NGA","BRA","BGD","RUS","MEX","ETH","JPN","PHL","EGY","COD","VNM","IRN","TUR","DEU","THA","GBR","FRA","TZA","ZAF","ITA","MMR","KEN","COL","KOR","SDN","UGA","ESP","DZA","IRQ","ARG","AFG","YEM","CAN","POL","MAR","AGO","UKR","UZB","MYS","MOZ","GHA","PER","SAU","MDG","CIV","NPL","CMR","VEN","NER","AUS"];
+const AGG=["WLD","XD","XT","XN","XM","SSF","EAS","ECS","LCN","MEA","NAC","SAS"];
+const AGGREMAP={"XD":"HIC","XT":"UMC","XN":"LMC","XM":"LIC","1W":"WLD"};
+const INCOME=[["HIC","High income"],["UMC","Upper-middle income"],["LMC","Lower-middle income"],["LIC","Low income"]];
+const REGION=[["NAC","North America"],["ECS","Europe & Central Asia"],["EAS","East Asia & Pacific"],["LCN","Latin America & Caribbean"],["MEA","Middle East & North Africa"],["SAS","South Asia"],["SSF","Sub-Saharan Africa"]];
+
+// ---- helpers
+function fmtVal(v,k){
+ if(v==null||!isFinite(v))return '—';
+ const dec=(SNAP.indMeta[k]&&SNAP.indMeta[k].dec)||0;
+ return Number(v).toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+function unitOf(k){return SNAP.indMeta[k]?SNAP.indMeta[k].unit:'';}
+function nameOf(k){return SNAP.indMeta[k]?SNAP.indMeta[k].name:k;}
+function goodHigh(k){return SNAP.indMeta[k]&&SNAP.indMeta[k].good==='high';}
+function lastNonNull(arr){for(let i=arr.length-1;i>=0;i--){if(arr[i]!=null&&isFinite(arr[i]))return{v:arr[i],i};}return{v:null,i:-1};}
+function firstNonNull(arr){for(let i=0;i<arr.length;i++){if(arr[i]!=null&&isFinite(arr[i]))return{v:arr[i],i};}return{v:null,i:-1};}
+function yearAt(i){return SNAP.years[i]||'—';}
+function spark(arr,w,h,col,fill){
+ const v=arr.filter(x=>x!=null&&isFinite(x));if(v.length<2)return '<span class="muted small">—</span>';
+ const mn=Math.min(...v),mx=Math.max(...v),rng=(mx-mn)||1,n=arr.length;
+ let d='',started=false;
+ arr.forEach((x,i)=>{if(x==null||!isFinite(x))return;const X=(i/(n-1))*w,Y=h-((x-mn)/rng)*(h-3)-1.5;d+=(started?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1)+' ';started=true;});
+ const area=fill?'<path d="'+d+'L'+w+' '+h+' L0 '+h+' Z" fill="'+col+'1f"/>':'';
+ return '<svg viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" preserveAspectRatio="none" style="display:block">'+area+'<path d="'+d.trim()+'" fill="none" stroke="'+col+'" stroke-width="1.6"/></svg>';
+}
+// change latest-vs-2000 for a series; "improve" colored green by indicator polarity
+function changeHtml(arr,k){
+ const f=firstNonNull(arr),l=lastNonNull(arr);
+ if(f.v==null||l.v==null||l.i===f.i)return '<span class="muted">—</span>';
+ const diff=l.v-f.v;const better=goodHigh(k)?diff>0:diff<0;
+ const ar=diff>0?'▲':(diff<0?'▼':'■');
+ const cls=better?'dn':'up';
+ const dec=(SNAP.indMeta[k]&&SNAP.indMeta[k].dec)||0;
+ const mag=Math.abs(diff).toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});
+ return '<span class="delta '+cls+'">'+ar+' '+mag+'</span>';
+}
+// color tint per indicator value (good direction baked in)
+function valColor(v,k){
+ if(v==null)return 'var(--dim)';
+ const t={mmr:[400,150,70],nmr:[30,15,7],u5:[60,30,12],sba:[60,80,95],anc:[60,80,95],adol:[100,50,20],tfr:[4,3,2.1],stnt:[30,15,5]}[k];
+ if(!t)return 'var(--teal)';
+ const high=goodHigh(k);
+ let bucket;
+ if(high){bucket=v>=t[2]?3:v>=t[1]?2:v>=t[0]?1:0;}
+ else{bucket=v<=t[2]?3:v<=t[1]?2:v<=t[0]?1:0;}
+ return ['#ef5466','#f3833b','#f5b945','#3ddc97'][bucket];
+}
+function badgeFor(k){
+ // maternal mortality & survey-based coverage/stunting are modeled estimates
+ return (k==='mmr'||k==='sba'||k==='anc'||k==='stnt')?'<span class="badge b-mod">modeled</span>':'<span class="badge b-meas">measured</span>';
+}
+
+// ---- (a) HEADLINE
+function renderGlobal(){
+ const wld=SNAP.agg.WLD&&SNAP.agg.WLD.s;if(!wld)return;
+ const mmr=wld.mmr||[],nmr=wld.nmr||[],u5=wld.u5||[];
+ const mmrL=lastNonNull(mmr),nmrL=lastNonNull(nmr),u5L=lastNonNull(u5);
+ const mmrF=firstNonNull(mmr),nmrF=firstNonNull(nmr),u5F=firstNonNull(u5);
+ $('mmryear').textContent=yearAt(mmrL.i);$('nmryear').textContent=yearAt(nmrL.i);$('u5year').textContent=yearAt(u5L.i);
+ $('mmrv').innerHTML=fmtVal(mmrL.v,'mmr')+' <small>per 100,000</small>';
+ $('nmrv').innerHTML=fmtVal(nmrL.v,'nmr')+' <small>per 1,000</small>';
+ $('u5v').innerHTML=fmtVal(u5L.v,'u5')+' <small>per 1,000</small>';
+ function dropLine(F,L,k){
+   if(F.v==null||L.v==null)return '<span class="muted">—</span>';
+   const drop=F.v-L.v;const pct=F.v?Math.round(100*drop/F.v):null;
+   return 'since '+yearAt(F.i)+': <span class="delta dn">▼ −'+fmtVal(drop,k)+'</span>'+(pct!=null?' ('+pct+'% lower)':'');
+ }
+ $('mmrs').innerHTML=dropLine(mmrF,mmrL,'mmr');
+ $('nmrs').innerHTML=dropLine(nmrF,nmrL,'nmr');
+ $('u5s').innerHTML=dropLine(u5F,u5L,'u5');
+ $('spkmmryr').textContent=yearAt(mmrL.i);$('spknmryr').textContent=yearAt(nmrL.i);$('spku5yr').textContent=yearAt(u5L.i);
+ $('sparkMMR').innerHTML=spark(mmr,250,46,'#b08ef0',true);
+ $('sparkNMR').innerHTML=spark(nmr,250,46,'#f5b945',true);
+ $('sparkU5').innerHTML=spark(u5,250,46,'#26c6da',true);
+ const mmrPct=(mmrF.v&&mmrL.v!=null)?Math.round(100*(mmrF.v-mmrL.v)/mmrF.v):null;
+ const u5Pct=(u5F.v&&u5L.v!=null)?Math.round(100*(u5F.v-u5L.v)/u5F.v):null;
+ $('globalcaveat').innerHTML='Since 2000 the world has seen one of the clearest gains in modern public health: world under-5 mortality fell from <b>'+fmtVal(u5F.v,'u5')+'</b> ('+yearAt(u5F.i)+') to <b>'+fmtVal(u5L.v,'u5')+'</b> per 1,000 ('+yearAt(u5L.i)+')'+(u5Pct!=null?', a <b>'+u5Pct+'%</b> decline':'')+', and the maternal mortality ratio fell '+(mmrPct!=null?'about <b>'+mmrPct+'%</b>':'')+' over the same period. Progress has <b>slowed and is uneven</b> — the panels below show where the burden remains concentrated. Maternal mortality is a <span class="badge b-mod">modeled</span> UN MMEIG estimate; mortality and fertility years run to '+yearAt(u5L.i)+', while coverage and stunting come from periodic surveys with older latest years. Descriptive, not a forecast.';
+}
+
+// ---- (b) LEADERBOARD
+let LEADK='mmr';
+function renderLead(){
+ const k=LEADK,rows=[];
+ COUNTRIES.forEach(iso=>{const c=SNAP.cty[iso];if(!c||!c.latest||!c.latest[k])return;rows.push({iso,name:c.name,v:c.latest[k].v,y:c.latest[k].y});});
+ const high=goodHigh(k);
+ // "most at risk" = worst first: for good=low indicators that means highest value at top;
+ // for good=high indicators (none in this leaderboard's set today) it means lowest at top.
+ rows.sort((a,b)=>high?(a.v-b.v):(b.v-a.v));
+ const max=Math.max(...rows.map(r=>r.v),1);
+ const m=SNAP.indMeta[k];
+ $('leaddesc').innerHTML=nameOf(k)+' — <b>'+m.unit+'</b>. '+badgeFor(k)+' '+(high?'Lowest coverage is at the top (most at risk first).':'Highest burden is at the top (worst first).');
+ $('leadlist').innerHTML=rows.map((r,i)=>{
+  const col=valColor(r.v,k);
+  return '<div class="row2"><div class="rk">'+(i+1)+'</div>'+
+   '<div class="nm">'+r.name+'</div>'+
+   '<div class="meter"><div class="tk"><div class="fl" style="width:'+Math.max(2,(100*r.v/max)).toFixed(1)+'%;background:'+col+'"></div></div></div>'+
+   '<div class="rate">'+fmtVal(r.v,k)+'</div><div class="yr">'+r.y+'</div></div>';
+ }).join('')||'<div class="muted">No data.</div>';
+}
+[...document.querySelectorAll('#leadind button')].forEach(b=>b.onclick=()=>{LEADK=b.dataset.k;[...document.querySelectorAll('#leadind button')].forEach(x=>x.classList.toggle('on',x===b));renderLead();});
+
+// ---- (c) COVERAGE / DRIVERS (income / region)
+let INEQMODE='inc';
+function regionStuntMean(regCode){
+ // stunting has no WB aggregate -> compute unweighted mean across atlas countries in region
+ let sum=0,n=0,maxY='';
+ COUNTRIES.forEach(iso=>{const c=SNAP.cty[iso];if(!c||c.region!==regCode)return;const d=c.latest&&c.latest.stnt;if(!d)return;sum+=d.v;n++;if(d.y>maxY)maxY=d.y;});
+ return n?{v:sum/n,y:maxY,n}:null;
+}
+function fillIneqSelect(){
+ const sel=$('ineqind');sel.innerHTML='';
+ ['mmr','nmr','u5','sba','anc','adol','tfr','stnt'].forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=nameOf(k);sel.appendChild(o);});
+ sel.value='mmr';
+}
+function renderIneq(){
+ const k=$('ineqind').value;
+ const groups=INEQMODE==='inc'?INCOME:REGION;
+ const m=SNAP.indMeta[k];
+ const stuntByRegion=(k==='stnt');
+ let descExtra='';
+ if(stuntByRegion){
+   descExtra=' <span class="badge b-mod">computed</span> Child stunting has no World Bank world/income/region aggregate; the value shown'+(INEQMODE==='inc'?' for income groups is unavailable':' is an unweighted mean across this atlas’s countries in each region')+'.';
+ }
+ $('ineqdesc').innerHTML=nameOf(k)+' — <b>'+m.unit+'</b>, by World Bank '+(INEQMODE==='inc'?'income group':'region')+'. '+badgeFor(k)+descExtra;
+ const recs=groups.map(([code,label])=>{
+  if(stuntByRegion){
+    if(INEQMODE==='inc')return {code,label,arr:[],v:null,yi:-1,yr:null,computed:true};
+    const sm=regionStuntMean(code);
+    return {code,label,arr:[],v:sm?sm.v:null,yi:-1,yr:sm?sm.y:null,n:sm?sm.n:0,computed:true};
+  }
+  const a=SNAP.agg[code];const s=a&&a.s&&a.s[k]?a.s[k]:[];
+  const l=lastNonNull(s);
+  return {code,label,arr:s,v:l.v,yi:l.i,yr:l.i>=0?yearAt(l.i):null};
+ });
+ $('ineqlist').innerHTML=recs.map(r=>{
+  const col=valColor(r.v,k);
+  const valHtml=r.v==null?'—':fmtVal(r.v,k)+(r.computed&&r.n?' <span class="note">(n='+r.n+')</span>':'');
+  return '<div class="ineq"><div class="nm"><div class="t">'+r.label+'</div><div class="c">'+(r.computed?'unweighted mean':'World Bank aggregate')+'</div></div>'+
+   '<div class="sp">'+(r.arr&&r.arr.length?spark(r.arr,96,26,col,false):'<span class="muted small">—</span>')+'</div>'+
+   '<div class="val">'+valHtml+'</div>'+
+   '<div class="yy">'+(r.yr||'—')+'</div>'+
+   '<div class="ch">'+(r.arr&&r.arr.length?changeHtml(r.arr,k):'<span class="muted">—</span>')+'</div></div>';
+ }).join('');
+ // contextual caveat: show the headline gap for maternal/neonatal
+ if(INEQMODE==='inc'&&(k==='mmr'||k==='nmr'||k==='u5')){
+  const hi=recs.find(r=>r.code==='HIC'),lo=recs.find(r=>r.code==='LIC');
+  if(hi&&lo&&hi.v!=null&&lo.v!=null&&hi.v>0){
+   const ratio=(lo.v/hi.v).toFixed(0);
+   $('ineqcaveat').innerHTML='Low-income vs. high-income countries: <b>'+fmtVal(lo.v,k)+'</b> vs. <b>'+fmtVal(hi.v,k)+'</b> '+m.unit+' — roughly a <b>'+ratio+'×</b> gap. World Bank aggregate series; income groups are the Bank’s own classifications. The spark line traces 2000→latest; "change" is latest vs. 2000. These are population-weighted estimates, not a simple average of member countries. '+(k==='mmr'?'Maternal mortality is a modeled UN MMEIG estimate.':'');
+   return;
+  }
+ }
+ $('ineqcaveat').innerHTML='World Bank aggregate series (population-weighted estimates). Income groups (high / upper-middle / lower-middle / low) and regions are the Bank’s classifications. The spark line traces 2000→latest; "change" is latest vs. 2000. Coverage and stunting come from periodic surveys, so latest years are older and some aggregates are unavailable (shown as "—").';
+}
+$('ineqind').onchange=renderIneq;
+[...document.querySelectorAll('#ineqmode button')].forEach(b=>b.onclick=()=>{INEQMODE=b.dataset.m;[...document.querySelectorAll('#ineqmode button')].forEach(x=>x.classList.toggle('on',x===b));renderIneq();});
+
+// ---- (d) COUNTRY PROFILE
+const PROFINDS=['mmr','nmr','u5','sba','anc','adol','tfr','stnt'];
+let CMPK='mmr';
+function fillCySelect(){
+ const sel=$('cysel');sel.innerHTML='';
+ const arr=COUNTRIES.map(iso=>({iso,name:(SNAP.cty[iso]||{}).name||iso})).sort((a,b)=>a.name.localeCompare(b.name));
+ arr.forEach(o=>{const op=document.createElement('option');op.value=o.iso;op.textContent=o.name;sel.appendChild(op);});
+ sel.value='NGA';
+}
+function renderProfile(){
+ const iso=$('cysel').value;const c=SNAP.cty[iso];if(!c)return;
+ $('profmeta').innerHTML='<b style="color:var(--ink);font-size:14px">'+c.name+'</b> '+
+   '<span class="tag">'+(c.incomeName||'—')+'</span><span class="tag">'+(c.regionName||'—')+'</span>';
+ $('profcards').innerHTML=PROFINDS.map(k=>{
+  const d=c.latest&&c.latest[k];
+  const col=d?valColor(d.v,k):'var(--dim)';
+  return '<div class="mini"><div class="l">'+nameOf(k)+'<br><span style="color:var(--dim)">'+unitOf(k)+'</span></div>'+
+   '<div class="v" style="color:'+col+'">'+(d?fmtVal(d.v,k):'—')+'</div>'+
+   '<div class="y">'+(d?'as of '+d.y:'no data')+'</div></div>';
+ }).join('');
+ $('profSparkMMR').innerHTML=spark(c.mmr||[],220,46,'#b08ef0',true);
+ $('profSparkNMR').innerHTML=spark(c.nmr||[],220,46,'#f5b945',true);
+ $('profSparkU5').innerHTML=spark(c.u5||[],220,46,'#26c6da',true);
+ renderCmp();
+ const mmrL=lastNonNull(c.mmr||[]),u5L=lastNonNull(c.u5||[]);
+ const sba=c.latest&&c.latest.sba;
+ $('profcaveat').innerHTML=c.name+'’s maternal, neonatal and under-5 mortality are traced from 2000 to the latest reported year ('+(mmrL.i>=0?yearAt(mmrL.i):'—')+' for maternal, '+(u5L.i>=0?yearAt(u5L.i):'—')+' for under-5). '+(sba?'Skilled birth attendance was last reported at <b>'+fmtVal(sba.v,'sba')+'%</b> in '+sba.y+'. ':'')+'Each card shows the latest available year, which differs by indicator; maternal mortality is a <span class="badge b-mod">modeled</span> estimate, and coverage/stunting come from periodic household surveys. Descriptive, not a forecast.';
+}
+function renderCmp(){
+ const iso=$('cysel').value;const c=SNAP.cty[iso];if(!c)return;
+ const k=CMPK;$('cmpindname').textContent=nameOf(k).toLowerCase();
+ const cd=c.latest&&c.latest[k];
+ const incCode=c.income, regCode=c.region;
+ function aggLatest(code){const a=SNAP.agg[code];if(!a||!a.s||!a.s[k])return null;return lastNonNull(a.s[k]).v;}
+ const rows=[
+  {l:c.name,v:cd?cd.v:null,me:true},
+  {l:(c.incomeName||'Income peers'),v:aggLatest(incCode)},
+  {l:(c.regionName||'Region'),v:aggLatest(regCode)},
+  {l:'World',v:aggLatest('WLD')}
+ ];
+ const vals=rows.map(r=>r.v).filter(v=>v!=null&&isFinite(v));
+ const max=Math.max(...vals,1);
+ $('cmpbars').innerHTML=rows.map(r=>{
+  const col=r.v==null?'var(--dim)':(r.me?'#26c6da':valColor(r.v,k));
+  const w=r.v==null?0:Math.max(2,100*r.v/max);
+  return '<div class="peerbar"><div class="pl"'+(r.me?' style="color:var(--teal);font-weight:700"':'')+'>'+r.l+'</div>'+
+   '<div class="pm"><div class="tk"><div class="fl" style="width:'+w.toFixed(1)+'%;background:'+col+'"></div></div></div>'+
+   '<div class="pv">'+(r.v==null?'—':fmtVal(r.v,k))+'</div></div>';
+ }).join('');
+}
+$('cysel').onchange=renderProfile;
+[...document.querySelectorAll('#cmpind button')].forEach(b=>b.onclick=()=>{CMPK=b.dataset.k;[...document.querySelectorAll('#cmpind button')].forEach(x=>x.classList.toggle('on',x===b));renderCmp();});
+
+// ---- master render
+function render(){
+ $('vintchip').innerHTML='<b>latest available '+SNAP.vintage+'</b>';
+ $('vintfoot').textContent=SNAP.vintage+(SNAP.embedded?' (embedded '+SNAP.embedded+')':'');
+ $('srcchip').innerHTML=LIVE?'<span class="badge b-meas">live</span> World Bank API':'<span class="badge b-mod">snapshot</span> embedded';
+ const embedYr=SNAP.embedded?+SNAP.embedded.slice(0,4):null;
+ const vintYr=+(''+SNAP.vintage).slice(0,4);
+ if(embedYr&&vintYr&&(embedYr-vintYr)>2){$('vintchip').innerHTML+=' <span class="stale">data lag</span>';}
+ renderGlobal();renderLead();renderIneq();renderProfile();
+}
+
+// ---- LIVE FETCH (graceful: keep embed on failure)
+function wbUrl(codes,ind){return WB+'/country/'+codes.join(';')+'/indicator/'+ind+'?format=json&date=2000:2024&per_page=20000';}
+function wbFetch(codes,ind){return fetch(wbUrl(codes,ind)).then(r=>{if(!r.ok)throw r.status;return r.json();}).then(d=>{if(!Array.isArray(d)||d.length<2||!d[1])throw 'shape';return d[1];});}
+function keyOf(r){return r.countryiso3code||r.country.id;}
+
+async function fetchWB(){
+ $('srcchip').innerHTML='<span class="badge b-mod">…</span> contacting World Bank';
+ try{
+  const years=SNAP.years;const yIdx={};years.forEach((y,i)=>yIdx[y]=i);
+  const agg={};AGG.forEach(c=>{const cc=AGGREMAP[c]||c;agg[cc]={name:(SNAP.agg[cc]||{}).name||cc,s:{}};});
+  const cty={};COUNTRIES.forEach(iso=>{cty[iso]=Object.assign({},SNAP.cty[iso],{latest:{}});SERIESK.forEach(k=>cty[iso][k]=new Array(years.length).fill(null));});
+  for(const indId of Object.keys(IND2K)){
+   const k=IND2K[indId];
+   const [aRows,cRows]=await Promise.all([wbFetch(AGG,indId),wbFetch(COUNTRIES,indId)]);
+   // aggregates: full series
+   aRows.forEach(r=>{let code=keyOf(r);code=AGGREMAP[code]||code;if(!agg[code])agg[code]={name:r.country.value,s:{}};if(!agg[code].s[k])agg[code].s[k]=new Array(years.length).fill(null);if(r.value!=null&&yIdx[r.date]!=null)agg[code].s[k][yIdx[r.date]]=r.value;});
+   // countries: latest per indicator + series for SERIESK
+   const best={};
+   cRows.forEach(r=>{const iso=r.countryiso3code||r.country.id;if(!cty[iso])return;if(r.value==null)return;const y=r.date,v=r.value;
+     if(!best[iso+k]||y>best[iso+k]){best[iso+k]=y;cty[iso].latest[k]={v,y};}
+     if(SERIESK.indexOf(k)>=0&&yIdx[y]!=null)cty[iso][k][yIdx[y]]=v;});
+  }
+  SNAP=Object.assign({},SNAP,{agg,cty});
+  LIVE=true;
+  render();
+ }catch(e){
+  LIVE=false;render();
+  $('srcchip').innerHTML='<span class="badge b-mod">snapshot</span> embedded (live refresh unavailable)';
+ }
+}
+
+// ---- boot
+function boot(){
+ $('splash').style.display='none';
+ fillIneqSelect();fillCySelect();
+ render();
+ fetchWB();
+}
+$('refresh').onclick=fetchWB;
+if(document.readyState!=='loading')boot();else document.addEventListener('DOMContentLoaded',boot);
+</script>
+</body>
+</html>

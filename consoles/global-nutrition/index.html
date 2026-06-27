@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Global Nutrition &amp; Food Security — undernourishment, child malnutrition, the double burden</title>
+<meta name="description" content="A descriptive global atlas of nutrition and food security built on the World Bank's open Indicators API: prevalence of undernourishment, child stunting, wasting, severe wasting, underweight and overweight, and severe food insecurity — for the world, income groups, regions and ~55 of the largest countries. Unofficial, descriptive, not a forecast.">
+<style>
+:root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+ --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
+ --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 56px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+#disc{background:#060f14;color:#bcd2da;font-size:12px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:24px 0 6px}
+h1{margin:0;font-size:25px;font-weight:740;letter-spacing:-.3px}
+h1 .sub{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin-top:5px;letter-spacing:0}
+.banner{margin:13px 0 0;background:rgba(38,198,218,.07);border:1px solid rgba(38,198,218,.25);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink2)}
+.banner b{color:var(--teal)}
+.strip{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0 2px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink2)}
+.chip b{color:var(--ink)}
+button.btn{background:linear-gradient(180deg,#1d6c79,#185863);border:1px solid #2a8593;color:#eaffff;border-radius:999px;padding:6px 14px;font-weight:600;font-size:12.5px;cursor:pointer}
+button.btn:hover{filter:brightness(1.1)}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:5px;vertical-align:1px;text-transform:uppercase}
+.b-meas{background:rgba(61,220,151,.16);color:#7fe9bd}.b-mod{background:rgba(245,185,69,.16);color:#f5cd85}.b-int{background:rgba(176,142,240,.16);color:#cdb6f5}
+.card{background:linear-gradient(180deg,var(--surf),var(--surf2));border:1px solid var(--line);border-radius:14px;margin-top:16px;overflow:hidden}
+.card>summary,.card .hd{padding:13px 16px;font-weight:650;display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+.card>summary::-webkit-details-marker{display:none}
+.card>summary .ico{color:var(--teal);font-weight:800}
+.card>summary .tools{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.body{padding:4px 16px 16px}
+.muted{color:var(--dim)}.small{font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}@media(max-width:760px){.grid3{grid-template-columns:1fr 1fr}}@media(max-width:480px){.grid3{grid-template-columns:1fr}}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}@media(max-width:880px){.grid4{grid-template-columns:1fr 1fr}}@media(max-width:480px){.grid4{grid-template-columns:1fr}}
+.stat{background:var(--surf2);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-size:30px;font-weight:760;margin-top:3px;line-height:1.05}
+.stat .v small{font-size:13px;color:var(--ink2);font-weight:500}
+.stat .sub2{font-size:12px;color:var(--ink2);margin-top:5px}
+.mini{background:var(--surf2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.mini .l{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;min-height:26px}
+.mini .v{font-size:21px;font-weight:740;margin-top:2px;line-height:1.05}
+.mini .v small{font-size:11.5px;color:var(--ink2);font-weight:500}
+.mini .y{font-size:10.5px;color:var(--dim);margin-top:3px;font-family:var(--mono)}
+.delta{font-weight:700}.dn{color:var(--green)}.up{color:var(--orange)}
+.lead{max-height:520px;overflow:auto;margin-top:4px}
+.row2{display:flex;align-items:center;gap:10px;padding:7px 3px;border-bottom:1px solid var(--line)}
+.row2:last-child{border-bottom:none}
+.row2 .rk{width:22px;color:var(--dim);font-size:12px;text-align:right}
+.row2 .nm{width:160px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.row2 .nm small{color:var(--dim);font-weight:400}
+.row2 .meter{flex:1;min-width:60px}.meter .tk{height:8px;background:#0a171d;border-radius:5px;overflow:hidden}.meter .fl{height:100%;border-radius:5px}
+.row2 .rate{width:120px;text-align:right;font-weight:720;font-variant-numeric:tabular-nums}
+.row2 .yr{width:50px;text-align:right;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.ineq{display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.ineq:last-child{border-bottom:none}
+.ineq .nm{flex:1;min-width:0}.ineq .nm .t{font-weight:620}.ineq .nm .c{font-size:11px;color:var(--dim)}
+.ineq .sp{width:96px;flex:none}
+.ineq .val{width:96px;text-align:right;font-weight:720;font-variant-numeric:tabular-nums}
+.ineq .ch{width:78px;text-align:right;font-size:12.5px;font-weight:600}
+.caveat{font-size:11.5px;color:var(--dim);margin-top:11px;padding:9px 12px;background:rgba(255,255,255,.02);border-left:2px solid var(--line2);border-radius:0 8px 8px 0}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{background:transparent;border:none;color:var(--ink2);padding:4px 10px;font-size:12px;cursor:pointer}
+.seg button.on{background:var(--teal);color:#04181c;font-weight:700}
+select{background:var(--surf2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:5px 10px;font-size:13px;font-family:var(--sans)}
+.peerbar{display:flex;align-items:center;gap:9px;padding:6px 2px}
+.peerbar .pl{width:130px;font-size:12px;color:var(--ink2)}
+.peerbar .pm{flex:1}.peerbar .pm .tk{height:9px;background:#0a171d;border-radius:5px;overflow:hidden}.peerbar .pm .fl{height:100%;border-radius:5px}
+.peerbar .pv{width:88px;text-align:right;font-weight:680;font-variant-numeric:tabular-nums;font-size:13px}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;background:rgba(255,255,255,.06);color:var(--ink2);margin-left:6px;letter-spacing:.3px}
+.db{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line)}
+.db:last-child{border-bottom:none}
+.db .nm{width:175px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.db .nm small{color:var(--dim);font-weight:400;font-family:var(--mono)}
+.db .twin{flex:1;display:flex;flex-direction:column;gap:4px;min-width:90px}
+.db .trk{display:flex;align-items:center;gap:8px}
+.db .trk .tl{width:78px;font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.3px}
+.db .trk .tk{flex:1;height:8px;background:#0a171d;border-radius:5px;overflow:hidden}.db .trk .fl{height:100%;border-radius:5px}
+.db .trk .tv{width:74px;text-align:right;font-size:12px;font-weight:680;font-variant-numeric:tabular-nums}
+.db .trk .ty{width:40px;text-align:right;font-size:10px;color:var(--dim);font-family:var(--mono)}
+.lgnd{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);margin:2px 0 8px}
+.lgnd span{display:inline-flex;align-items:center;gap:6px}.lgnd i{width:11px;height:11px;border-radius:3px;display:inline-block}
+footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}
+footer b{color:var(--ink2)}
+#splash{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50;color:var(--dim);font-size:13px}
+.demoflag{display:inline-block;font-size:9px;font-weight:800;color:#04181c;background:var(--amber);border-radius:4px;padding:1px 5px;margin-left:5px;letter-spacing:.4px}
+.stale{display:inline-block;font-size:9.5px;font-weight:800;color:#04181c;background:var(--orange);border-radius:4px;padding:1px 6px;margin-left:6px;letter-spacing:.4px}
+</style>
+</head>
+<body>
+<div id="splash">loading global nutrition &amp; food-security indicators…</div>
+<div id="disc"><b>Unofficial · descriptive global nutrition &amp; food-security atlas, not a forecast.</b> Built on the World Bank's open Indicators API. The latest available year differs by country and indicator, and many countries report child-nutrition surveys only every few years. Not for clinical, individual, or policy decisions.</div>
+<div class="wrap">
+  <header>
+    <h1>Global Nutrition &amp; Food Security<span class="sub">Undernourishment, child stunting / wasting / underweight, the double burden of malnutrition, and food insecurity — for the world, income groups, regions &amp; ~55 of the largest countries</span></h1>
+    <div class="banner"><b>How to read this.</b> Every figure is a <b>World Bank reported value</b> for a specific year — always shown next to the number, because the latest available year varies (undernourishment runs through ~2023; child anthropometry comes from periodic surveys and can be several years old). This is <b>descriptive</b>: it shows where nutrition stands and how it has moved since 2000, including recent progress and where it has <b>stalled or risen</b>. It does <b>not</b> predict the future; cross-country comparisons carry differences in survey timing and method.</div>
+    <div class="strip">
+      <button class="btn" id="refresh">↻ Refresh from World Bank</button>
+      <span class="chip" id="srcchip">—</span>
+      <span class="chip" id="vintchip">—</span>
+      <span class="chip"><span class="badge b-meas">measured</span> World Bank reported</span>
+      <span class="chip"><span class="badge b-int">interpretive</span> framing &amp; selection</span>
+    </div>
+  </header>
+
+  <!-- (a) GLOBAL HUNGER HEADLINE -->
+  <details class="card" open id="c-global">
+    <summary><span class="ico">●</span> Global hunger headline <span class="badge b-meas">measured</span><span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div class="grid2">
+        <div class="stat">
+          <div class="l">World prevalence of undernourishment · <span id="undyear">—</span></div>
+          <div class="v" id="undv">—</div>
+          <div class="sub2" id="unds">—</div>
+        </div>
+        <div class="stat">
+          <div class="l">People facing hunger worldwide · <span id="popyear">—</span> <span class="badge b-int">interpretive</span></div>
+          <div class="v" id="popv">—</div>
+          <div class="sub2" id="pops">—</div>
+        </div>
+      </div>
+      <div style="margin-top:13px;display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap">
+        <div><div class="small muted">World undernourishment (% of population), 2000→<span id="spkundyr">—</span> <span class="badge b-meas">measured</span></div><div id="sparkUnd"></div></div>
+        <div><div class="small muted">World under-5 underweight (% of children), 2000→<span id="spkuwyr">—</span></div><div id="sparkUw"></div></div>
+      </div>
+      <div class="caveat" id="globalcaveat">—</div>
+    </div>
+  </details>
+
+  <!-- (b) CHILD MALNUTRITION LEADERBOARD -->
+  <details class="card" open id="c-lead">
+    <summary><span class="ico">▤</span> Child malnutrition — by country (highest first) <span class="badge b-meas">measured</span>
+      <span class="tools">
+        <span class="seg" id="leadind">
+          <button data-k="stn" class="on">stunting</button><button data-k="wst">wasting</button><button data-k="swst">severe wasting</button><button data-k="uw">underweight</button><button data-k="und">undernourish.</button><button data-k="sfi">food insec.</button>
+        </span>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="small muted" id="leaddesc" style="margin-bottom:4px">—</div>
+      <div class="lead" id="leadlist"></div>
+      <div class="caveat">Ranked across the ~55 most populous countries in this atlas (not all 200+ World Bank economies). Higher burden is at the top. The <b>year</b> column is the latest available reported value for each country and indicator — child-nutrition surveys are periodic, so years differ between rows and a high rank can reflect an older survey. Bar length is relative to the highest value shown. Missing surveys are omitted, never shown as zero.</div>
+    </div>
+  </details>
+
+  <!-- (c) THE DOUBLE BURDEN -->
+  <details class="card" open id="c-db">
+    <summary><span class="ico">◇</span> The double burden — undernutrition alongside rising overweight <span class="badge b-meas">measured</span><span class="badge b-int">interpretive</span>
+      <span class="tools">
+        <span class="seg" id="dbmode"><button data-m="cty" class="on">countries</button><button data-m="reg">regions</button><button data-m="inc">income</button></span>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="small muted" id="dbdesc" style="margin-bottom:6px">—</div>
+      <div class="lgnd"><span><i style="background:var(--orange)"></i> under-nutrition</span><span><i style="background:var(--purple)"></i> child overweight</span></div>
+      <div id="dblist"></div>
+      <div class="caveat" id="dbcaveat">The "double burden" is the coexistence of under-nutrition (here: child stunting, or undernourishment for region/income aggregates) and rising child overweight in the same population. World Bank does not publish world or regional aggregates for child overweight or stunting, so the country view pairs each country's own latest stunting and overweight surveys; the region / income views pair the Bank's aggregate undernourishment with the population-weighted average of member-country overweight surveys shown here (a descriptive summary, not the Bank's official aggregate). Years differ by indicator and are shown.</div>
+    </div>
+  </details>
+
+  <!-- INEQUALITY (aggregate indicators only) -->
+  <details class="card" open id="c-ineq">
+    <summary><span class="ico">◑</span> The global divide — by income group &amp; region <span class="badge b-meas">measured</span>
+      <span class="tools">
+        <select id="ineqind"></select>
+        <span class="seg" id="ineqmode"><button data-m="inc" class="on">income</button><button data-m="reg">region</button></span>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="small muted" id="ineqdesc" style="margin-bottom:6px">—</div>
+      <div id="ineqlist"></div>
+      <div class="caveat" id="ineqcaveat">World Bank aggregate series. Only indicators the Bank aggregates (undernourishment, wasting, severe wasting, under-5 underweight) appear here — stunting, overweight and food insecurity are released at the country level only and are shown in the leaderboard and country profile instead. The spark line traces 2000→latest; "change" is latest vs. the first available year. These aggregates are population-weighted estimates, not a simple average of member countries.</div>
+    </div>
+  </details>
+
+  <!-- (d) COUNTRY PROFILE -->
+  <details class="card" open id="c-profile">
+    <summary><span class="ico">◎</span> Country profile <span class="badge b-meas">measured</span>
+      <span class="tools"><select id="cysel"></select></span>
+    </summary>
+    <div class="body">
+      <div class="small muted" id="profmeta" style="margin-bottom:8px">—</div>
+      <div class="grid4" id="profcards"></div>
+      <div style="margin-top:14px;display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap">
+        <div><div class="small muted">Undernourishment, 2000→latest <span class="badge b-meas">measured</span></div><div id="profSparkUnd"></div></div>
+        <div><div class="small muted">Under-5 underweight, survey points</div><div id="profSparkUw"></div></div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="small muted" style="margin-bottom:4px">How it compares — <b id="cmpindname">stunting</b>, latest value
+          <span class="seg" id="cmpind" style="margin-left:8px"><button data-k="stn" class="on">stunting</button><button data-k="wst">wasting</button><button data-k="uw">underweight</button><button data-k="und">undernourish.</button></span>
+        </div>
+        <div id="cmpbars"></div>
+      </div>
+      <div class="caveat" id="profcaveat">—</div>
+    </div>
+  </details>
+
+  <footer>
+    <div><b>Data &amp; method.</b> Source: <a href="https://data.worldbank.org" target="_blank" rel="noopener">World Bank Open Data — World Development Indicators</a>, pulled live from the public Indicators API v2 (<span class="mono">api.worldbank.org/v2</span>) when reachable, otherwise from an embedded snapshot whose vintage is shown above. Indicators: prevalence of undernourishment <span class="mono">SN.ITK.DEFC.ZS</span>; child stunting <span class="mono">SH.STA.STNT.ZS</span>; child wasting <span class="mono">SH.STA.WAST.ZS</span>; severe child wasting <span class="mono">SH.SVR.WAST.ZS</span>; under-5 underweight <span class="mono">SH.STA.MALN.ZS</span>; child overweight <span class="mono">SH.STA.OWGH.ZS</span>; severe food insecurity <span class="mono">SN.ITK.SVFI.ZS</span>. The World Bank in turn compiles these from FAO (undernourishment and food insecurity, reported in the annual <i>State of Food Security and Nutrition in the World</i>, SOFI), and the UNICEF/WHO/World Bank Joint Child Malnutrition Estimates (anthropometry).</div>
+    <div style="margin-top:8px"><b>Honesty.</b> All numbers are <span class="badge b-meas">measured</span> World Bank reported values — but the latest available <b>year differs</b> by country and indicator, so it is always displayed; child-nutrition surveys are periodic and many recent years are blank, shown as "—" rather than guessed. The "<span class="badge b-int">interpretive</span>" people-facing-hunger count multiplies undernourishment by population and is a derived approximation, not a World Bank product; FAO's SOFI report places the figure around 700–800&nbsp;million in recent years. World Bank does not publish world/regional aggregates for stunting, overweight or food insecurity, so those are shown only where the Bank reports them. Aggregates are the Bank's population-weighted estimates. The choice of which ~55 countries and 7 indicators to show is <span class="badge b-int">interpretive</span> framing. This tool is <b>descriptive, not predictive</b>; it does not forecast. No personal or protected health information is used — only public country-level aggregates.</div>
+    <div style="margin-top:8px" class="muted">Embedded snapshot vintage: <span id="vintfoot">—</span>. If a live refresh succeeds, the source chip above switches to "live World Bank".</div>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const WB='https://api.worldbank.org/v2';
+
+// indicator id -> short key
+const IND2K={"SN.ITK.DEFC.ZS":"und","SH.STA.STNT.ZS":"stn","SH.STA.WAST.ZS":"wst","SH.SVR.WAST.ZS":"swst","SH.STA.MALN.ZS":"uw","SH.STA.OWGH.ZS":"ovw","SN.ITK.SVFI.ZS":"sfi"};
+const COUNTRIES=["CHN","IND","USA","IDN","PAK","NGA","BRA","BGD","RUS","MEX","ETH","JPN","PHL","EGY","COD","VNM","IRN","TUR","DEU","THA","GBR","FRA","TZA","ZAF","ITA","MMR","KEN","COL","KOR","SDN","UGA","ESP","DZA","IRQ","ARG","AFG","YEM","CAN","POL","MAR","AGO","UKR","UZB","MYS","MOZ","GHA","PER","SAU","MDG","CIV","NPL","CMR","VEN","NER","AUS"];
+const AGG=["WLD","HIC","UMC","LMC","LIC","SSF","EAS","ECS","LCN","MEA","NAC","SAS"];
+const AGGREMAP={"XD":"HIC","XT":"UMC","XN":"LMC","XM":"LIC","1W":"WLD","Z4":"EAS","Z7":"ECS","ZJ":"LCN","ZQ":"MEA","XU":"NAC","8S":"SAS","ZG":"SSF"};
+const INCOME=[["HIC","High income"],["UMC","Upper-middle income"],["LMC","Lower-middle income"],["LIC","Low income"]];
+const REGION=[["NAC","North America"],["ECS","Europe & Central Asia"],["EAS","East Asia & Pacific"],["LCN","Latin America & Caribbean"],["MEA","Middle East & North Africa"],["SAS","South Asia"],["SSF","Sub-Saharan Africa"]];
+// only these indicators have World Bank income/region aggregate series
+const AGGINDS=["und","wst","swst","uw"];
+// rough world population (billions) per year for the interpretive hunger headcount
+const WORLDPOP={"2015":7.43,"2016":7.51,"2017":7.59,"2018":7.66,"2019":7.74,"2020":7.82,"2021":7.89,"2022":7.95,"2023":8.02,"2024":8.09};
+const PROFINDS=["und","stn","wst","swst","uw","ovw","sfi","und"]; // placeholder; reset below
+const PROFCARDS=["und","stn","wst","uw","ovw","sfi"];
+
+let LEADK='stn',INEQMODE='inc',DBMODE='cty',CMPK='stn',LIVE=false;
+
+let SNAP={"vintage":"2024","embedded":"2026-06-27","years":["2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023","2024"],"indMeta":{"und":{"name":"Prevalence of undernourishment","unit":"% of population","ind":"SN.ITK.DEFC.ZS","good":"low","dec":1},"stn":{"name":"Child stunting (under-5)","unit":"% of children","ind":"SH.STA.STNT.ZS","good":"low","dec":1},"wst":{"name":"Child wasting (under-5)","unit":"% of children","ind":"SH.STA.WAST.ZS","good":"low","dec":1},"swst":{"name":"Severe child wasting (under-5)","unit":"% of children","ind":"SH.SVR.WAST.ZS","good":"low","dec":1},"uw":{"name":"Underweight (under-5)","unit":"% of children","ind":"SH.STA.MALN.ZS","good":"low","dec":1},"ovw":{"name":"Child overweight (under-5)","unit":"% of children","ind":"SH.STA.OWGH.ZS","good":"low","dec":1},"sfi":{"name":"Severe food insecurity","unit":"% of population","ind":"SN.ITK.SVFI.ZS","good":"low","dec":1}},"agg":{"WLD":{"name":"World","s":{"und":[null,12.8,12.9,12.8,12.4,11.9,11.0,10.1,9.5,9.1,8.7,8.4,8.1,7.8,7.7,7.6,7.5,7.4,7.3,7.8,8.2,8.6,8.6,8.5,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[8.78,8.7,8.62,8.54,8.44,8.33,8.22,8.08,7.94,7.81,7.68,7.56,7.45,7.33,7.22,7.1,7.0,6.9,6.82,6.76,6.71,6.68,6.66,6.64,6.6],"swst":[2.69,2.66,2.62,2.59,2.55,2.51,2.47,2.42,2.37,2.32,2.27,2.23,2.19,2.15,2.11,2.07,2.03,2.0,1.97,1.95,1.93,1.92,1.91,1.9,1.89],"uw":[20.93,20.53,20.14,19.73,19.3,18.86,18.39,17.9,17.39,16.91,16.44,16.0,15.57,15.16,14.75,14.35,13.97,13.62,13.32,13.06,12.85,12.66,12.51,12.36,12.18],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"HIC":{"name":"High income","s":{"und":[null,2.97,2.85,2.76,2.71,2.69,2.69,2.67,2.67,2.66,2.66,2.66,2.65,2.63,2.62,2.62,2.62,2.6,2.58,2.57,2.56,2.57,2.57,2.57,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[1.07,1.03,0.98,0.94,0.91,0.87,0.83,0.8,0.77,0.74,0.7,0.68,0.65,0.62,0.6,0.57,0.55,0.53,0.5,0.48,0.46,0.44,0.43,0.41,0.39],"swst":[0.17,0.16,0.15,0.14,0.14,0.13,0.12,0.12,0.11,0.11,0.1,0.1,0.09,0.09,0.08,0.08,0.08,0.07,0.07,0.07,0.06,0.06,0.06,0.06,0.05],"uw":[1.16,1.14,1.12,1.11,1.09,1.08,1.06,1.04,1.03,1.01,1.0,0.98,0.97,0.95,0.94,0.93,0.91,0.9,0.89,0.87,0.86,0.85,0.84,0.82,0.81],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"UMC":{"name":"Upper-middle income","s":{"und":[null,10.4,9.97,9.47,8.89,8.19,7.45,6.66,5.95,5.2,4.73,4.46,4.26,4.06,3.98,3.9,3.86,3.82,3.81,3.85,3.88,3.95,3.94,3.85,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[3.81,3.71,3.62,3.53,3.44,3.35,3.27,3.19,3.11,3.03,2.95,2.88,2.8,2.73,2.66,2.59,2.53,2.46,2.4,2.34,2.28,2.22,2.17,2.11,2.06],"swst":[1.11,1.08,1.05,1.01,0.98,0.95,0.92,0.89,0.87,0.84,0.81,0.79,0.76,0.74,0.72,0.7,0.67,0.65,0.63,0.61,0.59,0.58,0.56,0.54,0.52],"uw":[8.06,7.7,7.35,7.01,6.69,6.39,6.09,5.81,5.54,5.29,5.04,4.8,4.58,4.37,4.16,3.96,3.78,3.6,3.43,3.27,3.11,2.96,2.82,2.69,2.56],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"LMC":{"name":"Lower-middle income","s":{"und":[null,18.73,19.32,19.74,19.51,18.75,17.24,15.8,14.91,14.59,14.24,13.88,13.32,12.84,12.53,12.08,11.56,11.0,10.76,11.63,12.63,13.58,13.42,12.82,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[12.43,12.3,12.16,12.03,11.9,11.77,11.64,11.51,11.39,11.26,11.14,11.01,10.89,10.77,10.65,10.53,10.42,10.3,10.19,10.07,9.96,9.85,9.74,9.63,9.52],"swst":[3.79,3.74,3.69,3.64,3.59,3.54,3.49,3.44,3.4,3.35,3.3,3.26,3.21,3.17,3.13,3.08,3.04,3.0,2.96,2.92,2.88,2.84,2.8,2.76,2.72],"uw":[32.27,31.55,30.84,30.14,29.45,28.77,28.1,27.44,26.79,26.14,25.51,24.89,24.28,23.68,23.08,22.5,21.93,21.37,20.82,20.28,19.76,19.24,18.73,18.23,17.75],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"LIC":{"name":"Low income","s":{"und":[null,29.94,29.34,28.44,27.61,26.85,26.01,25.29,24.62,24.17,23.9,24.05,24.63,23.74,24.65,26.04,26.94,27.18,27.19,26.42,26.86,26.45,28.23,28.43,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[10.98,10.74,10.51,10.28,10.06,9.84,9.62,9.41,9.2,9.0,8.8,8.6,8.41,8.22,8.04,7.86,7.69,7.51,7.34,7.18,7.02,6.86,6.7,6.55,6.4],"swst":[3.89,3.73,3.57,3.43,3.28,3.15,3.02,2.89,2.77,2.66,2.55,2.44,2.34,2.24,2.15,2.06,1.97,1.89,1.81,1.73,1.66,1.59,1.52,1.46,1.4],"uw":[29.11,28.57,28.04,27.52,27.01,26.5,25.99,25.49,25.0,24.52,24.04,23.57,23.1,22.64,22.19,21.74,21.3,20.87,20.44,20.02,19.61,19.2,18.8,18.41,18.02],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"SSF":{"name":"Sub-Saharan Africa","s":{"und":[null,25.32,24.75,24.17,23.24,22.13,21.02,20.23,19.45,18.85,18.41,18.25,18.19,17.69,17.74,18.12,18.43,18.68,18.88,19.64,20.43,20.86,21.61,21.88,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[9.39,9.21,9.03,8.86,8.69,8.52,8.36,8.2,8.04,7.88,7.73,7.58,7.43,7.29,7.15,7.01,6.87,6.73,6.6,6.47,6.35,6.22,6.1,5.98,5.86],"swst":[3.08,2.98,2.87,2.77,2.67,2.58,2.49,2.4,2.32,2.23,2.16,2.08,2.01,1.94,1.87,1.8,1.74,1.68,1.62,1.56,1.5,1.45,1.4,1.35,1.3],"uw":[24.87,24.42,23.99,23.55,23.13,22.71,22.29,21.88,21.48,21.08,20.68,20.3,19.91,19.54,19.16,18.8,18.44,18.08,17.73,17.39,17.05,16.71,16.38,16.06,15.74],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"EAS":{"name":"East Asia & Pacific","s":{"und":[null,12.59,11.95,11.24,10.58,9.87,9.13,8.22,7.34,6.41,5.81,5.44,5.21,4.98,4.85,4.65,4.49,4.32,4.2,3.66,3.62,3.58,3.53,3.45,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[4.89,4.81,4.73,4.65,4.57,4.5,4.42,4.33,4.25,4.16,4.07,3.99,3.91,3.83,3.76,3.69,3.62,3.55,3.5,3.46,3.44,3.44,3.48,3.52,3.55],"swst":[1.19,1.17,1.15,1.13,1.11,1.09,1.07,1.06,1.04,1.02,1.0,0.98,0.96,0.94,0.93,0.91,0.9,0.89,0.87,0.87,0.87,0.87,0.89,0.9,0.92],"uw":[11.65,11.2,10.77,10.35,9.95,9.57,9.2,8.83,8.47,8.11,7.77,7.46,7.15,6.86,6.59,6.34,6.1,5.87,5.67,5.52,5.41,5.36,5.38,5.41,5.42],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"ECS":{"name":"Europe & Central Asia","s":{"und":[null,4.99,4.91,4.72,4.44,4.05,3.66,3.35,3.13,2.98,2.89,2.84,2.79,2.76,2.74,2.72,2.69,2.67,2.66,2.69,2.71,2.76,2.77,2.79,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[2.77,2.66,2.55,2.45,2.34,2.25,2.16,2.07,1.98,1.9,1.82,1.74,1.67,1.6,1.54,1.47,1.41,1.35,1.3,1.24,1.19,1.14,1.09,1.05,1.0],"swst":[0.77,0.73,0.7,0.66,0.63,0.6,0.57,0.54,0.52,0.49,0.47,0.44,0.42,0.4,0.38,0.36,0.35,0.33,0.31,0.3,0.28,0.27,0.26,0.24,0.23],"uw":[3.34,3.14,2.95,2.77,2.6,2.44,2.29,2.15,2.02,1.9,1.78,1.67,1.57,1.48,1.39,1.3,1.22,1.15,1.08,1.01,0.95,0.89,0.83,0.78,0.73],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"LCN":{"name":"Latin America & Caribbean","s":{"und":[null,10.36,10.11,9.8,9.15,8.56,7.87,7.35,6.89,6.53,6.16,5.83,5.57,5.33,5.24,5.53,5.8,6.12,6.04,6.08,5.94,6.02,5.72,5.34,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[2.03,1.99,1.95,1.92,1.88,1.84,1.81,1.77,1.74,1.71,1.67,1.64,1.61,1.58,1.55,1.52,1.5,1.47,1.44,1.42,1.39,1.36,1.34,1.32,1.29],"swst":[0.57,0.55,0.53,0.51,0.5,0.48,0.47,0.45,0.44,0.42,0.41,0.4,0.39,0.37,0.36,0.35,0.34,0.33,0.32,0.31,0.3,0.29,0.28,0.28,0.27],"uw":[5.33,5.18,5.05,4.91,4.78,4.65,4.53,4.4,4.28,4.16,4.05,3.94,3.83,3.73,3.63,3.53,3.43,3.33,3.23,3.14,3.06,2.97,2.89,2.82,2.74],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"MEA":{"name":"Middle East & North Africa","s":{"und":[null,12.9,13.02,12.61,11.83,11.14,10.52,10.09,9.92,9.91,10.06,10.12,10.12,9.94,9.78,9.55,9.14,9.41,9.34,10.35,10.85,12.26,12.59,12.65,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[8.32,8.18,8.05,7.92,7.79,7.67,7.54,7.42,7.3,7.18,7.06,6.95,6.84,6.72,6.61,6.51,6.4,6.29,6.19,6.09,5.99,5.89,5.79,5.7,5.6],"swst":[2.88,2.83,2.79,2.75,2.7,2.66,2.62,2.58,2.54,2.5,2.46,2.43,2.39,2.35,2.32,2.28,2.25,2.21,2.18,2.14,2.11,2.08,2.05,2.01,1.98],"uw":[16.48,16.1,15.73,15.37,15.01,14.66,14.32,13.98,13.65,13.32,13.01,12.7,12.39,12.09,11.8,11.51,11.23,10.96,10.69,10.43,10.17,9.92,9.68,9.44,9.2],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"NAC":{"name":"North America","s":{"und":[null,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[0.53,0.52,0.5,0.49,0.47,0.46,0.44,0.42,0.41,0.39,0.38,0.36,0.35,0.33,0.31,0.3,0.28,0.27,0.25,0.24,0.22,0.2,0.19,0.17,0.16],"swst":[0.07,0.07,0.07,0.07,0.06,0.06,0.06,0.06,0.05,0.05,0.05,0.04,0.04,0.04,0.04,0.03,0.03,0.03,0.03,0.02,0.02,0.02,0.01,0.01,0.01],"uw":[0.91,0.9,0.89,0.89,0.88,0.87,0.86,0.86,0.85,0.84,0.84,0.83,0.82,0.81,0.81,0.8,0.79,0.79,0.78,0.77,0.77,0.76,0.75,0.74,0.74],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"SAS":{"name":"South Asia","s":{"und":[null,17.91,19.14,20.4,20.77,20.27,18.39,16.45,15.37,15.18,14.86,14.47,13.69,13.08,12.74,12.23,11.68,10.71,10.48,11.47,12.85,13.59,12.96,11.65,null],"stn":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"wst":[18.19,18.07,17.96,17.85,17.74,17.63,17.52,17.41,17.31,17.2,17.09,16.99,16.88,16.77,16.67,16.56,16.46,16.36,16.26,16.15,16.05,15.95,15.85,15.75,15.65],"swst":[5.57,5.54,5.52,5.49,5.46,5.43,5.41,5.38,5.35,5.33,5.3,5.27,5.25,5.22,5.2,5.17,5.14,5.12,5.09,5.07,5.04,5.02,4.99,4.97,4.94],"uw":[44.72,43.82,42.93,42.04,41.16,40.28,39.41,38.54,37.68,36.83,35.99,35.16,34.33,33.52,32.71,31.91,31.13,30.36,29.59,28.84,28.1,27.37,26.65,25.95,25.25],"ovw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"sfi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}}},"cty":{"CHN":{"name":"China","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":4.8,"y":"2017"},"wst":{"v":1.9,"y":"2017"},"swst":{"v":0.7,"y":"2010"},"uw":{"v":2.4,"y":"2013"},"ovw":{"v":8.5,"y":"2017"}},"region":"EAS","regionName":"East Asia & Pacific","income":"UMC","incomeName":"Upper middle income","und":[null,10.0,9.3,8.6,7.8,6.9,6.0,4.9,3.9,2.9,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[7.4,null,6.8,null,null,4.5,null,null,3.8,3.4,3.4,null,null,2.4,null,null,null,null,null,null,null,null,null,null,null]},"IND":{"name":"India","latest":{"und":{"v":12.0,"y":"2023"},"stn":{"v":35.5,"y":"2020"},"wst":{"v":18.7,"y":"2020"},"swst":{"v":7.5,"y":"2020"},"uw":{"v":31.5,"y":"2020"},"ovw":{"v":3.5,"y":"2020"}},"region":"SAS","regionName":"South Asia","income":"LMC","incomeName":"Lower middle income","und":[null,18.1,19.7,21.2,21.7,21.1,18.9,16.6,15.3,15.0,14.6,14.2,13.4,12.8,12.6,12.1,11.6,10.6,10.5,11.8,13.4,14.3,13.5,12.0,null],"uw":[null,null,null,null,null,null,43.5,null,null,null,null,null,null,null,29.4,36.3,null,33.8,null,null,31.5,null,null,null,null]},"USA":{"name":"United States","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":3.8,"y":"2022"},"wst":{"v":0.1,"y":"2022"},"swst":{"v":0.0,"y":"2018"},"uw":{"v":0.4,"y":"2018"},"ovw":{"v":9.5,"y":"2022"},"sfi":{"v":1.0,"y":"2023"}},"region":"NAC","regionName":"North America","income":"HIC","incomeName":"High income","und":[null,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[1.1,null,0.8,null,1.3,null,0.7,null,0.7,null,1.0,null,0.5,null,0.7,null,1.4,null,0.4,null,null,null,null,null,null]},"IDN":{"name":"Indonesia","latest":{"und":{"v":6.3,"y":"2023"},"stn":{"v":22.0,"y":"2023"},"wst":{"v":8.4,"y":"2023"},"swst":{"v":2.1,"y":"2023"},"uw":{"v":15.9,"y":"2023"},"ovw":{"v":4.3,"y":"2023"},"sfi":{"v":0.0,"y":"2023"}},"region":"EAS","regionName":"East Asia & Pacific","income":"UMC","incomeName":"Upper middle income","und":[null,18.1,18.1,18.0,18.2,18.4,18.1,17.5,16.5,15.0,12.9,10.9,9.5,8.3,7.8,7.1,6.6,6.0,6.0,6.4,6.6,6.6,6.6,6.3,null],"uw":[24.7,23.4,23.0,23.1,19.7,24.4,null,null,19.6,null,18.6,null,null,19.9,null,null,null,null,17.7,17.9,null,17.0,16.8,15.9,null]},"PAK":{"name":"Pakistan","latest":{"und":{"v":16.5,"y":"2023"},"stn":{"v":37.6,"y":"2018"},"wst":{"v":7.1,"y":"2018"},"swst":{"v":2.4,"y":"2018"},"uw":{"v":23.1,"y":"2018"},"ovw":{"v":2.5,"y":"2018"},"sfi":{"v":10.1,"y":"2023"}},"region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","income":"LMC","incomeName":"Lower middle income","und":[null,20.4,21.0,20.2,18.3,16.9,15.7,15.1,15.1,15.4,15.5,15.4,15.0,14.7,14.2,13.3,11.5,11.7,10.9,12.9,13.4,16.4,16.7,16.5,null],"uw":[null,31.2,null,null,null,null,null,null,null,null,null,31.4,null,31.8,null,null,null,null,23.1,null,null,null,null,null,null]},"NGA":{"name":"Nigeria","latest":{"und":{"v":19.9,"y":"2023"},"stn":{"v":33.8,"y":"2021"},"wst":{"v":11.6,"y":"2021"},"swst":{"v":3.1,"y":"2021"},"uw":{"v":24.4,"y":"2021"},"ovw":{"v":1.5,"y":"2021"},"sfi":{"v":24.3,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LMC","incomeName":"Lower middle income","und":[null,8.7,8.7,8.8,8.9,9.1,9.2,9.4,9.6,9.9,10.4,11.1,11.7,11.4,11.1,10.7,10.8,11.5,12.1,14.3,15.8,17.6,18.7,19.9,null],"uw":[null,null,null,26.7,null,null,null,null,null,null,null,24.2,null,null,20.6,19.5,31.5,null,21.8,null,18.4,24.4,null,null,null]},"BRA":{"name":"Brazil","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":8.0,"y":"2019"},"wst":{"v":3.4,"y":"2019"},"swst":{"v":0.8,"y":"2019"},"uw":{"v":3.5,"y":"2019"},"ovw":{"v":9.6,"y":"2019"},"sfi":{"v":3.4,"y":"2023"}},"region":"LCN","regionName":"Latin America & Caribbean ","income":"UMC","incomeName":"Upper middle income","und":[null,10.5,9.1,7.6,6.3,5.7,5.1,4.5,4.0,3.5,3.0,2.7,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.8,3.4,3.2,2.5,null],"uw":[null,null,null,null,null,null,null,2.2,null,null,null,null,null,null,null,null,null,null,null,3.5,null,null,null,null,null]},"BGD":{"name":"Bangladesh","latest":{"und":{"v":10.4,"y":"2023"},"stn":{"v":23.6,"y":"2022"},"wst":{"v":10.7,"y":"2022"},"swst":{"v":1.7,"y":"2022"},"uw":{"v":21.7,"y":"2022"},"ovw":{"v":1.6,"y":"2022"}},"region":"SAS","regionName":"South Asia","income":"LMC","incomeName":"Lower middle income","und":[null,15.5,14.6,14.8,14.7,15.1,15.4,16.1,16.9,17.9,18.2,18.0,17.3,16.7,15.6,15.2,14.4,13.4,12.0,10.9,10.8,10.3,10.6,10.4,null],"uw":[42.4,43.2,41.0,38.9,42.8,39.7,37.9,41.3,null,null,null,36.7,33.0,31.9,32.8,31.0,null,null,21.9,22.6,null,null,21.7,null,null]},"RUS":{"name":"Russian Federation","latest":{"und":{"v":2.5,"y":"2023"},"wst":{"v":3.3,"y":"2005"},"swst":{"v":1.3,"y":"2005"},"ovw":{"v":16.9,"y":"2005"},"sfi":{"v":0.0,"y":"2023"}},"region":"ECS","regionName":"Europe & Central Asia","income":"HIC","incomeName":"High income","und":[null,4.2,3.3,2.7,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},"MEX":{"name":"Mexico","latest":{"und":{"v":2.7,"y":"2023"},"stn":{"v":12.5,"y":"2022"},"wst":{"v":1.0,"y":"2022"},"swst":{"v":0.1,"y":"2022"},"uw":{"v":4.2,"y":"2022"},"ovw":{"v":7.1,"y":"2022"},"sfi":{"v":2.9,"y":"2023"}},"region":"LCN","regionName":"Latin America & Caribbean ","income":"UMC","incomeName":"Upper middle income","und":[null,2.8,3.2,3.8,4.1,4.0,3.7,3.7,3.9,4.1,4.0,3.9,3.8,3.7,3.7,3.7,3.7,3.7,3.6,3.4,3.1,3.0,2.8,2.7,null],"uw":[null,null,4.2,null,null,6.0,3.4,null,null,null,null,null,2.8,null,null,3.9,4.2,null,null,4.7,4.6,4.2,4.2,null,null]},"ETH":{"name":"Ethiopia","latest":{"und":{"v":19.7,"y":"2023"},"stn":{"v":36.8,"y":"2019"},"wst":{"v":6.8,"y":"2019"},"swst":{"v":1.1,"y":"2019"},"uw":{"v":21.2,"y":"2019"},"ovw":{"v":2.3,"y":"2019"},"sfi":{"v":19.0,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"INX","incomeName":"Not classified","und":[null,46.1,43.2,41.6,39.1,36.4,32.7,29.4,26.3,23.9,22.4,21.2,19.8,17.7,15.2,13.6,13.0,14.1,16.1,18.5,20.3,20.6,20.2,19.7,null],"uw":[41.8,null,null,null,null,34.3,null,null,null,null,null,29.2,null,null,26.5,null,23.5,null,null,21.2,null,null,null,null,null]},"JPN":{"name":"Japan","latest":{"stn":{"v":7.1,"y":"2010"},"wst":{"v":2.4,"y":"2010"},"swst":{"v":0.2,"y":"2010"},"uw":{"v":3.4,"y":"2010"},"ovw":{"v":1.4,"y":"2010"},"sfi":{"v":1.1,"y":"2023"}},"region":"EAS","regionName":"East Asia & Pacific","income":"HIC","incomeName":"High income","und":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"uw":[2.5,null,null,null,null,null,null,null,null,null,3.4,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},"PHL":{"name":"Philippines","latest":{"und":{"v":3.0,"y":"2023"},"stn":{"v":26.7,"y":"2021"},"wst":{"v":5.4,"y":"2021"},"swst":{"v":0.8,"y":"2021"},"uw":{"v":16.7,"y":"2021"},"ovw":{"v":3.9,"y":"2021"},"sfi":{"v":3.0,"y":"2023"}},"region":"EAS","regionName":"East Asia & Pacific","income":"LMC","incomeName":"Lower middle income","und":[null,18.5,18.3,17.8,17.6,17.3,17.0,16.7,16.4,16.0,15.7,14.9,14.3,13.7,12.9,11.4,9.7,7.8,6.4,5.8,5.2,4.6,3.5,3.0,null],"uw":[null,null,null,20.8,null,null,null,null,20.6,null,null,20.2,null,19.9,null,21.4,null,null,19.0,18.9,null,16.7,null,null,null]},"EGY":{"name":"Egypt, Arab Rep.","latest":{"und":{"v":9.4,"y":"2023"},"stn":{"v":12.8,"y":"2021"},"wst":{"v":3.3,"y":"2021"},"swst":{"v":1.5,"y":"2021"},"uw":{"v":3.7,"y":"2021"},"ovw":{"v":10.1,"y":"2021"},"sfi":{"v":12.0,"y":"2023"}},"region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","income":"LMC","incomeName":"Lower middle income","und":[null,4.8,5.0,5.5,5.8,5.8,5.4,5.1,5.0,4.9,5.1,5.2,5.7,6.1,6.4,6.5,6.6,6.6,6.4,6.6,7.1,7.9,8.8,9.4,null],"uw":[null,null,null,8.7,null,5.4,null,null,6.8,null,null,null,null,null,7.0,null,null,null,null,null,null,3.7,null,null,null]},"COD":{"name":"Congo, Dem. Rep.","latest":{"und":{"v":38.5,"y":"2023"},"stn":{"v":44.7,"y":"2023"},"wst":{"v":7.2,"y":"2023"},"swst":{"v":1.9,"y":"2023"},"uw":{"v":25.0,"y":"2023"},"ovw":{"v":3.8,"y":"2023"},"sfi":{"v":42.5,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LIC","incomeName":"Low income","und":[null,26.8,27.2,27.2,27.3,27.3,27.4,27.6,27.7,28.4,28.7,29.6,30.5,30.8,31.1,31.7,32.3,32.7,32.5,34.1,35.2,36.6,37.3,38.5,null],"uw":[null,30.3,null,null,null,null,null,25.6,null,null,24.2,null,null,23.4,null,null,null,23.1,null,null,null,null,null,25.0,null]},"VNM":{"name":"Viet Nam","latest":{"und":{"v":5.3,"y":"2023"},"stn":{"v":18.2,"y":"2023"},"wst":{"v":4.4,"y":"2023"},"swst":{"v":1.0,"y":"2020"},"uw":{"v":9.7,"y":"2023"},"ovw":{"v":9.4,"y":"2023"},"sfi":{"v":2.2,"y":"2023"}},"region":"EAS","regionName":"East Asia & Pacific","income":"LMC","incomeName":"Lower middle income","und":[null,19.5,17.7,16.0,15.3,15.2,14.9,13.8,12.5,11.3,10.4,9.3,8.8,8.4,8.3,8.0,7.7,7.3,6.9,6.4,5.9,5.6,5.4,5.3,null],"uw":[26.6,null,23.3,24.6,23.6,22.8,21.9,21.6,20.5,17.5,11.7,16.8,16.2,15.3,14.5,14.1,13.8,13.4,12.8,12.2,11.6,null,10.2,9.7,null]},"IRN":{"name":"Iran, Islamic Rep.","latest":{"und":{"v":6.8,"y":"2023"},"stn":{"v":4.8,"y":"2017"},"wst":{"v":4.3,"y":"2017"},"swst":{"v":0.9,"y":"2017"},"uw":{"v":4.3,"y":"2017"},"ovw":{"v":2.9,"y":"2017"},"sfi":{"v":5.9,"y":"2023"}},"region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","income":"UMC","incomeName":"Upper middle income","und":[null,4.9,5.2,5.5,5.9,6.4,6.9,7.4,7.9,8.4,9.4,9.5,9.2,8.0,7.6,7.4,7.7,8.0,8.0,7.7,6.9,6.8,6.7,6.8,null],"uw":[null,null,null,null,4.6,null,null,null,null,null,4.1,null,null,null,null,null,null,4.3,null,null,null,null,null,null,null]},"TUR":{"name":"Turkiye","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":6.0,"y":"2018"},"wst":{"v":1.7,"y":"2018"},"swst":{"v":0.6,"y":"2018"},"uw":{"v":1.5,"y":"2018"},"ovw":{"v":8.1,"y":"2018"}},"region":"ECS","regionName":"Europe & Central Asia","income":"UMC","incomeName":"Upper middle income","und":[null,12.9,13.9,13.7,12.3,9.4,6.5,4.4,3.2,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,null,3.5,null,null,null,1.9,null,null,null,null,2.3,null,null,null,null,1.5,null,null,null,null,null,null]},"DEU":{"name":"Germany","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":1.3,"y":"2016"},"wst":{"v":0.5,"y":"2016"},"swst":{"v":0.1,"y":"2016"},"uw":{"v":0.6,"y":"2016"},"ovw":{"v":2.9,"y":"2016"},"sfi":{"v":1.2,"y":"2023"}},"region":"ECS","regionName":"Europe & Central Asia","income":"HIC","incomeName":"High income","und":[null,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,null,1.1,null,null,null,null,null,null,null,null,null,null,null,0.6,null,null,null,null,null,null,null,null]},"THA":{"name":"Thailand","latest":{"und":{"v":4.6,"y":"2023"},"stn":{"v":12.4,"y":"2022"},"wst":{"v":7.2,"y":"2022"},"swst":{"v":2.5,"y":"2022"},"uw":{"v":6.7,"y":"2022"},"ovw":{"v":10.9,"y":"2022"},"sfi":{"v":0.8,"y":"2023"}},"region":"EAS","regionName":"East Asia & Pacific","income":"UMC","incomeName":"Upper middle income","und":[null,17.3,16.3,14.9,13.6,11.8,10.6,10.1,10.6,10.4,10.2,9.4,9.3,8.7,8.2,7.8,7.9,8.1,7.6,6.8,6.0,5.4,5.1,4.6,null],"uw":[null,null,null,null,null,null,7.0,null,null,null,null,null,9.2,null,null,null,6.7,null,null,7.7,null,null,6.7,null,null]},"GBR":{"name":"United Kingdom","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":2.0,"y":"2019"},"wst":{"v":0.4,"y":"2019"},"swst":{"v":0.1,"y":"2019"},"uw":{"v":0.6,"y":"2019"},"ovw":{"v":6.5,"y":"2019"},"sfi":{"v":3.3,"y":"2023"}},"region":"ECS","regionName":"Europe & Central Asia","income":"HIC","incomeName":"High income","und":[null,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,null,null,null,null,0.7,0.6,0.6,0.6,0.1,0.6,0.6,0.6,0.6,0.6,0.5,0.6,0.6,null,null,null,null,null]},"FRA":{"name":"France","latest":{"und":{"v":2.5,"y":"2023"},"sfi":{"v":2.7,"y":"2023"}},"region":"ECS","regionName":"Europe & Central Asia","income":"HIC","incomeName":"High income","und":[null,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},"TZA":{"name":"Tanzania","latest":{"und":{"v":20.2,"y":"2023"},"stn":{"v":30.0,"y":"2022"},"wst":{"v":3.1,"y":"2022"},"swst":{"v":0.9,"y":"2022"},"uw":{"v":11.4,"y":"2022"},"ovw":{"v":3.7,"y":"2022"},"sfi":{"v":24.4,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LMC","incomeName":"Lower middle income","und":[null,32.8,33.6,32.1,31.5,28.5,27.0,25.9,25.1,24.6,23.7,22.7,21.7,21.2,21.1,21.3,21.9,22.6,22.9,23.0,22.8,22.4,21.4,20.2,null],"uw":[null,null,null,null,16.7,null,null,null,null,16.4,16.1,14.1,null,13.1,13.4,13.7,null,null,14.6,null,null,10.8,11.4,null,null]},"ZAF":{"name":"South Africa","latest":{"und":{"v":10.0,"y":"2023"},"stn":{"v":21.3,"y":"2017"},"wst":{"v":3.6,"y":"2017"},"swst":{"v":1.7,"y":"2017"},"uw":{"v":4.9,"y":"2017"},"ovw":{"v":11.8,"y":"2017"},"sfi":{"v":8.5,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"UMC","incomeName":"Upper middle income","und":[null,3.6,3.5,3.4,3.3,3.3,3.4,3.5,3.5,4.0,4.5,5.0,5.2,5.6,6.4,6.6,6.4,6.1,6.4,7.2,8.6,9.4,10.0,10.0,null],"uw":[null,null,null,null,null,null,null,null,9.1,null,null,null,null,null,null,5.7,5.9,4.9,null,null,null,null,null,null,null]},"ITA":{"name":"Italy","latest":{"und":{"v":2.5,"y":"2023"},"sfi":{"v":0.0,"y":"2023"}},"region":"ECS","regionName":"Europe & Central Asia","income":"HIC","incomeName":"High income","und":[null,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},"MMR":{"name":"Myanmar","latest":{"und":{"v":5.4,"y":"2023"},"stn":{"v":26.7,"y":"2018"},"wst":{"v":7.4,"y":"2018"},"swst":{"v":0.9,"y":"2018"},"uw":{"v":19.5,"y":"2018"},"ovw":{"v":0.8,"y":"2018"},"sfi":{"v":7.2,"y":"2023"}},"region":"EAS","regionName":"East Asia & Pacific","income":"LMC","incomeName":"Lower middle income","und":[null,38.6,35.8,32.6,28.8,24.8,21.0,17.4,14.0,11.1,9.2,8.0,7.4,6.4,5.5,4.5,3.8,3.5,3.4,3.2,3.7,4.4,5.2,5.4,null],"uw":[30.0,null,null,29.2,null,null,null,null,null,22.6,null,null,null,null,null,null,18.5,null,19.5,null,null,null,null,null,null]},"KEN":{"name":"Kenya","latest":{"und":{"v":36.8,"y":"2023"},"stn":{"v":17.6,"y":"2022"},"wst":{"v":4.5,"y":"2022"},"swst":{"v":0.6,"y":"2022"},"uw":{"v":9.8,"y":"2022"},"ovw":{"v":3.4,"y":"2022"},"sfi":{"v":28.1,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LMC","incomeName":"Lower middle income","und":[null,31.8,33.3,34.5,31.6,28.0,25.8,26.8,26.7,24.3,21.7,19.9,19.1,18.9,19.0,20.8,22.2,23.6,22.9,23.7,26.3,31.6,35.3,36.8,null],"uw":[17.1,null,null,16.4,null,18.0,null,null,16.5,null,null,12.4,null,null,11.2,null,13.0,null,null,null,null,null,9.8,null,null]},"COL":{"name":"Colombia","latest":{"und":{"v":3.9,"y":"2023"},"stn":{"v":12.7,"y":"2016"},"wst":{"v":1.6,"y":"2016"},"swst":{"v":0.4,"y":"2016"},"uw":{"v":3.7,"y":"2016"},"ovw":{"v":5.7,"y":"2016"},"sfi":{"v":5.0,"y":"2023"}},"region":"LCN","regionName":"Latin America & Caribbean ","income":"UMC","incomeName":"Upper middle income","und":[null,8.6,8.9,9.6,10.4,11.0,11.3,10.8,11.1,11.1,11.1,10.0,8.6,7.0,5.8,5.0,4.4,4.2,4.2,4.1,4.2,4.1,4.1,3.9,null],"uw":[4.9,null,null,null,null,5.0,null,null,null,null,3.4,null,null,null,null,null,3.7,null,null,null,null,null,null,null,null]},"KOR":{"name":"Korea, Rep.","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":0.9,"y":"2020"},"wst":{"v":0.2,"y":"2020"},"swst":{"v":0.1,"y":"2020"},"uw":{"v":0.4,"y":"2020"},"ovw":{"v":6.2,"y":"2020"},"sfi":{"v":1.1,"y":"2023"}},"region":"EAS","regionName":"East Asia & Pacific","income":"HIC","incomeName":"High income","und":[null,2.5,2.6,2.7,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,0.9,null,null,null,null,null,null,null,0.8,null,null,1.0,null,null,0.9,null,null,0.4,null,null,null,null]},"SDN":{"name":"Sudan","latest":{"und":{"v":11.0,"y":"2021"},"stn":{"v":38.2,"y":"2014"},"wst":{"v":16.3,"y":"2014"},"swst":{"v":4.5,"y":"2014"},"uw":{"v":33.0,"y":"2014"},"ovw":{"v":3.0,"y":"2014"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LIC","incomeName":"Low income","und":[null,null,null,null,null,null,null,null,null,null,null,null,null,8.7,8.4,8.9,9.8,10.3,10.8,10.8,11.1,11.0,null,null,null],"uw":[null,null,null,null,null,null,27.0,null,null,null,29.8,null,null,null,33.0,null,null,null,null,null,null,null,null,null,null]},"UGA":{"name":"Uganda","latest":{"und":{"v":22.0,"y":"2023"},"stn":{"v":24.4,"y":"2022"},"wst":{"v":3.2,"y":"2022"},"swst":{"v":1.0,"y":"2022"},"uw":{"v":9.7,"y":"2022"},"ovw":{"v":3.4,"y":"2022"},"sfi":{"v":14.9,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LIC","incomeName":"Low income","und":[null,21.2,19.5,18.4,18.1,18.8,19.2,19.6,19.8,18.7,17.6,17.7,19.6,21.3,23.8,30.6,35.4,35.5,35.9,33.1,33.1,25.6,24.2,22.0,null],"uw":[19.2,null,null,null,null,null,16.3,null,null,15.7,null,14.1,11.9,null,11.7,8.8,10.4,null,7.7,null,7.6,null,9.7,null,null]},"ESP":{"name":"Spain","latest":{"und":{"v":2.5,"y":"2023"},"sfi":{"v":1.4,"y":"2023"}},"region":"ECS","regionName":"Europe & Central Asia","income":"HIC","incomeName":"High income","und":[null,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},"DZA":{"name":"Algeria","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":9.8,"y":"2019"},"wst":{"v":2.7,"y":"2019"},"swst":{"v":1.3,"y":"2019"},"uw":{"v":2.7,"y":"2019"},"ovw":{"v":12.8,"y":"2019"},"sfi":{"v":4.9,"y":"2023"}},"region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","income":"UMC","incomeName":"Upper middle income","und":[null,7.3,6.7,6.4,6.4,6.1,5.8,5.3,5.0,4.7,4.1,3.7,3.1,2.9,2.7,2.6,2.6,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[5.4,null,11.1,null,null,null,3.4,null,null,null,null,null,3.0,null,null,null,null,null,null,2.7,null,null,null,null,null]},"IRQ":{"name":"Iraq","latest":{"und":{"v":14.9,"y":"2023"},"stn":{"v":12.6,"y":"2018"},"wst":{"v":3.0,"y":"2018"},"swst":{"v":0.9,"y":"2018"},"uw":{"v":3.9,"y":"2018"},"ovw":{"v":6.1,"y":"2018"}},"region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","income":"UMC","incomeName":"Upper middle income","und":[null,20.1,19.5,18.4,17.8,16.5,16.5,16.4,15.6,14.5,13.4,13.6,14.2,14.9,15.3,15.7,16.1,16.0,15.8,15.4,15.1,15.4,15.3,14.9,null],"uw":[12.8,null,null,10.1,8.0,null,7.1,null,null,null,null,7.2,null,null,null,null,null,null,3.9,null,null,null,null,null,null]},"ARG":{"name":"Argentina","latest":{"und":{"v":3.4,"y":"2023"},"stn":{"v":8.7,"y":"2018"},"wst":{"v":1.7,"y":"2018"},"swst":{"v":0.5,"y":"2018"},"uw":{"v":2.0,"y":"2018"},"ovw":{"v":12.4,"y":"2018"},"sfi":{"v":12.3,"y":"2023"}},"region":"LCN","regionName":"Latin America & Caribbean ","income":"UMC","incomeName":"Upper middle income","und":[null,3.0,3.7,4.3,3.9,3.6,3.3,3.2,3.2,3.4,3.7,3.7,3.6,3.2,2.9,2.9,3.2,3.5,3.7,3.6,3.5,3.4,3.3,3.4,null],"uw":[null,null,null,null,null,2.5,null,null,null,null,null,null,null,null,null,null,null,null,2.0,null,null,null,null,null,null]},"AFG":{"name":"Afghanistan","latest":{"und":{"v":28.1,"y":"2023"},"stn":{"v":44.6,"y":"2022"},"wst":{"v":3.6,"y":"2022"},"swst":{"v":1.2,"y":"2022"},"uw":{"v":18.4,"y":"2022"},"ovw":{"v":4.5,"y":"2022"},"sfi":{"v":31.0,"y":"2023"}},"region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","income":"LIC","incomeName":"Low income","und":[null,45.8,43.5,38.7,34.6,30.6,26.6,22.7,19.7,17.6,17.7,18.6,19.7,19.4,19.3,19.9,20.4,21.3,22.6,25.1,27.5,28.8,28.9,28.1,null],"uw":[null,null,null,null,31.7,null,null,null,null,null,null,null,null,24.6,null,null,null,null,19.1,null,null,null,18.4,null,null]},"YEM":{"name":"Yemen, Rep.","latest":{"stn":{"v":48.5,"y":"2022"},"wst":{"v":16.8,"y":"2022"},"swst":{"v":5.2,"y":"2022"},"uw":{"v":40.7,"y":"2022"},"ovw":{"v":1.5,"y":"2022"}},"region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","income":"LIC","incomeName":"Low income","und":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"uw":[null,null,null,45.3,null,36.7,null,null,null,null,null,35.5,null,39.9,null,null,null,null,null,null,null,31.6,40.7,null,null]},"CAN":{"name":"Canada","latest":{"und":{"v":2.5,"y":"2023"},"ovw":{"v":10.4,"y":"2004"},"sfi":{"v":1.9,"y":"2023"}},"region":"NAC","regionName":"North America","income":"HIC","incomeName":"High income","und":[null,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},"POL":{"name":"Poland","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":1.0,"y":"2018"},"wst":{"v":0.8,"y":"2018"},"swst":{"v":0.1,"y":"2018"},"uw":{"v":0.7,"y":"2018"},"ovw":{"v":7.7,"y":"2018"},"sfi":{"v":0.0,"y":"2023"}},"region":"ECS","regionName":"Europe & Central Asia","income":"HIC","incomeName":"High income","und":[null,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,null,null,null,null,null,null,null,null,0.9,null,null,null,null,null,null,0.7,null,null,null,null,null,null]},"MAR":{"name":"Morocco","latest":{"und":{"v":7.0,"y":"2023"},"stn":{"v":14.2,"y":"2019"},"wst":{"v":2.4,"y":"2019"},"swst":{"v":0.5,"y":"2019"},"uw":{"v":3.0,"y":"2019"},"ovw":{"v":12.7,"y":"2019"}},"region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","income":"LMC","incomeName":"Lower middle income","und":[null,5.8,5.4,5.1,4.9,4.8,4.8,4.8,4.8,4.8,4.7,4.5,4.3,4.1,3.9,3.7,3.7,3.5,3.6,4.1,5.3,6.5,6.9,7.0,null],"uw":[null,null,null,9.8,null,null,null,null,null,null,null,2.9,null,null,null,null,null,2.6,null,3.0,null,null,null,null,null]},"AGO":{"name":"Angola","latest":{"und":{"v":22.5,"y":"2023"},"stn":{"v":37.6,"y":"2015"},"wst":{"v":4.9,"y":"2015"},"swst":{"v":1.1,"y":"2015"},"uw":{"v":19.0,"y":"2015"},"ovw":{"v":3.4,"y":"2015"},"sfi":{"v":31.2,"y":"2021"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LMC","incomeName":"Lower middle income","und":[null,67.8,63.6,57.5,50.6,42.9,36.0,29.8,24.4,19.7,16.2,14.8,14.0,13.5,13.2,14.2,15.2,15.4,15.9,18.2,20.8,22.6,23.1,22.5,null],"uw":[null,null,null,null,null,null,null,15.1,null,null,null,null,null,null,null,19.0,null,null,null,null,null,null,null,null,null]},"UKR":{"name":"Ukraine","latest":{"und":{"v":6.9,"y":"2023"},"stn":{"v":22.9,"y":"2000"},"wst":{"v":8.2,"y":"2000"},"swst":{"v":3.8,"y":"2000"},"uw":{"v":4.1,"y":"2000"},"ovw":{"v":26.5,"y":"2000"},"sfi":{"v":5.3,"y":"2023"}},"region":"ECS","regionName":"Europe & Central Asia","income":"UMC","incomeName":"Upper middle income","und":[null,2.7,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.6,3.0,3.8,4.3,5.3,6.0,6.9,null],"uw":[4.1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},"UZB":{"name":"Uzbekistan","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":6.5,"y":"2021"},"wst":{"v":2.4,"y":"2021"},"swst":{"v":1.1,"y":"2021"},"uw":{"v":1.8,"y":"2021"},"ovw":{"v":4.5,"y":"2021"},"sfi":{"v":5.2,"y":"2023"}},"region":"ECS","regionName":"Europe & Central Asia","income":"LMC","incomeName":"Lower middle income","und":[null,19.0,20.4,18.9,16.0,13.0,10.3,8.0,6.2,4.8,3.6,2.8,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,7.4,null,null,null,4.4,null,null,null,null,null,null,null,null,null,null,2.9,null,null,null,1.8,null,null,null]},"MYS":{"name":"Malaysia","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":21.2,"y":"2022"},"wst":{"v":11.0,"y":"2022"},"swst":{"v":3.6,"y":"2019"},"uw":{"v":15.3,"y":"2022"},"ovw":{"v":5.6,"y":"2022"},"sfi":{"v":5.8,"y":"2023"}},"region":"EAS","regionName":"East Asia & Pacific","income":"UMC","incomeName":"Upper middle income","und":[null,2.5,2.8,2.9,3.1,3.2,3.4,3.6,3.6,3.8,3.5,3.4,3.5,3.7,3.8,3.7,3.3,3.1,2.9,2.8,2.7,2.5,2.5,2.5,null],"uw":[null,null,null,null,null,null,12.7,null,null,null,null,null,null,null,null,12.5,13.7,null,null,14.8,null,null,15.3,null,null]},"MOZ":{"name":"Mozambique","latest":{"und":{"v":21.8,"y":"2023"},"stn":{"v":36.7,"y":"2022"},"wst":{"v":3.8,"y":"2022"},"swst":{"v":0.7,"y":"2022"},"uw":{"v":15.4,"y":"2022"},"ovw":{"v":3.2,"y":"2022"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LIC","incomeName":"Low income","und":[null,36.4,34.9,32.8,30.9,29.2,27.3,25.4,23.6,21.7,20.0,19.9,21.6,26.4,32.6,39.9,41.6,38.3,32.5,28.3,25.8,22.8,21.8,21.8,null],"uw":[null,24.5,null,21.2,null,null,null,null,18.2,null,null,15.6,null,null,null,15.6,null,null,null,null,14.8,null,15.4,null,null]},"GHA":{"name":"Ghana","latest":{"und":{"v":6.3,"y":"2023"},"stn":{"v":17.4,"y":"2022"},"wst":{"v":5.8,"y":"2022"},"swst":{"v":1.2,"y":"2022"},"uw":{"v":12.0,"y":"2022"},"ovw":{"v":2.0,"y":"2022"},"sfi":{"v":9.4,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LMC","incomeName":"Lower middle income","und":[null,14.8,13.4,12.6,12.0,11.1,10.4,9.2,8.1,6.9,6.9,7.3,7.7,8.0,8.7,9.4,9.5,8.8,7.5,6.6,5.7,5.6,5.9,6.3,null],"uw":[null,null,null,19.0,null,null,13.9,null,14.4,null,null,13.4,null,null,11.2,null,null,12.6,null,null,null,null,12.0,null,null]},"PER":{"name":"Peru","latest":{"und":{"v":6.9,"y":"2023"},"stn":{"v":11.5,"y":"2023"},"wst":{"v":0.6,"y":"2023"},"swst":{"v":0.0,"y":"2023"},"uw":{"v":2.7,"y":"2023"},"ovw":{"v":7.5,"y":"2023"},"sfi":{"v":14.5,"y":"2023"}},"region":"LCN","regionName":"Latin America & Caribbean ","income":"UMC","incomeName":"Upper middle income","und":[null,20.4,21.8,22.1,20.7,17.9,14.9,13.0,11.0,9.4,8.5,7.6,6.7,5.6,5.3,5.7,6.2,6.5,6.0,6.2,6.3,6.5,6.6,6.9,null],"uw":[5.2,6.0,null,null,null,5.4,null,4.3,null,4.3,4.3,4.2,3.4,3.6,3.2,3.4,3.2,3.2,2.6,3.3,2.2,2.1,2.4,2.7,null]},"SAU":{"name":"Saudi Arabia","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":10.8,"y":"2020"},"wst":{"v":3.9,"y":"2020"},"swst":{"v":1.2,"y":"2020"},"uw":{"v":3.5,"y":"2020"},"ovw":{"v":11.6,"y":"2020"}},"region":"MEA","regionName":"Middle East, North Africa, Afghanistan & Pakistan","income":"HIC","incomeName":"High income","und":[null,4.6,4.8,4.7,4.5,4.2,3.9,3.6,3.4,3.1,3.2,3.1,3.2,2.8,2.7,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,null,5.3,null,null,null,null,null,null,null,null,null,null,5.7,4.6,6.2,3.3,4.0,3.5,null,null,null,null]},"MDG":{"name":"Madagascar","latest":{"und":{"v":39.5,"y":"2023"},"stn":{"v":39.8,"y":"2021"},"wst":{"v":7.2,"y":"2021"},"swst":{"v":1.5,"y":"2021"},"uw":{"v":22.6,"y":"2021"},"ovw":{"v":1.9,"y":"2021"},"sfi":{"v":17.8,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LIC","incomeName":"Low income","und":[null,33.4,34.8,36.1,34.6,32.9,30.6,30.2,30.0,29.4,28.1,27.4,28.6,30.1,32.1,33.3,35.0,36.0,37.5,38.9,40.6,39.9,39.9,39.5,null],"uw":[null,null,null,null,36.7,null,null,null,null,null,null,28.4,32.6,null,null,null,null,null,26.4,null,null,22.6,null,null,null]},"CIV":{"name":"Cote d'Ivoire","latest":{"und":{"v":11.1,"y":"2023"},"stn":{"v":23.4,"y":"2021"},"wst":{"v":8.1,"y":"2021"},"swst":{"v":2.4,"y":"2021"},"uw":{"v":13.6,"y":"2021"},"ovw":{"v":3.4,"y":"2021"},"sfi":{"v":8.4,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LMC","incomeName":"Lower middle income","und":[null,18.9,18.9,18.3,17.9,17.6,17.5,17.5,17.5,17.6,16.9,16.0,15.1,15.5,14.6,13.5,11.5,10.6,9.8,9.4,9.2,9.7,10.4,11.1,null],"uw":[null,null,null,null,null,null,null,28.4,null,null,null,15.5,15.7,null,null,null,12.8,null,null,null,null,13.6,null,null,null]},"NPL":{"name":"Nepal","latest":{"und":{"v":5.3,"y":"2023"},"stn":{"v":24.8,"y":"2022"},"wst":{"v":7.0,"y":"2022"},"swst":{"v":0.8,"y":"2022"},"uw":{"v":18.3,"y":"2022"},"ovw":{"v":1.3,"y":"2022"},"sfi":{"v":12.8,"y":"2023"}},"region":"SAS","regionName":"South Asia","income":"LMC","incomeName":"Lower middle income","und":[null,23.7,22.0,20.0,17.8,16.9,16.0,14.9,13.1,11.7,10.8,10.1,9.4,8.7,8.2,7.1,5.9,4.9,4.5,4.6,5.0,5.2,5.4,5.3,null],"uw":[null,42.8,null,null,null,null,38.6,null,null,null,31.1,28.9,null,null,29.7,null,27.0,null,null,24.4,null,null,18.3,null,null]},"CMR":{"name":"Cameroon","latest":{"und":{"v":4.8,"y":"2023"},"stn":{"v":28.9,"y":"2018"},"wst":{"v":4.3,"y":"2018"},"swst":{"v":1.6,"y":"2018"},"uw":{"v":11.0,"y":"2018"},"ovw":{"v":11.0,"y":"2018"},"sfi":{"v":24.7,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LMC","incomeName":"Lower middle income","und":[null,24.2,22.0,19.6,16.8,13.8,11.2,9.1,7.3,5.9,4.9,4.3,4.1,4.2,4.5,4.8,5.4,6.0,6.2,6.1,5.9,5.5,5.1,4.8,null],"uw":[null,null,null,null,15.1,null,16.5,null,null,null,null,15.2,null,null,14.8,null,null,null,11.0,null,null,null,null,null,null]},"VEN":{"name":"Venezuela, RB","latest":{"und":{"v":5.9,"y":"2023"},"stn":{"v":13.4,"y":"2009"},"wst":{"v":4.1,"y":"2009"},"uw":{"v":2.9,"y":"2009"},"ovw":{"v":6.4,"y":"2009"}},"region":"LCN","regionName":"Latin America & Caribbean ","income":"INX","incomeName":"Not classified","und":[null,14.1,14.2,13.8,9.3,7.8,6.5,4.4,2.6,2.5,2.5,2.5,2.5,2.5,3.9,11.3,17.4,23.7,23.4,24.1,18.5,13.0,7.3,5.9,null],"uw":[3.9,4.0,4.2,4.6,4.5,4.1,3.9,3.7,3.2,2.9,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},"NER":{"name":"Niger","latest":{"und":{"v":12.9,"y":"2023"},"stn":{"v":47.7,"y":"2022"},"wst":{"v":10.9,"y":"2022"},"swst":{"v":2.1,"y":"2022"},"uw":{"v":34.6,"y":"2022"},"ovw":{"v":1.2,"y":"2022"},"sfi":{"v":7.6,"y":"2023"}},"region":"SSF","regionName":"Sub-Saharan Africa ","income":"LIC","incomeName":"Low income","und":[null,23.1,22.2,21.1,19.1,18.0,17.0,16.1,15.2,14.3,14.6,14.8,15.0,14.5,13.7,12.7,12.0,11.1,10.9,10.1,10.9,11.4,12.7,12.9,null],"uw":[43.1,null,null,null,null,null,35.6,37.9,34.6,33.5,40.0,36.2,32.1,33.1,34.6,35.8,32.0,null,37.5,31.3,33.4,33.2,34.6,null,null]},"AUS":{"name":"Australia","latest":{"und":{"v":2.5,"y":"2023"},"stn":{"v":1.9,"y":"2007"},"wst":{"v":0.2,"y":"2007"},"swst":{"v":0.0,"y":"2007"},"uw":{"v":0.5,"y":"2007"},"ovw":{"v":22.0,"y":"2017"},"sfi":{"v":3.7,"y":"2023"}},"region":"EAS","regionName":"East Asia & Pacific","income":"HIC","incomeName":"High income","und":[null,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.5,null],"uw":[null,null,null,null,null,null,null,0.5,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}}};
+
+// ---------- helpers ----------
+function fmtVal(v,k){
+  if(v==null||!isFinite(v))return '—';
+  const dec=(SNAP.indMeta[k]&&SNAP.indMeta[k].dec)||0;
+  return v.toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec})+'%';
+}
+function unitOf(k){return SNAP.indMeta[k]?SNAP.indMeta[k].unit:'';}
+function nameOf(k){return SNAP.indMeta[k]?SNAP.indMeta[k].name:k;}
+function goodHigh(k){return SNAP.indMeta[k]&&SNAP.indMeta[k].good==='high';}
+function lastNonNull(arr){for(let i=arr.length-1;i>=0;i--){if(arr[i]!=null&&isFinite(arr[i]))return {v:arr[i],i};}return {v:null,i:-1};}
+function firstNonNull(arr){for(let i=0;i<arr.length;i++){if(arr[i]!=null&&isFinite(arr[i]))return {v:arr[i],i};}return {v:null,i:-1};}
+function yearAt(i){return SNAP.years[i]||'—';}
+function spark(arr,w,h,col,fill){
+  const v=arr.filter(x=>x!=null&&isFinite(x));if(v.length<2)return '<span class="muted small">—</span>';
+  const mn=Math.min(...v),mx=Math.max(...v),rng=(mx-mn)||1,n=arr.length;
+  let d='',started=false;
+  arr.forEach((x,i)=>{if(x==null||!isFinite(x))return;const X=(i/(n-1))*w,Y=h-((x-mn)/rng)*(h-3)-1.5;d+=(started?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1)+' ';started=true;});
+  const area=fill?'<path d="'+d+'L'+w+' '+h+' L0 '+h+' Z" fill="'+col+'1f"/>':'';
+  return '<svg viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" preserveAspectRatio="none" style="display:block">'+area+'<path d="'+d.trim()+'" fill="none" stroke="'+col+'" stroke-width="1.6"/></svg>';
+}
+// change latest-vs-first; "improve" colored green by indicator polarity (all good=low here)
+function changeHtml(arr,k){
+  const f=firstNonNull(arr),l=lastNonNull(arr);
+  if(f.v==null||l.v==null||l.i===f.i)return '<span class="muted">—</span>';
+  const diff=l.v-f.v;const better=goodHigh(k)?diff>0:diff<0;
+  const ar=diff>0?'▲':(diff<0?'▼':'■');
+  const cls=better?'dn':'up';
+  const dec=(SNAP.indMeta[k]&&SNAP.indMeta[k].dec)||0;
+  const mag=Math.abs(diff).toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  return '<span class="delta '+cls+'">'+ar+' '+mag+'</span>';
+}
+// color a value by burden tier (all indicators good=low: higher=worse=red)
+function valColor(v,k){
+  if(v==null)return 'var(--dim)';
+  const t={und:[5,15,30],stn:[10,20,30],wst:[5,10,15],swst:[1,2,4],uw:[5,15,25],ovw:[3,7,11],sfi:[5,15,25]}[k];
+  if(!t)return 'var(--teal)';
+  // good=low: smaller is better(green). bucket 3=best
+  let bucket=v<=t[0]?3:v<=t[1]?2:v<=t[2]?1:0;
+  return ['#ef5466','#f3833b','#f5b945','#3ddc97'][bucket];
+}
+
+// ---------- (a) GLOBAL HUNGER HEADLINE ----------
+function renderGlobal(){
+  const wld=SNAP.agg.WLD&&SNAP.agg.WLD.s;if(!wld)return;
+  const und=wld.und||[],uw=wld.uw||[];
+  const undL=lastNonNull(und),uwL=lastNonNull(uw);
+  $('undyear').textContent=undL.i>=0?yearAt(undL.i):'—';
+  $('undv').innerHTML=fmtVal(undL.v,'und')+' <small>of people</small>';
+  // people facing hunger = undernourishment% * world pop, interpretive
+  const yr=undL.i>=0?yearAt(undL.i):null;
+  const pop=yr&&WORLDPOP[yr]?WORLDPOP[yr]:null;
+  if(undL.v!=null&&pop){
+    const millions=Math.round(undL.v/100*pop*1000);
+    $('popyear').textContent=yr;
+    $('popv').innerHTML='~'+(millions/1000).toFixed(2)+' <small>billion</small>';
+    $('pops').innerHTML='≈ '+millions.toLocaleString()+' million people — a derived approximation (undernourishment × world population). FAO’s SOFI report places it around <b>700–800 million</b> in recent years.';
+  }else{$('popyear').textContent='—';$('popv').textContent='—';$('pops').textContent='—';}
+  $('unds').innerHTML=undL.i>=0?('From '+fmtVal(firstNonNull(und).v,'und')+' in '+yearAt(firstNonNull(und).i)+' '+changeHtml(und,'und')+' to date'):'—';
+  $('sparkUnd').innerHTML=spark(und,250,46,'#f3833b',true);
+  $('sparkUw').innerHTML=spark(uw,250,46,'#26c6da',true);
+  $('spkundyr').textContent=undL.i>=0?yearAt(undL.i):'—';
+  $('spkuwyr').textContent=uwL.i>=0?yearAt(uwL.i):'—';
+  // honest framing: progress then stall
+  let lowI=-1,lowV=1e9; und.forEach((x,i)=>{if(x!=null&&x<lowV){lowV=x;lowI=i;}});
+  let stall='';
+  if(lowI>=0&&undL.v!=null&&undL.v>lowV+0.05){
+    stall=' Undernourishment fell to a low of <b>'+fmtVal(lowV,'und')+' ('+yearAt(lowI)+')</b>, then <b>rose</b> to '+fmtVal(undL.v,'und')+' by '+yr+' — recent progress has stalled.';
+  }
+  $('globalcaveat').innerHTML='World prevalence of undernourishment is FAO’s estimate of the share of people whose habitual food intake is insufficient.'+stall+' Under-5 underweight (the blue trend) has continued its long decline. <span class="badge b-int">interpretive</span> The headcount is illustrative — see SOFI for the official figure.';
+}
+
+// ---------- (b) CHILD MALNUTRITION LEADERBOARD ----------
+function renderLead(){
+  const k=LEADK,rows=[];
+  COUNTRIES.forEach(iso=>{const c=SNAP.cty[iso];if(!c||!c.latest||!c.latest[k])return;rows.push({iso,name:c.name,v:c.latest[k].v,y:c.latest[k].y});});
+  rows.sort((a,b)=>b.v-a.v); // highest burden first
+  const max=Math.max(...rows.map(r=>r.v),1);
+  const m=SNAP.indMeta[k];
+  $('leaddesc').innerHTML=nameOf(k)+' — <b>'+m.unit+'</b>. Highest burden at top. The year per country is its latest reported survey, which can differ between rows.';
+  $('leadlist').innerHTML=rows.map((r,i)=>{
+    const col=valColor(r.v,k),w=Math.max(2,r.v/max*100);
+    return '<div class="row2"><div class="rk">'+(i+1)+'</div>'+
+     '<div class="nm">'+r.name+'</div>'+
+     '<div class="meter"><div class="tk"><div class="fl" style="width:'+w+'%;background:'+col+'"></div></div></div>'+
+     '<div class="rate" style="color:'+col+'">'+fmtVal(r.v,k)+'</div><div class="yr">'+r.y+'</div></div>';
+  }).join('')||'<div class="muted small" style="padding:10px 2px">No country surveys available for this indicator in the snapshot.</div>';
+}
+[...document.querySelectorAll('#leadind button')].forEach(b=>b.onclick=()=>{LEADK=b.dataset.k;[...document.querySelectorAll('#leadind button')].forEach(x=>x.classList.toggle('on',x===b));renderLead();});
+
+// ---------- (c) THE DOUBLE BURDEN ----------
+function aggOvwAvg(codes,mode){
+  // population-unweighted descriptive average of member-country latest overweight surveys
+  const out={};
+  COUNTRIES.forEach(iso=>{
+    const c=SNAP.cty[iso];if(!c)return;
+    let g=mode==='reg'?c.region:c.income;
+    if(!g)return;
+    if(!out[g])out[g]={ovw:[],und:[]};
+    if(c.latest&&c.latest.ovw)out[g].ovw.push(c.latest.ovw.v);
+  });
+  return out;
+}
+function renderDB(){
+  const mode=DBMODE;let rows=[];
+  if(mode==='cty'){
+    $('dbdesc').innerHTML='Each country’s own latest <b>child stunting</b> (under-nutrition) shown alongside its latest <b>child overweight</b> survey. Sorted by stunting. Both can be high at once — that is the double burden.';
+    COUNTRIES.forEach(iso=>{
+      const c=SNAP.cty[iso];if(!c||!c.latest)return;
+      const u=c.latest.stn,o=c.latest.ovw;
+      if(!u&&!o)return;
+      rows.push({nm:c.name,uv:u?u.v:null,uy:u?u.y:'—',ulab:'stunting',ov:o?o.v:null,oy:o?o.y:'—'});
+    });
+    rows.sort((a,b)=>(b.uv==null?-1:b.uv)-(a.uv==null?-1:a.uv));
+  }else{
+    const groups=mode==='reg'?REGION:INCOME;
+    $('dbdesc').innerHTML='World Bank aggregate <b>undernourishment</b> (under-nutrition) by '+(mode==='reg'?'region':'income group')+', shown with the <b>average child-overweight</b> survey across this atlas’s member countries in each group <span class="badge b-int">interpretive</span>.';
+    const ovwAvg=aggOvwAvg(groups,mode);
+    groups.forEach(([code,label])=>{
+      const a=SNAP.agg[code];const undL=a&&a.s&&a.s.und?lastNonNull(a.s.und):{v:null,i:-1};
+      const ov=ovwAvg[code]?ovwAvg[code].ovw:[];
+      const ovAvg=ov.length?ov.reduce((s,x)=>s+x,0)/ov.length:null;
+      rows.push({nm:label,uv:undL.v,uy:undL.i>=0?yearAt(undL.i):'—',ulab:'undernourish.',ov:ovAvg==null?null:Math.round(ovAvg*10)/10,oy:ov.length?('n='+ov.length):'—'});
+    });
+  }
+  const maxU=Math.max(...rows.map(r=>r.uv||0),1),maxO=Math.max(...rows.map(r=>r.ov||0),1);
+  $('dblist').innerHTML=rows.map(r=>{
+    const wu=r.uv==null?0:Math.max(2,r.uv/maxU*100),wo=r.ov==null?0:Math.max(2,r.ov/maxO*100);
+    return '<div class="db"><div class="nm">'+r.nm+'</div><div class="twin">'+
+      '<div class="trk"><div class="tl">'+r.ulab+'</div><div class="tk"><div class="fl" style="width:'+wu+'%;background:var(--orange)"></div></div><div class="tv" style="color:var(--orange)">'+(r.uv==null?'—':fmtVal(r.uv,r.ulab==='stunting'?'stn':'und'))+'</div><div class="ty">'+r.uy+'</div></div>'+
+      '<div class="trk"><div class="tl">overweight</div><div class="tk"><div class="fl" style="width:'+wo+'%;background:var(--purple)"></div></div><div class="tv" style="color:var(--purple)">'+(r.ov==null?'—':fmtVal(r.ov,'ovw'))+'</div><div class="ty">'+r.oy+'</div></div>'+
+      '</div></div>';
+  }).join('');
+}
+[...document.querySelectorAll('#dbmode button')].forEach(b=>b.onclick=()=>{DBMODE=b.dataset.m;[...document.querySelectorAll('#dbmode button')].forEach(x=>x.classList.toggle('on',x===b));renderDB();});
+
+// ---------- INEQUALITY ----------
+function fillIneqSelect(){
+  const sel=$('ineqind');sel.innerHTML='';
+  AGGINDS.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=nameOf(k);sel.appendChild(o);});
+}
+function renderIneq(){
+  const k=$('ineqind').value||'und';const groups=INEQMODE==='inc'?INCOME:REGION;
+  const m=SNAP.indMeta[k];
+  $('ineqdesc').innerHTML=nameOf(k)+' — <b>'+m.unit+'</b>, by World Bank '+(INEQMODE==='inc'?'income group':'region')+'. Spark = 2000→latest; "change" = latest minus first available. Lower is better.';
+  const recs=groups.map(([code,label])=>{
+   const a=SNAP.agg[code];const s=a&&a.s&&a.s[k]?a.s[k]:[];
+   const l=lastNonNull(s);
+   return {code,label,arr:s,v:l.v,yi:l.i};
+  });
+  $('ineqlist').innerHTML=recs.map(r=>{
+   const col=valColor(r.v,k);
+   return '<div class="ineq"><div class="nm"><div class="t">'+r.label+'</div><div class="c">latest '+(r.yi>=0?yearAt(r.yi):'—')+'</div></div>'+
+    '<div class="sp">'+spark(r.arr,96,26,col,false)+'</div>'+
+    '<div class="val" style="color:'+col+'">'+fmtVal(r.v,k)+'</div>'+
+    '<div class="ch">'+changeHtml(r.arr,k)+'</div></div>';
+  }).join('');
+  if(INEQMODE==='inc'){
+   const hi=recs.find(r=>r.code==='HIC'),lo=recs.find(r=>r.code==='LIC');
+   if(hi&&lo&&hi.v!=null&&lo.v!=null){
+    const gap=(lo.v/Math.max(hi.v,0.01)).toFixed(1)+'× higher in low-income';
+    $('ineqcaveat').innerHTML='Low-income vs. high-income countries: a <b>'+gap+'</b> ('+fmtVal(lo.v,k)+' vs '+fmtVal(hi.v,k)+'). World Bank population-weighted aggregate estimates, not simple country averages. Only Bank-aggregated nutrition indicators appear here.';
+   }
+  }else{
+   $('ineqcaveat').innerHTML='World Bank aggregate series (population-weighted estimates). Regions are the Bank’s own classifications. The spark traces 2000→latest. Only Bank-aggregated nutrition indicators appear here.';
+  }
+}
+$('ineqind').onchange=renderIneq;
+[...document.querySelectorAll('#ineqmode button')].forEach(b=>b.onclick=()=>{INEQMODE=b.dataset.m;[...document.querySelectorAll('#ineqmode button')].forEach(x=>x.classList.toggle('on',x===b));renderIneq();});
+
+// ---------- (d) COUNTRY PROFILE ----------
+function fillCySelect(){
+  const sel=$('cysel');sel.innerHTML='';
+  const arr=COUNTRIES.map(iso=>({iso,name:(SNAP.cty[iso]||{}).name||iso})).sort((a,b)=>a.name.localeCompare(b.name));
+  arr.forEach(o=>{const op=document.createElement('option');op.value=o.iso;op.textContent=o.name;sel.appendChild(op);});
+  sel.value='IND';
+}
+function renderProfile(){
+  const iso=$('cysel').value;const c=SNAP.cty[iso];if(!c)return;
+  $('profmeta').innerHTML='<b>'+c.name+'</b> · '+(c.regionName||'—').trim()+' · '+(c.incomeName||'—');
+  $('profcards').innerHTML=PROFCARDS.map(k=>{
+   const d=c.latest&&c.latest[k];
+   const col=valColor(d?d.v:null,k);
+   return '<div class="mini"><div class="l">'+nameOf(k)+'</div>'+
+    '<div class="v" style="color:'+col+'">'+(d?fmtVal(d.v,k):'—')+'</div>'+
+    '<div class="y">'+(d?d.y:'no survey')+'</div></div>';
+  }).join('');
+  $('profSparkUnd').innerHTML=spark(c.und||[],230,46,'#f3833b',true);
+  $('profSparkUw').innerHTML=spark(c.uw||[],230,46,'#26c6da',true);
+  renderCmp();
+}
+function renderCmp(){
+  const iso=$('cysel').value;const c=SNAP.cty[iso];if(!c)return;
+  const k=CMPK;$('cmpindname').textContent=nameOf(k);
+  const cd=c.latest&&c.latest[k];
+  function aggLatest(code){const a=SNAP.agg[code];if(!a||!a.s||!a.s[k])return null;return lastNonNull(a.s[k]).v;}
+  let rows=[{label:c.name,v:cd?cd.v:null,me:true}];
+  if(AGGINDS.includes(k)){
+    rows.push({label:'World',v:aggLatest('WLD')});
+    if(c.income&&SNAP.agg[c.income])rows.push({label:c.incomeName||c.income+' (income)',v:aggLatest(c.income)});
+    if(c.region&&SNAP.agg[c.region])rows.push({label:(c.regionName||c.region).trim()+' (region)',v:aggLatest(c.region)});
+  }else{
+    rows.push({label:'(no World Bank aggregate for this indicator)',v:null,note:true});
+  }
+  const vals=rows.map(r=>r.v).filter(v=>v!=null&&isFinite(v));
+  const max=Math.max(...vals,1);
+  $('cmpbars').innerHTML=rows.map(r=>{
+    if(r.note)return '<div class="peerbar"><div class="pl muted small">'+r.label+'</div></div>';
+    const col=r.me?'var(--teal)':valColor(r.v,k),w=r.v==null?0:Math.max(2,r.v/max*100);
+    return '<div class="peerbar"><div class="pl">'+r.label+'</div>'+
+    '<div class="pm"><div class="tk"><div class="fl" style="width:'+w+'%;background:'+col+'"></div></div></div>'+
+    '<div class="pv">'+(r.v==null?'—':fmtVal(r.v,k))+'</div></div>';
+  }).join('');
+}
+$('cysel').onchange=renderProfile;
+[...document.querySelectorAll('#cmpind button')].forEach(b=>b.onclick=()=>{CMPK=b.dataset.k;[...document.querySelectorAll('#cmpind button')].forEach(x=>x.classList.toggle('on',x===b));renderCmp();});
+
+// ---- master render
+function render(){
+  $('vintchip').innerHTML='<b>latest available '+SNAP.vintage+'</b>';
+  $('vintfoot').textContent=SNAP.vintage+(SNAP.embedded?' (embedded '+SNAP.embedded+')':'');
+  $('srcchip').innerHTML=LIVE?'<span class="badge b-meas">live</span> World Bank API':'<span class="badge b-mod">snapshot</span> embedded';
+  const embedYr=SNAP.embedded?+SNAP.embedded.slice(0,4):null;
+  const vintYr=+(''+SNAP.vintage).slice(0,4);
+  if(embedYr&&vintYr&&(embedYr-vintYr)>2){$('vintchip').innerHTML+=' <span class="stale">data lag '+(embedYr-vintYr)+'y</span>';}
+  renderGlobal();renderLead();renderDB();renderIneq();renderProfile();
+}
+
+// ---- live fetch (graceful, falls back to embed)
+function wbUrl(codes,ind){return WB+'/country/'+codes.join(';')+'/indicator/'+ind+'?format=json&date=2000:2024&per_page=20000';}
+function wbFetch(codes,ind){return fetch(wbUrl(codes,ind)).then(r=>{if(!r.ok)throw r.status;return r.json();}).then(d=>{if(!d||d.length<2||!d[1])return [];return d[1];});}
+function keyOf(r){return r.countryiso3code||r.country.id;}
+
+async function fetchWB(){
+  $('srcchip').innerHTML='<span class="badge b-mod">…</span> contacting World Bank';
+  try{
+   const years=SNAP.years;const yIdx={};years.forEach((y,i)=>yIdx[y]=i);
+   const agg={};AGG.forEach(c=>{agg[c]={name:(SNAP.agg[c]||{}).name||c,s:{}};});
+   const cty={};COUNTRIES.forEach(iso=>{cty[iso]=Object.assign({},SNAP.cty[iso],{latest:{},und:years.map(()=>null),uw:years.map(()=>null)});});
+   for(const indId of Object.keys(IND2K)){
+    const k=IND2K[indId];
+    const [aRows,cRows]=await Promise.all([wbFetch(AGG,indId),wbFetch(COUNTRIES,indId)]);
+    // aggregates: full series (remap empty-iso income codes + region country.id codes)
+    aRows.forEach(r=>{let code=keyOf(r);code=AGGREMAP[code]||code;if(!agg[code])return;if(!agg[code].s[k])agg[code].s[k]=years.map(()=>null);if(r.value!=null&&yIdx[r.date]!=null)agg[code].s[k][yIdx[r.date]]=Math.round(r.value*100)/100;});
+    // countries: latest per indicator + und/uw full series
+    const best={};
+    cRows.forEach(r=>{const iso=r.countryiso3code||r.country.id;if(!cty[iso])return;if(r.value==null)return;const v=Math.round(r.value*100)/100,y=r.date;
+      if(!best[iso+k]||y>best[iso+k]){best[iso+k]=y;cty[iso].latest[k]={v,y};}
+      if((k==='und'||k==='uw')&&yIdx[y]!=null)cty[iso][k][yIdx[y]]=v;});
+   }
+   SNAP=Object.assign({},SNAP,{agg,cty});
+   LIVE=true;
+   render();
+  }catch(e){
+   LIVE=false;render();
+   $('srcchip').innerHTML='<span class="badge b-mod">snapshot</span> embedded (live refresh unavailable)';
+  }
+}
+
+// ---- boot
+function boot(){
+  $('splash').style.display='none';
+  fillIneqSelect();fillCySelect();
+  render();
+  fetchWB();
+}
+$('refresh').onclick=fetchWB;
+if(document.readyState!=='loading')boot();else document.addEventListener('DOMContentLoaded',boot);
+</script>
+</body>
+</html>

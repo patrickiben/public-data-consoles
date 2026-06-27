@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Antimicrobial Resistance — the global &amp; U.S. burden</title>
+<meta name="description" content="The global and U.S. burden of antimicrobial (antibiotic &amp; antifungal) resistance, from the authoritative GRAM/IHME global estimates and the CDC Antibiotic Resistance Threats report, with an emerging-resistance watch list. Estimate-based surveillance — there is no live AMR feed. Descriptive, not a forecast.">
+<style>
+:root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+ --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
+ --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 56px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+#disc{background:#060f14;color:#bcd2da;font-size:12px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:24px 0 6px}
+h1{margin:0;font-size:25px;font-weight:740;letter-spacing:-.3px}
+h1 .sub{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin-top:5px;letter-spacing:0}
+.banner{margin:13px 0 0;background:rgba(245,185,69,.07);border:1px solid rgba(245,185,69,.28);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink2)}
+.banner b{color:var(--amber)}
+.strip{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0 2px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink2)}
+.chip b{color:var(--ink)}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:5px;vertical-align:1px;text-transform:uppercase}
+.b-meas{background:rgba(61,220,151,.16);color:#7fe9bd}.b-mod{background:rgba(245,185,69,.16);color:#f5cd85}.b-int{background:rgba(176,142,240,.16);color:#cdb6f5}
+.card{background:linear-gradient(180deg,var(--surf),var(--surf2));border:1px solid var(--line);border-radius:14px;margin-top:16px;overflow:hidden}
+.card>summary{padding:13px 16px;font-weight:650;display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+.card>summary::-webkit-details-marker{display:none}
+.card>summary .ico{color:var(--teal);font-weight:800}
+.body{padding:4px 16px 16px}
+.muted{color:var(--dim)}.small{font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}@media(max-width:760px){.grid3{grid-template-columns:1fr 1fr}}
+.stat{background:var(--surf2);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-size:28px;font-weight:760;margin-top:3px;line-height:1.05}
+.stat .v small{font-size:12.5px;color:var(--ink2);font-weight:500}
+.stat .sub2{font-size:11.5px;color:var(--ink2);margin-top:5px}
+.bar{display:flex;align-items:center;gap:10px;padding:6px 2px}
+.bar .nm{width:188px;font-size:13px}.bar .nm small{color:var(--dim)}
+.bar .tk{flex:1;height:9px;background:#0a171d;border-radius:5px;overflow:hidden}.bar .fl{height:100%;border-radius:5px}
+.bar .vv{width:118px;text-align:right;font-weight:680;font-size:12.5px;font-variant-numeric:tabular-nums}
+.threat{display:flex;gap:11px;align-items:baseline;padding:8px 2px;border-bottom:1px solid var(--line)}
+.threat:last-child{border-bottom:none}
+.threat .tier{width:80px;flex:none}
+.threat .nm{flex:1}.threat .nm b{font-weight:640}.threat .nm .sci{font-style:italic;color:var(--ink2)}
+.threat .nums{width:200px;text-align:right;font-size:12px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.tg{font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:5px;text-transform:uppercase;white-space:nowrap}
+.em{display:flex;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line)}.em:last-child{border-bottom:none}
+.em .dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:none}
+.em .nm{font-weight:650}.em .nm .sci{font-style:italic;font-weight:400;color:var(--ink2)}
+.em .cls{font-size:11.5px;color:var(--teal)}
+.em .note{font-size:12.5px;color:var(--ink2);margin-top:3px}.em .src{font-size:11px;color:var(--dim);margin-top:4px;font-family:var(--mono)}
+.st{font-size:9.5px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:5px;text-transform:uppercase;white-space:nowrap}
+.caveat{font-size:11.5px;color:var(--dim);margin-top:12px;padding:9px 12px;background:rgba(255,255,255,.02);border-left:2px solid var(--line2);border-radius:0 8px 8px 0}
+.drv{padding:9px 2px;border-bottom:1px solid var(--line)}.drv:last-child{border-bottom:none}
+.drv .t{font-weight:640}.drv .d{font-size:12.5px;color:var(--ink2);margin-top:2px}
+footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}
+footer b{color:var(--ink2)}
+svg.spk{display:block}
+</style>
+</head>
+<body>
+<div id="disc"><b>Unofficial · descriptive, not a forecast.</b> Antimicrobial resistance is tracked through <b>periodic modeled estimates and surveillance reports</b>, not a live data feed — every figure here is dated and cited. Not for clinical or prescribing decisions; consult clinicians and official guidance.</div>
+<div class="wrap">
+  <header>
+    <h1>Antimicrobial Resistance<span class="sub">The global &amp; U.S. burden of drug-resistant bacteria and fungi — the "silent pandemic" — and an emerging-resistance watch</span></h1>
+    <div class="banner"><b>Why this one has no live feed.</b> Unlike overdoses or respiratory viruses, there is <b>no public, real-time AMR data stream</b>. The authoritative numbers come from large periodic studies — the <b>GRAM / IHME</b> global burden estimates and the <b>CDC Antibiotic Resistance Threats</b> report — which are <span class="badge b-mod">modeled</span> estimates for a given year. They are embedded here with their vintage and source. This is honest surveillance, not a ticker.</div>
+    <div class="strip">
+      <span class="chip"><b>Global:</b> GRAM/IHME · 2019 burden, 2050 projection</span>
+      <span class="chip"><b>U.S.:</b> CDC AR Threats · 2019 report</span>
+      <span class="chip"><span class="badge b-mod">modeled</span> study estimate</span>
+      <span class="chip"><span class="badge b-int">interpretive</span> curated watch</span>
+    </div>
+  </header>
+
+  <!-- GLOBAL BURDEN -->
+  <details class="card" open>
+    <summary><span class="ico">●</span> Global burden <span class="badge b-mod">modeled</span></summary>
+    <div class="body">
+      <div class="grid3">
+        <div class="stat"><div class="l">Deaths attributable to bacterial AMR · 2019</div><div class="v" id="g1">—</div><div class="sub2">deaths that would not have happened if infections were drug-susceptible</div></div>
+        <div class="stat"><div class="l">Deaths associated with bacterial AMR · 2019</div><div class="v" id="g2">—</div><div class="sub2">deaths where a drug-resistant infection played a role</div></div>
+        <div class="stat"><div class="l">Projected attributable deaths · per year by 2050</div><div class="v" id="g3">—</div><div class="sub2">GRAM forecast; ~39M cumulative deaths 2025–2050</div></div>
+      </div>
+      <div style="margin-top:14px" class="small muted">Attributable death rate by region, per 100,000 (2019) — the burden falls hardest on low- and middle-income regions.</div>
+      <div id="regions" style="margin-top:6px"></div>
+      <div style="margin-top:14px" class="small muted">Six leading pathogens accounted for ~73% of attributable deaths (~929,000). Attributable deaths, 2019:</div>
+      <div id="pathogens" style="margin-top:6px"></div>
+      <div class="caveat">Source: <b>GRAM — Murray et al., <i>The Lancet</i> 2022</b> (global bacterial AMR burden, 2019) and <b>GBD 2021 AMR Collaborators, <i>The Lancet</i> 2024</b> (trends &amp; 2050 projection). These are <span class="badge b-mod">modeled</span> estimates with wide uncertainty intervals; the central values are shown. "Attributable" and "associated" are two distinct counterfactual measures — both are reported because each answers a different question.</div>
+    </div>
+  </details>
+
+  <!-- US THREATS -->
+  <details class="card" open>
+    <summary><span class="ico">▦</span> U.S. threats — the CDC list <span class="badge b-mod">modeled</span></summary>
+    <div class="body">
+      <div class="grid2">
+        <div class="stat"><div class="l">Antibiotic-resistant infections · U.S. per year</div><div class="v" id="u1">—</div><div class="sub2">plus <i>C. difficile</i>, ~223,900 cases — together &gt;3 million infections</div></div>
+        <div class="stat"><div class="l">Deaths · U.S. per year</div><div class="v" id="u2">—</div><div class="sub2">~48,000 including <i>C. difficile</i></div></div>
+      </div>
+      <div style="margin-top:13px" class="small muted">CDC ranks 18 resistant pathogens + <i>C. difficile</i> by threat level. Estimated U.S. infections &amp; deaths per year (most figures 2017):</div>
+      <div id="threats" style="margin-top:6px"></div>
+      <div class="caveat">Source: <b>CDC, <i>Antibiotic Resistance Threats in the United States, 2019</i></b>. Tiers: <span class="tg" style="background:rgba(239,84,102,.16);color:#f0808e">urgent</span> <span class="tg" style="background:rgba(243,131,59,.16);color:#f5a877">serious</span> <span class="tg" style="background:rgba(245,185,69,.16);color:#f5cd85">concerning</span> <span class="tg" style="background:rgba(38,198,218,.16);color:#8fe2ed">watch</span>. Estimates are <span class="badge b-mod">modeled</span> and are due to be refreshed by CDC; treat them as orders of magnitude, not exact counts.</div>
+    </div>
+  </details>
+
+  <!-- EMERGING WATCH -->
+  <details class="card" open>
+    <summary><span class="ico">⚠</span> Emerging-resistance watch <span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:4px">Resistance mechanisms and organisms spreading faster than the headline reports capture. Curated from CDC, WHO and published surveillance — qualitative early-warning, not a live count.</div>
+      <div id="emerg"></div>
+      <div class="caveat">Compiled from CDC, WHO and peer-reviewed surveillance; reflects status as of the date below. <i>Candida auris</i> clinical-case figures are CDC surveillance counts (a rare AMR threat that <em>is</em> nationally reported) and show the steep recent rise; other entries are qualitative. Naloxone-style note: many of these have <b>few or no</b> remaining reliable treatments, which is what makes them "urgent".</div>
+    </div>
+  </details>
+
+  <!-- DRIVERS -->
+  <details class="card">
+    <summary><span class="ico">◍</span> What drives it — &amp; the broken pipeline <span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div id="drivers"></div>
+      <div class="caveat">Interpretive synthesis of the scientific consensus (CDC, WHO, O'Neill Review 2016). AMR is a natural evolutionary process accelerated by how antimicrobials are used in people, animals and agriculture; the response combines stewardship, infection prevention, surveillance, and new drug/vaccine development.</div>
+    </div>
+  </details>
+
+  <footer>
+    <div><b>Sources &amp; method.</b> Global: <a href="https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(21)02724-0/fulltext" target="_blank" rel="noopener">GRAM — Murray et al., Lancet 2022</a> (2019 burden) and GBD 2021 AMR Collaborators, Lancet 2024 (projection). U.S.: <a href="https://www.cdc.gov/antimicrobial-resistance/data-research/threats/" target="_blank" rel="noopener">CDC Antibiotic Resistance Threats in the United States, 2019</a>. <i>C. auris</i>: CDC surveillance. Drivers: CDC / WHO / O'Neill Review (2016).</div>
+    <div style="margin-top:8px"><b>Honesty.</b> Every number is a <span class="badge b-mod">modeled</span> estimate or surveillance count for a stated year, embedded with its vintage — there is no live AMR feed to refresh from. Figures carry wide uncertainty; the watch list and drivers are <span class="badge b-int">interpretive</span>. Descriptive, not predictive; not for clinical decisions; no personal or protected health information.</div>
+    <div style="margin-top:8px" class="muted">Data vintage: global burden <b>2019</b> (projection to 2050), U.S. threats <b>2019 report (2017 data)</b>, <i>C. auris</i> through <b>2023</b>. Compiled <span id="compiled">2026-06-27</span>.</div>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>n==null?'—':n>=1e6?(n/1e6).toFixed(2).replace(/\.?0+$/,'')+' million':n.toLocaleString();
+
+// ---- GLOBAL (GRAM / IHME) — modeled estimates, 2019; projection 2050
+$('g1').innerHTML='1.27 <small>million</small>';
+$('g2').innerHTML='4.95 <small>million</small>';
+$('g3').innerHTML='~1.91 <small>million</small>';
+// attributable death rate per 100k by GBD super-region, 2019 (GRAM central estimates)
+const REGIONS=[
+ ['Western sub-Saharan Africa',27.3],['South Asia',21.5],['Eastern Europe / Central Asia',17.6],
+ ['Latin America',14.4],['High-income',13.0],['Southeast &amp; East Asia',12.6],['Australasia',6.5]
+];
+const PATHO=[ // attributable deaths, 2019 (GRAM)
+ ['<i>E. coli</i>',219000],['<i>S. aureus</i> (incl. MRSA)',194000],['<i>K. pneumoniae</i>',148000],
+ ['<i>S. pneumoniae</i>',147000],['<i>A. baumannii</i>',97000],['<i>P. aeruginosa</i>',92000]
+];
+function bars(el,rows,unit,col){const max=Math.max(...rows.map(r=>r[1]));
+ $(el).innerHTML=rows.map(r=>'<div class="bar"><div class="nm">'+r[0]+'</div><div class="tk"><div class="fl" style="width:'+(100*r[1]/max).toFixed(1)+'%;background:'+col+'"></div></div><div class="vv">'+(unit==='rate'?r[1].toFixed(1)+' /100k':fmt(r[1]))+'</div></div>').join('');}
+bars('regions',REGIONS,'rate','#f3833b');
+bars('pathogens',PATHO,'count','#ef5466');
+
+// ---- U.S. (CDC AR Threats 2019) — modeled estimates
+$('u1').innerHTML='2.8 <small>million +</small>';
+$('u2').innerHTML='35,000 <small>+</small>';
+const TIERCOL={urgent:['#ef5466','rgba(239,84,102,.16)','#f0808e'],serious:['#f3833b','rgba(243,131,59,.16)','#f5a877'],concerning:['#f5b945','rgba(245,185,69,.16)','#f5cd85'],watch:['#26c6da','rgba(38,198,218,.16)','#8fe2ed']};
+const THREATS=[
+ ['urgent','Carbapenem-resistant <span class="sci">Acinetobacter</span>','8,500 infections · 700 deaths'],
+ ['urgent','<span class="sci">Candida auris</span> (drug-resistant fungus)','323 clinical cases (2018) · rising steeply'],
+ ['urgent','<span class="sci">Clostridioides difficile</span>','223,900 cases · 12,800 deaths'],
+ ['urgent','Carbapenem-resistant <span class="sci">Enterobacterales</span> (CRE)','13,100 infections · 1,100 deaths'],
+ ['urgent','Drug-resistant <span class="sci">Neisseria gonorrhoeae</span>','~550,000 resistant infections'],
+ ['serious','Methicillin-resistant <span class="sci">S. aureus</span> (MRSA)','323,700 infections · 10,600 deaths'],
+ ['serious','ESBL-producing <span class="sci">Enterobacterales</span>','197,400 infections · 9,100 deaths'],
+ ['serious','Vancomycin-resistant <span class="sci">Enterococcus</span> (VRE)','54,500 infections · 5,400 deaths'],
+ ['serious','Multidrug-resistant <span class="sci">Pseudomonas aeruginosa</span>','32,600 infections · 2,700 deaths'],
+ ['serious','Drug-resistant <span class="sci">Streptococcus pneumoniae</span>','900,000 infections · 3,600 deaths'],
+ ['serious','Drug-resistant nontyphoidal <span class="sci">Salmonella</span>','212,500 infections · 70 deaths'],
+ ['serious','Drug-resistant <span class="sci">Campylobacter</span>','448,400 infections · 70 deaths'],
+ ['serious','Drug-resistant tuberculosis','~850 cases (U.S.) · a major global threat'],
+ ['concerning','Erythromycin-resistant Group A <span class="sci">Strep</span>','5,400 infections · 450 deaths'],
+ ['concerning','Clindamycin-resistant Group B <span class="sci">Strep</span>','13,000 infections · 720 deaths'],
+ ['watch','Azole-resistant <span class="sci">Aspergillus fumigatus</span>','watch — antifungal resistance'],
+ ['watch','Drug-resistant <span class="sci">Mycoplasma genitalium</span>','watch — limited treatments'],
+ ['watch','Drug-resistant <span class="sci">Bordetella pertussis</span>','watch']
+];
+$('threats').innerHTML=THREATS.map(t=>{const c=TIERCOL[t[0]];
+ return '<div class="threat"><div class="tier"><span class="tg" style="background:'+c[1]+';color:'+c[2]+'">'+t[0]+'</span></div><div class="nm">'+t[1]+'</div><div class="nums">'+t[2]+'</div></div>';}).join('');
+
+// ---- EMERGING WATCH (interpretive)
+const EMERG=[
+ {n:'<span class="sci">Candida auris</span>',cls:'Multidrug-resistant fungus',st:'rising fast',col:'#ef5466',
+  note:'U.S. clinical cases rose from 53 (2016) to 323 (2018), 1,471 (2021), 2,377 (2022) and ~4,514 (2023). Spreads in healthcare settings, survives on surfaces, and some isolates resist all three antifungal classes.',src:'CDC surveillance'},
+ {n:'Carbapenemase-producing CRE (NDM, KPC, OXA-48)',cls:'Gram-negative enzymes',st:'spreading',col:'#ef5466',
+  note:'Mobile enzymes that destroy last-line carbapenems; NDM-type especially has spread globally, leaving few or no options. Often requires newer combination agents that are costly and not universally available.',src:'CDC · WHO'},
+ {n:'Ceftriaxone-resistant <span class="sci">N. gonorrhoeae</span>',cls:'Last-line STI resistance',st:'emerging',col:'#f5b945',
+  note:'Ceftriaxone is the last reliable monotherapy for gonorrhea; sporadic resistant and reduced-susceptibility cases threaten it, which is why it sits on every agency\'s urgent list.',src:'CDC · WHO GASP'},
+ {n:'Azole-resistant <span class="sci">Aspergillus</span> &amp; antifungal resistance',cls:'Fungal resistance',st:'under-recognized',col:'#f5b945',
+  note:'Environmental azole use selects for resistant molds; antifungal options are far fewer than antibacterials, so resistance here is especially consequential.',src:'CDC · ECDC'},
+ {n:'Colistin / <span class="sci">mcr</span> resistance',cls:'Last-resort polymyxin',st:'watch',col:'#26c6da',
+  note:'Plasmid-borne mcr genes confer resistance to colistin, a drug of last resort revived for untreatable Gram-negatives; mobility between bacteria is the concern.',src:'published surveillance'}
+];
+const ESTC={'rising fast':['rgba(239,84,102,.16)','#f0808e'],'spreading':['rgba(239,84,102,.16)','#f0808e'],'emerging':['rgba(245,185,69,.16)','#f5cd85'],'under-recognized':['rgba(245,185,69,.16)','#f5cd85'],'watch':['rgba(38,198,218,.16)','#8fe2ed']};
+$('emerg').innerHTML=EMERG.map(e=>{const c=ESTC[e.st]||['rgba(107,130,144,.16)','#9fb4bd'];
+ return '<div class="em"><div class="dot" style="background:'+e.col+'"></div><div><div class="nm">'+e.n+' <span class="st" style="background:'+c[0]+';color:'+c[1]+'">'+e.st+'</span></div><div class="cls">'+e.cls+'</div><div class="note">'+e.note+'</div><div class="src">surveillance: '+e.src+'</div></div></div>';}).join('');
+
+// ---- DRIVERS (interpretive)
+const DRIVERS=[
+ ['Overuse &amp; misuse in people','An estimated ~28% of outpatient antibiotic prescriptions in the U.S. are unnecessary (CDC); each exposure selects for resistant survivors. Antibiotics do not work on viruses, yet are often prescribed for them.'],
+ ['Use in animals &amp; agriculture','A large share of all antimicrobials by volume is used in food-producing animals; resistant bacteria and resistance genes move between animals, food, the environment and people ("One Health").'],
+ ['Global spread','Resistance genes travel with people, trade, and water; an enzyme that emerges in one region can appear worldwide within years (e.g. NDM).'],
+ ['The broken pipeline','No new <i>class</i> of antibiotics has reached the clinic for Gram-negative bacteria in decades; the market incentives for developing antibiotics are weak because new drugs are (rightly) held in reserve.'],
+ ['What helps','Stewardship (right drug, dose, duration), infection prevention &amp; control, vaccination (fewer infections = fewer prescriptions), surveillance, sanitation, and investment in new drugs, diagnostics and vaccines.']
+];
+$('drivers').innerHTML=DRIVERS.map(d=>'<div class="drv"><div class="t">'+d[0]+'</div><div class="d">'+d[1]+'</div></div>').join('');
+</script>
+</body>
+</html>

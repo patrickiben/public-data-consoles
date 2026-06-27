@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neglected Tropical Diseases — the global burden</title>
+<meta name="description" content="The 20 neglected tropical diseases (NTDs) that affect over a billion people in the world's poorest communities — who they affect, the burden by disease, the progress toward the WHO 2030 elimination roadmap, and why they are 'neglected'. WHO estimates, dated and cited. Descriptive, not a forecast.">
+<style>
+:root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+ --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
+ --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 56px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+#disc{background:#060f14;color:#bcd2da;font-size:12px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:24px 0 6px}
+h1{margin:0;font-size:25px;font-weight:740;letter-spacing:-.3px}
+h1 .sub{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin-top:5px}
+.banner{margin:13px 0 0;background:rgba(38,198,218,.07);border:1px solid rgba(38,198,218,.25);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink2)}.banner b{color:var(--teal)}
+.strip{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0 2px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink2)}.chip b{color:var(--ink)}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:5px;vertical-align:1px;text-transform:uppercase}
+.b-meas{background:rgba(61,220,151,.16);color:#7fe9bd}.b-mod{background:rgba(245,185,69,.16);color:#f5cd85}.b-int{background:rgba(176,142,240,.16);color:#cdb6f5}
+.card{background:linear-gradient(180deg,var(--surf),var(--surf2));border:1px solid var(--line);border-radius:14px;margin-top:16px;overflow:hidden}
+.card>summary{padding:13px 16px;font-weight:650;display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+.card>summary::-webkit-details-marker{display:none}
+.card>summary .ico{color:var(--teal);font-weight:800}
+.body{padding:4px 16px 16px}
+.muted{color:var(--dim)}.small{font-size:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}@media(max-width:760px){.grid3{grid-template-columns:1fr}}
+.stat{background:var(--surf2);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-size:27px;font-weight:760;margin-top:3px;line-height:1.05}.stat .v small{font-size:12.5px;color:var(--ink2);font-weight:500}
+.stat .sub2{font-size:11.5px;color:var(--ink2);margin-top:5px}
+.bar{display:flex;align-items:center;gap:10px;padding:5px 2px}
+.bar .nm{width:210px;font-size:13px}.bar .nm small{color:var(--dim)}.bar .tk{flex:1;height:9px;background:#0a171d;border-radius:5px;overflow:hidden}.bar .fl{height:100%;border-radius:5px}
+.bar .vv{width:110px;text-align:right;font-weight:680;font-size:12.5px;font-variant-numeric:tabular-nums}
+.dis{display:flex;gap:11px;align-items:baseline;padding:8px 2px;border-bottom:1px solid var(--line)}.dis:last-child{border-bottom:none}
+.dis .st{width:96px;flex:none}.dis .nm{flex:1}.dis .nm b{font-weight:640}.dis .nm .note{font-size:11.5px;color:var(--ink2)}
+.dis .nums{width:150px;text-align:right;font-size:11.5px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.tg{font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:5px;text-transform:uppercase;white-space:nowrap}
+.caveat{font-size:11.5px;color:var(--dim);margin-top:12px;padding:9px 12px;background:rgba(255,255,255,.02);border-left:2px solid var(--line2);border-radius:0 8px 8px 0}
+.drv{padding:9px 2px;border-bottom:1px solid var(--line)}.drv:last-child{border-bottom:none}.drv .t{font-weight:640}.drv .d{font-size:12.5px;color:var(--ink2);margin-top:2px}
+footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}footer b{color:var(--ink2)}
+</style>
+</head>
+<body>
+<div id="disc"><b>Unofficial · descriptive, not a forecast.</b> NTD burden is tracked through <b>WHO surveillance estimates</b> with large reporting gaps — figures are approximate, dated and cited. Not for clinical decisions.</div>
+<div class="wrap">
+  <header>
+    <h1>Neglected Tropical Diseases<span class="sub">The 20 diseases of poverty that affect over a billion people — the burden, the progress toward elimination, and why they stay "neglected"</span></h1>
+    <div class="banner"><b>What these are.</b> NTDs are a group of ~20 conditions — parasitic, bacterial, viral and venomous — that thrive in poverty, in tropical and subtropical settings with unsafe water, poor sanitation and limited health access. They rarely kill in large numbers all at once, so they draw little attention and little research funding — hence "neglected" — yet they blind, disable, disfigure and trap communities in poverty. Figures are <span class="badge b-mod">modeled</span> WHO estimates with wide uncertainty.</div>
+    <div class="strip">
+      <span class="chip"><b>Source:</b> WHO NTD programme</span>
+      <span class="chip"><b>Vintage:</b> latest WHO reporting (~2022–2023)</span>
+      <span class="chip"><span class="badge b-mod">modeled</span> WHO estimate</span>
+      <span class="chip"><span class="badge b-int">interpretive</span> status &amp; framing</span>
+    </div>
+  </header>
+
+  <details class="card" open>
+    <summary><span class="ico">●</span> The global picture <span class="badge b-mod">modeled</span></summary>
+    <div class="body">
+      <div class="grid3">
+        <div class="stat"><div class="l">People requiring NTD interventions</div><div class="v">~1.6 <small>billion</small></div><div class="sub2">about 1 in 5 people on Earth, almost all in low-income communities</div></div>
+        <div class="stat"><div class="l">Diseases on the WHO NTD list</div><div class="v">20</div><div class="sub2">parasitic, bacterial, viral &amp; venomous</div></div>
+        <div class="stat"><div class="l">People at risk of dengue alone</div><div class="v">~4 <small>billion</small></div><div class="sub2">about half the world — and rising with the climate</div></div>
+      </div>
+      <div class="caveat">NTDs are a leading cause of preventable blindness and disability. They are concentrated in sub-Saharan Africa, South Asia and Latin America, and disproportionately affect children and the rural poor. Many are controlled through inexpensive <b>mass drug administration</b> — among the best value-for-money interventions in global health.</div>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="ico">▦</span> The biggest by people affected <span class="badge b-mod">modeled</span></summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:4px">People infected or requiring preventive treatment (WHO estimates; "infected/affected", distinct from "at risk"):</div>
+      <div id="burden"></div>
+      <div class="caveat">Estimates mix prevalence and treatment-need depending on the disease and carry wide uncertainty; dengue is shown by population <b>at risk</b> in the headline above, not here, because it is a different measure. Several diseases overlap geographically, so totals are not additive.</div>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><span class="ico">▤</span> The 20 NTDs — status &amp; toll <span class="badge b-mod">modeled</span> <span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div id="list"></div>
+      <div class="caveat">Status is an <span class="badge b-int">interpretive</span> summary of WHO programme classifications: <span class="tg" style="background:rgba(61,220,151,.16);color:#7fe9bd">eradicating</span> (near zero) · <span class="tg" style="background:rgba(38,198,218,.16);color:#8fe2ed">eliminating</span> (as a public-health problem in many countries) · <span class="tg" style="background:rgba(245,185,69,.16);color:#f5cd85">controlling</span> (mass treatment) · <span class="tg" style="background:rgba(243,131,59,.16);color:#f5a877">high-fatality</span> · <span class="tg" style="background:rgba(239,84,102,.16);color:#f0808e">rising</span>. Tolls are approximate WHO figures.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="ico">◆</span> Progress &amp; the 2030 roadmap <span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div id="progress"></div>
+      <div class="caveat">WHO's <b>NTD Road Map 2021–2030</b> targets a 90% reduction in people needing interventions, 100 countries eliminating at least one NTD, and the eradication of two (dracunculiasis and yaws). Progress is real but uneven and was set back by COVID-19 disruptions to mass-treatment campaigns. Interpretive synthesis of WHO reporting.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="ico">◍</span> Why "neglected" <span class="badge b-int">interpretive</span></summary>
+    <div class="body">
+      <div id="why"></div>
+      <div class="caveat">Interpretive synthesis. The paradox of NTDs: they affect more than a billion people yet attract a tiny fraction of health research funding, because those affected are poor and the diseases are largely absent from wealthy countries — even though many can be controlled or eliminated very cheaply.</div>
+    </div>
+  </details>
+
+  <footer>
+    <div><b>Source &amp; method.</b> <a href="https://www.who.int/health-topics/neglected-tropical-diseases" target="_blank" rel="noopener">World Health Organization — Neglected Tropical Diseases programme</a> and the WHO NTD Road Map 2021–2030. Figures are <span class="badge b-mod">modeled</span> WHO estimates with large reporting gaps and wide uncertainty; status classifications and framing are <span class="badge b-int">interpretive</span>.</div>
+    <div style="margin-top:8px"><b>Honesty.</b> There is no live global NTD feed; this is the standard periodic WHO estimate, embedded with its vintage. Surveillance is weakest exactly where the burden is highest, so true numbers may be higher. Descriptive, not predictive; no personal or protected health information.</div>
+    <div style="margin-top:8px" class="muted">Data vintage: latest WHO reporting (~2022–2023). Compiled 2026-06-27.</div>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const M=n=>n>=1e9?(n/1e9).toFixed(1)+'B':n>=1e6?(n/1e6).toFixed(0)+'M':(n/1e3).toFixed(0)+'k';
+// biggest NTDs by people infected / requiring preventive treatment (WHO estimates)
+const BURDEN=[['Soil-transmitted helminths',1500000000,'roundworm, whipworm, hookworm'],['Schistosomiasis',250000000,'requiring treatment'],['Scabies',200000000,'at any given time'],['Lymphatic filariasis',51000000,'infected'],['Trachoma',115000000,'in endemic areas'],['Onchocerciasis',21000000,'river blindness'],['Chagas disease',7000000,'mostly Latin America'],['Leishmaniasis',1000000,'new cases / year']];
+const maxb=Math.max(...BURDEN.map(r=>r[1]));
+$('burden').innerHTML=BURDEN.map(r=>'<div class="bar"><div class="nm">'+r[0]+' <small>'+r[2]+'</small></div><div class="tk"><div class="fl" style="width:'+(100*r[1]/maxb).toFixed(1)+'%;background:#26c6da"></div></div><div class="vv">'+M(r[1])+'</div></div>').join('');
+// the 20 NTDs
+const SC={erad:['eradicating','rgba(61,220,151,.16)','#7fe9bd'],elim:['eliminating','rgba(38,198,218,.16)','#8fe2ed'],ctrl:['controlling','rgba(245,185,69,.16)','#f5cd85'],fatal:['high-fatality','rgba(243,131,59,.16)','#f5a877'],rise:['rising','rgba(239,84,102,.16)','#f0808e']};
+const LIST=[
+ ['ctrl','Soil-transmitted helminthiases','Intestinal worms; ~1.5B infected, sap children\'s growth &amp; schooling','~1.5B infected'],
+ ['rise','Dengue &amp; chikungunya','Mosquito-borne; ~4B at risk, ~100–400M infections/yr, expanding with the climate','~4B at risk'],
+ ['ctrl','Schistosomiasis','Freshwater snail-borne flukes; ~250M need treatment','~250M'],
+ ['rise','Scabies','Mite infestation; ~200M at any time, intense itch &amp; secondary infection','~200M'],
+ ['elim','Trachoma','Leading infectious cause of blindness; many countries now eliminating','~115M in endemic areas'],
+ ['elim','Lymphatic filariasis','Causes elephantiasis; mass treatment shrinking it','~51M infected'],
+ ['elim','Onchocerciasis','"River blindness" from blackfly-borne worms','~21M infected'],
+ ['fatal','Leishmaniasis','Sandfly-borne; visceral form (kala-azar) is usually fatal untreated','~700k–1M new/yr'],
+ ['elim','Chagas disease','Triatomine-bug parasite; chronic heart damage','~6–7M infected'],
+ ['elim','Leprosy (Hansen\'s)','Curable, but stigma &amp; disability persist','~170k–200k new/yr'],
+ ['fatal','Rabies','Dog-mediated; ~100% fatal once symptomatic, yet vaccine-preventable','~59k deaths/yr'],
+ ['fatal','Snakebite envenoming','Added to the list in 2017; a huge rural toll','~81k–138k deaths/yr'],
+ ['elim','Human African trypanosomiasis','"Sleeping sickness"; driven down to <1,000 cases/yr','<1,000 cases/yr'],
+ ['erad','Dracunculiasis (Guinea worm)','From 3.5M cases (1986) to ~14 in 2023 — on the brink of eradication','~14 cases (2023)'],
+ ['erad','Yaws','A skin/bone infection; targeted for eradication with a single-dose cure','elimination target'],
+ ['ctrl','Foodborne trematodiases','Liver, lung &amp; intestinal flukes from contaminated food','tens of millions'],
+ ['ctrl','Taeniasis / cysticercosis','Pork tapeworm; a leading cause of acquired epilepsy','widespread'],
+ ['ctrl','Echinococcosis','Tapeworm cysts in liver &amp; lungs, from dogs/livestock','~1M+ at any time'],
+ ['fatal','Buruli ulcer &amp; others','Buruli ulcer, mycetoma, deep mycoses — disfiguring skin/tissue NTDs','localized'],
+ ['fatal','Chikungunya, etc. (arboviral)','Severe joint disease; grouped with dengue in the vector-borne NTDs','region-specific']
+];
+$('list').innerHTML=LIST.map(d=>{const s=SC[d[0]];
+ return '<div class="dis"><div class="st"><span class="tg" style="background:'+s[1]+';color:'+s[2]+'">'+s[0]+'</span></div><div class="nm"><b>'+d[1]+'</b><div class="note">'+d[2]+'</div></div><div class="nums">'+d[3]+'</div></div>';}).join('');
+// progress
+const PROG=[
+ ['Guinea worm — almost gone','From an estimated 3.5 million cases in 1986 to roughly 14 human cases in 2023; poised to become only the second human disease ever eradicated, after smallpox.'],
+ ['~50+ countries have eliminated at least one NTD','Dozens of countries have hit WHO elimination milestones for trachoma, lymphatic filariasis, sleeping sickness or others — the roadmap target is 100 countries by 2030.'],
+ ['Mass drug administration at scale','Hundreds of millions of people are treated each year, often with donated medicines — one of the highest-return interventions in global health.'],
+ ['Setbacks &amp; threats','COVID-19 interrupted treatment campaigns; climate change is expanding the range of dengue and other vector-borne NTDs; funding remains fragile.']
+];
+$('progress').innerHTML=PROG.map(d=>'<div class="drv"><div class="t">'+d[0]+'</div><div class="d">'+d[1]+'</div></div>').join('');
+// why neglected
+const WHY=[
+ ['Diseases of poverty','They cluster where there is unsafe water, poor sanitation and weak health systems — and where patients cannot pay, so markets ignore them.'],
+ ['Out of sight in wealthy countries','Largely absent from high-income nations, NTDs attract a tiny share of medical research and pharmaceutical investment.'],
+ ['Chronic, not explosive','They disable and disfigure over years rather than killing in sudden epidemics, so they rarely make headlines — yet the cumulative burden is immense.'],
+ ['But highly cost-effective to fight','Many are controllable or eliminable with cheap, safe, donated drugs given once or twice a year — which is why they are a flagship of equity-focused global health.']
+];
+$('why').innerHTML=WHY.map(d=>'<div class="drv"><div class="t">'+d[0]+'</div><div class="d">'+d[1]+'</div></div>').join('');
+</script>
+</body>
+</html>

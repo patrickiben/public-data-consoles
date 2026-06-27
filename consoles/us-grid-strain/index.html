@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>U.S. Grid Strain — live</title>
+<meta name="description" content="Live U.S. electrical grid strain by balancing authority, built on the public EIA Hourly Electric Grid Monitor: demand vs recent peak, day-ahead forecast surprise, fuel mix, and the directed inter-region interchange network. Unofficial.">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--bg:#0f1b2a;--panel:#16273d;--panel2:#14253b;--ink:#eaf1f8;--ink2:#aebfd2;--dim:#7e93ad;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+ --sea:#3fa9f5;--ok:#34c98a;--gold:#f0b429;--orange:#f97b3d;--red:#ef5350;--violet:#b46ff0;--r:14px;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;background:radial-gradient(1200px 600px at 72% -12%,#1a3252,#0f1b2a 55%) fixed,#0f1b2a;color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--sea);text-decoration:none}.wrap{max-width:1280px;margin:0 auto;padding:0 18px 40px}
+#disc{background:#0a1422;color:#c6d6e8;font-size:12.5px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:26px 0 6px}
+h1{margin:0;font-size:27px;font-weight:760;letter-spacing:-.4px;background:linear-gradient(90deg,#eaf1f8,#9fd0ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.s{color:var(--ink2);font-size:14.5px;margin-top:7px;max-width:760px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 4px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:13px;color:var(--ink2)}
+.chip b{color:var(--ink)}
+button.btn{background:linear-gradient(180deg,#2f6db0,#27598f);border:1px solid #3a7cc0;color:#fff;border-radius:999px;padding:7px 15px;font-weight:600;font-size:13px;cursor:pointer}
+button.btn:hover{filter:brightness(1.08)}
+.muted{color:var(--dim)}.spin{display:inline-block;width:13px;height:13px;border:2px solid #ffffff33;border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px}@keyframes s{to{transform:rotate(360deg)}}
+/* key gate */
+#gate{display:none;background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line2);border-radius:var(--r);padding:22px;margin:18px 0;max-width:680px}
+#gate h2{margin:0 0 6px;font-size:18px}#gate input{width:100%;margin-top:12px;background:#0d1826;border:1px solid var(--line2);color:var(--ink);border-radius:10px;padding:11px 13px;font-size:14px;font-family:ui-monospace,monospace}
+#gate .row{display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap}
+/* layout */
+.grid{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;margin-top:14px}
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.card .hd{padding:12px 15px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;font-weight:650}
+.card .hd .ti{color:var(--sea)}.card .hd .sub{color:var(--dim);font-weight:400;font-size:12px;margin-left:auto}
+#map{height:560px;background:#0c1626}
+.body{padding:13px 15px}
+/* national summary */
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.kpi{background:#0f1d30;border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+.kpi .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.kpi .v{font-size:21px;font-weight:740;margin-top:3px}.kpi .v small{font-size:12px;color:var(--ink2);font-weight:500}
+/* leaderboard */
+.lead{max-height:430px;overflow:auto}
+.row2{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.row2:hover{background:#ffffff08}
+.row2 .nm{flex:1;min-width:0}.row2 .nm .c{font-weight:650;font-size:13.5px}.row2 .nm .r{font-size:11.5px;color:var(--dim)}
+.row2 .meter{width:108px;flex:none}
+.meter .track{height:7px;background:#0d1826;border-radius:5px;overflow:hidden}.meter .fill{height:100%;border-radius:5px}
+.row2 .pct{width:50px;text-align:right;font-weight:740;font-size:14px}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:5px}
+/* detail */
+#detail{margin-top:16px;display:none}
+.dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media(max-width:680px){.dgrid{grid-template-columns:repeat(2,1fr)}}
+.fuel{display:flex;height:16px;border-radius:6px;overflow:hidden;margin-top:6px;border:1px solid var(--line)}
+.fuel span{display:block}
+.flegend{display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;font-size:11.5px;color:var(--ink2)}
+.flegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:0}
+.ramp{display:flex;align-items:flex-end;gap:2px;height:46px;margin-top:8px}
+.ramp b{flex:1;background:var(--sea);border-radius:2px 2px 0 0;opacity:.85;min-height:2px}
+.leg{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);margin-top:9px}
+.leg .d{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:-1px}
+footer{color:var(--dim);font-size:12px;margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+footer .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:11px;padding:12px 15px;margin-bottom:10px;color:var(--ink2)}
+.arrowdiv{color:#fff;font-size:13px;text-shadow:0 0 3px #000;line-height:1}
+</style>
+</head>
+<body>
+<div id="disc"><b>Unofficial.</b> Built on the public EIA Hourly Electric Grid Monitor — <b>not</b> an official grid operator source. Data is hourly and lags ~1 h. For real-time conditions and conservation appeals, follow your utility, your grid operator (ERCOT, CAISO, PJM…) and <b>call 911 in an emergency.</b></div>
+<div class="wrap">
+  <header>
+    <h1>U.S. Grid Strain</h1>
+    <div class="s">How hard is each region's power grid working right now? Live demand vs. its own recent peak, day-ahead forecast surprise, fuel mix, and the <b>directed interchange network</b> — which regions are sourcing power and which are leaning on their neighbors.</div>
+    <div class="bar">
+      <button class="btn" id="refresh"><i class="ti ti-refresh"></i> Refresh</button>
+      <span class="chip" id="upd"><span class="muted">not loaded</span></span>
+      <span class="chip" id="natdemand"><span class="muted">—</span></span>
+      <span class="chip"><i class="ti ti-key"></i> <a href="#" id="changekey">EIA key</a></span>
+    </div>
+  </header>
+
+  <!-- key gate -->
+  <div id="gate">
+    <h2><i class="ti ti-key" style="color:var(--gold)"></i> One-time setup: your free EIA API key</h2>
+    <div class="muted">This dashboard reads the U.S. Energy Information Administration's public grid data, which needs a free key. It's stored only in <b>your browser</b> (localStorage) — never sent anywhere else or baked into this page.</div>
+    <div style="margin-top:10px">1. Get a key (instant, free): <a href="https://www.eia.gov/opendata/register.php" target="_blank" rel="noopener">eia.gov/opendata/register <i class="ti ti-external-link"></i></a></div>
+    <input id="keyin" placeholder="Paste your EIA API key here" autocomplete="off" spellcheck="false">
+    <div class="row"><button class="btn" id="savekey">Save key &amp; load</button><span class="muted" id="keymsg"></span></div>
+  </div>
+
+  <div id="app" style="display:none">
+    <div class="grid">
+      <div class="card">
+        <div class="hd"><i class="ti ti-map-2"></i> Grid map &amp; interchange <span class="sub">marker size = demand · color = strain · arrows = power flow →</span></div>
+        <div id="map"></div>
+        <div class="leg body" style="padding-top:10px">
+          <span><span class="d" style="background:var(--ok)"></span>&lt;80% of recent peak</span>
+          <span><span class="d" style="background:var(--gold)"></span>80–90%</span>
+          <span><span class="d" style="background:var(--orange)"></span>90–98%</span>
+          <span><span class="d" style="background:var(--red)"></span>≥98% (at/near recent peak)</span>
+          <span class="muted">· arrows = net interchange, source → sink</span>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="hd"><i class="ti ti-gauge"></i> National snapshot</div>
+          <div class="body"><div class="kpis" id="kpis"></div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="hd"><i class="ti ti-list-numbers"></i> Strain leaderboard <span class="sub">% of each region's 7-day peak demand</span></div>
+          <div class="body"><div class="lead" id="lead"><div class="muted"><span class="spin"></span> loading…</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="detail">
+      <div class="hd"><i class="ti ti-bolt"></i> <span id="dname">—</span> <span class="sub" id="dsub"></span></div>
+      <div class="body">
+        <div class="dgrid" id="dkpis"></div>
+        <div id="dfuelhd" style="margin-top:14px;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Generation by fuel</div>
+        <div class="fuel" id="dfuel"></div><div class="flegend" id="dfleg"></div>
+        <div style="margin-top:14px;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Demand, last 24 h (net-load ramp)</div>
+        <div class="ramp" id="dramp"></div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="note"><b>How to read "strain" honestly.</b> The headline number is each region's <b>demand as a % of its own highest demand over the last 7 days</b> — a <b>pressure proxy</b>, not a reserve margin. A region can sit at 100% of its recent peak and still be fine if it has spare capacity; this dashboard can't see true capacity or reserves (that's the grid operators' real-time data). Treat high numbers as "working hard / worth watching," not "about to fail." The <b>interchange arrows</b> are real, directional public data (region-to-region net power flow), but grid physics is loop-governed (Kirchhoff), so flows distribute across all paths — this is the net result, not a simple upstream→downstream chain.</div>
+      <div>Data: <a href="https://www.eia.gov/electricity/gridmonitor/" target="_blank" rel="noopener">EIA Hourly Electric Grid Monitor</a> (EIA-930) via the public EIA OpenData v2 API — hourly, ~1 h lag. Map © OpenStreetMap, © CARTO. Your EIA key is stored only in your browser.</div>
+    </footer>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const BASE='https://api.eia.gov/v2/electricity/rto';
+let KEY=localStorage.getItem('eia_key')||'';
+
+/* ---- Balancing-authority geography (code -> map centroid + interconnection).
+   SEED set of the major load-serving BAs; replaced by a verified full table. ---- */
+/* BA_GEO_START */
+const BA_GEO={
+ MISO:{n:'Midcontinent ISO',lat:41.6,lon:-90.5,ic:'Eastern',iso:1,reg:'Midwest'},
+ PJM:{n:'PJM Interconnection',lat:39.95,lon:-79.0,ic:'Eastern',iso:1,reg:'Mid-Atlantic'},
+ ERCO:{n:'ERCOT (Texas)',lat:31.0,lon:-99.5,ic:'Texas',iso:1,reg:'Texas'},
+ SWPP:{n:'Southwest Power Pool',lat:37.5,lon:-97.5,ic:'Eastern',iso:1,reg:'Central Plains'},
+ CISO:{n:'California ISO',lat:37.0,lon:-120.0,ic:'Western',iso:1,reg:'California'},
+ ISNE:{n:'ISO New England',lat:43.0,lon:-71.5,ic:'Eastern',iso:1,reg:'New England'},
+ NYIS:{n:'New York ISO',lat:42.9,lon:-75.5,ic:'Eastern',iso:1,reg:'New York'},
+ SOCO:{n:'Southern Company',lat:33.0,lon:-85.5,ic:'Eastern',iso:0,reg:'Southeast'},
+ TVA:{n:'Tennessee Valley Authority',lat:35.5,lon:-86.5,ic:'Eastern',iso:0,reg:'Tennessee Valley'},
+ FPL:{n:'Florida Power & Light',lat:27.0,lon:-80.8,ic:'Eastern',iso:0,reg:'Florida'},
+ BPAT:{n:'Bonneville Power',lat:45.6,lon:-120.5,ic:'Western',iso:0,reg:'Pacific NW'},
+ DUK:{n:'Duke Energy Carolinas',lat:35.3,lon:-81.0,ic:'Eastern',iso:0,reg:'Carolinas'},
+ PACE:{n:'PacifiCorp East',lat:41.5,lon:-111.5,ic:'Western',iso:0,reg:'Utah/Wyoming'},
+ PACW:{n:'PacifiCorp West',lat:44.0,lon:-122.5,ic:'Western',iso:0,reg:'Oregon'},
+ AECI:{n:'Associated Electric Coop',lat:38.0,lon:-92.5,ic:'Eastern',iso:0,reg:'Missouri'},
+ SRP:{n:'Salt River Project',lat:33.4,lon:-111.7,ic:'Western',iso:0,reg:'Arizona'},
+ AZPS:{n:'Arizona Public Service',lat:34.0,lon:-112.0,ic:'Western',iso:0,reg:'Arizona'},
+ PSCO:{n:'Public Service Colorado',lat:39.5,lon:-105.0,ic:'Western',iso:0,reg:'Colorado'},
+ CPLE:{n:'Duke Progress East',lat:35.6,lon:-78.6,ic:'Eastern',iso:0,reg:'Carolinas'},
+ LGEE:{n:'LG&E and KU',lat:38.0,lon:-85.5,ic:'Eastern',iso:0,reg:'Kentucky'},
+ NEVP:{n:'Nevada Power',lat:36.2,lon:-115.1,ic:'Western',iso:0,reg:'S. Nevada'},
+ SCEG:{n:'Dominion Energy South Carolina',lat:33.8,lon:-81.0,ic:'Eastern',iso:0,reg:'Carolinas'},
+ SC:{n:'Santee Cooper',lat:33.4,lon:-79.9,ic:'Eastern',iso:0,reg:'Carolinas'},
+ LDWP:{n:'LA Dept. Water & Power',lat:34.05,lon:-118.25,ic:'Western',iso:0,reg:'Los Angeles'},
+ IPCO:{n:'Idaho Power',lat:43.6,lon:-116.2,ic:'Western',iso:0,reg:'Idaho'},
+ WACM:{n:'WAPA Rocky Mountain',lat:40.4,lon:-105.1,ic:'Western',iso:0,reg:'Rocky Mountain'},
+ WALC:{n:'WAPA Desert Southwest',lat:33.5,lon:-112.1,ic:'Western',iso:0,reg:'Desert Southwest'},
+ PNM:{n:'Public Service New Mexico',lat:35.1,lon:-106.6,ic:'Western',iso:0,reg:'New Mexico'},
+ PSEI:{n:'Puget Sound Energy',lat:47.6,lon:-122.0,ic:'Western',iso:0,reg:'Pacific NW'},
+ PGE:{n:'Portland General Electric',lat:45.5,lon:-122.7,ic:'Western',iso:0,reg:'Oregon'},
+ FPC:{n:'Duke Energy Florida',lat:28.5,lon:-82.0,ic:'Eastern',iso:0,reg:'Florida'},
+ FMPP:{n:'Florida Municipal Power Pool',lat:28.5,lon:-81.4,ic:'Eastern',iso:0,reg:'Florida'},
+ TEC:{n:'Tampa Electric',lat:27.95,lon:-82.45,ic:'Eastern',iso:0,reg:'Florida'},
+ TEPC:{n:'Tucson Electric Power',lat:32.2,lon:-110.9,ic:'Western',iso:0,reg:'Arizona'},
+ EPE:{n:'El Paso Electric',lat:31.8,lon:-106.4,ic:'Western',iso:0,reg:'West Texas/NM'},
+ IID:{n:'Imperial Irrigation District',lat:33.0,lon:-115.5,ic:'Western',iso:0,reg:'SE California'},
+ BANC:{n:'BA of Northern California',lat:38.6,lon:-121.5,ic:'Western',iso:0,reg:'Sacramento'},
+ TIDC:{n:'Turlock Irrigation District',lat:37.5,lon:-120.85,ic:'Western',iso:0,reg:'C. California'},
+ NWMT:{n:'NorthWestern Energy',lat:46.6,lon:-111.5,ic:'Western',iso:0,reg:'Montana'},
+ SPA:{n:'Southwestern Power Admin.',lat:36.0,lon:-95.0,ic:'Eastern',iso:0,reg:'Central Plains'},
+ AEC:{n:'PowerSouth Energy Coop',lat:31.3,lon:-86.5,ic:'Eastern',iso:0,reg:'Southeast'},
+ TAL:{n:'City of Tallahassee',lat:30.45,lon:-84.3,ic:'Eastern',iso:0,reg:'Florida'},
+ JEA:{n:'JEA (Jacksonville)',lat:30.3,lon:-81.7,ic:'Eastern',iso:0,reg:'Florida'},
+ SEC:{n:'Seminole Electric Coop',lat:28.8,lon:-82.3,ic:'Eastern',iso:0,reg:'Florida'},
+ GVL:{n:'Gainesville Regional',lat:29.65,lon:-82.32,ic:'Eastern',iso:0,reg:'Florida'},
+ HST:{n:'City of Homestead',lat:25.47,lon:-80.48,ic:'Eastern',iso:0,reg:'Florida'},
+ NSB:{n:'New Smyrna Beach',lat:29.03,lon:-80.93,ic:'Eastern',iso:0,reg:'Florida'},
+ SEPA:{n:'Southeastern Power Admin.',lat:33.4,lon:-82.0,ic:'Eastern',iso:0,reg:'Southeast'},
+ OVEC:{n:'Ohio Valley Electric',lat:38.8,lon:-82.6,ic:'Eastern',iso:0,reg:'Ohio Valley'},
+ CPLW:{n:'Duke Progress West',lat:35.6,lon:-82.6,ic:'Eastern',iso:0,reg:'Carolinas'},
+ YAD:{n:'Alcoa Yadkin',lat:35.4,lon:-80.2,ic:'Eastern',iso:0,reg:'Carolinas'},
+ SCL:{n:'Seattle City Light',lat:47.6,lon:-122.33,ic:'Western',iso:0,reg:'Seattle'},
+ TPWR:{n:'Tacoma Power',lat:47.25,lon:-122.45,ic:'Western',iso:0,reg:'Tacoma'},
+ CHPD:{n:'Chelan County PUD',lat:47.8,lon:-120.3,ic:'Western',iso:0,reg:'Pacific NW'},
+ DOPD:{n:'Douglas County PUD',lat:47.7,lon:-119.9,ic:'Western',iso:0,reg:'Pacific NW'},
+ GCPD:{n:'Grant County PUD',lat:47.2,lon:-119.3,ic:'Western',iso:0,reg:'Pacific NW'},
+ AVA:{n:'Avista',lat:47.66,lon:-117.4,ic:'Western',iso:0,reg:'Pacific NW'},
+ WAUW:{n:'WAPA Upper Great Plains W.',lat:45.5,lon:-102.0,ic:'Western',iso:0,reg:'Upper Great Plains'},
+ WWA:{n:'NaturEner Wind Watch',lat:48.5,lon:-111.0,ic:'Western',iso:0,reg:'Montana'},
+ GWA:{n:'NaturEner Power Watch',lat:48.5,lon:-111.2,ic:'Western',iso:0,reg:'Montana'},
+ GRID:{n:'Gridforce Energy Mgmt',lat:44.5,lon:-114.0,ic:'Western',iso:0,reg:'Mountain West'},
+ GRIF:{n:'Griffith Energy',lat:35.2,lon:-114.4,ic:'Western',iso:0,reg:'Desert Southwest'},
+ GRMA:{n:'Gila River Power',lat:33.1,lon:-112.4,ic:'Western',iso:0,reg:'Arizona'},
+ HGMA:{n:'Harquahala Generating',lat:33.5,lon:-113.1,ic:'Western',iso:0,reg:'Arizona'},
+ DEAA:{n:'Arlington Valley',lat:33.4,lon:-113.0,ic:'Western',iso:0,reg:'Arizona'},
+ EEI:{n:'Electric Energy Inc.',lat:37.2,lon:-88.9,ic:'Eastern',iso:0,reg:'Midwest'}
+};
+/* BA_GEO_END */
+
+const fmt=n=>n==null||!isFinite(n)?'—':Math.round(n).toLocaleString();
+const gw=n=>n==null||!isFinite(n)?'—':(n/1000).toFixed(1);
+async function eia(path,params){
+ const u=new URL(BASE+path);u.searchParams.set('api_key',KEY);u.searchParams.set('frequency','hourly');u.searchParams.append('data[0]','value');
+ for(const[k,v]of params)u.searchParams.append(k,v);
+ let lastErr;
+ for(let a=0;a<3;a++){ // retry transient network blips / 5xx / rate-limit; never retry a bad key
+  try{
+   const r=await fetch(u.toString());
+   if(!r.ok){const t=await r.text().catch(()=>'');const err={status:r.status,body:t.slice(0,200)};if(r.status===403||r.status===400)throw err;lastErr=err;await new Promise(R=>setTimeout(R,650*(a+1)));continue;}
+   const j=await r.json();return (j&&j.response&&j.response.data)||[];
+  }catch(e){if(e&&e.status===403)throw e;lastErr=e;await new Promise(R=>setTimeout(R,650*(a+1)));}
+ }
+ throw lastErr;}
+// paginated fetch (EIA caps length at 5000)
+async function eiaAll(path,params,maxRows){const out=[];let off=0;for(let i=0;i<6;i++){const p=params.concat([['length','5000'],['offset',String(off)]]);const d=await eia(path,p);out.push(...d);if(d.length<5000||out.length>=(maxRows||1e9))break;off+=5000;}return out;}
+
+const CATCOL=p=>p>=98?'#ef5350':p>=90?'#f97b3d':p>=80?'#f0b429':'#34c98a';
+const CATLAB=p=>p>=98?'at/near recent peak':p>=90?'elevated':p>=80?'busy':'normal';
+
+let map,gLayer,STATE={};
+function initMap(){
+ map=L.map('map',{zoomControl:true,preferCanvas:true,worldCopyJump:false}).setView([39.5,-97],4);
+ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:9,minZoom:3}).addTo(map);
+ gLayer=L.layerGroup().addTo(map);
+}
+function bearing(a,b,c,d){const y=Math.sin((d-b)*Math.PI/180)*Math.cos(c*Math.PI/180);const x=Math.cos(a*Math.PI/180)*Math.sin(c*Math.PI/180)-Math.sin(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.cos((d-b)*Math.PI/180);return Math.atan2(y,x)*180/Math.PI;}
+
+async function loadGrid(){
+ if(!KEY){showGate();return;}
+ $('upd').innerHTML='<span class="spin"></span> loading EIA…';
+ try{
+  // 1) latest snapshot: D, DF, NG, TI for all respondents (last ~20h, take most recent per BA/type)
+  const snap=await eia('/region-data/data/',[['facets[type][]','D'],['facets[type][]','DF'],['facets[type][]','NG'],['facets[type][]','TI'],['sort[0][column]','period'],['sort[0][direction]','desc'],['length','5000']]);
+  // 2) 7-day demand history for peak + 24h ramp
+  const start=new Date(Date.now()-7*864e5).toISOString().slice(0,13);
+  const hist=await eiaAll('/region-data/data/',[['facets[type][]','D'],['start',start],['sort[0][column]','period'],['sort[0][direction]','desc']],14000);
+  // 3) interchange edges (latest)
+  const inter=await eia('/interchange-data/data/',[['sort[0][column]','period'],['sort[0][direction]','desc'],['length','5000']]);
+
+  // ---- assemble per-BA state
+  const ba={};
+  const grab=(o,t)=>o.respondent&&o.type===t;
+  snap.forEach(o=>{const c=o.respondent;if(!c)return;const t=o.type,v=+o.value;if(!isFinite(v))return;ba[c]=ba[c]||{code:c,name:o['respondent-name']||c};if(ba[c][t]==null)ba[c][t]=v;}); // first (most recent) wins
+  // peak + ramp from history
+  const series={};
+  hist.forEach(o=>{const c=o.respondent;if(!c)return;const v=+o.value;if(!isFinite(v))return;(series[c]=series[c]||[]).push({p:o.period,v});});
+  Object.keys(series).forEach(c=>{const arr=series[c];const peak=Math.max(...arr.map(x=>x.v));ba[c]=ba[c]||{code:c,name:c};ba[c].peak=peak;ba[c].ramp=arr.slice(0,24).reverse().map(x=>x.v);});
+  // strain
+  Object.values(ba).forEach(b=>{
+   if(b.D!=null&&b.peak){b.pct=Math.round(100*b.D/b.peak);}
+   b.imp=(b.TI!=null&&b.D)?Math.max(0,-b.TI)/b.D:((b.NG!=null&&b.D)?Math.max(0,(b.D-b.NG))/b.D:null);
+   b.surp=(b.DF!=null&&b.DF>0&&b.D!=null)?(b.D-b.DF)/b.DF:null;
+  });
+  // interchange: latest net per (fromba,toba)
+  const edges={};
+  inter.forEach(o=>{const f=o.fromba,t=o.toba;if(!f||!t)return;const v=+o.value;if(!isFinite(v))return;const k=f+'>'+t;if(edges[k]==null)edges[k]=v;});
+
+  STATE={ba,edges,t:new Date()};
+  render();
+  $('upd').innerHTML='<i class="ti ti-clock"></i> updated '+STATE.t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+ }catch(e){
+  if(e&&e.status===403){KEY='';localStorage.removeItem('eia_key');$('upd').innerHTML='<span style="color:#ef5350">key rejected</span>';showGate('That key was rejected by EIA (403). Double-check it and paste again.');return;}
+  $('upd').innerHTML='<span style="color:#ef5350">load failed'+(e&&e.status?' ('+e.status+')':'')+'</span>';
+ }
+}
+
+// EIA region-data mixes individual BAs with REGION/NATIONAL aggregates (US48 + 13 regions);
+// exclude the aggregates so the leaderboard, map and national total don't double/triple-count.
+const AGG=new Set(['US48','MIDA','MIDW','TEX','FLA','NW','CENT','SE','CAR','CAL','TEN','NY','SW','NE']);
+function render(){
+ const list=Object.values(STATE.ba).filter(b=>b.D!=null&&!AGG.has(b.code)).sort((a,b)=>(b.pct||0)-(a.pct||0));
+ // national total: prefer EIA's US48 aggregate (exact), else sum the BAs
+ const us48=STATE.ba['US48'];
+ const tot=(us48&&us48.D!=null)?us48.D:list.reduce((s,b)=>s+(b.D||0),0);
+ const hot=list.filter(b=>b.pct>=90).length;
+ const importers=list.filter(b=>b.TI!=null).slice().sort((a,b)=>a.TI-b.TI);
+ const bigImp=importers[0], bigExp=importers[importers.length-1];
+ $('natdemand').innerHTML='<i class="ti ti-bolt"></i> U.S. demand <b>'+gw(tot)+' GW</b>';
+ $('kpis').innerHTML=
+  kpi('Total U.S. demand',gw(tot)+' <small>GW</small>')+
+  kpi('Regions ≥90% of peak',hot+' <small>of '+list.length+'</small>')+
+  kpi('Biggest net importer',(bigImp&&bigImp.TI<0)?(bigImp.code+' <small>'+gw(-bigImp.TI)+' GW in</small>'):'—')+
+  kpi('Biggest net exporter',(bigExp&&bigExp.TI>0)?(bigExp.code+' <small>'+gw(bigExp.TI)+' GW out</small>'):'—');
+ // leaderboard
+ $('lead').innerHTML=list.map(b=>{const p=b.pct||0,col=CATCOL(p);const g=BA_GEO[b.code];
+  return '<div class="row2" data-c="'+b.code+'"><div class="nm"><div class="c">'+b.code+'<span class="muted" style="font-weight:400"> · '+(g?g.reg:(b.name||''))+'</span>'+
+   (b.surp>0.03?'<span class="tag" style="background:#f0b42922;color:#f4cd6b">+'+Math.round(b.surp*100)+'% vs forecast</span>':'')+
+   (b.imp>0.12?'<span class="tag" style="background:#3fa9f522;color:#9fd2f0">imports '+Math.round(b.imp*100)+'%</span>':'')+
+   '</div><div class="r">'+(b.name||'')+' · '+fmt(b.D)+' MW</div></div>'+
+   '<div class="meter"><div class="track"><div class="fill" style="width:'+Math.min(100,p)+'%;background:'+col+'"></div></div></div>'+
+   '<div class="pct" style="color:'+col+'">'+p+'%</div></div>';}).join('')||'<div class="muted">No data returned.</div>';
+ [...document.querySelectorAll('.row2')].forEach(r=>r.onclick=()=>selectBA(r.dataset.c));
+ drawMap(list);
+}
+function kpi(l,v){return '<div class="kpi"><div class="l">'+l+'</div><div class="v">'+v+'</div></div>';}
+
+function drawMap(list){
+ gLayer.clearLayers();
+ const byCode={};list.forEach(b=>byCode[b.code]=b);
+ // interchange arrows (top flows between mapped BAs)
+ const ed=Object.entries(STATE.edges).map(([k,v])=>{const[f,t]=k.split('>');return{f,t,v};})
+   .filter(e=>e.v>0&&BA_GEO[e.f]&&BA_GEO[e.t]).sort((a,b)=>b.v-a.v).slice(0,28);
+ const maxv=ed.length?ed[0].v:1;
+ ed.forEach(e=>{const A=BA_GEO[e.f],B=BA_GEO[e.t];const w=1+3.5*Math.sqrt(e.v/maxv);
+  L.polyline([[A.lat,A.lon],[B.lat,B.lon]],{color:'#5e7ea3',weight:w,opacity:.5}).addTo(gLayer);
+  const mid=[(A.lat+B.lat)/2,(A.lon+B.lon)/2];const br=bearing(A.lat,A.lon,B.lat,B.lon);
+  L.marker(mid,{icon:L.divIcon({className:'',html:'<div class="arrowdiv" style="transform:rotate('+br+'deg)">➤</div>',iconSize:[14,14]})}).addTo(gLayer);});
+ // BA markers
+ const maxD=Math.max(...list.map(b=>b.D||0),1);
+ list.forEach(b=>{const g=BA_GEO[b.code];if(!g)return;const p=b.pct||0,col=CATCOL(p);const rad=5+13*Math.sqrt((b.D||0)/maxD);
+  L.circleMarker([g.lat,g.lon],{radius:rad,fillColor:col,color:'#0c1726',weight:1.3,fillOpacity:.82})
+   .bindPopup('<b>'+b.code+'</b> — '+(b.name||g.n)+'<br>'+fmt(b.D)+' MW · <b style="color:'+col+'">'+p+'% of 7-day peak</b> ('+CATLAB(p)+')'+(b.TI!=null?'<br>'+(b.TI<0?'importing '+fmt(-b.TI):'exporting '+fmt(b.TI))+' MW':''))
+   .on('click',()=>selectBA(b.code)).addTo(gLayer);});
+}
+
+async function selectBA(code){
+ const b=STATE.ba[code];if(!b)return;const g=BA_GEO[code];const p=b.pct||0,col=CATCOL(p);
+ $('detail').style.display='block';$('dname').textContent=b.code+' — '+(b.name||(g&&g.n)||'');
+ $('dsub').textContent=g?(g.reg+' · '+g.ic+' Interconnection'+(g.iso?' · ISO/RTO':'')):'';
+ $('dkpis').innerHTML=
+  kpi('Demand now',fmt(b.D)+' <small>MW</small>')+
+  kpi('% of 7-day peak','<span style="color:'+col+'">'+p+'%</span> <small>'+CATLAB(p)+'</small>')+
+  kpi('vs day-ahead forecast',b.surp!=null?((b.surp>=0?'+':'')+Math.round(b.surp*100)+'% <small>'+(b.surp>0?'above plan':'below plan')+'</small>'):'—')+
+  kpi('Net interchange',b.TI!=null?((b.TI<0?'importing ':'exporting ')+fmt(Math.abs(b.TI))+' <small>MW</small>'):'—');
+ // ramp
+ const ramp=b.ramp||[];const rmax=Math.max(...ramp,1);
+ $('dramp').innerHTML=ramp.map(v=>'<b style="height:'+(100*v/rmax)+'%" title="'+fmt(v)+' MW"></b>').join('')||'<span class="muted">no series</span>';
+ $('detail').scrollIntoView({block:'nearest',behavior:'smooth'});
+ // fuel mix (on demand)
+ $('dfuel').innerHTML='';$('dfleg').innerHTML='<span class="muted"><span class="spin"></span> loading fuel mix…</span>';
+ try{
+  const f=await eia('/fuel-type-data/data/',[['facets[respondent][]',code],['sort[0][column]','period'],['sort[0][direction]','desc'],['length','60']]);
+  const latest={};let fp='';f.forEach(o=>{const ft=o.fueltype;if(!ft)return;if(latest[ft]==null){latest[ft]=+o.value;if(!fp)fp=o.period;}});
+  const FC={NG:['#f0883e','Natural gas'],COL:['#8a8a8a','Coal'],NUC:['#b46ff0','Nuclear'],WND:['#34c98a','Wind'],SUN:['#f0c419','Solar'],WAT:['#3fa9f5','Hydro'],OIL:['#9c6b4f','Oil'],OTH:['#6b7d92','Other'],BAT:['#e06ec0','Batteries'],GEO:['#c0734f','Geothermal'],PS:['#5fc7c7','Pumped storage']};
+  const tot=Object.entries(latest).reduce((s,[k,v])=>s+Math.max(0,v||0),0)||1;
+  const parts=Object.entries(latest).filter(([k,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  $('dfuel').innerHTML=parts.map(([k,v])=>'<span style="width:'+(100*v/tot)+'%;background:'+((FC[k]||['#6b7d92'])[0])+'" title="'+(FC[k]?FC[k][1]:k)+' '+fmt(v)+' MW"></span>').join('');
+  $('dfleg').innerHTML=parts.map(([k,v])=>'<span><i style="background:'+((FC[k]||['#6b7d92'])[0])+'"></i>'+(FC[k]?FC[k][1]:k)+' '+Math.round(100*v/tot)+'%</span>').join('');
+  $('dfuelhd').textContent='Generation by fuel'+(fp?' · as of '+fp.replace('T',' ')+':00 UTC (EIA publishes fuel mix with extra lag)':'');
+ }catch(e){$('dfleg').innerHTML='<span class="muted">fuel mix unavailable for this region</span>';}
+}
+
+/* ---- key gate ---- */
+function showGate(msg){$('gate').style.display='block';$('app').style.display='none';if(msg)$('keymsg').textContent=msg;$('keyin').focus();}
+function hideGate(){$('gate').style.display='none';$('app').style.display='block';}
+$('savekey').onclick=()=>{const k=$('keyin').value.trim();if(k.length<20){$('keymsg').textContent='That doesn\'t look like a full EIA key.';return;}KEY=k;localStorage.setItem('eia_key',k);hideGate();if(!map)initMap();setTimeout(()=>map.invalidateSize(),60);loadGrid();};
+$('keyin').addEventListener('keydown',e=>{if(e.key==='Enter')$('savekey').click();});
+$('changekey').onclick=e=>{e.preventDefault();$('keyin').value=KEY;showGate();};
+$('refresh').onclick=()=>loadGrid();
+
+// boot
+if(KEY){hideGate();initMap();setTimeout(()=>map.invalidateSize(),60);loadGrid();}else{showGate();}
+</script>
+</body>
+</html>

@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Human Trafficking — Get Help, Understand the Scale, Spot the Signs</title>
+<meta name="description" content="A verified, self-contained resource: how to get help, what the data says (US + global), and how to recognize the signs of human trafficking. Built on primary public sources.">
+<style>
+:root{
+ --bg:#0e1217; --panel:#161c25; --panel2:#1b2230; --line:#242e3c; --line2:#2e3a4a;
+ --ink:#e8eef4; --mut:#93a2b3; --mut2:#6f8095;
+ --teal:#2bb6a6; --blue:#4a9fe0; --amber:#e0a52e; --green:#3fb079; --red:#e5484d; --violet:#9b7fe0;
+ --shadow:0 2px 18px rgba(0,0,0,.32);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.01em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.muted{color:var(--mut)}.small{font-size:12.5px}.tiny{font-size:11.5px}
+
+/* emergency strip */
+.emerg{background:linear-gradient(90deg,#3a1417,#2a1013);border-bottom:1px solid #57222a;color:#ffd9db;font-size:13px;padding:7px 0}
+.emerg b{color:#fff}
+.emerg a{color:#ff9ea2;font-weight:700}
+
+/* sticky nav */
+.nav{position:sticky;top:0;z-index:50;background:rgba(14,18,23,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:6px;height:54px;flex-wrap:wrap}
+.brand{font-weight:800;font-size:15px;margin-right:auto;display:flex;align-items:center;gap:9px}
+.brand .dot{width:11px;height:11px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px rgba(43,182,166,.16)}
+.nav a.tab{color:var(--mut);font-size:13px;font-weight:600;padding:7px 11px;border-radius:8px;white-space:nowrap}
+.nav a.tab:hover{color:var(--ink);background:var(--panel);text-decoration:none}
+.nav a.tab.help{color:#bdf0dc;background:rgba(63,176,121,.13);border:1px solid rgba(63,176,121,.3)}
+
+/* hero */
+.hero{padding:34px 0 8px}
+.hero h1{font-size:30px;line-height:1.15}
+.hero p.sub{color:var(--mut);font-size:15.5px;max-width:760px;margin:12px 0 0}
+
+section{padding:30px 0;border-top:1px solid var(--line)}
+.sechead{display:flex;align-items:baseline;gap:12px;margin-bottom:4px;flex-wrap:wrap}
+.sechead h2{font-size:21px}
+.sechead .kick{color:var(--teal);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.lead{color:var(--mut);max-width:820px;margin:8px 0 20px}
+
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:860px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px 18px;box-shadow:var(--shadow)}
+.card h3{font-size:15.5px;margin-bottom:3px}
+
+/* badges */
+.badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:20px;vertical-align:middle}
+.b-est{background:rgba(224,165,46,.15);color:#f0c469;border:1px solid rgba(224,165,46,.34)}
+.b-rep{background:rgba(74,159,224,.15);color:#8fc4f0;border:1px solid rgba(74,159,224,.34)}
+.b-det{background:rgba(43,182,166,.15);color:#79d8c9;border:1px solid rgba(43,182,166,.34)}
+.b-case{background:rgba(155,127,224,.15);color:#bfa9f0;border:1px solid rgba(155,127,224,.34)}
+.b-fw{background:rgba(147,162,179,.15);color:#b6c4d4;border:1px solid rgba(147,162,179,.3)}
+
+/* get-help cards */
+.help-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:14px}
+@media(max-width:860px){.help-grid{grid-template-columns:1fr}}
+.hcard{background:linear-gradient(180deg,#172230,#141b25);border:1px solid var(--line2);border-radius:14px;padding:18px}
+.hcard.prime{border-color:rgba(63,176,121,.5);background:linear-gradient(180deg,#13241d,#121a18)}
+.hcard.danger{border-color:rgba(229,72,77,.5);background:linear-gradient(180deg,#241315,#1a1214)}
+.hcard .who{font-size:13px;color:var(--mut);font-weight:600}
+.hcard .num{font-size:25px;font-weight:800;letter-spacing:-.02em;margin:5px 0 2px;display:block;color:#fff}
+.hcard.prime .num{color:#bff3da}.hcard.danger .num{color:#ffc4c6}
+.hcard .num a{color:inherit}
+.hcard .meta{font-size:12.5px;color:var(--mut);margin-top:7px}
+.hcard .chips{margin-top:9px;display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:var(--panel2);border:1px solid var(--line2);color:var(--mut)}
+
+/* stat callouts */
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.stat .big{font-size:33px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.stat .lab{color:var(--mut);font-size:13px;margin-top:7px}
+.stat.teal .big{color:#79d8c9}.stat.blue .big{color:#8fc4f0}.stat.amber .big{color:#f0c469}.stat.violet .big{color:#bfa9f0}
+
+/* bars */
+.bars{margin-top:6px}
+.bar{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}
+.bar .nm{flex:0 0 132px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .track{flex:1;height:14px;background:var(--panel2);border-radius:7px;overflow:hidden}
+.bar .fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#2bb6a6,#4a9fe0)}
+.bar .val{flex:0 0 auto;color:var(--mut);font-variant-numeric:tabular-nums;min-width:62px;text-align:right}
+.bar.alt .fill{background:linear-gradient(90deg,#9b7fe0,#4a9fe0)}
+.bar.warm .fill{background:linear-gradient(90deg,#e0a52e,#e5604d)}
+
+/* composition bar */
+.comp{display:flex;height:30px;border-radius:8px;overflow:hidden;border:1px solid var(--line2);margin:6px 0}
+.comp span{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0c1016;white-space:nowrap}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--mut)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
+
+/* notes / callouts */
+.note{border-left:3px solid var(--line2);padding:9px 13px;background:var(--panel2);border-radius:0 9px 9px 0;font-size:13px;color:var(--mut);margin-top:12px}
+.note.warn{border-color:var(--amber);background:rgba(224,165,46,.07)}
+.note.safe{border-color:var(--green);background:rgba(63,176,121,.07)}
+.note b{color:var(--ink)}
+
+/* indicator expanders */
+details.ind{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;margin:10px 0;overflow:hidden}
+details.ind>summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:700;display:flex;align-items:center;gap:10px}
+details.ind>summary::-webkit-details-marker{display:none}
+details.ind>summary .ar{margin-left:auto;color:var(--mut);transition:transform .2s}
+details.ind[open]>summary .ar{transform:rotate(90deg)}
+details.ind .body{padding:2px 16px 16px;border-top:1px solid var(--line)}
+.ilist{margin:10px 0 0;padding:0;list-style:none;columns:2;column-gap:22px}
+@media(max-width:680px){.ilist{columns:1}}
+.ilist li{padding:5px 0 5px 22px;position:relative;font-size:13.5px;break-inside:avoid}
+.ilist li::before{content:"";position:absolute;left:0;top:11px;width:7px;height:7px;border-radius:2px;background:var(--teal)}
+
+/* decision helper */
+.decide{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:18px}
+.dbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.dbtn{background:var(--panel2);border:1px solid var(--line2);color:var(--ink);border-radius:10px;padding:11px 15px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left}
+.dbtn:hover{border-color:var(--teal);color:#bff3da}
+.dout{margin-top:14px;padding:15px 16px;border-radius:12px;background:var(--panel2);border:1px solid var(--line2);display:none}
+.dout.show{display:block}
+.dout .a{font-size:16px;font-weight:800;color:#fff;margin-bottom:6px}
+.dout.em{border-color:rgba(229,72,77,.5);background:rgba(229,72,77,.08)}
+.dout.em .a{color:#ffc4c6}
+.dout.go{border-color:rgba(63,176,121,.5);background:rgba(63,176,121,.08)}
+.dout.go .a{color:#bff3da}
+
+table.src{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+table.src th,table.src td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.src th{color:var(--mut);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+table.src td.fig{color:var(--ink);font-weight:600;white-space:nowrap}
+
+footer{padding:30px 0 50px;border-top:1px solid var(--line);color:var(--mut2);font-size:12.5px}
+.pillrow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.pill{font-size:11.5px;padding:4px 10px;border-radius:20px;background:var(--panel);border:1px solid var(--line2);color:var(--mut)}
+.kbd{font-family:ui-monospace,Menlo,monospace;background:var(--panel2);border:1px solid var(--line2);border-radius:5px;padding:1px 5px;font-size:12px;color:var(--ink)}
+</style>
+</head>
+<body>
+
+<div class="emerg"><div class="wrap"><b>In immediate danger?</b> &nbsp;Call <a href="tel:911">911</a> now. &nbsp;·&nbsp; Help is available 24/7, free and confidential: National Human Trafficking Hotline <a href="tel:18883737888">1‑888‑373‑7888</a> · text <b>233733</b>.</div></div>
+
+<nav class="nav"><div class="wrap">
+  <div class="brand"><span class="dot"></span>Human Trafficking — Awareness &amp; Help</div>
+  <a class="tab help" href="#help">Get help</a>
+  <a class="tab" href="#scale">The scale</a>
+  <a class="tab" href="#us">US &amp; Florida</a>
+  <a class="tab" href="#global">Global</a>
+  <a class="tab" href="#signs">Spot the signs</a>
+  <a class="tab" href="#sources">Sources</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <h1>Get help, understand the scale, and learn to recognize the signs.</h1>
+  <p class="sub">A self‑contained resource built entirely on primary public sources — every hotline number and statistic was verified against its original source. It works offline, holds no personal data, and does not track or profile anyone. Its purpose is to <b>connect people to help</b> and to explain what the public evidence does — and does not — say.</p>
+</div></header>
+
+<!-- ============================ GET HELP ============================ -->
+<section id="help"><div class="wrap">
+  <div class="sechead"><span class="kick">Start here</span><h2>Get help &amp; report safely</h2></div>
+  <p class="lead">If a person is in immediate danger, call <b>911</b>. To get help for yourself or someone else, or to report a tip, use the hotlines below. They are free, confidential, and available around the clock.</p>
+
+  <div class="help-grid">
+    <div class="hcard prime">
+      <div class="who">National Human Trafficking Hotline — help &amp; tips</div>
+      <span class="num"><a href="tel:18883737888">1‑888‑373‑7888</a></span>
+      <div class="muted small">Text <b style="color:#bff3da">233733</b> &nbsp;·&nbsp; live chat &amp; more at <a href="https://humantraffickinghotline.org" target="_blank" rel="noopener">humantraffickinghotline.org</a></div>
+      <div class="meta">Confidential and anonymous. <b>Not law enforcement</b> — it connects callers to vetted local services. 24/7, in English, Spanish, and 200+ languages via interpreter. Email <a href="mailto:help@humantraffickinghotline.org">help@humantraffickinghotline.org</a> · TTY 711.</div>
+      <div class="chips"><span class="chip">24/7</span><span class="chip">Confidential</span><span class="chip">200+ languages</span><span class="chip">Free</span></div>
+    </div>
+    <div class="hcard danger">
+      <div class="who">Emergency / immediate danger</div>
+      <span class="num"><a href="tel:911">911</a></span>
+      <div class="muted small">Threats of violence, assault, a medical emergency, or anyone in immediate danger.</div>
+      <div class="meta">If it is safe to do so, note location and details for responders — but your safety comes first.</div>
+    </div>
+    <div class="hcard">
+      <div class="who">Report suspected trafficking to federal law enforcement — ICE HSI Tip Line</div>
+      <span class="num"><a href="tel:18663472423">1‑866‑347‑2423</a></span>
+      <div class="muted small">24/7/365. International: 802‑872‑6199 · <a href="https://www.ice.gov/tipline" target="_blank" rel="noopener">ice.gov/tipline</a></div>
+      <div class="meta">Part of the DHS Blue Campaign. For reporting suspicious activity; investigators follow up.</div>
+    </div>
+  </div>
+
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card">
+      <h3>Online child exploitation — NCMEC CyberTipline</h3>
+      <div class="muted small" style="margin-top:4px">Report at <a href="https://report.cybertip.org" target="_blank" rel="noopener">report.cybertip.org</a> or call <a href="tel:18008435678"><b>1‑800‑843‑5678</b></a> (1‑800‑THE‑LOST). The national clearinghouse for online child sexual exploitation.</div>
+    </div>
+    <div class="card">
+      <h3>Florida — Abuse Hotline (children &amp; vulnerable adults)</h3>
+      <div class="muted small" style="margin-top:4px">Call <a href="tel:18009622873"><b>1‑800‑962‑2873</b></a> (1‑800‑96‑ABUSE) · TTY 711 or 1‑800‑955‑8771 · <a href="https://www.myflfamilies.com/services/abuse/how-report-human-trafficking" target="_blank" rel="noopener">report online</a>. For suspected trafficking or abuse of a Florida child or vulnerable adult.</div>
+    </div>
+    <div class="card">
+      <h3>Florida — statewide tip line (FDLE)</h3>
+      <div class="muted small" style="margin-top:4px">Call <a href="tel:18553527233"><b>1‑855‑352‑7233</b></a> (1‑855‑FLA‑SAFE) · <a href="https://www.fdle.state.fl.us/florida-human-trafficking-hotline" target="_blank" rel="noopener">fdle.state.fl.us</a>. Florida Department of Law Enforcement statewide human‑trafficking reporting.</div>
+    </div>
+  </div>
+
+  <!-- safe response -->
+  <div class="grid g2" style="margin-top:18px">
+    <div class="card">
+      <h3 style="color:#bff3da">If you suspect trafficking — what to do</h3>
+      <div class="note safe" style="margin-top:8px"><b>Do not confront a suspected trafficker, and do not try to “rescue” anyone yourself.</b> Doing so can put the victim — and you — in greater danger, and can disrupt a later investigation. Source: DHS Blue Campaign.</div>
+      <ol class="muted" style="font-size:13.5px;margin:12px 0 0;padding-left:18px">
+        <li><b>Immediate danger?</b> Call <a href="tel:911">911</a>.</li>
+        <li><b>Report a tip</b> to the ICE HSI Tip Line <a href="tel:18663472423">1‑866‑347‑2423</a>, or anonymously to the National Hotline.</li>
+        <li><b>Help a victim</b> by sharing the National Human Trafficking Hotline: <a href="tel:18883737888">1‑888‑373‑7888</a> / text 233733. Let them reach out on their own terms.</li>
+        <li><b>Preserve their safety and choices.</b> Survivors are best supported when their autonomy is respected.</li>
+      </ol>
+    </div>
+    <div class="decide">
+      <h3>Not sure what to do? Pick the situation:</h3>
+      <div class="dbtns" id="dbtns">
+        <button class="dbtn" data-d="em">Someone is in immediate danger right now</button>
+        <button class="dbtn" data-d="susp">I think someone is being trafficked</button>
+        <button class="dbtn" data-d="self">I need help for myself</button>
+        <button class="dbtn" data-d="child">It involves a child / online exploitation</button>
+        <button class="dbtn" data-d="fl">I'm in Florida and want a local option</button>
+      </div>
+      <div class="dout" id="dout"><div class="a" id="dout-a"></div><div class="muted" id="dout-b" style="font-size:13.5px"></div></div>
+      <div class="tiny muted" style="margin-top:10px">This points you to the right hotline. It does not collect or store anything you click.</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============================ THE SCALE ============================ -->
+<section id="scale"><div class="wrap">
+  <div class="sechead"><span class="kick">The scale</span><h2>How large is the problem?</h2><span class="badge b-est">Estimate</span></div>
+  <p class="lead">The most authoritative global figure is the <b>2022 Global Estimates of Modern Slavery</b> from the International Labour Organization (ILO), Walk Free, and the UN’s International Organization for Migration (IOM). These are <b>modeled estimates with wide uncertainty</b> for any given day in 2021 — not a head‑count — and remain the latest joint estimate as of 2026.</p>
+
+  <div class="grid g4">
+    <div class="stat teal"><div class="big">49.6M</div><div class="lab">people in modern slavery on any given day (2021)</div></div>
+    <div class="stat blue"><div class="big">27.6M</div><div class="lab">in forced labour</div></div>
+    <div class="stat violet"><div class="big">6.3M</div><div class="lab">in forced commercial sexual exploitation</div></div>
+    <div class="stat amber"><div class="big">22M</div><div class="lab">in a forced marriage</div></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <h3>What modern slavery is made of</h3>
+      <div class="muted small">Of the 49.6 million, forced labour and forced marriage are the two halves.</div>
+      <div class="comp" style="margin-top:10px">
+        <span style="width:55.6%;background:#4a9fe0">Forced labour 27.6M</span>
+        <span style="width:44.4%;background:#e0a52e">Forced marriage 22M</span>
+      </div>
+      <div class="muted small" style="margin-top:14px">Within forced labour, by who imposes it:</div>
+      <div class="comp" style="margin-top:8px">
+        <span style="width:63%;background:#2bb6a6">Private economy 63%</span>
+        <span style="width:23%;background:#9b7fe0">Commercial sex 23%</span>
+        <span style="width:14%;background:#6f8095">State‑imposed 14%</span>
+      </div>
+      <div class="legend"><span><i style="background:#2bb6a6"></i>Private economy (≈17.4M, non‑sex sectors)</span><span><i style="background:#9b7fe0"></i>Commercial sexual exploitation (6.3M)</span><span><i style="background:#6f8095"></i>State‑imposed (3.9M)</span></div>
+      <div class="note">86% of forced labour is imposed by private actors. Source: ILO/Walk Free/IOM, <i>Global Estimates of Modern Slavery 2022</i>.</div>
+    </div>
+    <div class="card">
+      <h3>Who is affected</h3>
+      <div class="bars" style="margin-top:6px">
+        <div class="bar"><span class="nm">Women &amp; girls</span><div class="track"><div class="fill" style="width:54%"></div></div><span class="val">54% of all</span></div>
+        <div class="bar warm"><span class="nm">…in forced sex exploitation</span><div class="track"><div class="fill" style="width:80%"></div></div><span class="val">≈80%</span></div>
+        <div class="bar alt"><span class="nm">Children (total)</span><div class="track"><div class="fill" style="width:24%"></div></div><span class="val">12M+</span></div>
+        <div class="bar alt"><span class="nm">Children in forced labour</span><div class="track"><div class="fill" style="width:12%"></div></div><span class="val">3.3M (12%)</span></div>
+      </div>
+      <div class="note warn" style="margin-top:14px"><b>Read these as estimates.</b> Modern slavery is hidden, so these figures come from survey‑based modeling with real uncertainty. They went <b>up about 10 million since 2016</b> — partly true increase, partly better measurement. Forced‑labour prevalence is about <b>3.5 per 1,000 people</b> worldwide.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;background:var(--panel2)">
+    <h3>Three very different kinds of numbers — don’t mix them up</h3>
+    <div class="grid g3" style="margin-top:10px">
+      <div><span class="badge b-est">Estimate</span><div class="muted small" style="margin-top:6px">Modeled totals of <i>how many people are affected</i> (ILO/Walk Free, Walk Free GSI). Wide uncertainty; the closest thing to true scale.</div></div>
+      <div><span class="badge b-det">Detected</span><div class="muted small" style="margin-top:6px">People <i>officially identified</i> by authorities in a year (UNODC). A floor — only those found and recorded.</div></div>
+      <div><span class="badge b-rep">Reported</span><div class="muted small" style="margin-top:6px">Contacts to a <i>hotline</i> (Polaris/NHTH). Reflects awareness and willingness to call — <b>not</b> prevalence, and a significant undercount.</div></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============================ US & FLORIDA ============================ -->
+<section id="us"><div class="wrap">
+  <div class="sechead"><span class="kick">United States</span><h2>The US picture — and Florida</h2><span class="badge b-rep">Reported to hotline</span></div>
+  <p class="lead">These are <b>National Human Trafficking Hotline</b> figures for <b>2024</b> (published by Polaris in 2025). They count situations and contacts that reached the Hotline — a vital signal, but, as Polaris states plainly, <b>not an estimate of how common trafficking is</b>.</p>
+
+  <div class="grid g4">
+    <div class="stat blue"><div class="big">11,999</div><div class="lab">trafficking cases identified (2024)</div></div>
+    <div class="stat teal"><div class="big">21,865</div><div class="lab">victims &amp; survivors in those cases</div></div>
+    <div class="stat"><div class="big">32,309</div><div class="lab">total signals (calls, texts, chats, emails)</div></div>
+    <div class="stat violet"><div class="big">8,024</div><div class="lab">signals directly from victims/survivors</div></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <h3>Cases by type of trafficking (2024)</h3>
+      <div class="bars" style="margin-top:8px">
+        <div class="bar warm"><span class="nm">Sex trafficking</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="val">6,647</span></div>
+        <div class="bar"><span class="nm">Labor trafficking</span><div class="track"><div class="fill" style="width:33.4%"></div></div><span class="val">2,220</span></div>
+        <div class="bar alt"><span class="nm">Sex &amp; labor</span><div class="track"><div class="fill" style="width:20.5%"></div></div><span class="val">1,360</span></div>
+        <div class="bar"><span class="nm">Not specified</span><div class="track"><div class="fill" style="width:26.7%"></div></div><span class="val">≈1,772</span></div>
+      </div>
+      <div class="muted small" style="margin-top:12px">Top states by signal volume (2024):</div>
+      <div class="bars">
+        <div class="bar alt"><span class="nm">California</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="val">3,378</span></div>
+        <div class="bar alt"><span class="nm">Texas</span><div class="track"><div class="fill" style="width:71.6%"></div></div><span class="val">2,418</span></div>
+        <div class="bar alt"><span class="nm">Florida</span><div class="track"><div class="fill" style="width:54.2%"></div></div><span class="val">1,830</span></div>
+      </div>
+      <div class="note warn"><b>Polaris, in its own words:</b> the statistics “do not reflect the prevalence of human trafficking victimization” — they reflect only those who were aware of, and chose to contact, the Hotline. Cumulatively since 2007 the Hotline has logged 463,109 signals, 112,822 cases, and 218,568 victims.</div>
+    </div>
+
+    <div class="card">
+      <h3>Florida focus <span class="muted small" style="font-weight:400">— 3rd nationally (2024)</span></h3>
+      <div class="grid g3" style="margin-top:8px">
+        <div class="stat" style="padding:13px"><div class="big" style="font-size:24px;color:#8fc4f0">832</div><div class="lab">FL cases (2024)</div></div>
+        <div class="stat" style="padding:13px"><div class="big" style="font-size:24px;color:#79d8c9">1,874</div><div class="lab">FL victims (2024)</div></div>
+        <div class="stat" style="padding:13px"><div class="big" style="font-size:24px">1,830</div><div class="lab">FL signals (600 from victims)</div></div>
+      </div>
+      <div class="muted small" style="margin-top:12px">All‑time since 2007: <b>8,298</b> cases · <b>19,235</b> victims · <b>25,895</b> signals.</div>
+      <div style="margin-top:12px;font-size:13.5px">
+        <div><b>Report in Florida:</b> Abuse Hotline <a href="tel:18009622873">1‑800‑962‑2873</a> · FDLE statewide line <a href="tel:18553527233">1‑855‑352‑7233</a>.</div>
+        <div class="muted" style="margin-top:7px"><b>Law &amp; coordination:</b> Florida’s Statewide Council on Human Trafficking (2014, chaired by the Attorney General); trafficking is a first‑degree‑to‑life felony under <span class="kbd">Fla. Stat. 787.06</span>; mandatory public‑awareness signage under <span class="kbd">787.29/787.30</span>.</div>
+        <div class="muted" style="margin-top:7px"><b>Tampa Bay region:</b> Tampa Bay Human Trafficking Task Force; the <i>Free Network</i> coalition (Hillsborough / Pasco / Pinellas); statewide <a href="https://www.myfloridalegal.com/human-trafficking/council" target="_blank" rel="noopener">Florida Alliance to End Human Trafficking</a>.</div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============================ GLOBAL ============================ -->
+<section id="global"><div class="wrap">
+  <div class="sechead"><span class="kick">Global comparison</span><h2>Where, how, and the world’s response</h2></div>
+  <p class="lead">Two complementary lenses: <b>prevalence</b> (Walk Free’s Global Slavery Index — modeled estimates) and <b>detected victims</b> (UNODC — people officially identified). Below them: how countries are graded, and how forced labour reaches consumers through supply chains.</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <h3>Highest prevalence by country <span class="badge b-est">Estimate</span></h3>
+      <div class="muted small">People in modern slavery per 1,000 population — Global Slavery Index 2023 (ref. 2021).</div>
+      <div class="bars" style="margin-top:10px">
+        <div class="bar"><span class="nm">North Korea</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="val">104.6</span></div>
+        <div class="bar"><span class="nm">Eritrea</span><div class="track"><div class="fill" style="width:86.3%"></div></div><span class="val">90.3</span></div>
+        <div class="bar"><span class="nm">Mauritania</span><div class="track"><div class="fill" style="width:30.6%"></div></div><span class="val">32.0</span></div>
+        <div class="bar"><span class="nm">Saudi Arabia</span><div class="track"><div class="fill" style="width:20.4%"></div></div><span class="val">21.3</span></div>
+        <div class="bar"><span class="nm">Türkiye</span><div class="track"><div class="fill" style="width:14.9%"></div></div><span class="val">15.6</span></div>
+        <div class="bar"><span class="nm">Tajikistan</span><div class="track"><div class="fill" style="width:13.4%"></div></div><span class="val">14.0</span></div>
+        <div class="bar"><span class="nm">UAE</span><div class="track"><div class="fill" style="width:12.8%"></div></div><span class="val">13.4</span></div>
+        <div class="bar"><span class="nm">Russia</span><div class="track"><div class="fill" style="width:12.4%"></div></div><span class="val">13.0</span></div>
+      </div>
+      <div class="note">High prevalence tracks state‑imposed labour, conflict, and weak protections. Reproductive of the GSI’s vulnerability dimensions: governance, unmet basic needs, inequality, disenfranchised groups, and conflict.</div>
+    </div>
+    <div class="card">
+      <h3>Largest numbers by country <span class="badge b-est">Estimate</span></h3>
+      <div class="muted small">Total people in modern slavery — Global Slavery Index 2023 (ref. 2021).</div>
+      <div class="bars" style="margin-top:10px">
+        <div class="bar alt"><span class="nm">India</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="val">11.0M</span></div>
+        <div class="bar alt"><span class="nm">China</span><div class="track"><div class="fill" style="width:52.7%"></div></div><span class="val">5.8M</span></div>
+        <div class="bar alt"><span class="nm">North Korea</span><div class="track"><div class="fill" style="width:24.5%"></div></div><span class="val">2.7M</span></div>
+        <div class="bar alt"><span class="nm">Pakistan</span><div class="track"><div class="fill" style="width:20.9%"></div></div><span class="val">2.3M</span></div>
+        <div class="bar alt"><span class="nm">Russia</span><div class="track"><div class="fill" style="width:17.3%"></div></div><span class="val">1.9M</span></div>
+        <div class="bar alt"><span class="nm">Indonesia</span><div class="track"><div class="fill" style="width:16.4%"></div></div><span class="val">1.8M</span></div>
+        <div class="bar alt"><span class="nm">Nigeria</span><div class="track"><div class="fill" style="width:14.5%"></div></div><span class="val">1.6M</span></div>
+        <div class="bar alt"><span class="nm">United States</span><div class="track"><div class="fill" style="width:10%"></div></div><span class="val">1.1M</span></div>
+      </div>
+      <div class="note">Prevalence and absolute numbers tell different stories: populous countries dominate totals even at lower rates. <b>The US is in the top 10 by absolute number (≈1.1M)</b> — trafficking is not only a problem “elsewhere.”</div>
+    </div>
+  </div>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <h3>What authorities actually detect <span class="badge b-det">Detected</span></h3>
+      <div class="muted small">UNODC Global Report on Trafficking in Persons 2024 (data for 2022, 156 countries).</div>
+      <div class="bars" style="margin-top:10px">
+        <div class="bar warm"><span class="nm">For forced labour</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="val">42%</span></div>
+        <div class="bar warm"><span class="nm">For sexual exploitation</span><div class="track"><div class="fill" style="width:85.7%"></div></div><span class="val">36%</span></div>
+        <div class="bar warm"><span class="nm">Forced criminality</span><div class="track"><div class="fill" style="width:19%"></div></div><span class="val">8%</span></div>
+      </div>
+      <ul class="muted" style="font-size:13px;margin:12px 0 0;padding-left:18px">
+        <li>Detected victims rose <b>+25%</b> vs pre‑pandemic 2019. Forced‑labour victims surged <b>+47%</b>.</li>
+        <li><b>2022 was the first year forced labour overtook sexual exploitation</b> as the most‑detected form.</li>
+        <li>Women &amp; girls were <b>61%</b> of detected victims; children <b>38%</b>. 60% of detected girls were trafficked for sexual exploitation.</li>
+        <li>Trafficking for forced criminality (incl. online scam centres) jumped from 1% (2016) to <b>8%</b> (2022).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>How countries are graded — US State Dept TIP tiers <span class="badge b-fw">Framework</span></h3>
+      <div class="muted small">The annual Trafficking in Persons Report ranks governments against the US TVPA minimum standards. Latest edition: <b>2025 (25th), released Sept 2025</b> — see the live report for each country’s current tier.</div>
+      <div style="margin-top:10px;display:grid;gap:8px">
+        <div style="display:flex;gap:10px;align-items:flex-start"><span class="badge" style="background:rgba(63,176,121,.16);color:#8fe0bb;border:1px solid rgba(63,176,121,.4);flex:none">Tier 1</span><span class="small muted">Government <b>fully meets</b> the minimum standards. (Not “trafficking‑free” — just fully compliant.)</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-rep" style="flex:none">Tier 2</span><span class="small muted">Does not fully meet standards but is making <b>significant efforts</b> to comply. (The largest group.)</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-est" style="flex:none">Tier 2 WL</span><span class="small muted">Tier 2 with aggravating signs — very large or rising victim numbers without proportional action.</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span class="badge" style="background:rgba(229,72,77,.16);color:#ff9ea2;border:1px solid rgba(229,72,77,.4);flex:none">Tier 3</span><span class="small muted">Does <b>not</b> meet standards and is <b>not</b> making significant efforts; may face restrictions on certain US assistance.</span></div>
+      </div>
+      <div class="note">Tier placements change yearly — see the live <a href="https://www.state.gov/trafficking-in-persons-report" target="_blank" rel="noopener">current TIP Report</a> for every country’s narrative and tier.</div>
+    </div>
+  </div>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <h3>Forced labour in what you buy — G20 supply chains <span class="badge b-est">Estimate</span></h3>
+      <div class="muted small">Walk Free GSI 2023: G20 nations imported <b>US$468 billion</b> of products at risk of being made with forced labour (2021).</div>
+      <div class="bars" style="margin-top:10px">
+        <div class="bar"><span class="nm">Electronics</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="val">$243.6B</span></div>
+        <div class="bar"><span class="nm">Garments</span><div class="track"><div class="fill" style="width:60.7%"></div></div><span class="val">$147.9B</span></div>
+        <div class="bar"><span class="nm">Palm oil</span><div class="track"><div class="fill" style="width:8.1%"></div></div><span class="val">$19.7B</span></div>
+        <div class="bar"><span class="nm">Solar panels</span><div class="track"><div class="fill" style="width:6.1%"></div></div><span class="val">$14.8B</span></div>
+        <div class="bar"><span class="nm">Textiles</span><div class="track"><div class="fill" style="width:5.2%"></div></div><span class="val">$12.7B</span></div>
+      </div>
+      <div class="note">A reminder that forced labour is woven into ordinary global supply chains, not confined to distant places.</div>
+    </div>
+    <div class="card">
+      <h3>The largest shared case dataset — IOM CTDC <span class="badge b-case">Case data</span></h3>
+      <div class="muted small">The Counter‑Trafficking Data Collaborative pools de‑identified records from front‑line organizations: <b>230,000+ victims &amp; survivors across 199 countries (2002–2024)</b>, contributed by IOM, Polaris, A21, RecollectiV, and OTSH.</div>
+      <div class="muted small" style="margin-top:12px">From a peer‑reviewed analysis of the de‑identified pool, the most common reported <b>means of control</b> (case counts):</div>
+      <div class="bars">
+        <div class="bar"><span class="nm">Threats</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="val">12,343</span></div>
+        <div class="bar"><span class="nm">Psychological abuse</span><div class="track"><div class="fill" style="width:97.1%"></div></div><span class="val">11,980</span></div>
+        <div class="bar"><span class="nm">Restricted movement</span><div class="track"><div class="fill" style="width:89.6%"></div></div><span class="val">11,059</span></div>
+        <div class="bar"><span class="nm">Taking earnings</span><div class="track"><div class="fill" style="width:69.6%"></div></div><span class="val">8,588</span></div>
+        <div class="bar"><span class="nm">Physical abuse</span><div class="track"><div class="fill" style="width:66.3%"></div></div><span class="val">8,187</span></div>
+      </div>
+      <div class="note">In the same de‑identified pool, sexual exploitation was the most common single type (≈49%) ahead of forced labour (≈21%), and about 70% of recorded victims were female. The data is k‑anonymized and shared as a download; explore it at <a href="https://www.ctdatacollaborative.org" target="_blank" rel="noopener">ctdatacollaborative.org</a>. <b>It is case data, not a population estimate.</b></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============================ SPOT THE SIGNS ============================ -->
+<section id="signs"><div class="wrap">
+  <div class="sechead"><span class="kick">Recognize &amp; respond</span><h2>Spot the signs — for everyone, and for frontline roles</h2><span class="badge b-fw">Framework</span></div>
+  <p class="lead">These are <b>recognized indicator frameworks</b> from the ILO, DHS, Polaris, and sector experts. They describe <b>situations</b> that warrant a closer look — never a way to judge a person. Trafficking can affect anyone of any gender, age, nationality, or background.</p>
+
+  <div class="note warn" style="margin-bottom:16px">
+    <b>Before you read a single list, read this.</b> No indicator is proof. A person’s race, ethnicity, sex, or religion is <b>never</b> an indicator. <b>Do not investigate, confront, or “rescue.”</b> If you have a concern, report it — call 911 in an emergency, or the National Human Trafficking Hotline at 1‑888‑373‑7888 — and let trained specialists take it from there. As Polaris puts it: it’s less about memorizing signs than knowing the <b>story</b> — “context and proximity.”
+  </div>
+
+  <details class="ind" open>
+    <summary><span style="color:#79d8c9">●</span> ILO indicators of forced labour (11) <span class="badge b-fw">ILO 2025</span><span class="ar">▸</span></summary>
+    <div class="body">
+      <div class="muted small" style="margin-top:10px">Forced labour is “all work or service which is exacted from any person under the threat of a penalty and for which the person has not offered themself voluntarily” (ILO Convention No. 29). The presence of a single indicator does not confirm forced labour, but it signals risk and warrants further inquiry.</div>
+      <ul class="ilist">
+        <li>Abuse of vulnerability</li><li>Deception</li><li>Restriction of movement</li><li>Isolation</li>
+        <li>Physical and sexual violence</li><li>Intimidation and threats</li><li>Retention of identity documents</li><li>Withholding of wages</li>
+        <li>Debt bondage</li><li>Abusive working and living conditions</li><li>Excessive overtime</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="grid g2">
+    <details class="ind">
+      <summary><span style="color:#8fc4f0">●</span> DHS Blue Campaign — general signs <span class="ar">▸</span></summary>
+      <div class="body">
+        <ul class="ilist" style="columns:1">
+          <li>Disconnected from family, friends, or support networks</li>
+          <li>Defers to, or is controlled by, a companion who speaks for them</li>
+          <li>Appears coached on what to say</li>
+          <li>Has their freedom of movement restricted</li>
+          <li>Lives or works under unreasonable security measures</li>
+        </ul>
+        <div class="muted small" style="margin-top:8px">DHS: the presence or absence of any indicator is not proof; report to ICE HSI <a href="tel:18663472423">1‑866‑347‑2423</a> or the National Hotline.</div>
+      </div>
+    </details>
+    <details class="ind">
+      <summary><span style="color:#bfa9f0">●</span> Sector‑specific — healthcare &amp; aviation <span class="ar">▸</span></summary>
+      <div class="body">
+        <div style="margin-top:8px"><b>Healthcare (HEAL Trafficking).</b> Encounters are a key chance to help. The <b>PEARR</b> approach: <span class="muted">Privacy, Educate, Ask, Respect, Respond</span> — a survivor‑centered, trauma‑informed way to raise concerns without endangering the patient.</div>
+        <div style="margin-top:10px"><b>Aviation (Blue Lightning Initiative, DOT + CBP).</b> Watch for: a controlled or submissive companion; someone who seems held against their will; third‑party control or a “quota”; branding/ownership tattoos; an unaccompanied minor traveling under unusual circumstances.</div>
+      </div>
+    </details>
+  </div>
+
+  <div class="card" style="margin-top:16px;background:linear-gradient(180deg,#13241d,#141b25);border-color:rgba(63,176,121,.35)">
+    <h3 style="color:#bff3da">The one thing to remember</h3>
+    <div class="muted" style="margin-top:6px;font-size:14px">If something feels wrong, you don’t need to be certain, and you should not act alone. Save the number — <b style="color:#fff">1‑888‑373‑7888</b>, text <b style="color:#fff">233733</b> — and make the call. Trained advocates take it from there, 24/7, confidentially.</div>
+  </div>
+</div></section>
+
+<!-- ============================ SOURCES ============================ -->
+<section id="sources"><div class="wrap">
+  <div class="sechead"><span class="kick">Transparency</span><h2>Sources &amp; how to read this</h2></div>
+  <p class="lead">Every figure here was verified against its primary source. Numbers are point‑in‑time snapshots with the source and year shown — none are pulled live, so this page works offline and always shows the same vetted values. Follow the links for the latest.</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <h3>Primary sources</h3>
+      <table class="src">
+        <tr><th>Topic</th><th>Source (year)</th></tr>
+        <tr><td>Global estimates (49.6M etc.)</td><td>ILO, Walk Free &amp; IOM — <a href="https://www.ilo.org/publications/major-publications/global-estimates-modern-slavery-forced-labour-and-forced-marriage" target="_blank" rel="noopener">Global Estimates of Modern Slavery 2022</a> (data 2021)</td></tr>
+        <tr><td>Country prevalence &amp; numbers; G20 imports</td><td>Walk Free — <a href="https://www.walkfree.org/global-slavery-index/" target="_blank" rel="noopener">Global Slavery Index 2023</a></td></tr>
+        <tr><td>US &amp; Florida hotline statistics (2024)</td><td>Polaris — <a href="https://humantraffickinghotline.org/en/statistics" target="_blank" rel="noopener">National Human Trafficking Hotline statistics</a> (2025)</td></tr>
+        <tr><td>Detected victims worldwide</td><td>UNODC — <a href="https://www.unodc.org/unodc/en/data-and-analysis/glotip.html" target="_blank" rel="noopener">Global Report on Trafficking in Persons 2024</a> (data 2022)</td></tr>
+        <tr><td>Country tier rankings</td><td>US State Dept — <a href="https://www.state.gov/trafficking-in-persons-report" target="_blank" rel="noopener">Trafficking in Persons Report 2025</a></td></tr>
+        <tr><td>Pooled case data</td><td>IOM — <a href="https://www.ctdatacollaborative.org" target="_blank" rel="noopener">Counter‑Trafficking Data Collaborative</a></td></tr>
+        <tr><td>Indicators of forced labour</td><td>ILO — <a href="https://www.ilo.org/publications/indicators-forced-labour" target="_blank" rel="noopener">Indicators of Forced Labour</a> (2025 rev.); DHS Blue Campaign; Polaris</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>How to read the numbers honestly</h3>
+      <div class="pillrow"><span class="pill"><b style="color:#f0c469">Estimate</b> — modeled, wide uncertainty</span><span class="pill"><b style="color:#79d8c9">Detected</b> — officially identified</span><span class="pill"><b style="color:#8fc4f0">Reported</b> — hotline contacts, undercount</span><span class="pill"><b style="color:#bfa9f0">Case data</b> — de‑identified records</span><span class="pill"><b style="color:#b6c4d4">Framework</b> — official guidance</span></div>
+      <ul class="muted" style="font-size:13px;margin:6px 0 0;padding-left:18px">
+        <li><b>Estimates ≠ detections ≠ hotline reports.</b> They measure different things and should never be summed or directly compared.</li>
+        <li>Hotline data reflect <b>awareness and willingness to reach out</b>, not how common trafficking is.</li>
+        <li>Some widely‑circulated trafficking statistics are unverifiable; figures here were limited to those confirmable in a primary source. Where a commonly‑cited number couldn’t be verified, it was left out.</li>
+        <li>This page <b>does not profile or score individuals</b> and collects no data. It exists to connect people to help.</li>
+      </ul>
+      <div class="note safe" style="margin-top:12px"><b>If you take one thing from this page:</b> help is free, confidential, and a phone call away — <b>1‑888‑373‑7888</b>, text <b>233733</b>, or <b>911</b> in an emergency.</div>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div><b>Human Trafficking — Awareness &amp; Help.</b> An independent, non‑commercial public‑information resource. Not affiliated with or endorsed by any government agency or the organizations cited. Not legal or professional advice.</div>
+  <div style="margin-top:8px">Built from primary public sources; every hotline and statistic independently verified. Figures reflect the most recent editions available as of June 2026 — follow the source links for live updates. Hotline numbers are safety‑critical; if you are reusing this page, re‑verify them periodically.</div>
+</div></footer>
+
+<script>
+// decision helper — points to the right hotline, stores nothing
+(function(){
+ var R={
+  em:{cls:'em',a:'Call 911 right now.',b:'For anyone in immediate danger, a medical emergency, or threats of violence. If it is safe, note the location for responders — but your safety comes first.'},
+  susp:{cls:'go',a:'Do not confront anyone. Report it.',b:'Call the ICE HSI Tip Line 1‑866‑347‑2423, or report anonymously to the National Human Trafficking Hotline 1‑888‑373‑7888 (text 233733). Share that number with the person if it is safe — let them reach out on their own terms.'},
+  self:{cls:'go',a:'You deserve help, and it is confidential.',b:'Call 1‑888‑373‑7888 or text 233733 anytime, free, in 200+ languages. They are not law enforcement and can connect you to local support, on your terms. Live chat at humantraffickinghotline.org.'},
+  child:{cls:'go',a:'Report online child exploitation to NCMEC.',b:'CyberTipline: report.cybertip.org or 1‑800‑843‑5678. For a child in Florida, the Abuse Hotline is 1‑800‑962‑2873. Immediate danger → 911.'},
+  fl:{cls:'go',a:'Florida options.',b:'Florida Abuse Hotline 1‑800‑962‑2873 (children & vulnerable adults) · FDLE statewide tip line 1‑855‑352‑7233 · National Hotline 1‑888‑373‑7888 / text 233733. Emergency → 911.'}
+ };
+ var out=document.getElementById('dout'),A=document.getElementById('dout-a'),B=document.getElementById('dout-b');
+ document.getElementById('dbtns').addEventListener('click',function(e){
+   var btn=e.target.closest('button[data-d]'); if(!btn) return;
+   var r=R[btn.getAttribute('data-d')]; if(!r) return;
+   out.className='dout show '+r.cls; A.textContent=r.a; B.textContent=r.b;
+   out.scrollIntoView({block:'nearest',behavior:'smooth'});
+ });
+ // active-section highlight in nav
+ var secs=[].slice.call(document.querySelectorAll('section[id]'));
+ var tabs={}; [].slice.call(document.querySelectorAll('.nav a.tab')).forEach(function(t){tabs[t.getAttribute('href').slice(1)]=t;});
+ if('IntersectionObserver' in window){
+   var io=new IntersectionObserver(function(es){es.forEach(function(en){ if(en.isIntersecting){ for(var k in tabs)tabs[k].style.color=''; var t=tabs[en.target.id]; if(t&&!t.classList.contains('help'))t.style.color='#e8eef4'; }});},{rootMargin:'-45% 0px -50% 0px'});
+   secs.forEach(function(s){io.observe(s);});
+ }
+})();
+</script>
+</body>
+</html>
