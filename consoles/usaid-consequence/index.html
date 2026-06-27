@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>USAID Withdrawal — Consequence Console (Funding · Health · Geopolitical)</title>
+<style>
+  :root{--bg:#0a1410;--surf2:#0e1c16;--surf:#13261d;--tx:#e9f3ee;--dim:#9fc0b0;
+    --measured:#1d9e75;--modeled:#c98a1a;--interp:#5d8fd0;--red:#e24b4a;--amber:#c98a1a;--teal:#26c6da;
+    --bd:rgba(255,255,255,.10);--bd2:rgba(255,255,255,.22);--r:10px;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.45}
+  header{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--bd);background:linear-gradient(180deg,#0c1b15,#0a1410);flex-wrap:wrap}
+  header h1{font-size:16px;margin:0;font-weight:700}
+  header .sub{color:var(--dim);font-size:11px;margin-top:1px}
+  .grow{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--bd2)}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .clock{font-variant-numeric:tabular-nums;color:var(--dim);font-size:11px}
+  #banner{padding:9px 16px;font-size:11.5px;color:#cfe6da;background:#0a1a14;border-bottom:1px solid var(--bd)}
+  #banner b{color:var(--amber)}
+  .bdg{font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;letter-spacing:.4px;vertical-align:middle}
+  .bdg.MEASURED{background:rgba(29,158,117,.18);color:#5fe0b0;border:1px solid rgba(29,158,117,.5)}
+  .bdg.MODELED{background:rgba(201,138,26,.18);color:#f0c46a;border:1px solid rgba(201,138,26,.5)}
+  .bdg.INTERPRETIVE{background:rgba(93,143,208,.18);color:#9fc0f0;border:1px solid rgba(93,143,208,.5)}
+  .cite{font-size:10px;color:var(--dim);font-style:italic}
+  main{display:flex;gap:12px;padding:12px;align-items:flex-start}
+  #left{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+  #side{flex:none;width:430px;display:flex;flex-direction:column;gap:12px}
+  .card{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:12px}
+  .card h2{font-size:13px;margin:0 0 3px;font-weight:700;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .card .cap{color:var(--dim);font-size:11px;margin-bottom:9px}
+  .rank{display:flex;align-items:center;gap:8px;margin:5px 0}
+  .rank .nm{width:120px;font-size:11px;color:var(--dim);flex:none}
+  .barwrap{flex:1;height:15px;background:#081410;border-radius:4px;position:relative;overflow:hidden}
+  .bar{height:100%;border-radius:4px;position:absolute;left:0;top:0}
+  .val{width:96px;text-align:right;font-variant-numeric:tabular-nums;font-size:11px;flex:none}
+  .kv{display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;gap:8px;border-top:1px solid var(--bd)}
+  .kv:first-child{border-top:0}
+  .kv span:first-child{color:var(--dim)}
+  .caveat{color:var(--dim);font-size:10.5px;margin-top:7px}
+  .sigcard{border:1px solid var(--bd);border-left:3px solid var(--measured);border-radius:7px;padding:7px 9px;margin:6px 0;font-size:11.5px}
+  .sigcard.mixed{border-left-color:var(--amber)}
+  .sigcard .t{font-weight:600}
+  .flow{display:flex;flex-direction:column;gap:6px}
+  .step{border:1px solid var(--bd);border-radius:7px;padding:7px 9px;font-size:11.5px;position:relative}
+  .step .arrow{color:var(--dim);text-align:center;font-size:14px;margin:-2px 0}
+  .feeds{display:flex;flex-wrap:wrap;gap:8px}
+  .feeds .f{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);border:1px solid var(--bd);border-radius:7px;padding:4px 8px}
+  svg{display:block;width:100%;height:auto}
+  .legend{display:flex;gap:14px;font-size:10.5px;color:var(--dim);margin-top:6px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+  @media(max-width:900px){main{flex-direction:column}#side{width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>USAID WITHDRAWAL — Consequence Console</h1>
+    <div class="sub">funding · health · food security · displacement · US domestic · geopolitical · <b style="color:var(--dim)">descriptive, not predictive</b></div>
+  </div>
+  <div class="grow"></div>
+  <span class="clock" id="clock"></span>
+  <span class="pill" id="threat"><span class="dot" style="background:var(--red)"></span><span id="threattx">—</span></span>
+</header>
+<div id="banner"></div>
+
+<main>
+  <div id="left">
+    <div class="card" id="fundcard">
+      <h2>Foreign-aid obligations: the collapse <span class="bdg MEASURED">MEASURED</span></h2>
+      <div class="cap">USAID (agency 072) total obligations by fiscal year — the real, measured policy shock everything downstream conditions on. Live from USAspending.gov; FY2026 is partial (through Q3).</div>
+      <div id="fundchart"></div>
+      <div id="fundkv"></div>
+    </div>
+    <div class="card" id="ctrycard">
+      <h2>Where it dropped — recipient countries <span class="bdg MEASURED">MEASURED</span></h2>
+      <div class="cap">USAID obligations by recipient country, FY2024 → FY2026. Bars scaled to each country's FY2024 baseline; the dark overlay is FY2026. Home-coded buckets (United States HQ, Switzerland = Global Fund/UN pass-through) are excluded.</div>
+      <div id="ctrybars"></div>
+      <div class="legend"><span><i style="background:var(--dim)"></i>FY2024 baseline</span><span><i style="background:var(--red)"></i>FY2026 (partial)</span></div>
+    </div>
+    <div class="card" id="econdepcard">
+      <h2>Economic dependency — can the state survive it? <span class="bdg MEASURED">MEASURED · World Bank <span id="econdepfeed" style="opacity:.8">(snapshot)</span></span></h2>
+      <div class="cap">Net development aid (ODA) as a share of each recipient's <b>whole economy</b> (% of GNI). Where this is high, an aid collapse is a macro and fiscal shock to the state itself — a consequence no death count captures. <b>Distinct from the recipient panel above</b> (which ranks USAID dollars): this ranks aid against GDP, surfacing the most structurally exposed economies — several of which are <i>not</i> the biggest dollar recipients. The US was the largest bilateral donor, so its withdrawal removes a large slice.</div>
+      <div id="econdep"></div>
+      <div class="caveat">Net ODA received, % of GNI — all-donor and annual (latest World Bank data, 2023). US share varies by country; the projected "% of GDP lost from the 2025 cut" is a separate MODELED overlay (ODI/CGD), not shown here as a live figure.</div>
+      <div class="cite">Source: World Bank World Development Indicators, <code>DT.ODA.ODAT.GN.ZS</code> (fetched live in-browser, keyless; 2023 snapshot fallback).</div>
+    </div>
+    <div class="card" id="domesticcard">
+      <h2>Made-in-America blowback — the cut came home <span class="bdg MEASURED">MEASURED</span> <span class="bdg MODELED">+ 1 modeled</span></h2>
+      <div class="cap">The same dollars, seen from the US side. Foreign-aid cuts also hit American farmers, implementers and universities — the consequence a domestic audience feels directly. Inverts the funding panel above (dollars leaving) to show where they originated and landed.</div>
+      <div class="kv"><span>Confirmed US layoffs / furloughs (183 orgs, 46 states)</span><span style="color:var(--red);font-weight:700">23,053 — a floor</span></div>
+      <div class="kv"><span>US commodities bought from US farmers (FY24 &rarr; now)</span><span>~1.1M MT / ~$2B &rarr; ~211&ndash;417k MT</span></div>
+      <div class="sigcard"><div class="t">Hardest-hit US institutions</div>Johns Hopkins ~2,200 jobs (247 US) / ~$800M &mdash; largest layoff in its history &middot; Chemonics ~750 &middot; FHI&nbsp;360 ~480 (~140 in NC) &middot; DAI 380+ &middot; Democracy International all 95</div>
+      <div class="sigcard mixed"><div class="t">Projected economy-wide hit <span class="bdg MODELED">MODELED</span></div>Up to ~$23B in lost US exports and 200,000+ American jobs at risk; agriculture and manufacturing most exposed; 46 states reported losses.</div>
+      <div class="cite">Sources: USAspending (place-of-performance) &middot; USDA Foreign Agricultural Service (Food-for-Peace tonnage) &middot; USAIDStopWork.com layoff tracker (as of 13 Jan 2026) &middot; NPR &middot; Inside Higher Ed. Org-reported counts are self-reported floors.</div>
+    </div>
+    <div class="card" id="waterfall">
+      <h2>From cut to consequence — the cascade <span class="bdg MEASURED">measured</span> → <span class="bdg MODELED">modeled</span></h2>
+      <div class="cap">How a funding cut propagates. The left two steps are measured; the right two are modeled with wide confidence intervals — the service-disruption→resurgence link is the crux and the least certain.</div>
+      <div class="flow" id="flow"></div>
+    </div>
+    <div class="card" id="deathcard">
+      <h2>Modeled excess deaths <span class="bdg MODELED">MODELED — projections, not counts</span></h2>
+      <div class="cap">Published projections, each with its range and citation. Counterfactual: assumes cuts persist with no donor/national backfill — a worst-case <b>bound</b>, not a realized count. Not a running death ticker.</div>
+      <div id="deaths"></div>
+      <div class="caveat" id="deathnote"></div>
+    </div>
+    <div class="card" id="foodcard">
+      <h2>The leading edge &mdash; food insecurity &amp; famine <span class="bdg MEASURED">MEASURED — observed, not projected</span></h2>
+      <div class="cap">One rung below the modeled deaths above, on the same causal chain &mdash; but observed in near-real-time, so it shows catastrophe building months before mortality registers. The single best beyond-deaths signal on this console.</div>
+      <div class="kv"><span>People in crisis or worse &mdash; IPC/CH Phase 3+ (2025, 47 countries)</span><span style="color:var(--amber);font-weight:700">266 million</span></div>
+      <div class="kv"><span>Phase 4 (Emergency) &middot; Phase 5 (Catastrophe/Famine)</span><span>&gt;39M &middot; 1.4M</span></div>
+      <div class="kv"><span>Famine formally confirmed</span><span style="color:var(--red)">Gaza + Sudan &mdash; first year with two in GRFC history</span></div>
+      <div class="kv"><span>Acutely malnourished children (GAM) &middot; severe (SAM)</span><span>35.5M &middot; ~10M</span></div>
+      <div class="kv"><span>WFP funding 2024 &rarr; 2025 (US &asymp; 46% of 2024 budget)</span><span>~$10B &rarr; ~$6.4B (&minus;40%)</span></div>
+      <div class="sigcard mixed"><div class="t">The warning system went dark</div>FEWS NET &mdash; the USAID-funded famine early-warning system &mdash; went offline ~30 Jan 2025 and resumed ~Jun 2025; the GRFC 2026 reported the <b>lowest data availability in a decade</b>. The cuts degraded our ability to even see the famine they helped cause.</div>
+      <div class="cite">Sources: Global Report on Food Crises 2026 (FAO/WFP, 24 Apr 2026) &middot; IPC/CH &middot; WFP &middot; Devex/CNN. Phase populations are MEASURED; sole attribution to USAID is INTERPRETIVE (multi-causal: conflict, climate, all-donor shortfall).</div>
+    </div>
+    <div class="card" id="educationcard">
+      <h2>The survivors, permanently diminished — education &amp; human capital <span class="bdg MODELED">mostly MODELED</span></h2>
+      <div class="cap">The mortality panels count children who die; this counts the far larger group who <b>survive but are permanently diminished</b> — the toddler stunted before age two, the girl pulled from school when the meal that drew her there vanishes. The slow-burn consequence, and an economic-sovereignty story: lost human capital compounds into lost lifetime earnings and GDP. Read as stakes, not a realized count.</div>
+      <div class="kv"><span>Children who lost their school meal &mdash; terminated McGovern-Dole programs <span class="bdg MEASURED">MEASURED</span></span><span style="color:var(--amber);font-weight:700">780,000+</span></div>
+      <div class="kv"><span>Projected additional children out of school by end-2026 (272M &rarr; 278M)</span><span>+6 million</span></div>
+      <div class="kv"><span>Projected fall in international education aid vs 2023 (28 countries lose &ge;25%)</span><span>&minus;$3.2B (&minus;24%)</span></div>
+      <div class="sigcard mixed"><div class="t">The lasting penalty <span class="bdg MODELED">MODELED · structural</span></div>A child born today in a low- or middle-income country is projected to lose <b>~51% of lifetime earnings</b> to nutrition, learning and skills deficits (World Bank HCI+ 2026); female scores run 20 points below male. Childhood stunting alone cuts individual earnings ~10&ndash;26% and can lower national GDP by up to ~7%.</div>
+      <div class="caveat"><b>Two anti-double-count rules:</b> this counts <i>survivors</i> with stunting / lost schooling, not the child deaths already in the deaths panel; and it shows the human <i>outcome</i> of school feeding, not the McGovern-Dole dollars already in the funding panel. The out-of-school and aid figures are all-donor projections (the US is one of ~3 donors driving ~80% of the cuts), not USAID alone.</div>
+      <div class="cite">Sources: Catholic Relief Services (school meals, 2025) &middot; UNICEF / UNESCO GEM (out-of-school &amp; aid, Sep 2025) &middot; World Bank Human Capital Index Plus (Feb 2026) &middot; World Bank nutrition research. World Bank HCI is live-wireable (<code>HD.HCI.OVRL</code>); shown here as cited figures.</div>
+    </div>
+  </div>
+
+  <div id="side">
+    <div class="card" id="readcard">
+      <h2>In plain English — what this shows</h2>
+      <div class="cap">Auto-written from the panels, for a non-specialist. Labels what is measured vs modeled vs interpretive.</div>
+      <div id="readout"></div>
+    </div>
+    <div class="card" id="sigcard">
+      <h2>Measured early signals <span class="bdg MEASURED">MEASURED — observed, not projected</span></h2>
+      <div class="cap">What is actually observed on the ground (service, commodity, workforce declines) — distinct from the modeled death projections. These are real declines, not deaths.</div>
+      <div id="signals"></div>
+    </div>
+    <div class="card" id="displacementcard">
+      <h2>Displacement &amp; migration pressure <span class="bdg MEASURED">MEASURED</span> <span class="bdg MODELED">+ link</span></h2>
+      <div class="cap">Converts the &ldquo;instability / migration&rdquo; story from the interpretive panel below into measured quantities: ration depth in camps and displacement stocks, bridged to migration by one published elasticity.</div>
+      <div class="kv"><span>Forcibly displaced worldwide (end-2024, UNHCR &mdash; 1 in 67)</span><span style="font-weight:700">123.2 million</span></div>
+      <div class="kv"><span>WFP people reached 2024 &rarr; 2025 (&minus;34% funding)</span><span>79.9M &rarr; 16.7M</span></div>
+      <div class="sigcard"><div class="t">Refugee ration cuts (US was the largest humanitarian donor)</div>Cox&rsquo;s Bazar (Rohingya): $12.50 &rarr; $6/person/month, &gt;1M affected &middot; Kenya: 40% &rarr; 28% of the minimum basket, ~800k refugees &middot; Uganda: 1.6M &rarr; 663k reached (&asymp;59% coverage cut)</div>
+      <div class="sigcard mixed"><div class="t">Ration cuts &rarr; onward migration <span class="bdg MODELED">MODELED</span></div>Each +1 percentage-point of food insecurity is associated with ~1.9% more people migrating outward (WFP). The Tier-3 migration link is an association, multi-causal &mdash; never a direct count.</div>
+      <div class="cite">Sources: UNHCR Refugee Data Finder API (keyless, live) &middot; WFP operational updates (Cox&rsquo;s Bazar 7 Mar 2025; Kenya 22 May 2025; Uganda 23 Mar 2026) &middot; WFP &ldquo;At the Root of Exodus&rdquo; (2017). US-specific attribution is strongest where third parties state it.</div>
+    </div>
+    <div class="card" id="fragcard">
+      <h2>Program exposure ranking <span class="bdg MODELED">MODELED — relative triage</span></h2>
+      <div class="cap">Relative exposure = how deeply each program was cut × how many depend on it. For prioritization, not absolute prediction; inherits the wide CIs of the source models.</div>
+      <div id="frag"></div>
+    </div>
+    <div class="card" id="geocard">
+      <h2>Influence vacuum — who fills the gap? <span class="bdg INTERPRETIVE">INTERPRETIVE</span></h2>
+      <div class="cap">Multi-causal and qualitative — read as "associated with", never "caused by". The best-evidenced finding is the <b>opposite</b> of the popular story.</div>
+      <div id="geo"></div>
+    </div>
+    <div class="card" id="feedcard">
+      <h2>Data health</h2>
+      <div class="cap">Live USAspending vs baked snapshot vs frozen narrative sources, with vintages. A single feed failure never blanks the console.</div>
+      <div class="feeds" id="feeds"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const SNAP = {"oblig":[{"fy":2019,"v":16.06},{"fy":2020,"v":16.84},{"fy":2021,"v":23.66},{"fy":2022,"v":32.76},{"fy":2023,"v":38.18},{"fy":2024,"v":25.34},{"fy":2025,"v":15.84},{"fy":2026,"v":6.21}],"status":{"fy":"2026","q":"3","oblig":6.25,"ba":16.66},"countries":[{"c":"Uganda","fy24":213,"fy25":47,"fy26":5},{"c":"South Africa","fy24":207,"fy25":89,"fy26":2},{"c":"Kenya","fy24":195,"fy25":127,"fy26":40},{"c":"Zimbabwe","fy24":134,"fy25":2,"fy26":0},{"c":"Tanzania","fy24":124,"fy25":69,"fy26":11},{"c":"Mozambique","fy24":109,"fy25":8,"fy26":7},{"c":"Nigeria","fy24":100,"fy25":21,"fy26":13},{"c":"Zambia","fy24":75,"fy25":13,"fy26":12},{"c":"Malawi","fy24":58,"fy25":25,"fy26":13},{"c":"Guatemala","fy24":56,"fy25":14,"fy26":0},{"c":"Bangladesh","fy24":56,"fy25":4,"fy26":0},{"c":"Congo (Kinshasa)","fy24":40,"fy25":10,"fy26":1},{"c":"Ethiopia","fy24":38,"fy25":14,"fy26":4},{"c":"El Salvador","fy24":33,"fy25":20,"fy26":0}],"deaths":[{"prog":"All programs (aggregate)","mid":14000000,"lo":8500000,"hi":19700000,"horizon":"by 2030 \u00b7 incl. >4.5M under-5; ~1.78M in 2025","badge":"MODELED","src":"Lancet, Rasella et al. (Jul 2025), 95% UI"},{"prog":"HIV / PEPFAR","mid":2900000,"lo":null,"hi":null,"horizon":"deaths by 2030 (~10.8M new infections)","badge":"MODELED","src":"Lancet HIV, Brink et al. (full-interruption)"},{"prog":"Tuberculosis","mid":null,"lo":100000,"hi":2240000,"horizon":"deaths by 2030 (scenario-dependent)","badge":"MODELED","src":"PLOS Glob. Pub. Health, 26-country"},{"prog":"Malaria","mid":100000,"lo":null,"hi":null,"horizon":"deaths / 13.6M cases = FULL PMI benefit at risk","badge":"MODELED","src":"Topazian et al./MAP \u2014 avertable benefit, not the ~47%-cut toll"},{"prog":"Family planning (maternal)","mid":34000,"lo":null,"hi":null,"horizon":"maternal deaths / yr (no published CI)","badge":"MODELED","src":"Guttmacher Institute"},{"prog":"Childhood vaccines","mid":1200000,"lo":null,"hi":null,"horizon":"child deaths over 5 yr","badge":"MODELED","src":"Gavi (stakeholder estimate)"}],"signals":[{"t":"South Africa HIV services (Q1-24\u2192Q1-25)","v":"testing \u22128.5% \u00b7 diagnosis \u221231% \u00b7 treatment initiation \u221230%","src":"aidsmap / Anova","attr":"measured"},{"t":"Mozambique HIV program","v":"ART initiation \u221214% \u00b7 viral-load tests \u221238\u201344% \u00b7 missed pickups +39%","src":"program data","attr":"measured"},{"t":"ARV stock (56 countries, May 2025)","v":"14% report \u22646 months' stock \u00b7 46% supply-chain disruptions","src":"UNAIDS","attr":"measured"},{"t":"Child nutrition (RUTF)","v":"shortages in 17 countries \u00b7 ~5,000t / ~$13M stranded","src":"UNICEF","attr":"measured"},{"t":"Implementing partners","v":"71% cancelled \u22651 activity \u00b7 widespread layoffs","src":"KFF","attr":"measured"},{"t":"Measles, Americas 2025","v":"14,891 cases / 29 deaths (~32\u00d7 vs 2024)","src":"PAHO","attr":"mixed \u00b7 multi-causal (incl. US domestic hesitancy)"}],"sectors":[{"s":"All awards terminated","pct":"83\u201386%","note":"~$27.7B unobligated freed","src":"CGD / State"},{"s":"Health awards","pct":"77%","src":"KFF/CGD"},{"s":"PEPFAR","pct":"65%","src":"KFF/CGD"},{"s":"Family planning","pct":"94\u201398%","src":"KFF/CGD"},{"s":"Climate","pct":">98%","src":"KFF/CGD"}],"geo":[{"region":"Sub-Saharan Africa","status":"mostly UNFILLED","note":"grant-funded HIV/TB/nutrition services stop rather than transfer; no donor at US scale","src":"CGD/KFF"},{"region":"China as 'gap-filler'","status":"largely a myth","note":"China grant-equivalent ~$5\u20138B/yr vs US ~$63B; its finance is mostly LOANS / rescue-lending (~60% to distressed borrowers by 2022)","src":"AidData v3.0"},{"region":"Russia / Gulf","status":"selective, narrow","note":"information & security influence (Sahel); targeted Gulf humanitarian spend \u2014 not broad health substitution","src":"Carnegie / ECFR"}],"baselines":{"pepfar":"20.6M people on ART via PEPFAR","pmi":"~30 PMI malaria focus countries","dah":"global development assistance for health down ~51% (IHME, 2025)"},"vintage":"2026-06-19"};
+const $=s=>document.querySelector(s);
+let DATA=JSON.parse(JSON.stringify(SNAP));
+const feedStatus={USAspending:'idle',Snapshot:'live',Narrative:'frozen'};
+const STATUS_OVERRIDE={}; // operator hook: STATUS_OVERRIDE[country|program]='watch'|'alert'
+function bdg(k){return `<span class="bdg ${k}">${k}</span>`;}
+function fmtB(v){return '$'+v.toFixed(1)+'B';}
+function fmtM(v){return '$'+v+'M';}
+function fmtDeaths(v){return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':String(v);}
+
+/* ---------- funding collapse bar chart ---------- */
+function drawFund(){const o=DATA.oblig;const W=560,H=170,pad=30,bw=(W-2*pad)/o.length*0.62;
+  const mx=Math.max(...o.map(x=>x.v));
+  let bars='';o.forEach((x,i)=>{const cx=pad+(W-2*pad)*(i/(o.length-1||1));const h=(x.v/mx)*(H-46);
+    const peak=x.v===mx;const recent=x.fy>=2025;const col=recent?'var(--red)':peak?'var(--amber)':'#3a7a5e';
+    bars+=`<rect x="${(cx-bw/2).toFixed(1)}" y="${(H-26-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${col}"/>
+      <text x="${cx.toFixed(1)}" y="${H-13}" text-anchor="middle" font-size="9" fill="var(--dim)">'${String(x.fy).slice(2)}</text>
+      <text x="${cx.toFixed(1)}" y="${(H-30-h).toFixed(1)}" text-anchor="middle" font-size="8.5" fill="${recent?'#f0a0a0':'var(--dim)'}">${x.v.toFixed(0)}</text>`;});
+  $('#fundchart').innerHTML=`<svg viewBox="0 0 ${W} ${H}">${bars}</svg>`;
+  const f23=o.find(x=>x.fy===2023),f26=o.find(x=>x.fy===2026);
+  const drop=f23&&f26?Math.round((1-f26.v/f23.v)*100):null;
+  $('#fundkv').innerHTML=`<div class="kv"><span>Peak (FY2023) → latest (FY2026, partial Q${DATA.status.q})</span><b>${fmtB(f23.v)} → ${fmtB(f26.v)} <span style="color:var(--red)">(−${drop}%)</span></b></div>
+    <div class="kv"><span>Current-year obligations (live)</span><b>${fmtB(DATA.status.oblig)} of ${fmtB(DATA.status.ba)} budget authority</b></div>
+    <div class="kv"><span>Awards terminated in the 2025 dismantling</span><b>${DATA.sectors[0].pct} <span class="cite">(${DATA.sectors[0].note}; ${DATA.sectors[0].src})</span></b></div>`;}
+
+/* ---------- recipient country bars ---------- */
+function drawCountries(){const c=DATA.countries;const mx=Math.max(...c.map(x=>x.fy24));
+  let h='';for(const x of c){const ov=(STATUS_OVERRIDE[x.c]);const drop=x.fy24>0?Math.round((1-x.fy26/x.fy24)*100):0;
+    h+=`<div class="rank"><div class="nm">${x.c}${ov?' ⚑':''}</div>
+      <div class="barwrap"><div class="bar" style="width:${(x.fy24/mx*100).toFixed(0)}%;background:var(--dim);opacity:.45"></div><div class="bar" style="width:${(x.fy26/mx*100).toFixed(0)}%;background:var(--red)"></div></div>
+      <div class="val">${fmtM(x.fy24)}→${fmtM(x.fy26)} <span style="color:var(--red)">−${drop}%</span></div></div>`;}
+  $('#ctrybars').innerHTML=h;}
+
+/* ---------- waterfall ---------- */
+function drawFlow(){const s=DATA.sectors;
+  const steps=[
+    {b:'MEASURED',t:`<b>1 · The cut.</b> ${s[0].pct} of awards terminated, ~${s[0].note}. By sector: health ${s[1].pct}, PEPFAR ${s[2].pct}, family planning ${s[3].pct}, climate ${s[4].pct}. <span class="cite">${s[1].src}</span>`},
+    {b:'MEASURED',t:`<b>2 · Service & supply disruption (observed).</b> Clinics closing, ARV/RUTF stockouts, partners laying off staff — see Measured early signals. <span class="cite">UNAIDS · UNICEF · KFF</span>`},
+    {b:'MODELED',t:`<b>3 · Disease resurgence (modeled, wide CI).</b> Reduced coverage → rising HIV/TB/malaria incidence & maternal deaths. The crux link, least certain; calibrated on 2015–2024 patterns. <span class="cite">see Modeled excess deaths</span>`},
+    {b:'INTERPRETIVE',t:`<b>4 · Cross-border & geopolitical spillover.</b> Outbreaks, displacement, instability, influence shifts — multi-causal, "associated with" not "caused by". <span class="cite">see Influence vacuum</span>`}];
+  let h='';steps.forEach((st,i)=>{h+=`<div class="step">${bdg(st.b)} ${st.t}</div>`;if(i<steps.length-1)h+=`<div class="arrow">↓</div>`;});
+  $('#flow').innerHTML=h;}
+
+/* ---------- modeled excess deaths ---------- */
+function drawDeaths(){const d=DATA.deaths;
+  // scale: use hi or mid up to aggregate hi
+  const top=Math.max(...d.map(x=>x.hi||x.mid||0));
+  let h='';for(const x of d){const lo=x.lo,hi=x.hi,mid=x.mid;
+    const a=lo!=null?lo:mid, b=hi!=null?hi:mid;
+    const x1=(a/top*100), x2=(b/top*100), xm=mid!=null?(mid/top*100):null;
+    const label=lo!=null&&hi!=null?`${fmtDeaths(lo)}–${fmtDeaths(hi)}`:mid!=null?`~${fmtDeaths(mid)}`:'—';
+    h+=`<div style="margin:8px 0">
+      <div class="rank" style="margin:0 0 2px"><div class="nm" style="width:auto;flex:1;color:var(--tx);font-weight:600">${x.prog}</div><div class="val" style="width:auto;color:#f0c46a">${label}</div></div>
+      <div class="barwrap" style="height:11px;background:#081410">
+        <div class="bar" style="left:${x1}%;width:${Math.max(2,x2-x1)}%;background:rgba(201,138,26,.5);border-radius:3px"></div>
+        ${xm!=null?`<div style="position:absolute;left:${xm}%;top:-2px;width:2px;height:15px;background:#f0c46a"></div>`:''}
+      </div>
+      <div class="cite" style="margin-top:2px">${x.horizon} · ${x.src}${(lo==null&&hi==null)?' · <b style="color:var(--amber)">no published CI</b>':''}</div></div>`;}
+  $('#deaths').innerHTML=h;
+  $('#deathnote').innerHTML=`⚠ These are <b>modeled projections, not counted deaths</b>, shown as ranges. "Malaria" and similar entries are <b>full program benefit at risk</b>, not the toll of a partial cut. Realized harm is bounded <b>below</b> the worst case by mitigants documented in 2025–26 (a Feb-2025 PEPFAR lifesaving-services waiver, a rejected PEPFAR rescission, a ~$9B Gavi replenishment, some reinstated food-aid contracts). Long-run tolls may be <i>under</i>-stated by 1-year models. Not for public release as a death forecast.`;}
+
+/* ---------- measured early signals ---------- */
+function drawSignals(){let h='';for(const s of DATA.signals){const mixed=s.attr!=='measured';
+    h+=`<div class="sigcard ${mixed?'mixed':''}"><div class="t">${s.t} ${bdg(mixed?'INTERPRETIVE':'MEASURED')}</div><div>${s.v}</div><div class="cite">${s.src}${mixed?' · '+s.attr:''}</div></div>`;}
+  $('#signals').innerHTML=h;}
+
+/* ---------- program exposure ranking ---------- */
+function drawFrag(){const rows=[
+  {p:'Family planning / maternal',cut:96,burden:'~34K maternal deaths/yr modeled'},
+  {p:'HIV / PEPFAR',cut:65,burden:'20.6M on ART; ~2.9M modeled deaths by 2030'},
+  {p:'Climate',cut:98,burden:'>98% cut ($2.1B)'},
+  {p:'Health (all)',cut:77,burden:'77% of health awards cut'},
+  {p:'Malaria (PMI)',cut:47,burden:'~30 focus countries; 13.6M cases at risk'},
+  {p:'Tuberculosis',cut:60,burden:'100K–2.24M modeled deaths by 2030'},
+  {p:'Nutrition',cut:70,burden:'RUTF shortages in 17 countries'},
+  ].sort((a,b)=>b.cut-a.cut);
+  let h='';for(const r of rows){const col=r.cut>=85?'var(--red)':r.cut>=65?'var(--amber)':'var(--modeled)';
+    h+=`<div class="rank"><div class="nm" style="width:150px">${r.p}</div><div class="barwrap"><div class="bar" style="width:${r.cut}%;background:${col}"></div></div><div class="val">${r.cut}% cut</div></div>
+      <div class="cite" style="margin:-2px 0 4px 158px">${r.burden}</div>`;}
+  $('#frag').innerHTML=h;}
+
+/* ---------- influence vacuum ---------- */
+function drawGeo(){let h='';for(const g of DATA.geo){const col=/myth/i.test(g.status)?'var(--measured)':/unfilled/i.test(g.status)?'var(--red)':'var(--amber)';
+    h+=`<div class="sigcard" style="border-left-color:${col}"><div class="t">${g.region} — <span style="color:${col}">${g.status}</span></div><div>${g.note}</div><div class="cite">${g.src}</div></div>`;}
+  $('#geo').innerHTML=h;}
+
+/* ---------- plain-English readout ---------- */
+function drawReadout(){const o=DATA.oblig,f23=o.find(x=>x.fy===2023),f26=o.find(x=>x.fy===2026),drop=Math.round((1-f26.v/f23.v)*100);
+  const agg=DATA.deaths[0];
+  $('#readout').innerHTML=`<ul style="margin:0;padding-left:18px">
+    <li style="margin:5px 0"><b>Measured:</b> U.S. foreign-aid obligations have fallen about <b>${drop}%</b> from their FY2023 peak (${fmtB(f23.v)} → ${fmtB(f26.v)}), with ${DATA.sectors[0].pct} of awards terminated. The hardest-hit recipients (e.g. ${DATA.countries[0].c}, ${DATA.countries[1].c}, ${DATA.countries[3].c}) are down 90%+ .</li>
+    <li style="margin:5px 0"><b>Measured on the ground:</b> real declines in HIV testing/treatment, ARV and nutrition supply, and partner staffing — observed, not projected.</li>
+    <li style="margin:5px 0"><b>Modeled:</b> if cuts persist with no backfill, published models project on the order of <b>${fmtDeaths(agg.lo)}–${fmtDeaths(agg.hi)}</b> excess deaths ${agg.horizon.split('·')[0]} (${agg.src}). This is a worst-case <b>bound</b> with wide uncertainty — a projection, not a count, and partly offset by documented mitigants.</li>
+    <li style="margin:5px 0"><b>Interpretive:</b> the "China fills the gap" story is mostly a myth — grant-funded health services tend to <b>stop</b> rather than transfer; the vacuum is largely <b>unfilled</b>. Instability/migration effects are multi-causal.</li>
+    </ul>
+    <div class="caveat" style="border-top:1px solid var(--bd);padding-top:7px"><b>Bottom line:</b> the funding shock is real and large; the human toll is a modeled range, not a measured count; the geopolitical fallout is interpretive. Descriptive of a policy shock — not a forecast, and not for release as a death count.</div>`;}
+
+/* ---------- escalate + feeds ---------- */
+function escalate(){const o=DATA.oblig,f23=o.find(x=>x.fy===2023),f26=o.find(x=>x.fy===2026),drop=1-f26.v/f23.v;
+  let col='var(--amber)',tx='Elevated — aid contracting';
+  if(drop>=0.6){col='var(--red)';tx='Critical — aid largely withdrawn';}
+  if(Object.values(STATUS_OVERRIDE).includes('alert')){col='var(--red)';tx='Operator alert active';}
+  $('#threat').innerHTML=`<span class="dot" style="background:${col}"></span><span>${tx}</span>`;
+  $('#banner').innerHTML=`<b>DESCRIPTIVE, NOT PREDICTIVE.</b> Funding cuts are <b style="color:var(--measured)">MEASURED</b> live from USAspending.gov. Health consequences are <b style="color:var(--modeled)">MODELED</b> projections with wide, sourced confidence intervals — every figure is badged, ranged and cited, and is <b>not</b> a running death count. The geopolitical layer is <b style="color:var(--interp)">INTERPRETIVE</b> and multi-causal: read downstream claims as "associated with", never "caused by". Headline mortality figures are forecasts contingent on cuts persisting with no backfill — a worst-case bound. For analytic use; not for public release as a death forecast. <span style="color:var(--dim)">Snapshot vintage ${DATA.vintage}.</span>`;}
+function drawFeeds(){const map={USAspending:'USAspending.gov (funding)',Snapshot:'embedded snapshot',Narrative:'modeled/narrative sources'};let h='';
+  for(const k in feedStatus){const s=feedStatus[k];const c=s==='live'?'var(--measured)':s==='loading'?'var(--amber)':s==='unavailable'?'var(--red)':'var(--dim)';
+    h+=`<div class="f"><span class="dot" style="background:${c}"></span>${map[k]} <span style="opacity:.7">${s}</span></div>`;}
+  h+=`<div class="f"><span class="dot" style="background:var(--teal)"></span>vintage ${DATA.vintage}</div>`;
+  $('#feeds').innerHTML=h;}
+
+function renderAll(){drawFund();drawCountries();drawFlow();drawDeaths();drawSignals();drawFrag();drawGeo();drawReadout();drawFeeds();escalate();}
+
+/* ---------- live USAspending refresh (CORS-open, fail-silent) ---------- */
+function fetchT(u,ms){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms||9000);return fetch(u,{signal:c.signal}).finally(()=>clearTimeout(t));}
+async function refresh(){feedStatus.USAspending='loading';drawFeeds();try{
+    const r=await fetchT('https://api.usaspending.gov/api/v2/agency/072/budgetary_resources/');const j=await r.json();
+    DATA.oblig=j.agency_data_by_year.filter(x=>x.fiscal_year>=2019).map(x=>({fy:x.fiscal_year,v:+(x.agency_total_obligated/1e9).toFixed(2)})).sort((a,b)=>a.fy-b.fy);
+    const t=await (await fetchT('https://api.usaspending.gov/api/v2/references/toptier_agencies/')).json();
+    const u=t.results.find(a=>a.abbreviation==='USAID');if(u){DATA.status={fy:u.active_fy,q:u.active_fq,oblig:+(u.obligated_amount/1e9).toFixed(2),ba:+((u.budget_authority_amount||0)/1e9).toFixed(2)};}
+    feedStatus.USAspending='live';}catch(e){feedStatus.USAspending='unavailable';console.warn('USAspending',e);}
+  renderAll();}
+
+function clockTick(){$('#clock').textContent=new Date().toISOString().replace('T',' ').slice(0,19)+' UTC';}
+renderAll();clockTick();setInterval(clockTick,1000);refresh();
+</script>
+<script>
+/* Economic-dependency panel — live World Bank (keyless, CORS=*) with 2023 snapshot floor */
+(function(){
+ const SNAP=[["Central African Republic",27.3],["Somalia",20.4],["Burundi",18.1],["Afghanistan",17.8],["Mozambique",15.3],["Gambia, The",14.6],["Liberia",13.7],["Malawi",13.2],["Rwanda",9.9],["Madagascar",8.1],["Sierra Leone",7.8],["Niger",7.8],["Burkina Faso",7.6],["Congo, Dem. Rep.",6.4],["Chad",6.3],["Togo",6.3],["Zambia",5.5],["Haiti",5.4],["Mali",5.4],["Uganda",4.7],["Ethiopia",4.0],["Sudan",3.5],["Guinea",2.6]];
+ const N=12;
+ const col=v=>v>=15?'var(--red)':v>=8?'var(--amber)':'#3a7a5e';
+ function draw(rows,live){
+   const el=document.getElementById('econdep'); if(!el)return;
+   const top=rows.slice(0,N), mx=Math.max.apply(null,rows.map(r=>r[1]));
+   el.innerHTML=top.map(r=>'<div class="rank"><div class="nm" style="width:152px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)" title="'+r[0]+'">'+r[0]+'</div>'+
+     '<div class="barwrap"><div class="bar" style="width:'+Math.min(100,r[1]/mx*100).toFixed(0)+'%;background:'+col(r[1])+'"></div></div>'+
+     '<div class="val">'+r[1].toFixed(1)+'%</div></div>').join('')+
+     '<div class="caveat" style="margin-top:5px">Most aid-dependent of the recipients queried ('+rows.length+' returned). Bars scaled to the top value.</div>';
+   const f=document.getElementById('econdepfeed'); if(f){f.textContent=live?'(live)':'(2023 snapshot)';if(live)f.style.color='var(--measured)';}
+ }
+ draw(SNAP,false);
+ const CC="CAF;SOM;BDI;AFG;MOZ;GMB;LBR;MWI;RWA;MDG;SLE;NER;BFA;COD;TCD;TGO;ZMB;HTI;MLI;UGA;ETH;SDN;GIN";
+ fetch('https://api.worldbank.org/v2/country/'+CC+'/indicator/DT.ODA.ODAT.GN.ZS?format=json&date=2019:2024&per_page=600')
+   .then(r=>r.json()).then(d=>{
+     const recs=(Array.isArray(d)&&d[1])||[]; const best={};
+     recs.forEach(r=>{if(r.value==null)return;const c=r.country.value,y=+r.date;if(!best[c]||y>best[c][1])best[c]=[r.value,y];});
+     const rows=Object.keys(best).map(c=>[c,best[c][0]]).sort((a,b)=>b[1]-a[1]);
+     if(rows.length>=8) draw(rows,true);
+   }).catch(e=>console.warn('WorldBank econdep',e));
+})();
+</script>
+</body>
+</html>

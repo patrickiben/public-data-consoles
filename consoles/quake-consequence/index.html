@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Earthquake Consequence Console — global, live</title>
+<meta name="description" content="An unofficial situational-awareness console for any significant earthquake on Earth: shaking footprint, USGS PAGER modeled impact, population exposure, lifeline (hospital/power/water/road) cascade, humanitarian reports and ground deformation — built from public data, with honesty badges (measured / modeled / interpretive). Decision-support for responders; not an official source.">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<style>
+:root{--bg:#0e1622;--panel:#15233a;--panel2:#1a2d4a;--ink:#eaf1f8;--ink2:#aebfd2;--dim:#7e93ad;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+ --sea:#3fa9f5;--meas:#34c98a;--model:#f0b429;--interp:#b46ff0;--a1:#f0b429;--a2:#f97316;--a3:#ef5350;--a4:#c0344f;--r:15px;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;background:radial-gradient(1100px 560px at 70% -10%,#19324f,#0e1622 55%) fixed,#0e1622;color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}.wrap{max-width:1320px;margin:0 auto;padding:0 18px}
+#disc{background:#0a1320;color:#c6d6e8;font-size:12.5px;text-align:center;padding:8px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:22px 0 14px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+header h1{margin:0;font-size:25px;font-weight:760;letter-spacing:-.3px;background:linear-gradient(90deg,#eaf1f8,#9fd0ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+header .s{color:var(--ink2);font-size:13.5px;margin-top:6px;max-width:640px}
+#evsel{background:var(--panel);border:1px solid var(--line2);color:var(--ink);border-radius:10px;padding:10px 13px;font-size:14px;font-family:inherit;min-width:260px;max-width:95vw}
+#share{background:var(--panel2);border:1px solid var(--line2);color:var(--ink);border-radius:10px;padding:0 13px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap}#share:hover{border-color:var(--sea);color:var(--sea)}
+#grid{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start;padding-bottom:10px}
+#map{height:62vh;min-height:440px;border-radius:var(--r);border:1px solid var(--line2);box-shadow:0 16px 46px -22px rgba(0,0,0,.7);background:#0b1220}
+.col{display:flex;flex-direction:column;gap:14px}
+.card{background:linear-gradient(180deg,var(--panel),#13223a);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px}
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:9px}.ch .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+.ch h2{margin:0;font-size:15px;font-weight:680}.ch .badge{margin-left:auto}
+.badge{font-size:10px;font-weight:800;letter-spacing:.04em;padding:3px 9px;border-radius:999px;text-transform:uppercase}
+.b-meas{background:rgba(52,201,138,.16);color:#5fe0a8}.b-model{background:rgba(240,180,41,.16);color:#f4c558}.b-interp{background:rgba(180,111,240,.16);color:#c79bf3}
+.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px}.row:last-child{border:none}.row .l{color:var(--ink2)}.row .v{font-weight:650;text-align:right}
+.big{font-size:30px;font-weight:780;line-height:1.05}.range{font-size:13px;color:var(--ink2);margin-top:3px}
+.alertpill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-weight:750;font-size:14px}
+.muted{color:var(--dim);font-size:12.5px}.small{font-size:12.5px}
+.bar{height:9px;border-radius:5px;background:var(--line2);overflow:hidden;margin:3px 0}.bar i{display:block;height:100%}
+.lvrow{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}.lvrow:last-child{border:none}
+.legend{background:#15233a;color:#dce8f5;padding:8px 11px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.4);font-size:12px;line-height:1.6}.legend i{width:11px;height:11px;display:inline-block;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line2);border-top-color:var(--sea);border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px}@keyframes s{to{transform:rotate(360deg)}}
+#foot{color:var(--dim);font-size:12px;padding:8px 0 40px}#foot .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--sea);border-radius:11px;padding:12px 15px;margin-bottom:10px;color:var(--ink2)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#15233a;color:#eaf1f8}.leaflet-popup-content{font-family:var(--sans);font-size:13px}.leaflet-control-attribution{background:rgba(14,22,34,.7)!important;color:#7e93ad!important}
+@media(max-width:980px){#grid{grid-template-columns:1fr}#map{height:50vh}}
+</style>
+</head>
+<body>
+<div id="disc"><b>Unofficial — decision support, not an official source.</b> Modeled figures are estimates with wide uncertainty; the real toll comes from responders on the ground. Follow your national geological/disaster agency, the <a href="https://www.usgs.gov/programs/earthquake-hazards" target="_blank" rel="noopener" style="color:#9fd2f0">USGS</a> and <a href="https://reliefweb.int" target="_blank" rel="noopener" style="color:#9fd2f0">ReliefWeb/OCHA</a>. <b>In an emergency, call your local emergency number.</b></div>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Earthquake Consequence Console</h1>
+      <div class="s">For any significant earthquake on Earth: where it shook, who's exposed, what's likely damaged, and where help has the most leverage — fast, from public data, so response can be aimed before the full picture arrives.</div>
+    </div>
+    <div><div class="muted small" style="margin-bottom:5px">Event <span style="opacity:.6">· auto-loads the latest red-alert quake</span></div><div style="display:flex;gap:8px"><select id="evsel"><option>loading recent significant earthquakes…</option></select><button id="share" title="Copy a link to this event">⤴ Share</button></div></div>
+  </header>
+  <div id="grid">
+    <div id="map"></div>
+    <div class="col">
+      <div class="card"><div class="ch"><div class="ic" style="background:#34c98a22;color:#34c98a"><i class="ti ti-activity-heartbeat"></i></div><h2>The event</h2><span class="badge b-meas">measured</span></div><div id="event"><div class="muted"><span class="spin"></span> loading…</div></div></div>
+      <div class="card"><div class="ch"><div class="ic" style="background:#f0b42922;color:#f0b429"><i class="ti ti-urgent"></i></div><h2>Estimated impact</h2><span class="badge b-model">modeled · USGS PAGER</span></div><div id="pager"><div class="muted">pending…</div></div></div>
+      <div class="card"><div class="ch"><div class="ic" style="background:#f0b42922;color:#f0b429"><i class="ti ti-users-group"></i></div><h2>Population exposed to shaking</h2><span class="badge b-model">modeled</span></div><div id="exposure"><div class="muted">pending…</div></div></div>
+      <div class="card"><div class="ch"><div class="ic" style="background:#b46ff022;color:#b46ff0"><i class="ti ti-building-hospital"></i></div><h2>Lifelines &amp; restoration priority</h2><span class="badge b-interp">interpretive · directed</span></div><div id="lifelines"><div class="muted">pending…</div></div></div>
+      <div class="card"><div class="ch"><div class="ic" style="background:#3fa9f522;color:#3fa9f5"><i class="ti ti-news"></i></div><h2>On the ground</h2><span class="badge b-meas">reports</span></div><div id="humanitarian"><div class="muted">pending…</div></div></div>
+      <div class="card"><div class="ch"><div class="ic" style="background:#3fa9f522;color:#3fa9f5"><i class="ti ti-satellite"></i></div><h2>Ground deformation (radar)</h2><span class="badge b-model">modeled · InSAR</span></div><div id="insar"><div class="muted">pending…</div></div></div>
+    </div>
+  </div>
+  <div id="foot"><div class="note"><b>About &amp; honesty.</b> This reorganizes public data into one response picture for any significant quake worldwide. Badges mark what each figure <em>is</em>: <span class="badge b-meas">measured</span> (sensors/observations), <span class="badge b-model">modeled</span> (estimates with uncertainty — e.g. PAGER fatalities/loss), <span class="badge b-interp">interpretive</span> (inferred, e.g. the lifeline cascade on approximate dependency data). It never invents casualty counts. It does not replace official agencies or on-the-ground assessment — it aims response sooner.</div><div id="src"></div></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const DEFAULT_EVENT='us6000t7zp'; // M7.5 Venezuela, 2026-06-24 — load this first
+const PAGER_COL={green:'#34c98a',yellow:'#f0b429',orange:'#f97316',red:'#ef5350'};
+const PAGER_MEAN={green:'no/▒minimal expected',yellow:'local impact likely',orange:'significant impact likely',red:'high impact — extensive damage &amp; casualties likely'};
+const fmtT=t=>{const d=(Date.now()-t)/3600000;return d<1?Math.round(d*60)+' min ago':d<48?Math.round(d)+' h ago':Math.round(d/24)+' d ago';};
+let map=L.map('map',{zoomControl:true,worldCopyJump:true}).setView([20,0],2);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+let LY={shake:L.layerGroup().addTo(map),after:L.layerGroup().addTo(map),epi:L.layerGroup().addTo(map),life:L.layerGroup().addTo(map)};
+const lg=L.control({position:'bottomright'});lg.onAdd=function(){const d=L.DomUtil.create('div','legend');d.innerHTML='<i style="background:#ef5350"></i>epicenter<br><i style="background:#f0b429"></i>aftershocks<br><i style="background:#b46ff0"></i>hospitals / lifelines';return d;};lg.addTo(map);
+$('src').innerHTML='Sources (public): USGS Earthquake Hazards Program (ComCat events, PAGER, ShakeMap, ground-failure), GDACS, ReliefWeb/OCHA, OpenStreetMap (lifelines), ESA/NASA Sentinel-1 via ASF (radar). Geocoding/links to official agencies. Runs in your browser; nothing stored.';
+
+async function jget(u,opt){const c=new AbortController(),to=setTimeout(()=>c.abort(),12000);try{const r=await fetch(u,Object.assign({signal:c.signal},opt||{}));clearTimeout(to);return r.ok?await r.json():null;}catch(e){clearTimeout(to);return null;}}
+
+/* ---------- event picker: recent significant quakes worldwide ---------- */
+async function loadList(){
+ const j=await jget('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson');
+ const sel=$('evsel');let feats=(j&&j.features)||[];
+ // what to show, in order: ?event= URL param  >  most recent RED-alert event  >  most recent ORANGE  >  reference event
+ const want=new URLSearchParams(location.search).get('event');
+ const byTime=a=>a.sort((x,y)=>y.properties.time-x.properties.time);
+ const reds=byTime(feats.filter(f=>f.properties.alert==='red')),oranges=byTime(feats.filter(f=>f.properties.alert==='orange'));
+ let pick=want||(reds[0]||oranges[0]||{}).id||DEFAULT_EVENT;
+ // make sure the picked event (and the reference event) appear in the dropdown even if outside the 30-day feed
+ for(const id of [pick,DEFAULT_EVENT]){if(id&&!feats.some(f=>f.id===id)){const d=await jget('https://earthquake.usgs.gov/fdsnws/event/1/query?eventid='+id+'&format=geojson');if(d&&d.id)feats.unshift(d);}}
+ const rank={red:3,orange:2,yellow:1};
+ feats.sort((a,b)=>(rank[b.properties.alert]||0)-(rank[a.properties.alert]||0)||(b.properties.sig||0)-(a.properties.sig||0));
+ sel.innerHTML=feats.slice(0,50).map(f=>{const p=f.properties;const dt=new Date(p.time).toISOString().slice(0,10);return '<option value="'+f.id+'">M'+p.mag+' · '+(p.place||'').slice(0,42)+' · '+dt+(p.alert?' · '+p.alert.toUpperCase()+' alert':'')+'</option>';}).join('');
+ if(!feats.some(f=>f.id===pick))pick=(feats[0]||{}).id||DEFAULT_EVENT;
+ sel.value=pick;sel.onchange=()=>{history.replaceState(null,'','?event='+sel.value);selectEvent(sel.value);};
+ selectEvent(pick);
+}
+
+/* ---------- select an event ---------- */
+let CUR=null;
+async function selectEvent(id){
+ Object.values(LY).forEach(l=>l.clearLayers());
+ ['event','pager','exposure','lifelines','humanitarian','insar'].forEach(p=>{if(p!=='event')$(p).innerHTML='<div class="muted"><span class="spin"></span> loading…</div>';});
+ $('event').innerHTML='<div class="muted"><span class="spin"></span> loading…</div>';
+ const d=await jget('https://earthquake.usgs.gov/fdsnws/event/1/query?eventid='+id+'&format=geojson');
+ if(!d){$('event').innerHTML='<div class="muted">Event details unavailable.</div>';return;}
+ CUR=d;const p=d.properties,g=d.geometry.coordinates,lat=g[1],lon=g[0],depth=g[2];
+ const prods=p.products||{};
+ // map: epicenter
+ map.setView([lat,lon],7);
+ L.circleMarker([lat,lon],{radius:12,fillColor:'#ef5350',color:'#fff',weight:2,fillOpacity:.6}).addTo(LY.epi).bindPopup('<b>M'+p.mag+' — '+p.place+'</b>');
+ L.circleMarker([lat,lon],{radius:5,fillColor:'#fff',color:'#ef5350',weight:2,fillOpacity:1}).addTo(LY.epi);
+ // event facts
+ const alert=p.alert;
+ $('event').innerHTML=
+  '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><div class="big">M '+p.mag+'</div>'+
+   (alert?'<span class="alertpill" style="background:'+PAGER_COL[alert]+'22;color:'+PAGER_COL[alert]+'"><span style="width:10px;height:10px;border-radius:50%;background:'+PAGER_COL[alert]+'"></span>'+alert.toUpperCase()+' alert</span>':'')+'</div>'+
+  '<div style="font-size:14px;margin:4px 0 8px">'+p.place+'</div>'+
+  '<div class="row"><span class="l">When</span><span class="v">'+new Date(p.time).toUTCString().replace('GMT','UTC')+' ('+fmtT(p.time)+')</span></div>'+
+  '<div class="row"><span class="l">Depth</span><span class="v">'+(depth!=null?depth.toFixed(0)+' km':'—')+'</span></div>'+
+  '<div class="row"><span class="l">Felt reports (DYFI)</span><span class="v">'+(p.felt!=null?p.felt.toLocaleString():'—')+'</span></div>'+
+  '<div class="row"><span class="l">Tsunami flag</span><span class="v">'+(p.tsunami?'yes — check warnings':'no')+'</span></div>'+
+  (alert?'<div class="small" style="margin-top:7px;color:'+PAGER_COL[alert]+'">'+PAGER_MEAN[alert]+'</div>':'')+
+  '<div class="small" style="margin-top:6px"><a href="'+(p.url||'#')+'" target="_blank" rel="noopener">Full USGS event page →</a></div>';
+ loadAftershocks(lat,lon,p.time);
+ // ===== consequence panels (verified specs) =====
+ const shakeP=loadShakeMap(prods);
+ loadPAGER(prods);
+ loadExposure(prods);
+ loadLifelines(lat,lon,shakeP);
+ loadHumanitarian(prods,p,lat,lon);
+ loadInSAR(lat,lon,p.time);
+}
+
+async function loadAftershocks(lat,lon,t){
+ const j=await jget('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude='+lat+'&longitude='+lon+'&maxradiuskm=200&minmagnitude=3.5&starttime='+new Date(t).toISOString().slice(0,19)+'&orderby=time&limit=200');
+ const fs=(j&&j.features)||[];
+ fs.forEach(f=>{const c=f.geometry.coordinates;if(c[1]===CUR.geometry.coordinates[1])return;L.circleMarker([c[1],c[0]],{radius:2+f.properties.mag,fillColor:'#f0b429',color:'#0b1220',weight:.6,fillOpacity:.6}).addTo(LY.after).bindPopup('<b>M'+f.properties.mag+'</b> aftershock<br>'+fmtT(f.properties.time));});
+}
+
+/* ===== data panels (verified specs, research wf_a9da911d) ===== */
+const fmtN=n=>{n=+n;return !isFinite(n)?'—':n>=1e9?(n/1e9).toFixed(1).replace(/\.0$/,'')+'B':n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,'')+'M':n>=1e3?(n/1e3).toFixed(0)+'k':String(Math.round(n));};
+const GFCOL={green:'#34c98a',yellow:'#f0b429',orange:'#f97316',red:'#ef5350'};
+const mmiCol=m=>m>=8?'#c0344f':m>=7?'#ef5350':m>=6?'#f97316':m>=5?'#f0b429':'#9bbf6b';
+const purl=(lp,key)=>{const c=lp.contents||{};return (c[key]||c['download/'+key]||c['json/'+key]||{}).url;};
+
+async function loadShakeMap(prods){const sm=prods.shakemap&&prods.shakemap[0];if(!sm)return null;
+ const cont=await jget(purl(sm,'download/cont_mi.json')||purl(sm,'cont_mi.json'));
+ if(cont&&cont.features)L.geoJSON(cont,{style:f=>({color:f.properties.color||'#f0b429',weight:f.properties.weight||2,opacity:.85}),onEachFeature:(f,l)=>l.bindTooltip('Shaking — MMI '+f.properties.value,{sticky:true})}).addTo(LY.shake);
+ return cont;}
+
+async function loadPAGER(prods){const el=$('pager');const lp=prods.losspager&&prods.losspager[0];
+ if(!lp){el.innerHTML='<div class="muted">No PAGER impact model for this event.</div>';return;}
+ const [alerts,comments]=await Promise.all([jget(purl(lp,'json/alerts.json')),jget(purl(lp,'json/comments.json'))]);
+ if(!alerts||!alerts.fatality){el.innerHTML='<div class="muted">PAGER detail unavailable.</div>';return;}
+ const fb=alerts.fatality.bins||[],eb=alerts.economic.bins||[];
+ const modal=a=>a.reduce((x,y)=>+y.probability>+(x.probability||0)?y:x,a[0]||{});const fm=modal(fb);
+ const hist=(bins,lab)=>bins.filter(b=>+b.probability>0.005).map(b=>{const p=Math.round(+b.probability*100);return '<div class="lvrow"><span style="flex:none;width:112px;font-size:12px">'+lab(b)+'</span><span class="bar" style="flex:1"><i style="width:'+Math.max(3,p)+'%;background:'+b.color+'"></i></span><span class="muted" style="flex:none;width:30px;text-align:right">'+p+'%</span></div>';}).join('');
+ el.innerHTML=(comments&&comments.impact1?'<div class="small" style="margin-bottom:10px">'+comments.impact1+'</div>':'')+
+  '<div class="muted small" style="margin-bottom:3px">Likely fatalities — probability by range</div>'+hist(fb,b=>fmtN(b.min)+'–'+fmtN(b.max))+
+  '<div class="muted small" style="margin:10px 0 3px">Likely economic loss</div>'+hist(eb,b=>'$'+fmtN(+b.min*1e6)+'–$'+fmtN(+b.max*1e6))+
+  '<div class="small" style="margin-top:11px;color:#f4c558;background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.28);border-radius:9px;padding:9px 11px"><b>PAGER loss‑model estimates — not a confirmed toll.</b> They size the likely order of magnitude (~'+Math.round(+fm.probability*100)+'% chance fatalities fall in the '+fmtN(fm.min)+'–'+fmtN(fm.max)+' range) so responders can scale up before counts arrive. The real toll comes from the ground — follow ReliefWeb/OCHA.</div>';}
+
+async function loadExposure(prods){const el=$('exposure');const lp=prods.losspager&&prods.losspager[0];
+ if(!lp){el.innerHTML='<div class="muted">No exposure model.</div>';return;}
+ const expo=await jget(purl(lp,'json/exposures.json'));
+ if(!expo||!expo.population_exposure){el.innerHTML='<div class="muted">Exposure data unavailable.</div>';return;}
+ const pe=expo.population_exposure;const rows=pe.mmi.map((m,i)=>({m,pop:+pe.aggregated_exposure[i]})).filter(x=>x.pop>0&&x.m>=4);
+ const max=Math.max(1,...rows.map(x=>x.pop));const strong=rows.filter(x=>x.m>=7).reduce((a,x)=>a+x.pop,0);
+ el.innerHTML='<div class="big" style="color:#f97316">'+fmtN(strong)+'</div><div class="range">people in strong shaking (MMI 7+), where serious damage is likely</div>'+
+  '<div style="margin-top:9px">'+rows.slice().reverse().map(x=>'<div class="lvrow"><span style="flex:none;width:52px">MMI '+x.m+'</span><span class="bar" style="flex:1"><i style="width:'+Math.round(100*x.pop/max)+'%;background:'+mmiCol(x.m)+'"></i></span><span class="muted" style="flex:none;width:48px;text-align:right">'+fmtN(x.pop)+'</span></div>').join('')+'</div>'+
+  '<div class="small muted" style="margin-top:7px">Modeled population in each shaking band (PAGER + LandScan). The closest‑to‑measurement impact number — lead with exposure, not a casualty count.</div>';}
+
+/* ===== directed lifeline-cascade restoration engine =====
+   Patrick's directedness-not-connectedness applied to disaster RESPONSE: damage propagates
+   through a directed dependency network (power→water→hospital). The question isn't "which asset
+   looks worst" (the loudest) but "which repair restores the most downstream care" (the transmitter).
+   A utility can replace the illustrative proximity model with their REAL network via UTILITY_TOPOLOGY. */
+const LIFE_COL={power:'#f0b429',water:'#3fa9f5',hospital:'#b46ff0'};
+// Drop a utility's real network here to make this a true restoration-priority tool:
+//   {nodes:[{id,type:'power'|'water'|'hospital',lat,lon,name,beds?}], edges:[[fromId,toId],...]}  (edge = "from feeds to")
+const UTILITY_TOPOLOGY=null;
+function nearestOf(n,arr){let best=null,bd=Infinity;for(const a of arr){const dx=a.lat-n.lat,dy=(a.lon-n.lon)*Math.cos(n.lat*Math.PI/180),dd=dx*dx+dy*dy;if(dd<bd){bd=dd;best=a;}}return best;}
+function buildLifelineGraph(osm){
+ if(UTILITY_TOPOLOGY){const nodes=UTILITY_TOPOLOGY.nodes.map(n=>Object.assign({weight:n.type==='hospital'?(+n.beds>0?+n.beds:30):0},n));return {supplied:true,nodes,edges:(UTILITY_TOPOLOGY.edges||[]).slice(),sinks:nodes.filter(n=>n.type==='hospital')};}
+ const nodes=[];let i=0;
+ osm.forEach(e=>{const t=e.tags||{},ll=e.lat?[e.lat,e.lon]:(e.center?[e.center.lat,e.center.lon]:null);if(!ll)return;let type;
+  if(/hospital|clinic/.test(t.amenity||''))type='hospital';else if(/plant|substation/.test(t.power||''))type='power';else if(/water/.test(t.man_made||''))type='water';else return;
+  const beds=+(t.beds||t['health_facility:beds']||0);
+  nodes.push({id:'n'+(i++),type,lat:ll[0],lon:ll[1],name:t.name||(type.charAt(0).toUpperCase()+type.slice(1)+' #'+i),weight:type==='hospital'?(beds>0?beds:(t.amenity==='hospital'?30:6)):0});});
+ const power=nodes.filter(n=>n.type==='power'),water=nodes.filter(n=>n.type==='water'),hosp=nodes.filter(n=>n.type==='hospital'),edges=[];
+ // illustrative proximity rule: each hospital and each water works ← its nearest power substation (the dominant electricity dependency)
+ water.forEach(w=>{const p=nearestOf(w,power);if(p)edges.push([p.id,w.id]);});
+ hosp.forEach(h=>{const p=nearestOf(h,power);if(p)edges.push([p.id,h.id]);});
+ return {supplied:false,nodes,edges,sinks:hosp};}
+function pip(pt,ring){let x=pt[0],y=pt[1],inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/((yj-yi)||1e-12)+xi))inside=!inside;}return inside;}
+function mmiAt(lat,lon,cont,epi){let m=0;
+ if(cont&&cont.features)for(const f of cont.features){const v=+f.properties.value;if(v<=m)continue;const g=f.geometry,lines=g.type==='MultiLineString'?g.coordinates:[g.coordinates];for(const ring of lines){if(ring.length>3&&pip([lon,lat],ring)){m=v;break;}}}
+ if(m>0)return m;
+ if(epi){const dx=lat-epi[0],dy=(lon-epi[1])*Math.cos(lat*Math.PI/180),km=Math.sqrt(dx*dx+dy*dy)*111;return Math.max(1,(epi[2]||7)-2.0*Math.log10(km/12+1));}
+ return 0;}
+// functional = not damaged AND, for each upstream input TYPE, at least one input of that type is functional (DAG: power→water→hospital)
+function evalFunctional(nodes,edges,damaged){
+ const byId={},inE={};nodes.forEach(n=>{byId[n.id]=n;inE[n.id]=[];});edges.forEach(([a,b])=>{if(inE[b])inE[b].push(a);});
+ const st={},seen={};
+ const fn=id=>{if(id in st)return st[id];if(seen[id])return true;seen[id]=true;let ok=!damaged.has(id);
+  if(ok){const ins=inE[id]||[];if(ins.length){const byT={};ins.forEach(p=>{(byT[byId[p].type]=byT[byId[p].type]||[]).push(p);});for(const tp in byT){if(!byT[tp].some(fn)){ok=false;break;}}}}
+  seen[id]=false;st[id]=ok;return ok;};
+ nodes.forEach(n=>fn(n.id));return st;}
+function restorationRanking(graph,damaged,mmiOf){
+ const {nodes,edges,sinks}=graph,base=evalFunctional(nodes,edges,damaged),down=new Set(sinks.filter(s=>!base[s.id]).map(s=>s.id)),out=[];
+ nodes.forEach(n=>{if(!damaged.has(n.id))return;const d2=new Set(damaged);d2.delete(n.id);const st=evalFunctional(nodes,edges,d2);let cnt=0,beds=0;sinks.forEach(s=>{if(down.has(s.id)&&st[s.id]){cnt++;beds+=s.weight||0;}});out.push({node:n,restores:cnt,beds,mmi:mmiOf(n)});});
+ out.sort((a,b)=>b.restores-a.restores||b.beds-a.beds||b.mmi-a.mmi);
+ return {ranking:out,down:down.size};}
+
+async function loadLifelines(lat,lon,shakeP){const el=$('lifelines');
+ let osm=null;
+ if(!UTILITY_TOPOLOGY){const d=0.28,bbox=(lat-d).toFixed(3)+','+(lon-d).toFixed(3)+','+(lat+d).toFixed(3)+','+(lon+d).toFixed(3);
+  const ql='[out:json][timeout:25];(nwr["amenity"~"^(hospital|clinic)$"]('+bbox+');nwr["power"~"^(plant|substation)$"]('+bbox+');nwr["man_made"~"^(water_works|water_tower)$"]('+bbox+'););out center tags;';
+  const EPS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+  let j=null;for(const ep of EPS){j=await jget(ep,{method:'POST',body:'data='+encodeURIComponent(ql)});if(j&&j.elements)break;}
+  if(!j||!j.elements){el.innerHTML='<div class="muted">Lifeline network unavailable — OpenStreetMap Overpass is busy; it loads when a mirror frees up. (A utility’s own network can be wired in directly via <code>UTILITY_TOPOLOGY</code>.)</div>';return;}
+  osm=j.elements;}
+ const cont=shakeP?await shakeP:null;
+ const epi=CUR?[CUR.geometry.coordinates[1],CUR.geometry.coordinates[0],CUR.properties.mmi||7]:null;
+ const graph=buildLifelineGraph(osm||[]);
+ const mmiOf=n=>mmiAt(n.lat,n.lon,cont,epi);
+ const byId={};graph.nodes.forEach(n=>byId[n.id]=n);
+ // draw directed dependency edges + nodes
+ graph.edges.forEach(([a,b])=>{const A=byId[a],B=byId[b];if(A&&B)L.polyline([[A.lat,A.lon],[B.lat,B.lon]],{color:'#6b7d99',weight:1,opacity:.45,dashArray:'3 4'}).addTo(LY.life);});
+ graph.nodes.forEach(n=>{const m=mmiOf(n);L.circleMarker([n.lat,n.lon],{radius:n.type==='hospital'?6:5,fillColor:LIFE_COL[n.type],color:m>=6?'#ef5350':'#0b1220',weight:m>=6?2:1,fillOpacity:.92}).addTo(LY.life).bindPopup('<b>'+n.name+'</b><br>'+n.type+(n.weight?' · ~'+n.weight+' beds':'')+'<br>shaking ~MMI '+m.toFixed(1));});
+ const counts={hospital:graph.sinks.length,power:graph.nodes.filter(n=>n.type==='power').length,water:graph.nodes.filter(n=>n.type==='water').length};
+ // damage: power/water at MMI≥6, hospitals (built stronger) at MMI≥7 — a shaking proxy, not confirmed status
+ const damaged=new Set(graph.nodes.filter(n=>mmiOf(n)>=(n.type==='hospital'?7:6)).map(n=>n.id));
+ const inv='<div class="row"><span class="l"><span style="color:#b46ff0">⬤</span> Hospitals &amp; clinics</span><span class="v">'+counts.hospital+'</span></div><div class="row"><span class="l"><span style="color:#f0b429">⬤</span> Power plants / substations</span><span class="v">'+counts.power+'</span></div><div class="row"><span class="l"><span style="color:#3fa9f5">⬤</span> Water works / towers</span><span class="v">'+counts.water+'</span></div>';
+ if(!graph.sinks.length||!damaged.size){el.innerHTML=inv+'<div class="small muted" style="margin-top:8px">'+(graph.supplied?'Utility-supplied network.':'Illustrative proximity network.')+' No assets fall in the strong-shaking zone for this event, so no restoration ranking is needed.</div>';return;}
+ const {ranking,down}=restorationRanking(graph,damaged,mmiOf);
+ const top=ranking.filter(r=>r.restores>0).slice(0,5);
+ const loudest=graph.nodes.filter(n=>damaged.has(n.id)).sort((a,b)=>mmiOf(b)-mmiOf(a))[0];
+ if(top[0]){const t=top[0].node;L.circleMarker([t.lat,t.lon],{radius:13,fillColor:'#34c98a',color:'#34c98a',weight:3,opacity:.95,fillOpacity:.12}).addTo(LY.life).bindPopup('<b>Highest restoration leverage</b><br>'+t.name);}
+ el.innerHTML=inv+
+  '<div class="row"><span class="l">Impaired by shaking</span><span class="v" style="color:#ef5350">'+damaged.size+' assets · '+down+' hospitals offline</span></div>'+
+  (top.length?'<div class="muted small" style="margin:10px 0 4px">Restore first — ranked by downstream hospitals brought back online (directed leverage)</div>'+
+   top.map((r,i)=>'<div class="lvrow"><span style="flex:none;width:16px;color:#34c98a;font-weight:800">'+(i+1)+'</span><span style="flex:1;min-width:0"><b style="color:'+LIFE_COL[r.node.type]+'">'+r.node.name.slice(0,26)+'</b> <span class="muted">'+r.node.type+' · MMI '+r.mmi.toFixed(1)+'</span></span><span class="v" style="flex:none">+'+r.restores+' hosp'+(r.restores>1?'s':'')+(r.beds?' · '+r.beds+' beds':'')+'</span></div>').join('')
+   :'<div class="small muted" style="margin-top:8px">No upstream node restores additional hospitals — the offline hospitals are themselves the damaged points (each is its own repair).</div>')+
+  (top[0]&&loudest&&loudest.id!==top[0].node.id?'<div class="small" style="margin-top:10px;background:rgba(52,201,138,.08);border:1px solid rgba(52,201,138,.28);border-radius:9px;padding:9px 11px"><b>Directedness, not the loudest.</b> The most violently shaken asset is <b>'+loudest.name.slice(0,24)+'</b> (MMI '+mmiOf(loudest).toFixed(1)+') — but repairing it restores only itself. Repairing <b style="color:#34c98a">'+top[0].node.name.slice(0,24)+'</b> (upstream '+top[0].node.type+') brings <b>'+top[0].restores+' downstream hospital'+(top[0].restores>1?'s':'')+'</b> back online. Send the first crew upstream.</div>':'')+
+  '<div class="small muted" style="margin-top:8px">'+(graph.supplied?'<b>Using the utility-supplied dependency network.</b> ':'<b>Illustrative dependency model:</b> each hospital and water works is linked to its nearest power substation (the dominant electricity dependency) because the real topology isn’t public. Paste a utility’s actual network — including water, fuel and comms dependencies — into <code>UTILITY_TOPOLOGY</code> and this becomes a true restoration-priority tool. ')+'Impairment = strong shaking (MMI 6+ power/water, 7+ hospitals), a proxy for damage — not confirmed status; redundancy and backup generators aren’t modeled.</div>';}
+
+async function loadHumanitarian(prods,p,lat,lon){const el=$('humanitarian');let h='';
+ if(p.felt)h+='<div class="row"><span class="l">Citizen felt reports (DYFI)</span><span class="v">'+p.felt.toLocaleString()+(p.cdi?' · peak intensity '+p.cdi:'')+'</span></div>';
+ const gfp=prods['ground-failure']&&prods['ground-failure'][0]&&prods['ground-failure'][0].properties;
+ if(gfp){h+='<div class="row"><span class="l">Landslide hazard</span><span class="v" style="color:'+(GFCOL[gfp['landslide-alert']]||'#aebfd2')+'">'+String(gfp['landslide-alert']||'—').toUpperCase()+(gfp['landslide-population-alert-value']?' · ~'+(+gfp['landslide-population-alert-value']).toLocaleString()+' exposed':'')+'</span></div>';
+  h+='<div class="row"><span class="l">Liquefaction hazard</span><span class="v" style="color:'+(GFCOL[gfp['liquefaction-alert']]||'#aebfd2')+'">'+String(gfp['liquefaction-alert']||'—').toUpperCase()+(gfp['liquefaction-population-alert-value']?' · ~'+(+gfp['liquefaction-population-alert-value']).toLocaleString()+' exposed':'')+'</span></div>';}
+ const places=await jget('https://earthquake.usgs.gov/ws/geoserve/places.json?latitude='+lat+'&longitude='+lon+'&type=geonames&limit=5');
+ if(places&&places.geonames)h+='<div class="small" style="margin-top:7px"><b>Nearest towns:</b> '+places.geonames.features.slice(0,4).map(f=>f.properties.name+' ('+(+f.properties.population||0).toLocaleString()+')').join(', ')+'</div>';
+ h+='<div class="small" style="margin-top:9px"><a href="https://reliefweb.int/updates" target="_blank" rel="noopener">ReliefWeb situation reports →</a> · <a href="https://www.gdacs.org" target="_blank" rel="noopener">GDACS global alerts →</a></div>';
+ el.innerHTML=h||'<div class="muted">No additional ground data.</div>';}
+
+async function loadInSAR(lat,lon,t){const el=$('insar');
+ const j=await jget('https://api.daac.asf.alaska.edu/services/search/param?intersectsWith='+encodeURIComponent('POINT('+lon+' '+lat+')')+'&platform=Sentinel-1&processingLevel=SLC&start='+new Date(t).toISOString()+'&end=2026-12-31T00:00:00Z&output=geojson&maxResults=25');
+ const fs=(j&&j.features)||[];const dates=fs.map(f=>f.properties.startTime).filter(Boolean).sort();
+ el.innerHTML='<div class="row"><span class="l">Post‑event Sentinel‑1 radar passes</span><span class="v">'+fs.length+'</span></div>'+
+  (fs.length?'<div class="small" style="margin-top:3px">Earliest pass: '+String(dates[0]).slice(0,10)+'. Radar measures how the ground itself moved — the rupture and which side dropped.</div>':'<div class="small muted" style="margin-top:3px">No post‑event Sentinel‑1 acquisition yet (6–12 day repeat). The first pass enables a deformation map.</div>')+
+  '<div class="small muted" style="margin-top:8px"><b>How it connects:</b> a coseismic InSAR pair pinpoints the worst‑shaken corridor and the fault that moved. Producing it needs a free NASA Earthdata login + offline processing (ASF HyP3 / ARIA) — the same pipeline as the subsidence producer.</div>';}
+
+$('share').onclick=async()=>{const b=$('share'),url=location.origin+location.pathname+'?event='+$('evsel').value;try{await navigator.clipboard.writeText(url);b.textContent='✓ Link copied';}catch(e){window.prompt('Copy this link:',url);b.textContent='⤴ Share';}setTimeout(()=>b.textContent='⤴ Share',1800);};
+loadList();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VA Strain Console — Field Guide</title>
+<style>
+:root{--bg:#0a1420;--surf:#11213a;--tx:#eaf1fb;--dim:#9db4d2;--va:#5b9bd5;--vad:#003e73;--ok:#2bb673;--amber:#e0a020;--orange:#e8702a;--red:#e24b4a;--bd:rgba(255,255,255,.10);--bd2:rgba(255,255,255,.22)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.6}
+a{color:var(--va);text-decoration:none}a:hover{text-decoration:underline}
+header.top{padding:20px 28px;border-bottom:1px solid var(--bd);background:linear-gradient(180deg,#0c1d33,#0a1420)}
+header.top h1{margin:0;font-size:22px}header.top .sub{color:var(--dim);font-size:13px;margin-top:3px}
+.honest{margin:16px 28px;padding:13px 16px;border:1px solid var(--bd2);border-left:3px solid var(--amber);border-radius:8px;background:#0b1626;color:#cfe1f4;font-size:13.5px}
+.honest b{color:var(--amber)}
+.wrap{display:flex;gap:26px;padding:8px 28px 60px;align-items:flex-start}
+nav.toc{position:sticky;top:14px;flex:none;width:280px;border:1px solid var(--bd);border-radius:10px;background:var(--surf);padding:14px;max-height:calc(100vh - 28px);overflow:auto}
+nav.toc h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim)}
+nav.toc ol{margin:0;padding-left:20px}nav.toc li{margin:5px 0;font-size:13px}
+main{flex:1;min-width:0;max-width:860px}
+section{background:var(--surf);border:1px solid var(--bd);border-radius:12px;padding:20px 24px;margin-bottom:18px}
+section h2{margin:0 0 12px;font-size:20px;scroll-margin-top:14px}
+section h3{font-size:15.5px;margin:15px 0 5px;color:var(--va)}
+p{margin:9px 0}ul{margin:9px 0;padding-left:22px}li{margin:4px 0}
+.bdg{font-size:10px;font-weight:800;padding:1px 6px;border-radius:5px;background:rgba(224,160,32,.16);color:#f0c46a;border:1px solid rgba(224,160,32,.5)}
+code{background:#081320;border:1px solid var(--bd);border-radius:4px;padding:1px 5px;font-size:13px}
+pre{background:#081320;border:1px solid var(--bd);border-radius:8px;padding:12px;overflow:auto;font-size:12.5px;color:#bcd2e8}
+.chip{font-size:12.5px;padding:7px 11px;border-radius:7px;margin:4px 0;border:1px solid var(--bd)}
+.chip.read{background:rgba(91,155,213,.08);border-left:3px solid var(--va)}
+.chip.warn{background:rgba(226,75,74,.08);border-left:3px solid var(--red)}
+@media(max-width:900px){.wrap{flex-direction:column;padding:8px 14px 40px}nav.toc{position:static;width:100%;max-height:none}main{max-width:100%}}
+</style></head><body>
+<header class="top"><h1>VA Strain Console — Field Guide</h1>
+<div class="sub">how to read and wire the VA medical-center strain console · companion to <code>VA_Strain_Console.html</code></div></header>
+<div class="honest"><b>OPERATOR TEMPLATE — DEMO DATA.</b> Real-time VA strain (bed census, ED boarding, RN staffing) is internal to VHA and not public, so this console ships with <b>clearly-labelled demonstration data</b> plus hooks to wire your facility's live feeds (Section 9). It is <b>decision-support, not autopilot</b> — the strain index focuses attention; it does not triage patients. For a fully real-data example of the same engine, see the NHS Scotland console.</div>
+<div class="wrap">
+<nav class="toc"><h3>Contents</h3><ol>
+<li><a href="#s1">What this is — and why a template</a></li>
+<li><a href="#s2">Reading it at a glance</a></li>
+<li><a href="#s3">Facility strain index</a></li>
+<li><a href="#s4">Unit strain ranking</a></li>
+<li><a href="#s5">ED &amp; patient flow</a></li>
+<li><a href="#s6">Mental-health access</a></li>
+<li><a href="#s7">Staffing coverage</a></li>
+<li><a href="#s8">Surge scenario sandbox</a></li>
+<li><a href="#s9">Wiring your live feeds (the hook)</a></li>
+<li><a href="#s10">Honest limits &amp; appropriate use</a></li>
+</ol></nav>
+<main>
+<section id="s1"><h2>1 · What this is — and why a template</h2>
+<div class="chip read"><b>Is:</b> a VA medical-center strain/capacity early-warning console — facility strain index, unit ranking, ED flow, mental-health access, staffing — using the same engine as the St. Petersburg water and NHS consoles.</div>
+<div class="chip warn"><b>Is NOT:</b> connected to live VA systems out of the box, and not a patient-triage tool.</div>
+<p>Unlike public health systems, the VA does not publish real-time operational strain. Bed occupancy, ED boarding and staffing live inside internal VHA systems (bed-management/VSSC). Public VA data is limited to <em>lagged</em> access and quality measures (Access-to-Care wait times, SAIL star ratings, the Facilities API). So this console is built as an <strong>operator template</strong>: realistic demo data you can see working immediately, plus a clean hook to push your facility's real internal numbers in (Section 9) — no code changes required.</p></section>
+
+<section id="s2"><h2>2 · Reading it at a glance</h2>
+<p>The header pill shows the facility tier (<strong>Normal / Watch / Critical</strong>) and the strain index. The banner restates that this is a template on demo data. Everywhere a number appears it carries a <span class="bdg">DEMO</span> flag so no one mistakes it for live telemetry. Once you wire real feeds (Section 9), the demo flags fall away for the fields you supply.</p></section>
+
+<section id="s3"><h2>3 · Facility strain index <span class="bdg">DEMO</span></h2>
+<p>A 0–100 composite of the unit-level pressure below — occupancy relative to capacity, staffing shortfall, and ED boarding. It is weighted toward the worst unit and the busiest top-four, so a single overwhelmed department lifts the facility signal rather than being averaged away. On the demo baseline it reads <strong>Normal (~49)</strong> with the <strong>Emergency Department as the clear hotspot</strong> — illustrating the design intent: most of the building is coping while one unit is under real pressure, and the index points you straight at it.</p></section>
+
+<section id="s4"><h2>4 · Unit strain ranking <span class="bdg">DEMO</span></h2>
+<p>Every unit (ED, ICU, med-surg wards, mental health, community living center, OR), <strong>worst first</strong>, with its occupancy and the driver of its strain. This is the triage-of-attention view: where is pressure concentrating right now? Each unit's score blends occupancy, staffing and — for the ED — boarding load.</p></section>
+
+<section id="s5"><h2>5 · ED &amp; patient flow <span class="bdg">DEMO</span></h2>
+<p>The emergency department in detail: admitted patients <strong>boarding</strong> for want of an inpatient bed, walkouts (left without being seen), and diversion status. ED boarding is the canonical sign that the <em>whole</em> hospital is full — it is an inpatient-flow problem showing up in the ED, which is why it weighs on the facility index.</p></section>
+
+<section id="s6"><h2>6 · Mental-health access <span class="bdg">DEMO</span></h2>
+<p>A VA-specific priority: new-patient wait, same-day demand vs capacity, and inpatient psychiatry occupancy. Mental-health access is a core VA performance and safety concern, so it gets its own panel rather than being buried in general capacity.</p></section>
+
+<section id="s7"><h2>7 · Staffing coverage <span class="bdg">DEMO</span></h2>
+<p>RN actual-vs-target by unit. Staffing is the lever that turns physical capacity into <em>usable</em> capacity — a bed without a nurse is not a bed — so the strain score treats a staffing shortfall as a driver of pressure, not just an HR statistic.</p></section>
+
+<section id="s8"><h2>8 · Surge scenario sandbox</h2>
+<p>Pressure-test the response plan against four what-ifs: <strong>flu surge</strong>, <strong>mass-casualty incident</strong>, <strong>staffing shortage</strong>, and <strong>boarding crisis</strong>. Each adjusts the inputs and recomputes the index and ranking — clearly labelled as rehearsals, not forecasts. Use them to ask "if X happens tonight, where do we break first, and is the escalation plan ready?"</p></section>
+
+<section id="s9"><h2>9 · Wiring your live feeds — the operator hook</h2>
+<p>This is the key to making the console real. A global <code>STATUS_OVERRIDE</code> object, keyed by unit id, lets you push live values in from any source (a scheduled job, a dashboard embed, a paste from your bed-management export) <strong>without editing the console code</strong>. Any field you supply overrides the demo; the rest stays as-is. To force a tier, set <code>tier</code>.</p>
+<pre>// keys: ED, ICU, 3W, 4E, MH, CLC, OR
+STATUS_OVERRIDE['ICU'] = { census: 18, cap: 16, rnAct: 7, rnTgt: 8, tier: 'alert' };
+STATUS_OVERRIDE['ED']  = { census: 41, cap: 30, board: 19 };
+render();   // repaint with your live numbers</pre>
+<p>Wire it to your real systems by setting these fields from:</p>
+<ul>
+<li><strong>Census / capacity / boarding</strong> → your VISN or facility bed-management / capacity-management feed (the internal equivalent of a live census export).</li>
+<li><strong>RN actual vs target</strong> → the staffing/scheduling system (e.g. nurse-staffing methodology targets vs actual assignments).</li>
+<li><strong>Mental-health access</strong> → the scheduling/clinic feed for new-patient and same-day demand.</li>
+<li><strong>Public anchors (lagged)</strong> → VA Access-to-Care wait times and the <a href="https://developer.va.gov/explore/api/va-facilities" target="_blank">VA Facilities API</a> (needs a free developer key) for facility metadata and published wait times.</li>
+</ul>
+<p>The simplest production pattern: a scheduled job pulls your internal numbers, writes a small JSON, and the page reads it and calls <code>render()</code> on a timer. Because the override is field-level, you can wire one feed at a time and the rest stays on demo until you're ready.</p></section>
+
+<section id="s10"><h2>10 · Honest limits &amp; appropriate use</h2>
+<ul>
+<li><strong>Demo until wired.</strong> Out of the box the numbers are illustrative; only fields you push via the hook are real.</li>
+<li><strong>Decision-support, not autopilot.</strong> The index focuses attention; clinical and command staff decide.</li>
+<li><strong>Not a patient-level tool.</strong> It reads unit and facility pressure, not individual triage.</li>
+<li><strong>Public VA data is lagged.</strong> Access-to-Care and SAIL are useful anchors but are not real-time strain.</li>
+</ul>
+<div class="chip read"><b>Appropriate use:</b> a starting template for a VA facility or VISN operations team to stand up a strain view on their own internal feeds. For a working real-data reference using the identical engine on open data, open the <b>NHS Scotland</b> console and its field guide.</div>
+</section>
+</main></div></body></html>

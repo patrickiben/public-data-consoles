@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VA Medical Center — Strain & Capacity Console (Operator Template)</title>
+<style>
+  :root{--bg:#0a1018;--surf2:#0e1622;--surf:#13202f;--tx:#eaf0f7;--dim:#9fb2c8;
+    --green:#1d9e75;--green2:#5d9e2e;--amber:#d9a521;--red:#e24b4a;--blue:#4f86d6;--teal:#34b8c8;
+    --bd:rgba(255,255,255,.10);--bd2:rgba(255,255,255,.22);--r:10px;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.45}
+  header{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--bd);background:linear-gradient(180deg,#0d1726,#0a1018);flex-wrap:wrap}
+  header h1{font-size:16px;margin:0;font-weight:700}
+  header .sub{color:var(--dim);font-size:11px;margin-top:1px}
+  .grow{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--bd2)}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .clock{font-variant-numeric:tabular-nums;color:var(--dim);font-size:11px}
+  #banner{padding:9px 16px;font-size:11.5px;color:#cfe0f0;background:#0c1827;border-bottom:1px solid var(--bd)}
+  #banner b{color:var(--amber)}
+  .demoflag{font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;letter-spacing:.4px;background:rgba(217,165,33,.18);color:#f0cf6a;border:1px solid rgba(217,165,33,.5);vertical-align:middle}
+  .liveflag{font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;background:rgba(29,158,117,.18);color:#5fe0b0;border:1px solid rgba(29,158,117,.5);vertical-align:middle}
+  main{display:flex;gap:12px;padding:12px;align-items:flex-start}
+  #left{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+  #side{flex:none;width:420px;display:flex;flex-direction:column;gap:12px}
+  .card{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:12px}
+  .card h2{font-size:13px;margin:0 0 3px;font-weight:700;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .card .cap{color:var(--dim);font-size:11px;margin-bottom:9px}
+  .rank{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .rank .nm{width:150px;font-size:11.5px;flex:none}
+  .rank .nm small{color:var(--dim);font-size:10px;display:block}
+  .barwrap{flex:1;height:16px;background:#0a1422;border-radius:4px;position:relative;overflow:hidden}
+  .bar{height:100%;border-radius:4px}
+  .val{width:62px;text-align:right;font-variant-numeric:tabular-nums;font-size:11px;flex:none}
+  .kv{display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;gap:8px;border-top:1px solid var(--bd)}
+  .kv:first-child{border-top:0}.kv span:first-child{color:var(--dim)}
+  .big{font-size:30px;font-weight:800;line-height:1}
+  .gauge{display:flex;gap:14px;align-items:center}
+  .met{border-top:1px solid var(--bd);padding:6px 0;font-size:11.5px}
+  .met:first-child{border-top:0}
+  .caveat{color:var(--dim);font-size:10.5px;margin-top:7px}
+  .feeds{display:flex;flex-wrap:wrap;gap:8px}
+  .feeds .f{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);border:1px solid var(--bd);border-radius:7px;padding:4px 8px}
+  select,button.ctl{background:var(--surf2);color:var(--tx);border:1px solid var(--bd2);border-radius:7px;padding:5px 8px;font-size:12px}
+  details summary{cursor:pointer;font-weight:700;font-size:12.5px}
+  code{background:#0a1422;border:1px solid var(--bd);border-radius:4px;padding:1px 5px;font-size:11px}
+  .drill{display:inline-block;background:var(--amber);color:#1a1206;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:5px;letter-spacing:.5px;margin-left:6px}
+  @media(max-width:900px){main{flex-direction:column}#side{width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1 id="fname">VA Medical Center — Strain &amp; Capacity Console</h1>
+    <div class="sub">operator early-warning template · <b style="color:var(--dim)">decision-support, not autopilot</b></div>
+  </div>
+  <div class="grow"></div>
+  <label class="sub">Scenario
+    <select id="scen">
+      <option value="none">— live / demo baseline —</option>
+      <option value="flu">Respiratory/flu surge</option>
+      <option value="mci">Mass-casualty incident</option>
+      <option value="staff">Staffing shortage (sick-out)</option>
+      <option value="board">ED boarding crisis</option>
+    </select>
+  </label>
+  <button class="ctl" id="reset">Reset</button>
+  <span class="clock" id="clock"></span>
+  <span class="pill" id="threat"><span class="dot"></span><span id="threattx">—</span></span>
+</header>
+<div id="banner"></div>
+
+<main>
+  <div id="left">
+    <div class="card" id="idxcard">
+      <h2>Facility strain index <span class="demoflag">DEMO DATA</span></h2>
+      <div class="cap">Composite 0–100 from unit occupancy, staffing gap, ED boarding and access pressure. A watch tool — clinical judgment decides. Replace demo values with your facility's live feeds via the operator hook (below).</div>
+      <div class="gauge"><div><div class="big" id="idxval">—</div><div class="sub" id="idxtier"></div></div><div style="flex:1"><div class="barwrap" style="height:22px"><div class="bar" id="idxbar"></div></div><div class="caveat" id="idxnote"></div></div></div>
+    </div>
+    <div class="card" id="unitcard">
+      <h2>Unit strain ranking <span class="demoflag">DEMO DATA</span></h2>
+      <div class="cap">Each unit's strain score (worst first), with occupancy and the primary driver. ⚑ = operator override active. Mirrors the St. Pete station-criticality ranking.</div>
+      <div id="units"></div>
+    </div>
+    <div class="card" id="edcard">
+      <h2>Emergency Dept &amp; patient flow <span class="demoflag">DEMO DATA</span></h2>
+      <div class="cap">The usual strain epicenter: boarding (admitted patients held in the ED for want of an inpatient bed), walkouts, and diversion.</div>
+      <div id="ed"></div>
+    </div>
+    <div class="card" id="mhcard">
+      <h2>Mental-health access <span class="demoflag">DEMO DATA</span> <span class="liveflag">public anchor available</span></h2>
+      <div class="cap">A VA-specific priority. New-patient wait, same-day demand, and inpatient psych occupancy. Published facility wait times (access.va.gov) can anchor the wait metric; live in-day demand is operator-supplied.</div>
+      <div id="mh"></div>
+    </div>
+  </div>
+
+  <div id="side">
+    <div class="card" id="readcard">
+      <h2>Charge-nurse / administrator readout</h2>
+      <div class="cap">Auto-written plain-language summary of current strain and the top pressures.</div>
+      <div id="readout"></div>
+    </div>
+    <div class="card" id="staffcard">
+      <h2>Staffing coverage <span class="demoflag">DEMO DATA</span></h2>
+      <div class="cap">Actual vs target RN coverage by unit; red = understaffed. Live nurse-staffing/float data is internal — wire via the hook.</div>
+      <div id="staff"></div>
+    </div>
+    <div class="card" id="scencard">
+      <h2>Surge scenario sandbox</h2>
+      <div class="cap">Pressure-test the response plan: pick a scenario to see how strain propagates. Clearly a drill on synthetic data — never live.</div>
+      <div id="scenout"></div>
+    </div>
+    <div class="card" id="hookcard">
+      <h2>Operator hook — wire your live feeds</h2>
+      <details>
+        <summary>How to make this real (no code edits to panels)</summary>
+        <div style="margin-top:8px;font-size:11.5px;color:var(--dim)">
+          <p>Real-time strain (census, ED boarding, RN staffing) is internal to VHA and not public, so this console ships with <b>clearly-labeled DEMO data</b>. To make it live, push your facility's numbers into the global override object from your own scheduled job / dashboard backend — no edits to the panels needed:</p>
+          <p><code>STATUS_OVERRIDE['ICU'] = {census:18, cap:16, rnAct:7, rnTgt:8, tier:'alert'};</code><br>
+          <code>STATUS_OVERRIDE['ED'] = {board:22, lwbs:6.0, divert:true};</code> then call <code>render()</code>.</p>
+          <p>Keys are the unit IDs shown in the ranking (ED, ICU, 3W, 4E, MH, CLC, OR). Any field you supply overrides the demo value; fields you omit keep the demo. A <code>tier:'alert'|'watch'</code> flag forces that unit's escalation. Public anchors (VA Access-to-Care wait times, facility list/quality via api.va.gov Facilities API — note: that API needs a free key) are lagged and best baked as the baseline, with the operator hook carrying the live tail.</p>
+        </div>
+      </details>
+    </div>
+    <div class="card" id="feedcard">
+      <h2>Data health</h2>
+      <div class="cap">What's live vs demo vs operator-supplied. A single feed failure never blanks the console.</div>
+      <div class="feeds" id="feeds"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const FACILITY="Demo VA Medical Center (template — replace with your facility)";
+// ---- DEMO baseline (clearly synthetic; realistic ranges for a mid-size VAMC) ----
+const BASE={
+  units:[
+    {id:'ED', name:'Emergency Department', sub:'30 bays', cap:30, census:34, board:14, boardHrs:9.2, lwbs:4.1, divert:false, rnTgt:8, rnAct:6, driver:'admitted-patient boarding'},
+    {id:'ICU',name:'ICU / MICU',           sub:'16 beds', cap:16, census:14, rnTgt:8, rnAct:7, driver:'high acuity, limited beds'},
+    {id:'3W', name:'Med-Surg 3-West',       sub:'32 beds', cap:32, census:30, rnTgt:6, rnAct:5, driver:'discharge / placement delays'},
+    {id:'4E', name:'Med-Surg 4-East',       sub:'32 beds', cap:32, census:29, rnTgt:6, rnAct:5, driver:'steady census'},
+    {id:'MH', name:'Inpatient Mental Health',sub:'24 beds', cap:24, census:23, rnTgt:6, rnAct:4, driver:'staffing + admission demand'},
+    {id:'CLC',name:'Community Living Center',sub:'40 beds', cap:40, census:38, rnTgt:7, rnAct:6, driver:'long-term placement backlog'},
+    {id:'OR', name:'OR / PACU',             sub:'8 rooms', cap:8,  census:6,  rnTgt:5, rnAct:5, driver:'elective backlog'},
+  ],
+  mh:{newWait:21, sameDay:12, sameDayCap:10, psychOccPct:96, consultBacklog:140},
+};
+const STATUS_OVERRIDE={}; // operator hook
+let SCEN='none';
+window.STATUS_OVERRIDE=STATUS_OVERRIDE;
+const feedStatus={Demo:'demo', AccessToCare:'public (lagged)', Operator:'hook ready'};
+
+function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
+function deepUnits(){ // apply scenario + overrides to a working copy
+  let u=BASE.units.map(x=>Object.assign({},x));
+  let mh=Object.assign({},BASE.mh);
+  if(SCEN==='flu'){u=u.map(x=>{if(x.id==='ED'){x.census+=10;x.board+=6;x.lwbs+=2.5;}if(['3W','4E','ICU'].includes(x.id))x.census=Math.round(x.cap*0.99);return x;});}
+  if(SCEN==='mci'){u=u.map(x=>{if(x.id==='ED'){x.census+=16;x.board+=4;x.divert=true;}if(x.id==='OR')x.census=x.cap;if(x.id==='ICU')x.census=x.cap;return x;});}
+  if(SCEN==='staff'){u=u.map(x=>{x.rnAct=Math.max(1,x.rnAct-2);return x;});}
+  if(SCEN==='board'){u=u.map(x=>{if(x.id==='ED'){x.board+=12;x.boardHrs+=8;}if(['3W','4E','CLC'].includes(x.id))x.census=x.cap;return x;});mh.consultBacklog+=60;}
+  // operator overrides
+  u=u.map(x=>{const o=STATUS_OVERRIDE[x.id];return o?Object.assign(x,o):x;});
+  return {u,mh};
+}
+function unitStrain(x){
+  const occ=clamp((x.census/x.cap-0.70)/(1.15-0.70),0,1);
+  const staff=clamp(1-x.rnAct/x.rnTgt,0,1);
+  const board=x.id==='ED'?clamp((x.board||0)/22,0,1):0;
+  let s=Math.round(100*(0.45*occ+0.35*staff+0.20*Math.max(board, x.id==='ED'?board:occ*0.0)));
+  if(x.id==='ED') s=Math.round(100*(0.35*occ+0.30*staff+0.35*board));
+  if(x.tier==='alert') s=Math.max(s,88); if(x.tier==='watch') s=Math.max(s,65);
+  return clamp(s,0,100);
+}
+function col(s){return s>=80?'var(--red)':s>=60?'var(--amber)':s>=40?'var(--green2)':'var(--green)';}
+function tier(s){return s>=80?['Critical','var(--red)']:s>=60?['Watch','var(--amber)']:['Normal','var(--green)'];}
+
+function render(){
+  const {u,mh}=deepUnits();
+  u.forEach(x=>x._s=unitStrain(x));
+  const ranked=u.slice().sort((a,b)=>b._s-a._s);
+  const idx=Math.round(ranked.slice(0,4).reduce((a,b)=>a+b._s,0)/4*0.6 + ranked[0]._s*0.4); // weighted toward worst
+  const [tn,tc]=tier(idx);
+  // headline
+  $('#idxval').textContent=idx; $('#idxval').style.color=tc;
+  $('#idxtier').innerHTML=`<b style="color:${tc}">${tn}</b>`;
+  $('#idxbar').style.width=idx+'%'; $('#idxbar').style.background=tc;
+  const beds=u.reduce((a,b)=>a+(b.cap-b.census),0);
+  $('#idxnote').innerHTML=`Worst unit: <b>${ranked[0].name}</b> (${ranked[0]._s}). Net available beds: <b style="color:${beds<6?'var(--red)':'var(--tx)'}">${beds}</b> across the facility.${SCEN!=='none'?' <span class="drill">DRILL — synthetic</span>':''}`;
+  // unit ranking
+  $('#units').innerHTML=ranked.map(x=>{const occ=Math.round(x.census/x.cap*100);const ov=STATUS_OVERRIDE[x.id];
+    return `<div class="rank"><div class="nm">${x.name}${ov?' ⚑':''}<small>${x.census}/${x.cap} (${occ}%) · ${x.driver}</small></div>
+      <div class="barwrap"><div class="bar" style="width:${x._s}%;background:${col(x._s)}"></div></div><div class="val">${x._s}</div></div>`;}).join('');
+  // ED
+  const ed=u.find(x=>x.id==='ED');
+  $('#ed').innerHTML=`<div class="kv"><span>ED census / capacity</span><b style="color:${ed.census>ed.cap?'var(--red)':'var(--tx)'}">${ed.census} / ${ed.cap} (${Math.round(ed.census/ed.cap*100)}%)</b></div>
+    <div class="kv"><span>Admitted patients boarding</span><b style="color:${ed.board>=15?'var(--red)':ed.board>=8?'var(--amber)':'var(--tx)'}">${ed.board} (avg ${ed.boardHrs.toFixed(1)} h)</b></div>
+    <div class="kv"><span>Left without being seen</span><b>${ed.lwbs.toFixed(1)}%</b></div>
+    <div class="kv"><span>Ambulance diversion</span><b style="color:${ed.divert?'var(--red)':'var(--green)'}">${ed.divert?'ON DIVERSION':'accepting'}</b></div>`;
+  // MH
+  $('#mh').innerHTML=`<div class="kv"><span>New-patient wait (days)</span><b style="color:${mh.newWait>=20?'var(--amber)':'var(--tx)'}">${mh.newWait}</b></div>
+    <div class="kv"><span>Same-day MH demand vs capacity</span><b style="color:${mh.sameDay>mh.sameDayCap?'var(--red)':'var(--tx)'}">${mh.sameDay} / ${mh.sameDayCap}</b></div>
+    <div class="kv"><span>Inpatient psych occupancy</span><b>${mh.psychOccPct}%</b></div>
+    <div class="kv"><span>Specialty/MH consult backlog</span><b>${mh.consultBacklog}</b></div>`;
+  // staffing
+  $('#staff').innerHTML=u.map(x=>{const r=x.rnAct/x.rnTgt;const c=r>=1?'var(--green)':r>=0.8?'var(--amber)':'var(--red)';
+    return `<div class="rank"><div class="nm" style="width:140px">${x.name}</div><div class="barwrap"><div class="bar" style="width:${Math.round(clamp(r,0,1.1)/1.1*100)}%;background:${c}"></div></div><div class="val">${x.rnAct}/${x.rnTgt}</div></div>`;}).join('');
+  // scenario out
+  $('#scenout').innerHTML = SCEN==='none' ? `<div class="caveat">No scenario active — showing the demo baseline. Pick a scenario above to stress-test.</div>`
+    : `<div class="met"><b>${({flu:'Respiratory/flu surge',mci:'Mass-casualty incident',staff:'Staffing shortage',board:'ED boarding crisis'})[SCEN]}</b> <span class="drill">DRILL</span></div>
+       <div class="caveat">Facility strain index → <b style="color:${tc}">${idx} (${tn})</b>; worst unit <b>${ranked[0].name}</b> (${ranked[0]._s}); net beds <b>${beds}</b>. This is a synthetic pressure-test of your response plan, not live data.</div>`;
+  // readout
+  const hot=ranked.filter(x=>x._s>=60).map(x=>x.name);
+  $('#readout').innerHTML=`<ul style="margin:0;padding-left:18px">
+    <li style="margin:5px 0">Facility strain is <b style="color:${tc}">${tn.toLowerCase()}</b> (${idx}/100). ${hot.length?`Pressure is concentrated in <b>${hot.join(', ')}</b>.`:'No unit is in the watch range right now.'}</li>
+    <li style="margin:5px 0">The ED is holding <b>${ed.board}</b> admitted patients (avg ${ed.boardHrs.toFixed(1)} h)${ed.divert?' and is <b style="color:var(--red)">on diversion</b>':''}; ${beds} inpatient beds are open facility-wide.</li>
+    <li style="margin:5px 0">Mental-health new-patient wait is <b>${mh.newWait} days</b>; same-day demand ${mh.sameDay} vs ${mh.sameDayCap} slots.</li>
+    <li style="margin:5px 0">Most understaffed: <b>${u.slice().sort((a,b)=>a.rnAct/a.rnTgt-b.rnAct/b.rnTgt)[0].name}</b>.</li>
+    </ul>
+    <div class="caveat" style="border-top:1px solid var(--bd);padding-top:7px"><b>This is DEMO data on a template.</b> It is decision-support to focus attention, not a directive — clinical and command judgment decides. Wire your facility's live feeds via the operator hook to make it real.</div>`;
+  // escalate + feeds
+  $('#threat').innerHTML=`<span class="dot" style="background:${tc}"></span><span>${tn} — facility strain ${idx}</span>`;
+  $('#banner').innerHTML=`<b>OPERATOR TEMPLATE — DEMO DATA.</b> Real-time VA strain (ED boarding, bed census, RN staffing) is internal to VHA and <b>not public</b>, so this console ships with clearly-labeled <span class="demoflag">DEMO</span> values and <b>STATUS_OVERRIDE hooks</b> to wire your facility's live feeds (see the operator hook panel). Public anchors (VA Access-to-Care wait times, facility/quality data) are <span class="liveflag">public</span> but lagged. <b>Decision-support, not autopilot</b> — clinical and command staff decide; the strain index focuses attention, it does not triage patients.`;
+  drawFeeds();
+}
+function drawFeeds(){const map={Demo:'unit/ED/staffing (demo — wire live)',AccessToCare:'VA Access-to-Care wait times',Operator:'STATUS_OVERRIDE live hook'};let h='';
+  for(const k in feedStatus){const s=feedStatus[k];const c=s.startsWith('public')?'var(--amber)':s.startsWith('demo')?'var(--dim)':'var(--teal)';
+    h+=`<div class="f"><span class="dot" style="background:${c}"></span>${map[k]} <span style="opacity:.7">${s}</span></div>`;}
+  const live=Object.keys(STATUS_OVERRIDE).length;
+  h+=`<div class="f"><span class="dot" style="background:${live?'var(--green)':'var(--dim)'}"></span>operator overrides: ${live||'none'}</div>`;
+  $('#feeds').innerHTML=h;}
+
+$('#fname').textContent=FACILITY.split(' (')[0]+" — Strain & Capacity Console";
+$('#scen').onchange=e=>{SCEN=e.target.value;render();};
+$('#reset').onclick=()=>{SCEN='none';$('#scen').value='none';for(const k in STATUS_OVERRIDE)delete STATUS_OVERRIDE[k];render();};
+function clockTick(){$('#clock').textContent=new Date().toISOString().replace('T',' ').slice(0,19)+' UTC';}
+render();clockTick();setInterval(clockTick,1000);
+</script>
+</body>
+</html>

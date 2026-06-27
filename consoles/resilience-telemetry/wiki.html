@@ -1,0 +1,565 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resilience Telemetry — Operator Wiki</title>
+<style>
+:root{--bg:#081319;--surf2:#0d1c24;--surf:#13262f;--tx:#e9eff3;--dim:#9fb2c0;--green:#1d9e75;--amber:#c98a1a;--red:#e24b4a;--blue:#378add;--teal:#26c6da;--bd:rgba(255,255,255,.10);--bd2:rgba(255,255,255,.22);}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6}
+a{color:var(--teal);text-decoration:none} a:hover{text-decoration:underline}
+header.top{padding:20px 28px;border-bottom:1px solid var(--bd);background:linear-gradient(180deg,#0c1b23,#081319)}
+header.top h1{margin:0;font-size:22px;letter-spacing:.3px}
+header.top .sub{color:var(--dim);font-size:13px;margin-top:3px}
+.honest{margin:16px 28px;padding:13px 16px;border:1px solid var(--bd2);border-left:3px solid var(--amber);border-radius:8px;background:#0a1820;color:#cfe0ea;font-size:13.5px}
+.honest b{color:var(--amber)}
+.wrap{display:flex;gap:26px;padding:8px 28px 60px;align-items:flex-start}
+nav.toc{position:sticky;top:14px;flex:none;width:290px;border:1px solid var(--bd);border-radius:10px;background:var(--surf);padding:14px 14px;max-height:calc(100vh - 28px);overflow:auto}
+nav.toc h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim)}
+nav.toc ol{margin:0;padding-left:20px} nav.toc li{margin:5px 0;font-size:13px}
+main{flex:1;min-width:0;max-width:880px}
+section{background:var(--surf);border:1px solid var(--bd);border-radius:12px;padding:20px 24px;margin-bottom:18px}
+section h2{margin:0 0 12px;font-size:20px;color:var(--tx);scroll-margin-top:14px}
+section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
+.body p{margin:9px 0} .body ul,.body ol{margin:9px 0;padding-left:22px} .body li{margin:4px 0}
+.body code{background:#0a1820;border:1px solid var(--bd);border-radius:4px;padding:1px 5px;font-size:13px}
+.body blockquote{margin:10px 0;padding:8px 14px;border-left:3px solid var(--teal);background:#0a1820;border-radius:0 6px 6px 0;color:#cfe0ea}
+.body table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13.5px} .body td,.body th{border:1px solid var(--bd);padding:6px 9px;text-align:left} .body th{color:var(--dim);background:#0a1820}
+.chip{font-size:12.5px;padding:7px 11px;border-radius:7px;margin:4px 0;border:1px solid var(--bd)}
+.chip.read{background:rgba(38,198,218,.08);border-left:3px solid var(--teal)}
+.chip.warn{background:rgba(226,75,74,.08);border-left:3px solid var(--red)}
+.chip b{color:var(--tx)}
+@media(max-width:900px){.wrap{flex-direction:column;padding:8px 14px 40px} nav.toc{position:static;width:100%;max-height:none} main{max-width:100%}}
+</style></head><body>
+<header class="top"><h1>Resilience Telemetry — Operator Wiki</h1>
+<div class="sub">A plain-language field guide to the cross-asset fragility &amp; directed-spillover console · companion to <code>Resilience_Telemetry_Console.html</code></div></header>
+<div class="honest"><b>DESCRIPTIVE, NOT PREDICTIVE.</b> This console — and this guide — describe market stress as it happens. Nothing here forecasts crashes, gives timing, or is financial advice. Every "warning-like" panel rises <b>during</b> dislocations (2008/2020/2022), not before. Read Section 1 first.</div>
+<div class="wrap">
+<nav class="toc"><h3>Contents</h3><ol><li><a href="#s1">What this is — and what it is NOT</a></li>
+<li><a href="#s2">Reading the console at a glance</a></li><li><a href="#stwo">The two views — Diagnostic vs Predictive</a></li><li><a href="#sfactor">Factor baskets — what actually moves together</a></li><li><a href="#smeta">The meta-learning reliability layer</a></li><li><a href="#scascade">Cascade simulation — shock propagation</a></li><li><a href="#sgame">Game-theoretic lens — beauty contest &amp; coordination risk</a></li><li><a href="#snetstruct">Network structure — hubs, choke points &amp; amplification</a></li><li><a href="#s2b">In plain English — the live readout (start here)</a></li>
+<li><a href="#s3">Fragility thermometer</a></li>
+<li><a href="#s4">Indicator detail — the six channels</a></li>
+<li><a href="#s5">Surprise lens (active-inference analogue)</a></li>
+<li><a href="#s6">Directed spillover network (LCCA) — who leads whom</a></li>
+<li><a href="#s7">Asymmetry matrix & net transmitter / receiver</a></li>
+<li><a href="#s8">Systemic coupling — spectral radius ρ̂ & absorption ratio</a></li><li><a href="#s8b">Anticipation — where to act &amp; the out-of-sample test (predictive)</a></li><li><a href="#sper">Perspectives — Burry &amp; Stevenson lenses</a></li><li><a href="#sbkd">Structural backdrop — distribution &amp; real economy</a></li><li><a href="#salpha">Alpha Lab — can you trade the signal? (read first)</a></li><li><a href="#sfmacro">Forward macro — recession &amp; financial conditions</a></li><li><a href="#scrisis">Crisis replay — your mix through past stress</a></li><li><a href="#sovernight">Overnight vs intraday — the one free directional regularity</a></li>
+<li><a href="#s9">Financial turbulence (Mahalanobis)</a></li>
+<li><a href="#s10">Structural geography — market-state manifold (diffusion map)</a></li>
+<li><a href="#s11">Shock clustering — Hawkes self-excitation</a></li>
+<li><a href="#s12">Live vs Backtest mode</a></li>
+<li><a href="#s13">Base-rate honesty panel</a></li>
+<li><a href="#s14">Scenario sandbox (drills)</a></li>
+<li><a href="#s15">Asset coverage & exclusions</a></li>
+<li><a href="#s16">Where the data comes from & data health</a></li>
+<li><a href="#s17">Why it borrows the water dashboard's lenses but not its foresight</a></li>
+<li><a href="#s18">FAQ for investors & operators</a></li>
+<li><a href="#s19">Glossary</a></li></ol></nav>
+<main><section id="s1"><h2>What this is — and what it is NOT</h2><div class="chip read"><b>Read it:</b> Start here. The console is explicitly NOT predictive. It is a stress thermometer, not a crash detector.</div><div class="chip warn"><b>Does NOT mean:</b> Do NOT use this to time trades or forecast crashes. Do NOT assume high readings mean a collapse is imminent. Do NOT treat lead-lag associations as causal relationships.</div><div class="body"><p><strong>The Honesty Contract.</strong> This console describes financial stress in real time. It is <em>not</em> a crash predictor, not a timing tool, and makes no forecast. The framing borrows from physics (critical slowing down, phase transitions) as an analogy only — these signals are mostly <em>absent</em> before historical meltdowns.</p>
+
+<p><strong>Why Markets Aren't Like the Water System.</strong> The console's core panels — spectral radius, absorption ratio, turbulence, Hawkes clustering, lead-lag — were built as a <strong>thermometer of stress</strong>, not a thermometer of future crisis. By their own authors' admission, they rise <em>during</em> 2008/2020/2022, not before. Markets invert every advantage the water system has:</p>
+
+<ul>
+<li><strong>Topology is estimated and rewires in a crisis.</strong> The cross-asset network here is inferred from noisy returns; the instant volatility spikes, correlations collapse to one mode (everything moves together), and the graph rewires unpredictably.</li>
+<li><strong>Nothing is conserved.</strong> A crowded position unwinds in milliseconds through price. There is no quantity to integrate forward — no water level rising to a calculable overflow.</li>
+<li><strong>Drivers are endogenous and already priced.</strong> The would-be exogenous shocks (Fed policy, CPI, flows) are already embedded in price expectations. Only the unforecastable surprise remains.</li>
+<li><strong>Information has ~zero transport delay.</strong> Any stable upstream-leads-downstream pattern gets arbitraged away immediately. Lead-lag is an association observed in the data, not a causal edge you can exploit.</li>
+<li><strong>Price is the expectation itself.</strong> There is no hidden state. Watching the gauge perturbs it (reflexivity). The market is not a system with secrets to uncover.</li>
+</ul>
+
+<p><strong>What the Panels Actually Tell You.</strong> When the Fragility Thermometer rises (60–100), or spectral radius climbs, or Mahalanobis turbulence spikes, you are seeing that the market is currently moving in ways that are statistically large, persistent, or tightly coupled — <em>today</em>. A high reading can persist for months or years with nothing catastrophic happening. It can also drop from low levels with no warning. This is coincident, not leading.</p>
+
+<p><strong>The Only Weakly-Honest Leading Signal.</strong> The standardized absorption-ratio <em>shift</em> has shown the barest hint of lead in some sample windows — but it is sample-dependent and has not held out-of-sample. Do not trade on it.</p></div></section>
+<section id="s2"><h2>Reading the console at a glance</h2><div class="chip read"><b>Read it:</b> Scan: threat pill color in top right. Read the banner. Pick Live or Backtest. Then dive into the left (market-wide) or right (per-asset) panels.</div><div class="chip warn"><b>Does NOT mean:</b> Do NOT ignore the banner. Do NOT assume the threat pill is predictive. Do NOT cherry-pick favorable readings.</div><div class="body"><h3>Header: Threat Tier Pill</h3>
+<p>Top right shows the highest current Fragility Thermometer reading across all assets, with a colored pill:</p>
+<ul>
+<li><strong>Green, "Resilient"</strong> (0–59): Assets are moving within their own historical norm.</li>
+<li><strong>Amber, "Reduced resilience — watch"</strong> (60–84): Behavior is elevated vs baseline, but not extreme.</li>
+<li><strong>Red, "Least resilient vs recent norm"</strong> (≥85): Behavior is far above the asset's typical range.</li>
+</ul>
+<p>The pill updates in real time. It is a <strong>coincident indicator</strong> — it moves when stress is happening now, not before it arrives.</p>
+
+<h3>Always-On Honesty Banner</h3>
+<p>Below the header, a prominent banner states:</p>
+<blockquote><strong>DESCRIPTIVE, NOT PREDICTIVE.</strong> A resilience thermometer, not a crash detector.</blockquote>
+<p>It repeats the critical caveats: high readings can persist for months with nothing happening; declines also start from low readings; lead-lag is association, not causation; this is not financial advice.</p>
+
+<h3>Live | Backtest Toggle</h3>
+<p>Top-center toggle switches between two modes:</p>
+<ul>
+<li><strong>Live monitor</strong> (default): Real-time data from embedded snapshots + refreshed endpoints (crypto, FX, equities). All panels update as new data arrives.</li>
+<li><strong>Backtest / research</strong>: Slows time to a cursor date; every statistic uses only data up to that date (walk-forward). A separate "base-rate honesty" panel then compares what the metrics said that day to what actually happened next. Because crashes are rare (handful per decade), any apparent "skill" is mostly luck.</li>
+</ul>
+
+<h3>Detail Asset Selector</h3>
+<p>Top of header, next to the clock. Choose one asset to drill into its six fragility channels (persistence, amplitude, tail asymmetry, auto-correlation structure, self-similarity, mode-switching). These six channels overlap significantly (especially the persistence measures) and are not independent votes.</p>
+
+<h3>Data Vintage Clock</h3>
+<p>Displays "data through [date]" showing when the embedded snapshot was last updated. Colored dot = fresh. In Live mode, endpoints (Binance for crypto, ECB/Frankfurter for FX, Yahoo for equities) refresh the tail; a single feed failure does not blank the console.</p></div></section>
+<section id="stwo"><h2>The two views — Diagnostic vs Predictive</h2>
+<div class="chip read"><b>Read it:</b> The tabs at the top split the console into <b>Diagnostic</b> (current health &amp; strain — what is happening now) and <b>Predictive</b> (forecasting — the honest ceiling on what can be foreseen). The plain-English briefing and data-health show on both.</div>
+<div class="chip warn"><b>Does NOT mean:</b> The Predictive tab is NOT an alpha engine. It is the deliberately small, honest set of things that <em>can</em> be forecast (volatility, recession horizon) shown next to the things that cannot (short-term direction, R²≤0). The split exists to keep the two from being confused.</div>
+<div class="body"><p>The console used to mix descriptive monitors and the honest forecast panels in one scroll. They are now separated so the mental model is explicit. <strong>Diagnostic</strong> holds the fragility thermometer, directed network, systemic coupling, turbulence, manifold, Hawkes, surprise, order-book pressure, structural backdrop, crisis replay, perspectives, scenario sandbox, and the new <strong>factor-baskets</strong> panel. <strong>Predictive</strong> holds anticipation, the volatility lab, forward-macro, overnight drift, the Alpha Lab, and the new <strong>meta-learning reliability</strong> layer. This is itself the thesis in furniture form: a large, rich diagnostic surface and a small, hedged predictive one.</p></div></section>
+<section id="sfactor"><h2>Factor baskets — what actually moves together</h2>
+<div class="chip read"><b>Read it:</b> Hierarchical (average-linkage) clustering of the return-correlation matrix groups the 51 assets into the handful of <em>empirical</em> factors that actually drive them — the "actual baskets," not the nominal nine asset-class labels. It reports the <b>participation ratio</b> (effective number of independent factors), and the directed-network nodes are ringed in each basket's color.</div>
+<div class="chip warn"><b>Does NOT mean:</b> Assets in one basket are NOT independent bets. Spreading money across names inside the same basket barely diversifies. The clustering is descriptive of co-movement, not a claim about causation or the future.</div>
+<div class="body"><p>This panel answers "how much of my breadth is real?" Directly: the 48 non-crypto names collapse to about <strong>4.7 effective independent factors</strong> (participation ratio = trace²/‖C‖²). The biggest basket — roughly two-thirds of the assets — is a single <strong>global equity beta</strong> cluster: US large-cap, sectors, developed and emerging international, and even high-yield/EM credit all move as one risk-on factor. The clustering is genuinely informative where the labels mislead: it splits "credit" by <em>behavior</em> — high-yield and EM debt land in the equity-beta basket, while investment-grade and government bonds plus gold form a separate <strong>duration / safe-haven</strong> basket. The dollar/FX names form a third basket; volatility (VIX), cash (SHV), and idiosyncratic commodities sit alone. This is the empirical backbone of the "more assets, not more information" finding, shown as structure rather than asserted.</p>
+<p><strong>The baskets drive the whole interface.</strong> The asset selector is grouped into these baskets (not the nominal classes), the fragility thermometer sorts and headers by basket with a basket-color dot on each row, and the directed-network nodes are ringed in their basket color — so wherever you look, assets are organized by what actually moves together. (The underlying class field is retained only for mechanics like base-rate eligibility and FX labelling.)</p></div></section>
+<section id="smeta"><h2>The meta-learning reliability layer</h2>
+<div class="chip read"><b>Read it:</b> A layer <em>above</em> the forecasts. It does not predict — it reports <b>when</b> each forecast can be trusted: a skill board (out-of-sample R² for 5- and 20-day volatility vs direction) and a regime-conditional reliability table (how forecastable volatility is in calm / normal / stressed regimes), with your current regime marked.</div>
+<div class="chip warn"><b>Does NOT mean:</b> NOT a way to manufacture directional alpha. Conditioning on regime improves your sense of <em>how much to trust and size</em> the volatility/risk forecast — it never makes direction forecastable. Direction stays R²≈0 in every regime.</div>
+<div class="body"><p>This is meta-labeling in its only honest form (after López de Prado): use the working risk model to gate and size, not to invent a directional signal. The regime table makes two facts concrete. First, <strong>volatility is far more forecastable when stress is already elevated</strong> — its regime-conditional R² climbs from roughly 0.01 in calm markets to ~0.07 normal to ~0.35 stressed (clustering is strongest in turmoil). Second, <strong>direction is unforecastable in every regime</strong> (R²≈0 throughout). So the honest use is: in a stressed regime, trust and act on the volatility/risk reading more; never read any of it as a direction call. The panel highlights which regime you are in right now.</p></div></section>
+<section id="scascade"><h2>Cascade simulation — shock propagation</h2>
+<div class="chip read"><b>Read it:</b> Pick a market to shock and a minimum link strength; the panel propagates the shock <em>downstream</em> along the directed spillover network and reports how many markets it reaches, in how many waves, and which fall in each wave. It also reports the percolation threshold — the link strength below which a single shock spans the whole system.</div>
+<div class="chip warn"><b>Does NOT mean:</b> NOT a forecast and NOT a claim that shocking X <em>will</em> hit Y. The network is <em>estimated</em> from noisy returns, it rewires in a crisis, and lead-lag is association arbitraged toward lag 0. This is a descriptive what-if drill on the <em>current inferred</em> structure.</div>
+<div class="body">
+<p>This is your St. Pete water‑cascade mechanic — directed downstream propagation — brought to the market network as a <strong>directed‑reachability (percolation) cascade</strong>, the same family of model used for epidemics, power‑grid blackouts, and bank runs. A shock at the source flows to any market reachable via directed lead‑lag links of at least the chosen strength; each wave is one hop further out. Raising the trigger keeps only the strongest links (the cascade localises); lowering it lets weaker links carry the shock system‑wide. The behaviour is genuinely source‑dependent: a shock at a hub like the S&amp;P spreads in a few waves across dozens of markets, while a shock at a peripheral market like agriculture dies almost immediately. The percolation line is the tipping point at which one shock spans ≥50% of the system — the cascade‑analysis read on systemic fragility. It is descriptive: it shows how the <em>currently inferred</em> structure would carry a shock, not whether one is coming.</p></div></section>
+<section id="sgame"><h2>Game-theoretic lens — beauty contest &amp; coordination risk</h2>
+<div class="chip read"><b>Read it:</b> Two things. First, the strategic reason short-term direction can't be forecast (Keynes' beauty contest / higher-order beliefs). Second, a coordination/run-vulnerability gauge built from existing readings — strategic complementarity (coupling), crowding (share of markets already stretched), and whether the system's leader (focal point) is stable.</div>
+<div class="chip warn"><b>Does NOT mean:</b> NOT a prediction that a run or crash will occur. The run-vulnerability gauge is a global-games <em>framing</em> that reads <em>conditions</em> off the cross-asset state — it never claims a coordinated move is imminent.</div>
+<div class="body">
+<p>This makes the game theory that was implicit in the console explicit. <strong>Why direction is a guessing game:</strong> a price is the market's average guess about everyone else's average guess (Keynes' beauty contest); acting on a public signal moves the very price you are predicting (reflexivity); and any stable edge is competed toward zero. That higher-order-belief loop <em>is</em> the game-theoretic reason short-term direction is a martingale — the console's whole thesis, restated in game theory. <strong>Coordination / run-vulnerability:</strong> a crisis is a coordination failure (a run, a stampede, a currency attack). Global-games theory (Morris–Shin) says such failures get likelier when actions strongly reinforce each other (high complementarity ≈ high coupling), many players already sit near their tipping point (crowding), and the focal point is shifting (an unstable system leader). The gauge blends those three into a descriptive vulnerability read — context for the regime, not a timing signal.</p></div></section>
+<section id="snetstruct"><h2>Network structure — hubs, choke points &amp; amplification</h2>
+<div class="chip read"><b>Read it:</b> Three structural reads of the directed spillover network: where outflow concentrates (preferential-attachment hubs), which market is the bottleneck whose removal most fragments how a shock spreads (choke point), and how far a typical shock travels (amplifier vs suppressor).</div>
+<div class="chip warn"><b>Does NOT mean:</b> NOT a forecast. The network is estimated and rewires; these are descriptive structure of the current inference. The choke point is not a "weak link that will break" — it is where the current inferred topology happens to bottleneck.</div>
+<div class="body">
+<p>This panel is the honest residue of two more cross-domain analogies — metabolic pathways and evolutionary/social graph theory. <strong>Preferential attachment</strong> (the rich-get-richer power law seen in wealth and in how well-connected mutant genes take over a structured population) shows up as <em>spillover concentration</em>: a Gini and top-3 share of out-strength, and the hub list. <strong>Choke points</strong> are the metabolic-pathway idea of bottleneck reactions: the market whose removal most fragments shock propagation — which is genuinely <em>distinct</em> from the loudest transmitter (in testing, the top transmitter was NVDA while the top choke points were MSFT and EM sovereign debt). <strong>Amplification</strong> is evolutionary graph theory's amplifier-vs-suppressor distinction: how far a single shock reaches on average. <strong>What deliberately did not make it:</strong> flux-balance analysis (the predictive core of metabolic modelling) needs a conserved, stoichiometric quantity — markets have none (their #2 missing ingredient); and fixation-probability / evolutionary-dynamics models need an observable population of agents or strategies, which price data does not contain. Importing either would manufacture prediction the substrate can't support — so only the descriptive network structure transfers.</p></div></section>
+<section id="s2b"><h2>In plain English — the live readout (start here)</h2>
+<div class="chip read"><b>Read it:</b> The top-right card auto-writes 5–6 plain sentences describing exactly what every panel is saying right now — for a non-specialist. The header also shows a one-line regime summary.</div>
+<div class="chip warn"><b>Does NOT mean:</b> "Elevated" or "Stressed" is a description of current conditions, never a prediction or a buy/sell signal.</div>
+<div class="body">
+<p>If you read nothing else, read this panel. It translates the whole console into plain language and updates with the data (and with the date cursor in Backtest).</p>
+<h3>The header regime line</h3>
+<p>Under the title you'll see, e.g., <em>Regime: Elevated — watch · coupling low · turbulence calm · data live through 2026-06-18</em>. That's the one-glance summary: the overall regime word, whether assets are moving together (<strong>coupling</strong>), whether today's combined move is unusual (<strong>turbulence</strong>), and how fresh the data is.</p>
+<h3>The regime word is systemic, not one stock</h3>
+<p>The headline regime — <strong>Calm / Slightly elevated / Elevated — watch / Stressed</strong> — is driven by the <em>system</em>: how tightly assets are coupled, how large the combined move is, and how many assets are individually elevated. A single very-stretched name does <em>not</em> turn the whole headline red (that name is still called out in the first sentence). The colored pill in the top-right corner, by contrast, flags the single least-resilient asset.</p>
+<h3>What each sentence covers</h3>
+<ul>
+<li><strong>Overall + most stretched name</strong> — the regime, and which single market is most outside its own norm.</li>
+<li><strong>Coupling</strong> — are markets moving independently or together, and the plain consequence: when they move together, diversification protects you less.</li>
+<li><strong>Turbulence</strong> — is today's combined move ordinary or unusually large.</li>
+<li><strong>Leaders</strong> — which market's moves have tended to come first lately (with the reminder: a pattern, not a cause, and it can flip).</li>
+<li><strong>Closest historical analog</strong> — which past date today's market "shape" most resembles (a resemblance, not a prediction).</li>
+<li><strong>Shock clustering</strong> — whether big moves are isolated or clustering.</li>
+</ul>
+<p>Every readout ends with the same bottom line: it describes conditions, it does not forecast a crash, and it is not advice.</p>
+</div></section>
+<section id="s3"><h2>Fragility thermometer</h2><div class="chip read"><b>Read it:</b> The Fragility thermometer is a per-asset panel with a hot/cold score (0–100) and six sub-scores (volatility, persistence, shocks, GARCH, AR shift, directedness), each with an explanatory caption. Highest scores sort to the top.</div><div class="chip warn"><b>Does NOT mean:</b> A high score is NOT a crash-prediction tool. It describes the asset's current stress signature: larger moves, less mean-reversion, more clustering. The console explicitly warns: 'DESCRIPTIVE, NOT PREDICTIVE… A resilience thermometer, not a crash detector… [it] can persist for months or years with nothing happening.'</div><div class="body"><p>The console's headline score: a composite 0–100 "thermal" reading across six descriptive stress channels, one score per asset.</p><p><strong>The six channels:</strong> All are <strong>not independent</strong>; they overlap significantly, especially the persistence measures:</p><ol><li><strong>Volatility surge:</strong> Realized volatility relative to asset-specific norm.</li><li><strong>Persistence / mean-reversion loss:</strong> Autocorrelation of returns (DFA / Hurst exponent α rising toward 1 = less mean-reversion, higher persistence).</li><li><strong>Shock magnitude:</strong> Frequency of large moves (≥2σ, ≥3σ thresholds).</li><li><strong>Volatility clustering (GARCH signal):</strong> Conditional heteroskedasticity.</li><li><strong>Absorption-ratio shift:</strong> Increase in AR from baseline (the only weakly-leading variant, though sample-dependent).</li><li><strong>Network asymmetry:</strong> The asset's directedness score (how much it leads/lags peers).</li></ol><p><strong>Score interpretation:</strong> A high reading (e.g., 70/100) means that asset's recent fluctuations are larger, more persistent, and more asymmetric than its own historical norm — a <strong>descriptive</strong> summary of current stress, not a forecast.</p><p><strong>Behavior in the wild:</strong> High fragility readings can persist for months or years with nothing happening. Declines also routinely start from low readings, so a low score does not guarantee stability. The console is explicit: "A high reading can persist for months or years with nothing happening, and declines also start from low readings."</p><p><strong>Honest caveats per channel:</strong></p><ul><li><strong>Volatility:</strong> Mostly restates known GARCH clustering; often coincident, not leading.</li><li><strong>Persistence (DFA):</strong> Needs long windows; descriptive, lags the regime shift.</li><li><strong>Shock frequency:</strong> Coincident measure of tail activity.</li><li><strong>GARCH:</strong> Confirms clustering, no predictive power.</li><li><strong>AR shift:</strong> Weak regime flag; hasn't held out-of-sample.</li><li><strong>Directedness:</strong> Association, not causation; nearly contemporaneous leads.</li></ul><p><strong>Why the critical-slowing-down analogy breaks:</strong> Physics systems (lasers, neurons) show genuine early warning via reduced variance and coherence before a bifurcation. Markets invert this: price is the expectation; there's no hidden state to telemeter. Correlations are estimated and rewire instantly on news, so no fixed topology exists until after the move. The console is unsparing: "The critical-slowing-down framing is an analogy from physics (these signals were largely <em>absent</em> before historical meltdowns); the volatility channel mostly restates GARCH."</p></div></section>
+<section id="s4"><h2>Indicator detail — the six channels</h2><div class="chip read"><b>Read it:</b> /Users/patrickiben/Documents/Resilience_Telemetry/Resilience_Telemetry_Console.html lines 273–291 (fragilityFromReturns), lines 360–368 (INDMETA), lines 375–382 (drawIndic rendering)</div><div class="chip warn"><b>Does NOT mean:</b> Not a 6-dimensional voting system. Persistence overlaps across AC1/λ/DFA. Amplitude is driven by GARCH. Tail is one-event-sensitive. No weighting by predictive power—they are ensemble members, not independent classifiers.</div><div class="body"><p>Each fragility score rests on seven vol-standardized channels. They are <strong>not independent votes</strong>—persistence channels especially overlap. Displayed in walk-forward order: AC1, recovery rate, realized vol, bimodality, skewness, excess kurtosis, DFA.</p>
+
+<h3>Persistence (3 channels, averaged)</h3>
+<ul>
+<li><strong>Lag-1 autocorrelation (CSD)</strong> — vol-standardized to avoid measuring GARCH. Rising = slower recovery from shocks. <em>Weakest channel in markets</em>; hard to move the needle.</li>
+<li><strong>Recovery rate λ = −ln φ</strong> (φ = AR(1) parameter) — same information as AC1, repackaged. Falling λ = slower return to equilibrium. A sibling, not an independent vote.</li>
+<li><strong>DFA / Hurst α</strong> — rising toward 1 = more persistence / less mean-reversion. Needs long windows (252-day rolling, computed every 3 days); descriptive, often lags the regime shift by weeks.</li>
+</ul>
+
+<h3>Amplitude (2 channels, averaged)</h3>
+<ul>
+<li><strong>Realized volatility (annualized)</strong> — rising = larger fluctuations / higher stress. <em>Mostly restates known volatility clustering (GARCH)</em>; often coincident, not leading. Daily realized vol is √(252 × variance of 252-day returns).</li>
+<li><strong>Bimodality / flickering</strong> — rising = switching between calm and stressed states. <em>Vol clustering alone produces apparent switching; high false-positive rate</em>. Computed from skewness, kurtosis, and sample size.</li>
+</ul>
+
+<h3>Tail (2 channels, averaged)</h3>
+<ul>
+<li><strong>Skewness</strong> — more negative = asymmetry toward big drops. Returns are always left-skewed; one bad day flips the sign. Estimator is noisy.</li>
+<li><strong>Excess kurtosis</strong> — rising = fatter tails. <em>Estimator dominated by 1–2 extreme days; very noisy</em>. High variance, little signal between regimes in practice.</li>
+</ul>
+
+<h3>Honesty Panel</h3>
+<p>Each channel displays a small caveat in the console:</p>
+<ul>
+<li>AC1: <em>Weakest</em> in markets; mostly noise in equities and FX.</li>
+<li>Recovery rate: Same as AC1, not a separate vote.</li>
+<li>DFA: Lags the regime; needs months of history.</li>
+<li>Realized vol: GARCH-driven, not a unique transition signal.</li>
+<li>Bimodality: False positives from vol clustering.</li>
+<li>Skewness: One tail event flips it; very noisy.</li>
+<li>Kurtosis: Extreme-day-dominated; also very noisy.</li>
+</ul>
+
+<p>When Backtest mode includes a GARCH surrogate (synthetic returns with no built-in transition), if fragility ≥70 shows up on >5% of days in the surrogate, <strong>the index is largely measuring vol clustering, not a unique stress regime</strong>.</p></div></section>
+<section id="s5"><h2>Surprise lens (active-inference analogue)</h2><div class="chip read"><b>Read it:</b> /Users/patrickiben/Documents/Resilience_Telemetry/Resilience_Telemetry_Console.html lines 331–333 (computeSurprise), lines 388–393 (drawSurprise rendering)</div><div class="chip warn"><b>Does NOT mean:</b> Not a leading indicator. Not volatility or variance—it is a residual innovation metric conditioned on a 60-day local model. Not a forecast of returns or crashes. Not independent of fragility—both rise during stress, but neither causes the other.</div><div class="body"><h3>Core Concept</h3>
+<p>One-step negative log-likelihood (NLL) from a simple AR(1) + EWMA model. Analogue of variational free energy from active inference: <strong>higher surprise = larger deviation from the asset's local predictive model</strong>. Reported as a percentile (0–100 normalized against the asset's rolling 20-day mean).</p>
+
+<h3>Calculation</h3>
+<p>For each day t ≥ 1:</p>
+<ul>
+<li>Fit AR(1) model φ on a rolling 60-day window ending at t−1; estimate its variance v.</li>
+<li>Predict next day: μ = φ × r[t−1].</li>
+<li>Compute NLL: <code>0.5 × ((r[t] − μ) / σ)² + log(σ)</code>, where σ = √v.</li>
+<li>Update variance via EWMA: <code>v ← 0.94 × v + 0.06 × (r[t] − μ)²</code>.</li>
+<li>Smooth with 20-day rolling average.</li>
+<li>Convert to percentile using mean and std of the rolling series.</li>
+</ul>
+
+<h3>Interpretation</h3>
+<p><strong>High surprise</strong> (70–100) = asset behavior deviates far from its own 60-day predictive model. Not a forecast signal, but a <em>coincident</em> read on how much the asset is surprising itself. During stress (2020, 2022), surprise tends to rise, along with vol and fragility.</p>
+
+<h3>Why "Active Inference"?</h3>
+<p>In active inference, the system minimizes surprise (prediction error) to maintain a generative model. Here, we invert it: surprise measures how much the asset's local model is failing. Rising surprise = environment is drifting away from the model, not that a crash is imminent.</p></div></section>
+<section id="s6"><h2>Directed spillover network (LCCA) — who leads whom</h2><div class="chip read"><b>Read it:</b> /Users/patrickiben/Documents/Resilience_Telemetry/Resilience_Telemetry_Console.html lines 246–259 (lcca, gatePairThresh), lines 395–430 (drawNetwork, drawHeat, drawNetBars), lines 116–127 (HTML captions)</div><div class="chip warn"><b>Does NOT mean:</b> Not causal graphs. Not a predictor of spillover events. Not a ranking of systemic importance—transmitters may be volatility conduits, not fundamental drivers. The network rewires in crises; historical in-sample links often don't hold out-of-sample. Lead-lag is dominated by common risk factors and information lags, not structural causality.</div><div class="body"><h3>What Is LCCA?</h3>
+<p><strong>Lagged Cross-Correlation Asymmetry</strong>: measures which asset's <em>past</em> returns forecast another's <em>future</em> better. An arrow i→j means i's lagged returns correlate more strongly with j's forward returns than the reverse, over the 252-day analysis window.</p>
+
+<h3>Calculation</h3>
+<p>For each pair i, j and lags k = 1 to L (L = 4 days):</p>
+<ul>
+<li>Compute Fisher z-transformed cross-correlation: xcorr(i, j, k) at lag k.</li>
+<li>Sum absolute z-values: D(i→j) = Σ|fz(xcorr(i, j, k))| / L.</li>
+<li>Asymmetry: A(i→j) = D(i→j) − D(j→i). Red i→j means i leads j; blue j leads i; near-white = pure co-movement.</li>
+<li>Net transmitter/receiver: NET(i) = Σⱼ A(i→j). Right = transmitter (red), left = receiver (blue).</li>
+</ul>
+
+<h3>Permutation Gate</h3>
+<p>Only links pass if they exceed a 95th-percentile threshold from a circular-shift null (160 random rotations per asset pair). Solid arrows = significant under the gate; faint dashed = strongest tendencies below significance.</p>
+
+<h3>Directedness Ratio</h3>
+<p>Σ|A| / ΣD—how much of the total cross-correlation is directional (asymmetric) vs co-movement. Higher = more spillover; lower = assets moving as one. Mostly stays <0.5 in normal periods, peaks during crises.</p>
+
+<h3>Critical Honesty Note</h3>
+<p><strong>Lead-lag is association, not causation.</strong> Most surviving leads peak at 1 day (≈contemporaneous), reflecting information diffusion and microstructure, not causal transmission. In backtest, you can inject synthetic leads to watch the network respond—but real lead-lag tendencies are fleeting and don't generalize out-of-sample. The network is a <strong>snapshot of dependence structure</strong>, not a transmission mechanism.</p>
+
+<h3>Display</h3>
+<ul>
+<li><strong>Network diagram</strong>: nodes sized by |NET|, positioned by transmitter/receiver rank. Edges show top 12 absolute asymmetries.</li>
+<li><strong>Heat matrix</strong>: rows = source i, cols = target j. Red (i→j) = i leads; blue = j leads i. Intensity = strength of the z-transformed correlation asymmetry.</li>
+<li><strong>Net bars</strong>: sorted by NET, showing TO (total outflows) and FROM (total inflows) per asset.</li>
+</ul></div></section>
+<section id="s7"><h2>Asymmetry matrix & net transmitter / receiver</h2><div class="chip read"><b>Read it:</b> The N×N heatmap (rows = source, columns = target) shows which asset leads which. The bar chart to the right ranks all assets by net directedness: red extends right (transmits), blue extends left (receives).</div><div class="chip warn"><b>Does NOT mean:</b> The values are correlation-based associations, not causal drivers. A red SPY→LQD link does not mean stock strength causes bond weakness; it means their lagged returns moved together in that direction during the window, and that relationship is statistically above random circular-shift shuffles.</div><div class="body"><p>The left panel shows the <strong>directed asymmetry matrix</strong> A(i→j) = D(i→j) − D(j→i), where D(i→j) is the sum of absolute lagged cross-correlations of i leading j.</p><p><strong>Matrix interpretation:</strong></p><ul><li><strong style="color:#d32f2f">Red cells</strong> (positive A) indicate i→j: asset i leads asset j.</li><li><strong style="color:#1976d2">Blue cells</strong> (negative A) indicate j→i: asset j leads asset i.</li><li><strong>Near-white cells</strong> indicate pure co-movement with no directional winner (both lead/lag symmetrically).</li></ul><p>The matrix is anti-symmetric: if A(SPY→LQD) is red, then A(LQD→SPY) is equally blue.</p><p><strong>Right panel — net directional spillover:</strong> A horizontal bar chart ranks assets by their <code>NET</code> score (sum of all outgoing leads minus all incoming lags):</p><ul><li><strong>Right/red bars:</strong> Pure sources and hubs that lead more than they lag.</li><li><strong>Left/blue bars:</strong> Pure sinks and relays that lag more than they lead.</li><li><code>TO[i]</code> = total outgoing lead-lag contribution (i leads others).</li><li><code>FROM[i]</code> = total incoming lead-lag contribution (others lead i).</li></ul><p>Typical findings: broad equity indices (SPY, QQQ) often sit near neutral; commodities and credit tend more blue (receiver); volatility (VIX) and FX can oscillate.</p></div></section>
+<section id="s8"><h2>Systemic coupling — spectral radius ρ̂ & absorption ratio</h2><div class="chip read"><b>Read it:</b> The 'Systemic coupling' panel shows two sparklines and current values: ρ̂ (spectral radius) and AR (absorption ratio). Both are plotted over time; the caveats explain they rise DURING crises (2008, 2020, 2022), not before.</div><div class="chip warn"><b>Does NOT mean:</b> These are NOT early-warning signals of a crash. They are 'thermometer' readings of how unified the market currently is, analogous to critical-slowing-down in physics, but the analogy breaks in markets because the topology is estimated post-hoc, not fixed as in water systems.</div><div class="body"><p>These two metrics measure how tightly the whole cross-asset system is moving as a single unified entity. Both are <strong>coincident-to-lagging indicators</strong>: they spike <em>during</em> stress, not before.</p><p><strong>Spectral radius ρ̂:</strong> The dominant eigenvalue (λ_max) of the rolling cross-asset correlation matrix, divided by the number of assets. Think of it as a proxy for how many independent modes of variation remain in the system. High ρ̂ (closer to 1) means the assets are "mode-collapsing" — correlations rising, individual shock absorption falling.</p><ul><li>Formula: ρ̂ = λ_max / N (where N is the asset count).</li><li>This is an <em>analogy</em> to the VAR spectral radius ρ(Φ) from your seismic/hydraulic work, not a fitted dynamical operator.</li><li>The console uses macro/equity/FX assets only (crypto excluded) to maintain clean history back to 2016.</li></ul><p><strong>Absorption ratio (AR):</strong> The fraction of total variance explained by the top few eigenmodes (usually 5–10). High AR = little local shock absorption; most of the move is concentrated in the leading modes. Kritzman-Li (2011) framed this as a fragility measure, but it too rises during crises, not before.</p><p><strong>Why they are not leading indicators:</strong> Both metrics are fixed-topology readouts of realized correlation. When liquidity evaporates or systematic factors dominate (as in March 2020 or September 2022), all correlations spike simultaneously — the topology doesn't exist until after the move. The console's transparency: "ρ̂ is an analogy to the water system's fixed topology — except here the topology is <em>estimated</em> and rewires in a crisis."</p><p><strong>What they tell you:</strong> High ρ̂/AR indicates the current market is moving in lock-step (regime of tight coupling), not that a break is imminent. A persistent high reading can last months or years with nothing happening; declines also start from low readings (base-rate honesty).</p></div></section>
+<section id="s8b"><h2>Anticipation — where to act, &amp; the out-of-sample test (the predictive layer)</h2>
+<div class="chip read"><b>Read it:</b> This panel is the companion paper's actual engine made live. It names the upstream <b>transmitter</b> (the market to watch/hedge to get ahead of trouble), contrasts it with the <b>loudest</b> market, and runs a genuine <b>out-of-sample</b> test of whether the transmitter actually leads.</div>
+<div class="chip warn"><b>Does NOT mean:</b> A buy/sell signal or a price/return forecast. The out-of-sample lead is real but small in absolute terms — it sharpens <em>where</em> stress originates, not <em>whether</em> to trade.</div>
+<div class="body">
+<p>Every other panel is descriptive — it tells you the state <em>now</em>. This one is the closest thing to a <strong>predictive</strong> reading the evidence honestly supports, and it comes straight from the companion research paper ("Directedness, not connectedness, decides when to anticipate a contagion").</p>
+<h3>What it computes</h3>
+<ul>
+<li><strong>Net transmitter (Diebold–Yılmaz):</strong> using a vector-autoregression + directed volatility-spillover decomposition on the 21 long-history macro markets, the market that <em>exports</em> more stress than it imports. This is the "anticipation target" — watching or hedging it gets you upstream of the cascade.</li>
+<li><strong>Loudest market:</strong> the most-volatile name — the instinctive "react here" target, which is usually downstream (a receiver).</li>
+<li><strong>Directedness (0–1):</strong> how one-way the spillover is. The paper's core finding: anticipation has structural leverage <em>only when the network is directionally asymmetric</em> — when the transmitter and the loudest market differ. If directedness is low or the transmitter <em>is</em> the loudest, reacting is as good as anticipating, and the panel says so.</li>
+</ul>
+<h3>The out-of-sample test (why this is honest, not hype)</h3>
+<p>The engine splits history into a <strong>train</strong> half (first 60%) and a <strong>held-out test</strong> half (last 40%). It diagnoses the transmitter on the train half only, then checks on the unseen test half whether that transmitter's stress actually <em>leads</em> the basket's downstream stress — and by how much versus the loudest market. It reports the lead as a correlation and how robust it is across bootstrap resamples.</p>
+<p>This mirrors the paper's own real-data result, which was <em>positive but not statistically significant</em>. Expect a small lead: it confirms the transmitter is genuinely upstream, but the absolute predictability is low — exactly why the panel refuses to call it a trade signal. Lead is association, not causation, and the transmitter can migrate over time.</p>
+</div></section>
+<section id="sper"><h2>Perspectives — documented frameworks as lenses</h2>
+<div class="chip read"><b>Read it:</b> The default <b>Aggregate</b> view synthesises ten frameworks on the current strain at once — where they converge, where they split — and you can toggle any single lens (Burry, Stevenson, Soros, Templeton, Livermore, Bogle, Minsky, Mandelbrot, Thorp, Dalio). Each is really a documented <em>stance</em> (contrarian↔trend, value↔momentum, risk-on↔risk-off, micro↔macro, instability, fat-tails, factor-balance, sizing-discipline) wrapped in a memorable name, and reads the live numbers through it, auto-updating with the data. The four newer lenses were chosen to cover the axes the expanded console now measures: <strong>Minsky</strong> (stability-breeds-instability — coupling + calm credit + cascade amplification), <strong>Mandelbrot</strong> (fat tails — turbulence + Hawkes clustering; every Gaussian number understates the tail), <strong>Thorp</strong> (the systematic thesis itself — no edge in direction, the math is in sizing; reads the vol lab + meta layer + Deflated-Sharpe/PBO), and <strong>Dalio</strong> (risk parity — the factor panel: many names, few real factors). An LLM is deliberately <em>not</em> used to generate these: it would invent fluent but fabricated quotes and reasoning, with no verifier to catch it — the deterministic, quote-free version is the more honest engine.</div>
+<div class="chip warn"><b>Does NOT mean:</b> These are not their words, endorsements, predictions, or advice. Neither person has any connection to this console. Lenses map at the level of posture only.</div>
+<div class="body">
+<p>The same numbers, read two ways. The <strong>Burry lens</strong> watches for surface calm sitting on top of crowding (low VIX over high coupling/absorption), real-asset texture (gold), and the most-stretched name — carrying his hard-won <em>"right but early"</em> discipline, which is exactly why a loaded reading is never a countdown. The <strong>Stevenson lens</strong> reads the rates / gold / credit macro backdrop and the asset-strength-amid-stress pattern his inequality thesis points to.</p>
+<p>Every sentence is generated from the current data (and changes with the Backtest cursor). The only verbatim quote shown is a documented one, clearly attributed; everything else is "in the spirit of" the thinker's public thesis. Each lens carries its own honesty caveat — Burry's right-but-early, Stevenson's that the dashboard cannot prove a causal mechanism.</p>
+</div></section>
+<section id="sbkd"><h2>Structural backdrop — distribution &amp; real economy</h2>
+<div class="chip read"><b>Read it:</b> The wealth-distribution and real-economy data Stevenson's thesis actually rests on — top-1% vs bottom-50% wealth shares, real median income, the Gini index, the saving rate, home prices, labor share, and the policy rate — from the U.S. Federal Reserve / FRED.</div>
+<div class="chip warn"><b>Does NOT mean:</b> A trading signal, and not proof of cause. These series are quarterly/annual and lagged, US-centric, and document the distribution without showing it drives asset prices.</div>
+<div class="body">
+<p>This panel closes the honest gap in the Stevenson lens: the distributional data is now on the board. Each row shows the latest (or as-of-cursor) value, a long-history sparkline, and the approximate 10-year change. It is a <strong>slow structural backdrop</strong> — it moves quarterly or annually, not daily — so it is context for the regime, never a same-day signal. It is descriptive: it shows <em>what</em> the distribution is, not that the distribution <em>causes</em> the market readings in the rest of the console.</p>
+</div></section>
+<section id="salpha"><h2>Alpha Lab — can you actually trade the signal?</h2>
+<div class="chip read"><b>Read it:</b> A walk-forward backtest that tests, honestly, whether the stress signal makes money — net of trading costs, benchmarked against simply buying and holding SPY. Pick a stance (risk-off / contrarian / spread), a cost in basis points, and a holding period.</div>
+<div class="chip warn"><b>Does NOT mean:</b> Sold alpha or a live trading signal. It is research. The likely honest result — confirmed in the build — is that the edge bleeds out after friction and underperforms buy-and-hold.</div>
+<div class="body">
+<p>This panel answers the natural question — "there's a tiny statistical lead, can I monetise it?" — the only honest way: by simulating it. The signal is the walk-forward turbulence (its threshold set on a train split only, so there is no look-ahead); your chosen <strong>stance</strong> supplies the direction the data cannot. It reports <strong>net-of-cost</strong> Sharpe, total return, max drawdown, win rate and trade count, side by side with the same numbers for <strong>SPY buy-and-hold</strong>, and a <strong>train-vs-test</strong> column that flags overfitting.</p>
+<p>What it shows, as built: none of the stances beat buy-and-hold once realistic ETF friction is charged over repeated holding periods — risk-off loses, contrarian eked out a sliver that costs ate ~60% of, and the panel stamps <strong>INCONCLUSIVE</strong> when the test result cannot support an edge. That is the point. It is the computational form of Bogle's lesson: a ~0.18 volatility-correlation (≈3% of variance) is the kind of edge frictions quietly consume. Use it to <em>disprove</em> trade ideas cheaply, not to find a money machine.</p>
+<p><strong>Rigorous validation (the "better cross-validation" answer).</strong> The <em>Run rigorous validation</em> button reports two leakage-aware overfitting diagnostics over the stance×τ sweep: a <strong>Deflated Sharpe Ratio</strong> (Bailey–López de Prado — discounts the Sharpe by the best you'd expect from N no-skill tries) and the <strong>Probability of Backtest Overfitting</strong> (PBO, via combinatorially-purged cross-validation). As built they read DSR ≈ 1% and PBO ≈ 77% — i.e. the swept "edge" is very likely an artifact of trying many configurations. These tests shrink apparent edge; they never create it.</p>
+<p><strong>Forward-volatility lab — predict what's predictable.</strong> The constructive complement: a ridge model on the price/turbulence risk-state features, under purged + embargoed 5-fold CV, predicts next-20-day realized <em>volatility</em> at out-of-sample R²≈0.23 (genuinely learnable — volatility clusters; the expanded 34-asset basket lifted this from 0.21 by enriching the turbulence feature) while forward <em>direction</em> sits at R²≈0.00 (unlearnable). That contrast is the whole lesson: aim any learning at vol/regime/risk, not at price direction.</p>
+<p><strong>The "more data" experiment — an honest negative.</strong> A natural instinct is "add the best forward-content macro data and the model improves." The lab tests exactly that: it adds the yield curve, high-yield spread, financial-conditions index, VIX and real rate as features. The out-of-sample result is that they <em>do not help the 20-day model — they slightly degrade it</em> (R² 0.23 → 0.18) and badly overfit a drawdown target. This is reported on the panel with a red ▼, not hidden. It is the "shallow wins" / overfitting lesson demonstrated on live data: <strong>more and better data does not equal better prediction</strong> — slow, correlated features add parameters that overfit even under ridge regularization. Those macro series carry genuine signal, but at the <em>recession / regime horizon (months)</em>, which is why they live in the Forward-macro panel below — not inside a 20-day model.</p>
+</div></section>
+<section id="scrisis"><h2>Crisis replay — your mix through past stress windows</h2>
+<div class="chip read"><b>Read it:</b> Set the weights YOU choose across seven sleeves (Equities, Treasuries, Credit, Commodities, Gold, Dollar, Crypto), pick a real past stress window, and the card replays that allocation — daily-rebalanced — through the embedded history, showing an equity curve and the realized total return, max drawdown, and volatility versus 100%-stocks and a 60/40 baseline.</div>
+<div class="chip warn"><b>Does NOT mean:</b> NOT a forecast, NOT a recommendation, NOT an optimizer. It never suggests or optimizes weights — you set them. Past drawdown is not a prediction; the windows are a fixed, non-representative sample, and the embedded data starts in 2016 (there is no 2008 GFC in it).</div>
+<div class="body">
+<p>This is the one new artifact that came out of asking whether the "GemmaxVJEPA2" Expected-Free-Energy planner could be added to the console. The honest answer was no — that planner needs a controllable agent, a learnable forward world-model, and stable structure, none of which markets give a passive observer (forward direction here is out-of-sample R²≈0). So this card is deliberately that planner with <strong>the planner, the world-model, and both free-energy terms removed</strong>: what's left is a pure historical replay, which is honest precisely because it asserts nothing about the future.</p>
+<p><strong>What it computes:</strong> for the chosen window, the portfolio return each day is the weighted sum of the sleeves' realized returns (renormalized across whichever sleeves have history — crypto only exists from late 2023, so it is dropped and flagged in earlier windows), cumulated into an equity curve. Max drawdown is the deepest peak-to-trough on that curve; volatility is the annualized standard deviation of daily returns. The 100%-stocks and 60/40 lines are the same computation on fixed reference weights.</p>
+<p><strong>What it teaches:</strong> the console's whole thesis, made personal. In the COVID window, a 60/40 mix cut the drawdown from roughly −36% (all stocks) to about −20% and the total loss from −17% to −5% — because Treasuries and gold were still diversifying. The lesson is to watch how much that protection <em>shrinks</em> in windows where everything couples (the directed-network and coupling panels show that coupling rising in real time). It is a descriptive teaching tool for sizing and diversification intuition, not a trade.</p>
+</div></section>
+<section id="sovernight"><h2>Overnight vs intraday — the one free directional regularity</h2>
+<div class="chip read"><b>Read it:</b> Pick an index ETF and the card splits each day into its overnight (close→open) and intraday (open→close) halves, plotting the cumulative return of holding only-overnight vs only-intraday vs buy-and-hold, with annualised figures. Most of the equity-index return has historically accrued overnight.</div>
+<div class="chip warn"><b>Does NOT mean:</b> NOT a tradable edge. You cannot capture the close-to-open gap net of spreads, slippage and overnight-gap risk. It is a risk premium / opening-auction print artifact, not informational alpha, and not a forecast.</div>
+<div class="body">
+<p>This card is the honest answer to "what free public data predicts short-term <em>direction</em>?" The answer is: almost nothing — except this one documented, index-level regularity (Lou-Polk-Skouras 2019; the New York Fed's overnight-drift work). On this data SPY's overnight half earns about +8.8%/yr versus +4.4%/yr intraday — roughly two-thirds of the buy-and-hold return — and small-caps (IWM) are starker still: the intraday half is actually <em>negative</em>, so effectively all of the return came overnight.</p>
+<p><strong>Why it is not a trade.</strong> The drift has <em>persisted</em> in this sample rather than arbitraging away — which is precisely the signature of a <strong>risk premium</strong> (you are paid for bearing overnight-gap and dealer-inventory / liquidity-provision risk) plus an opening-auction print artifact, not free informational alpha. You cannot isolate the gap without paying spreads and slippage that erase it, and you would still carry the overnight-gap risk you are being compensated for. Switch the selector to <strong>TLT</strong> (Treasuries) and the pattern inverts — proof this is an equity-flow effect, not a universal law.</p>
+<p>It is the closest free data gets to short-term directional structure, included precisely to show <em>why</em> that structure is still not a forecast you can trade — the same lesson as the Alpha Lab and the volatility lab, made concrete on a real, named anomaly.</p>
+</div></section>
+<section id="sfmacro"><h2>Forward macro — recession &amp; financial conditions (months horizon)</h2>
+<div class="chip read"><b>Read it:</b> The panel where the best free <em>forward-looking</em> data actually carries signal: the 12-month recession probability (yield-curve model), the 10y-2y and 10y-3mo curve spreads, the high-yield credit spread (OAS), the Chicago Fed financial-conditions index, initial jobless claims, and unemployment — each with a long sparkline and current value, plus a plain-language read (benign / building / elevated). Source: FRED.</div>
+<div class="chip warn"><b>Does NOT mean:</b> NOT a market-timing tool and NOT a same-day signal. These series are slow (weekly to monthly), noisy, and widely watched — so largely priced. An inverted curve has led recessions by 6-18 months <em>on average</em>, with long and variable lags and false signals. Use them for recession-watch and risk <em>posture</em>, never for entries.</div>
+<div class="body">
+<p>This is the constructive home for the forward-content macro data, read at its <strong>natural horizon</strong>. The yield curve is the single best-documented leading indicator of U.S. recessions — it is literally the model behind the recession-probability row (an Estrella-Mishkin-style curve model). High-yield spreads and the financial-conditions index lead equity stress by weeks to months. The honest division of labour with the vol lab: short-horizon <em>risk</em> (vol, days-to-weeks) is best read from price state; medium-horizon <em>regime</em> (recession, months) is best read here. Forcing the months-horizon data into a days-horizon model overfits (see the vol-lab experiment above), so the console keeps them separate.</p>
+<p><strong>How to read it:</strong> a positive curve, tight credit spread, loose (negative) financial conditions and a low recession probability together say "forward macro benign." Watch for the curve turning negative (inversion), the HY spread widening through ~4.5-6%, or financial conditions turning positive (tight) — those are the historically-meaningful regime shifts, on a months clock, not a daily one.</p>
+</div></section>
+<section id="s9"><h2>Financial turbulence (Mahalanobis)</h2><div class="chip read"><b>Read it:</b> /Users/patrickiben/Documents/Resilience_Telemetry/Resilience_Telemetry_Console.html lines 491–503 (computeTurbulence), lines 536–538 (drawTurbulence rendering and caveats), lines 141–146 (HTML caption on turbulence)</div><div class="chip warn"><b>Does NOT mean:</b> Not a forecast of volatility or crashes. Not a threshold-crossing predictor—high turbulence can persist for days with no event, or spike on a single outlier. Not independent of spectral radius; both are multivariate stress measures that correlate during crises but neither causes the other. χ² tails are understated in financial returns.</div><div class="body"><h3>Core Measure</h3>
+<p>The Mahalanobis distance of today's 252-day cross-asset return vector from its mean, conditioned on the rolling covariance matrix. <strong>A multivariate extension of the per-asset surprise lens</strong>, capturing how far the system sits from its typical state in metric-adjusted space.</p>
+
+<h3>Calculation</h3>
+<ul>
+<li>Estimate mean μ and covariance Σ from the 252-day window of N-asset returns.</li>
+<li>Regularize Σ with shrinkage (Ledoit-Wolf, α ≈ 0.2) to avoid ill-conditioning.</li>
+<li>Compute D² = (x − μ)ᵀ Σ⁻¹ (x − μ) for today's 10-day aggregate return vector x.</li>
+<li>Map to χ² CDF percentile using N degrees of freedom.</li>
+<li>Smooth with 20-day rolling average for trend.</li>
+</ul>
+
+<h3>Interpretation</h3>
+<p><strong>Higher turbulence = larger deviation from the system's covariance-weighted center.</strong> Rising turbulence during 2020 and 2022 crises is well-documented; it is a <strong>coincident-to-slightly-lagging</strong> read on regime stress, not a leading signal.</p>
+
+<p>The drivers panel shows each asset's contribution to today's Mahalanobis distance: xᵢ × (Σ⁻¹ x)ᵢ. Rank by magnitude to see which assets are pushing the system away from its center.</p>
+
+<h3>Caveat: Fat Tails & χ² Optimism</h3>
+<p>χ² percentiles are <em>optimistic</em> in financial fat tails—the true tail probability is worse. Treat the percentile as ordinal (higher = worse), not as a precise exceedance probability. During high turbulence, the true risk is underestimated.</p>
+
+<h3>Display</h3>
+<p>Top section: current Mahalanobis D² as a 0–100 percentile bar, with rolling sparkline. Below: top contributors (assets with largest influence on the distance).</p></div></section>
+<section id="s10"><h2>Structural geography — market-state manifold (diffusion map)</h2><div class="chip read"><b>Read it:</b> /Users/patrickiben/Documents/Resilience_Telemetry/Resilience_Telemetry_Console.html lines 551–591 (drawManifold, diffusion map logic and rendering), lines 147–150 (HTML caption on manifold)</div><div class="chip warn"><b>Does NOT mean:</b> Not a predictor of next-regime transitions. Not a ranking of crisis severity—the manifold is a state portrait, not a potential-energy landscape. Nearest neighbors in diffusion space share historical returns patterns, but financial systems do not repeat exactly. The manifold changes as new data arrive; past orbits are not predictive of future ones.</div><div class="body"><h3>What It Shows</h3>
+<p>A nonlinear generalization of the coupling panel: every dot is a 10-day cross-asset state (mean return vector or aggregated performance) from the macro names, placed by <strong>diffusion map</strong> so geometrically similar regimes sit together. Calm states cluster tightly; crises (2020, 2022) form a stressed arm. Current position and its nearest historical analogs are highlighted.</p>
+
+<h3>Diffusion Map Construction</h3>
+<ul>
+<li>Rolling 10-day windows of returns for ~25 macro/equity/FX names (crypto excluded).</li>
+<li>Compute pairwise Euclidean distances; threshold to form a k-nearest-neighbor graph (k ≈ 10–15).</li>
+<li>Symmetrize the adjacency matrix; apply diffusion kernel with exponential decay.</li>
+<li>Extract the first 2–3 eigenvectors (diffusion coordinates) and plot.</li>
+<li>Color by fragility percentile or era (calm vs stressed).</li>
+</ul>
+
+<h3>Interpretation</h3>
+<p><strong>Proximity = geometric resemblance in the realized cross-asset state.</strong> Where today sits—and which past state it most resembles—is a <strong>coincident read on the regime</strong>, never a forecast. The manifold structure realizes the geometric side of your LSAxJEPA framework: it is a nonlinear generalization of PCA/spectral structure, showing how the system inhabits its state space.</p>
+
+<h3>Honest Caveat</h3>
+<p><strong>⚠ COINCIDENT STATE GEOMETRY, NOT A FORECAST.</strong> A "closest analog" in diffusion space is a geometric resemblance—it does <strong>not</strong> imply the same outcome follows. Historical recurrence is rare in financial systems; initial conditions drift, and regimes change. The manifold is a <em>coincident</em> snapshot of structure, useful for regime classification, not for predicting the next move.</p>
+
+<h3>Display</h3>
+<p>An interactive scatter plot in 2D diffusion coordinates. Hover or click on dots to see date, fragility, and returns. Current day is marked. A tooltip shows the nearest historical state by Euclidean distance in diffusion space.</p></div></section>
+<section id="s11"><h2>Shock clustering — Hawkes self-excitation</h2><div class="chip read"><b>Read it:</b> /Users/patrickiben/Documents/Resilience_Telemetry/Resilience_Telemetry_Console.html lines 504–549 (fitHawkes, computeHawkes, drawHawkes rendering), lines 192–193 (HTML caption on Hawkes)</div><div class="chip warn"><b>Does NOT mean:</b> Not a predictor of the next shock. Not a measure of systemic importance or contagion. High branching ratio = feedback loops are active, not that a crash is coming. n is very noisy with few events; a single bad day changes the fit significantly. Not independent of turbulence or fragility—all three rise together during crises, but none causes the others.</div><div class="body"><h3>Core Concept</h3>
+<p>Do large moves beget more large moves? Fits a self-exciting point process to large return shocks (≥2.5σ magnitude). The <strong>branching ratio n</strong> is how self-reinforcing the clustering is: n ≈ 0.3 means shocks decay; n ≈ 0.9 means critical (on the brink of runaway); n = 1 is unstable.</p>
+
+<h3>Calculation</h3>
+<ul>
+<li>For each asset: identify days with |return| ≥ 2.5σ (threshold 2.5 from the window). Record these as event times.</li>
+<li>Fit Hawkes process: λ(t) = μ + α Σ exp(−β(t − tᵢ)), where μ = background rate, α = jump size, β = decay rate.</li>
+<li>Grid search over (μ, α, β) to maximize log-likelihood; then refine locally.</li>
+<li>Compute branching ratio: n = α exp(−β) / (1 − exp(−β)). This is the expected number of children per event in a Galton-Watson branching process.</li>
+<li>Also report half-life: how fast aftershocks decay (log(2) / β).</li>
+</ul>
+
+<h3>Interpretation</h3>
+<p><strong>CONTEMPORANEOUS: high n = shocks CURRENTLY clustering (aftershocks underway), NOT a coming exogenous mainshock.</strong> Rising branching ratio during stress (2022) means the cascade is self-sustaining. However, a high n does not forecast the next shock's magnitude or timing—only that if a shock occurs, more are likely to follow quickly. Implements your LSAxJEPA Hawkes λᵢ(t); the temporal twin of ρ(Φ) → 1 (cf. the induced-seismicity pilot).</p>
+
+<h3>Caveats</h3>
+<ul>
+<li><strong>Least-stable panel:</strong> single exponential kernel, daily bins, often few jump events (≤5). Confidence in n is low.</li>
+<li><strong>Threshold-dependent:</strong> moving 2.5σ to 3.0σ or 2.0σ changes the count and fit.</li>
+<li><strong>Temporal resolution:</strong> daily bins may miss intra-day clustering and aftershock sequences that resolve in hours.</li>
+</ul>
+
+<h3>Display</h3>
+<p>Current branching ratio n as a 0–100 bar chart (clipped at 1.0 for display). Per-asset breakdown: count of shocks, estimated n, and half-life in days. A message appears if too few shocks are detected to fit a reliable process.</p></div></section>
+<section id="s12"><h2>Live vs Backtest mode</h2><div class="chip read"><b>Read it:</b> Toggle between 'Live monitor' and 'Backtest / research' at the top. In backtest, a date cursor steps through history; the base-rate panel compares conditional drawdown rates to unconditional base rates. A scenario dropdown lets you inject test shocks.</div><div class="chip warn"><b>Does NOT mean:</b> The backtest mode is rigorous (no look-ahead) but is NOT a trading backtest. It is a stress-measure validation. The rare-events problem means even a "high-skill" conditional rate estimate has wide confidence intervals; the console refuses to claim predictive skill.</div><div class="body"><p>The console operates in two modes, toggled at the top:</p><p><strong>Live monitor:</strong> Pulls real-time or near-real-time data (Snapshot, Binance crypto, Frankfurter FX, YahooProxy equities) and computes all metrics on the current window. Every statistic is forward-looking: the window includes today, and forecasts are made with all data known as of now.</p><p><strong>Backtest/research mode:</strong> Implements strict walk-forward discipline. A date cursor allows you to step through history. At each cursor date, every statistic uses <em>only</em> data up to that date (no look-ahead). The panel then reveals what <em>actually happened next</em> and compares conditional drawdown rates (if the signal was high on day D, what was the realized loss over the next T days?) to the unconditional base rate.</p><p><strong>Base-rate honesty check:</strong> This is the most integrity-preserving part of the console. Real financial crashes are rare (a handful per decade). With such a small sample, apparent "skill" in a backtest is mostly luck and overfitting. The base-rate check asks:</p><ul><li>Unconditional drawdown rate (crashes happen how often?).</li><li>Conditional rate given high signal (how often did crashes follow high readings?).</li><li>Excess rate and confidence interval (given the handful of events, how uncertain are we?).</li></ul><p>Typical finding: conditional rates are noisy and confidence intervals wide. The console warns: "Crashes are rare (a handful of real events in a decade), so every rate above has a wide confidence interval; this is a base-rate honesty check, not a backtest of profits."</p><p><strong>Scenario sandbox:</strong> The console includes a drill mode to inject hypothetical shocks:</p><ul><li><strong>Common shock:</strong> Contemporaneous move across all assets (no leader).</li><li><strong>Lead scenario:</strong> The first asset in the list leads; its past returns are mixed into all others (1-day lag) to simulate spillover.</li></ul><p>This allows you to ask "If SPY surges, how does the network respond?" in a walk-forward setting without committing to a real trade.</p></div></section>
+<section id="s13"><h2>Base-rate honesty panel</h2><div class="chip read"><b>Read it:</b> In Backtest mode, scroll to the 'Backtest replay & base-rate honesty' section. Pick an asset from the dropdown. The panel shows side-by-side conditional vs unconditional rates with event counts and a "verdict" on whether timing skill is real or noise.</div><div class="chip warn"><b>Does NOT mean:</b> Crashes are rare (a handful per decade); every rate has a wide confidence interval. This is a base-rate honesty check, not a backtest of profits or trading performance.</div><div class="body"><h3>Purpose</h3>
+<p>Compares the <strong>conditional forward-drawdown rate</strong> (when fragility ≥ 70) against the <strong>unconditional base rate</strong> (any random day). With only 5–10 real drawdown events in a decade, hit-rate comparisons have wide confidence intervals; this panel enforces intellectual honesty.</p>
+<h3>Outputs (for the selected asset)</h3>
+<table style="border-collapse:collapse;margin:8px 0;font-size:11px"><tr style="border-bottom:1px solid #ddd"><td style="padding:4px 6px"><strong>Unconditional (any day)</strong></td><td style="padding:4px 6px">% chance of forward drawdown</td><td style="padding:4px 6px"># events / # days</td></tr><tr style="border-bottom:1px solid #ddd"><td style="padding:4px 6px"><strong>Conditional (fragility ≥ 70)</strong></td><td style="padding:4px 6px">% chance given high fragility</td><td style="padding:4px 6px"># conditional events / # high-fragility days</td></tr><tr style="border-bottom:1px solid #ddd"><td style="padding:4px 6px"><strong>Time-in-Alarm</strong></td><td style="padding:4px 6px">% of days with fragility ≥ 70</td><td style="padding:4px 6px"></td></tr></table>
+<h3>GARCH Surrogate Check</h3>
+<p>Optionally overlays a synthetic GARCH surrogate (no built-in regime transitions) to show what % of fragility readings come from pure volatility clustering alone. If the real asset's amplitude spike is not much higher than the GARCH surrogate's, the signal is largely measuring <strong>known volatility clustering</strong>, not a unique transition.</p>
+<h3>Asset Exclusions</h3>
+<ul>
+<li><strong>VIX (volatility index)</strong> and <strong>FX pairs (USD/JPY, USD/EUR, etc.)</strong> are excluded: not holdable long positions, so forward-drawdown base rates do not apply.</li>
+<li>These assets still feed the cross-asset network, coupling, and turbulence panels.</li>
+<li>Select an equity, sector, credit, commodity, or crypto asset for this check to work.</li>
+</ul></div></section>
+<section id="s14"><h2>Scenario sandbox (drills)</h2><div class="chip read"><b>Read it:</b> See 'Scenario sandbox (drill)' section with a dropdown menu. Select an injection, observe how panels change (especially the directed network), then click Reset.</div><div class="chip warn"><b>Does NOT mean:</b> These are teaching exercises, never investment signals. They show how the console responds to synthetic patterns.</div><div class="body"><h3>Purpose</h3>
+<p><strong>Clearly labeled a DRILL:</strong> Inject synthetic structures to see how the directed network and other panels respond. Never live data.</p>
+<h3>Available Drills</h3>
+<ul>
+<li><strong>Inject lead:</strong> Make the 1st asset a transmitter (plant a lead structure by mixing 60% of the 1st asset's lagged returns into all others). Tests how the network highlights planted transmitters.</li>
+<li><strong>Common shock:</strong> Mix contemporaneous shocks across all assets (contemporaneous, no leader). Since contemporaneous moves collapse the asymmetry structure, the directed network loses clarity—exactly as it would in a real crisis.</li>
+<li><strong>Volatility spike:</strong> Raise vol on the selected asset. Tests how fragility and surprise lenses respond to pure volatility without regime change.</li>
+</ul>
+<h3>Reset Button</h3>
+<p>Clears the injection and reverts to live/snapshot data.</p>
+<h3>Pedagogical Role</h3>
+<p>These drills let an operator understand the console's sensitivities without guessing from real market moves. They show that common shocks <strong>collapse directedness</strong> (asymmetry vanishes), which is consistent with crisis behavior.</p></div></section>
+<section id="s15"><h2>Asset coverage & exclusions</h2><div class="chip read"><b>Read it:</b> See the asset dropdown at top-left of the console. Click it to see the full list, organized by class. Use it to navigate the fragility thermometer and base-rate panel.</div><div class="chip warn"><b>Does NOT mean:</b> Asset exclusions are not data gaps; they reflect that volatility indices and FX rates are not holdable long positions, so forward-drawdown rates don't apply.</div><div class="body"><h3>Full Asset Universe</h3>
+<p>51 assets across multiple classes (a richer basket sharpens the multivariate stress measures and adds a genuine global-contagion view):</p>
+<ul>
+<li><strong>US equities (6):</strong> SPY, QQQ, IWM, AAPL, MSFT, NVDA</li>
+<li><strong>International equities (14):</strong> EEM (Emerging Mkts), EFA (Developed ex-US), VGK (Europe), EWG (Germany), EWU (UK), EWJ (Japan), MCHI (China), INDA (India), EWY (Korea), EWT (Taiwan), EWZ (Brazil), EWC (Canada), EWW (Mexico), ACWX (World ex-US)</li>
+<li><strong>Sectors (8):</strong> XLF (Financials), XLK (Technology), XLE (Energy), XLV (Health Care), XLI (Industrials), XLU (Utilities), XLP (Staples), IGV (Software)</li>
+<li><strong>Rates (4):</strong> TLT (20y+ US Treasuries), SHV (1-3y US Treasuries), BWX (Intl Treasury ex-US), BNDX (Intl Bond, USD-hedged)</li>
+<li><strong>Credit (6):</strong> LQD (US IG), HYG (US High-yield), VCIT (US IG corp), EMB (EM sovereign, USD), EMLC (EM local-currency sovereign), IBND (Intl corp bond)</li>
+<li><strong>Commodities (4):</strong> DBC, USO (Crude), GLD (Gold), CORN (Agriculture)</li>
+<li><strong>Dollar (1):</strong> UUP (US Dollar)</li>
+<li><strong>Crypto (3):</strong> BTC, ETH, SOL</li>
+<li><strong>FX pairs (4):</strong> USD/JPY, USD/CHF, USD/AUD, USD/EUR</li>
+<li><strong>Volatility (1):</strong> VIX</li>
+</ul>
+<p>The 2026 expansion added the missing S&amp;P sectors, short-duration rates, intermediate credit, an agricultural commodity, and a <strong>global equity layer</strong> (Europe, Germany, UK, Japan, China, India, Korea, Taiwan, Brazil, Canada, Mexico, World-ex-US) — chosen for distinct stress-transmission roles. <strong>Important — global markets and timezones:</strong> the international markets are added as <em>US-listed regional ETFs</em>, which all close at 4pm ET. This is deliberate: it keeps them <em>synchronized</em> with the rest of the basket and avoids the non-synchronous-trading bias (Lo-MacKinlay) that native local-hours indices (Nikkei, DAX…) would inject into the lead-lag network — where the later-closing market spuriously appears to "lead." The honest tradeoff is that these ETFs reprice overnight foreign news <em>during</em> the US session, so any "lead" the US shows over them in the directed network is partly a mechanical repricing artifact, not pure information flow (this caveat is shown on the network panel itself).</p>
+<h3>What Feeds Which Panels</h3>
+<ul>
+<li><strong>Directed spillover network (LCCA):</strong> All 51 assets (including crypto). Gated in Backtest before ~2023. International ETFs carry the timezone caveat above.</li>
+<li><strong>Coupling (ρ̂), Absorption Ratio, Turbulence, Manifold:</strong> Macro names <strong>excluding crypto</strong> (~16 equities/rates/credit/commodities) to ensure 2016 history. Crypto excluded for these panels.</li>
+<li><strong>Fragility thermometer, Surprise lens, Hawkes:</strong> All assets included.</li>
+<li><strong>Base-rate honesty:</strong> Equity, sector, credit, commodity, crypto only. <strong>VIX & FX excluded</strong> (not holdable long positions).</li>
+</ul></div></section>
+<section id="s16"><h2>Where the data comes from & data health</h2><div class="chip read"><b>Read it:</b> The console merges live feeds into a 10-year snapshot, with crypto (~2.7y) and rolling 252-day windows. Live data never required — snapshot always available.</div><div class="chip warn"><b>Does NOT mean:</b> This is NOT a real-time prediction engine. It is a descriptive snapshot-plus-refresh architecture that gracefully degrades if live feeds fail.</div><div class="body"><h3>Embedded real-history snapshot: the foundation</h3>
+<p>The console rests on a <strong>10-year embedded snapshot</strong> covering equities (S&P 500, sectors, indices), FX (USD/EUR, USD/JPY, USD/CHF, USD/AUD), credit, commodities, volatility indices, and macro rates — reaching back to 2016 for the macroeconomic basis (equity/FX cross-asset coupling panel). Cryptocurrency history spans approximately 2.7 years (Binance.US data).</p>
+
+<h3>Live refresh architecture (fail-silent design)</h3>
+<p>When operating in <strong>Live monitor</strong> mode, the console attempts to refresh the tail of each series every 10 minutes via three native live feeds. A single feed failure never blanks the console — the snapshot remains the floor.</p>
+<ul>
+<li><strong>Binance.US crypto</strong>: BTC, ETH, SOL (1-day closes, last 60 days); status marked live when reachable</li>
+<li><strong>Frankfurter ECB FX</strong>: EUR, JPY, CHF, AUD vs. USD (native daily rates, last 40 days); updates when available</li>
+<li><strong>Yahoo equities (via proxy)</strong>: SPY, VIX, sector indices (1-day closes, last 30 days via api.allorigins.win); degrades gracefully if unreachable</li>
+</ul>
+
+<h3>Data health indicators</h3>
+<p>A small <strong>feeds panel</strong> displays the real-time status of each source:</p>
+<ul>
+<li><span style="color:var(--green);">Green dot</span> = live refresh succeeded on this cycle</li>
+<li><span style="color:var(--amber);">Amber dot</span> = currently loading</li>
+<li><span style="color:var(--red);">Red dot</span> = unreachable; console continues on snapshot</li>
+<li><span style="color:var(--dim);">Dim dot</span> = idle (not yet attempted this session)</li>
+</ul>
+
+<h3>Window specifications & alignment</h3>
+<p>For all analytics:</p>
+<ul>
+<li><strong>Systemic panels</strong> (spectral radius, absorption ratio, diffusion map): macro/equity/FX names only, reaching to 2016 for historical alignment; crypto excluded from coupling analysis to preserve the 10-year baseline</li>
+<li><strong>Per-asset fragility thermometer</strong>: each asset uses its full available history (10y equities/FX, ~2.7y crypto)</li>
+<li><strong>Network & directed spillover</strong>: all asset classes included (equities, FX, crypto, commodities, vol, rates); window is 252 rolling days</li>
+<li><strong>Backtest mode</strong>: strict walk-forward — at any cursor date, every statistic uses only data up to that day</li>
+</ul>
+
+<h3>Overlapping asset coverage</h3>
+<p>The network and directed-spillover panels compute on the union of available assets for each date. The systemic coupling (spectral radius/absorption) drops out if fewer than 3×N days are available for the current asset subset; the manifold requires sufficient 10-day block states to cluster.</p></div></section>
+<section id="s17"><h2>Why it borrows the water dashboard's lenses but not its foresight</h2><div class="chip read"><b>Read it:</b> Markets have no fixed topology, no accumulation, no exogenous drivers, and no hidden state. Every structural advantage the water system has for forecasting is inverted in markets.</div><div class="chip warn"><b>Does NOT mean:</b> Do not treat elevated readings as predictive signals. They show current stress, not future moves.</div><div class="body"><p>The Resilience Telemetry console applies several <strong>structural analogs</strong> from the Saint Petersburg SCADA water-monitoring system (which <em>can</em> warn hours ahead). However, four critical market differences prevent the same forward-looking skill:</p>
+
+<h3>1. Fixed topology vs. estimated and rewiring</h3>
+<p><strong>Water:</strong> The pipe network and elevation structure are ground-truth, surveyed and stable. Pressure and flow respond to known fixed constraints.<br>
+<strong>Markets:</strong> The cross-asset correlation network is <em>estimated</em> from noisy daily returns and systematically rewires when a crisis hits. Historical "lead-lag" dissolves; everything converges to one mode (panic). The topology is a ghost until it breaks.</p>
+
+<h3>2. Conservation vs. price instantaneity</h3>
+<p><strong>Water:</strong> Water piles up in tanks of known volume and travels pipes at known speed. Total level + rate-of-rise → calculable time-to-overflow.<br>
+<strong>Markets:</strong> Nothing accumulates. A crowded position unwinds in milliseconds through price. There is no quantity to integrate forward; only the <em>expectation</em> of future supply/demand is priced. A crowded trade can evaporate before any aggregating metric signals it.</p>
+
+<h3>3. Exogenous drivers with real lead time vs. endogenous and already priced</h3>
+<p><strong>Water:</strong> Rain and surge are <em>exogenous</em> — coming whether or not anyone forecasts them, and don't change course because operators reacted to yesterday's forecast.<br>
+<strong>Markets:</strong> The "drivers" (Fed policy, CPI, flows) are already priced into expectations by the time they become observable. Information arbitrage across venues means any stable upstream-leads-downstream edge is traded to lag zero. Surprise is all that remains — by definition, unforecastable.</p>
+
+<h3>4. Hidden-state telemetry vs. price as the expectation</h3>
+<p><strong>Water:</strong> SCADA reads a tank level only the operator can see. The gauge is independent of what happens next; observing it does not change the water level.<br>
+<strong>Markets:</strong> Price <em>is</em> the aggregate expectation. There is no hidden state to telemeter. Worse, observing a gauge — discussing a risk, hedging it, trading on it — immediately changes the expectation and the price. Markets exhibit reflexivity; water systems do not.</p>
+
+<h3>Consequence: thermometer, not forecast</h3>
+<p>The spectral radius (ρ̂), absorption ratio, turbulence, Hawkes branching ratio, and timed lead-lag are built as a <strong>systemic-stress thermometer</strong>. By their authors' own admission, these metrics <em>rise during</em> 2008, 2020, and 2022 — not before. They are <strong>coincident-to-lagging</strong> measures of stress, not predictive. The only weakly-leading construct is the standardized absorption-ratio <em>shift</em>, and even that is sample-dependent and has not held out-of-sample.<br><br>This is exactly why everything here stays <strong>descriptive, not predictive.</strong> The console tells you <em>where the market sits today</em>, in geometric and spectral terms, relative to its own history — not where it will go.</p></div></section>
+<section id="s18"><h2>FAQ for investors & operators</h2><div class="chip read"><b>Read it:</b> High readings persist for years without crashing. Lead-lag is association, not causation. Closest analogs are geometric, not predictive. Descriptive, not predictive.</div><div class="chip warn"><b>Does NOT mean:</b> This is not a black-box trading system or a crash-prediction tool. It is a diagnostic for understanding current market stress.</div><div class="body"><h3>Q: Is a red reading (fragility ≥70) a sell signal?</h3>
+<p><strong>A:</strong> No. A high fragility reading is a descriptive statement: "This asset's recent fluctuations are larger, more persistent, or more asymmetric than its own historical norm." It does not predict when a drawdown will occur. Readings can stay red for months or years without significant correction; conversely, crashes sometimes begin from low readings. This is a stress thermometer, not a market-timing tool.</p>
+
+<h3>Q: I've seen elevated readings for months with nothing happening. Does that mean the console is broken?</h3>
+<p><strong>A:</strong> No, that is expected and honest. With only a handful of real drawdown events in a decade, the base-rate chance of a crash on any given day is already low. An elevated thermometer reading raises that chance somewhat, but from a very small number. The <strong>Backtest / base-rate honesty</strong> panel quantifies this: if you find that a fragility ≥70 raises the 10-day forward drawdown rate from (say) 1% to 1.8%, that is the true signal — modest and uncertain. The console will never claim otherwise.</p>
+
+<h3>Q: Does an arrow in the network mean A causes B?</h3>
+<p><strong>A:</strong> No. An arrow i→j means i's past returns have a higher predictive weight for j's future than the reverse. This is called "lead-lag" or "Granger causality" in econometrics, but it is purely correlational. Causes can include: genuine information cascades (rare), different market-open times, measurement lag, or simple overfitting. Any stable edge gets arbitraged away; what you see is mostly the noise of the week.</p>
+
+<h3>Q: Is the "closest-analog" state a prediction?</h3>
+<p><strong>A:</strong> No. The diffusion map shows that today's state is geometrically closest to (say) 2019 or 2021. That historical state is a <strong>coincident analog</strong> — it looked similar. But it does not predict that the same moves will follow. Markets have short memory, regime shifts can happen overnight, and new shocks are always possible.</p>
+
+<h3>Q: What does it mean if spectral radius is rising?</h3>
+<p><strong>A:</strong> It means the cross-asset correlation matrix is concentrating its variance in fewer eigenmodes. Assets are moving more in sync. This is a real, measurable signal of systemic tightness — but it is a <em>coincident</em> signal, visible during 2020 and 2022 as the crisis unfolded, not cleanly ahead of time. Rising coupling makes the system more fragile to the next shock, but the shock's timing and magnitude are unforecastable.</p>
+
+<h3>Q: If the Hawkes branching ratio approaches 1, is a crash imminent?</h3>
+<p><strong>A:</strong> No. A branching ratio near 1 (critical coupling) means large shocks are currently self-reinforcing — they beget more large shocks. This is a real description of the shock cascade active right now. But it does not tell you how long the cascade will last, how large the next shock will be, or when it will end. You are observing the stress, not predicting its duration.</p>
+
+<h3>Q: What if all the indicators are red and the diffusion map shows the stressed arm?</h3>
+<p><strong>A:</strong> That is a coherent stress signal: the market is exhibiting high fragility, tight coupling, strong shock clustering, and a geometric regime similar to past crises. This is valuable information for risk managers, forcing you to review your hedge ratios, concentration, and liquidity assumptions. It does <em>not</em> tell you to sell everything immediately, nor does it guarantee a crash by Friday. It is an honest call to heightened vigilance.</p>
+
+<h3>Q: Can I backtest a strategy on these signals?</h3>
+<p><strong>A:</strong> Yes, and the console offers a <strong>Backtest / research</strong> mode with strict walk-forward recomputation and base-rate honesty tables. But be warned: with a dozen real drawdown events in 10 years, apparent backtest "skill" is mostly luck. The console compares your fragility-based signal to the unconditional base rate and shows confidence intervals. Treat any edge as weak and prone to overfitting until it is validated out-of-sample on new data.</p>
+
+<h3>Q: Is the volatility channel different from GARCH?</h3>
+<p><strong>A:</strong> Not meaningfully. Realized volatility (the amplitude sub-score) and the bimodality coefficient mostly restate volatility clustering, which GARCH models directly. If you run a GARCH on the same asset, you will see similar conditional-vol spikes. The surprise lens (AR(1)+EWMA-vol log-likelihood) is more independent, but still a simple model. Neither the volatility channel nor surprise are strong out-of-sample predictors of drawdowns.</p>
+
+<h3>Q: What does the covariance shrinkage α do in the turbulence panel?</h3>
+<p><strong>A:</strong> It blends the sample covariance matrix with the identity (uniform correlation) to reduce estimation noise when data is scarce or dimensions are high. Higher α = more shrinkage toward identity. The default (0.20) is conservative. If covariance becomes ill-conditioned (nearly singular), α auto-raises. Adjust the slider to see how turbulence readings change with shrinkage, but remember: turbulence itself is a coincident metric, not forward-looking.</p>
+
+<h3>Q: Can I use this for real-time trading?</h3>
+<p><strong>A:</strong> Only if your risk tolerance aligns with "descriptive of current stress, not a market timer." You might use elevated fragility and tight coupling to tighten stops, increase hedging, or reduce leverage — all risk-management moves. Trying to trade the direction or timing based on these signals will likely fail out-of-sample. The console is for situational awareness, not alpha generation.</p></div></section>
+<section id="s19"><h2>Glossary</h2><div class="chip read"><b>Read it:</b> See definitions of all key terms: spectral radius, absorption ratio, fragility thermometer, LCCA, diffusion map, Hawkes, turbulence, surprise, DFA, bimodality, and more.</div><div class="chip warn"><b>Does NOT mean:</b> These are technical terms; understanding them is important for interpreting the console correctly and avoiding false signals.</div><div class="body"><dl style="margin:0; line-height:1.7;">
+
+<dt><strong>Absorption ratio</strong></dt>
+<dd>The fraction of total variance in a correlation matrix captured by the top k eigenmodes (Kritzman-Li metric). High ratio = little local shock-absorbing capacity; all variance is driven by a shared global mode. Coincident, not leading.</dd>
+
+<dt><strong>AC1 (Lag-1 autocorrelation)</strong></dt>
+<dd>Correlation between today's return and yesterday's return. In efficient markets, ~0. Rising values suggest slower mean-reversion (critical-slowing-down analogue). Weak in returns; mostly restated by volatility clustering.</dd>
+
+<dt><strong>Backtest / research mode</strong></dt>
+<dd>Walk-forward computation: at any cursor date, all statistics use only data up to that date. The panel then compares actual forward drawdowns to the base rate. Strict honesty check against luck.</dd>
+
+<dt><strong>Base-rate honesty</strong></dt>
+<dd>A statistical comparison of the actual frequency of drawdowns when fragility ≥70 (conditional rate) vs. any random day (unconditional base rate). If conditional ≈ unconditional, there is no demonstrated timing skill.</dd>
+
+<dt><strong>Bimodality coefficient</strong></dt>
+<dd>Statistical measure of "two-humped" distribution shape. Rising bimodality suggests the asset is flickering between calm and stressed states. Often a false positive driven by GARCH vol clustering alone.</dd>
+
+<dt><strong>Branching ratio (Hawkes)</strong></dt>
+<dd>In a Hawkes self-exciting point process, the expected number of child shocks per parent shock. Ratio ~1 = critical (approaching instability); <<1 = shocks die away fast. Realizes your LSAxJEPA temporal Hawkes λ<sub>i</sub>(t).</dd>
+
+<dt><strong>Critical-slowing-down (CSD)</strong></dt>
+<dd>In physics, the analogue of rising recovery time, persistence, and amplification near a phase transition. These metrics (AC1, DFA, rvol, bimodality) borrow the analogy from CSD, but in markets they rise <em>during</em> stress, not <em>before</em>, and are largely coincident or even lagging.</dd>
+
+<dt><strong>Cross-correlation asymmetry (LCCA)</strong></dt>
+<dd>Matrix A(i→j) = D(i→j) − D(j→i), where D is Granger causality direction (past i→future j). Anti-symmetric: red when i leads j, blue when j leads i. Predictive association, not causation.</dd>
+
+<dt><strong>Diffusion map</strong></dt>
+<dd>A nonlinear dimensionality-reduction technique (generalization of spectral decomposition / PCA) that embeds high-dimensional states (e.g., 20-asset returns over 10 days) into a low-D space so that similar regimes cluster. Realizes the geometric manifold of your LSAxJEPA framework.</dd>
+
+<dt><strong>DFA (Detrended fluctuation analysis) / Hurst exponent α</strong></dt>
+<dd>Measures scaling of cumulative returns; α ≈0.5 = random walk (no persistence), α >0.5 = more persistence (slow mean-reversion), α <0.5 = mean-reverting. Needs long windows; lags regime shifts; mostly descriptive.</dd>
+
+<dt><strong>Directedness ratio (Σ|A|/ΣD)</strong></dt>
+<dd>A network statistic: sum of absolute asymmetries divided by total Granger causality magnitude. Low ratio = network is becoming less directional (everything leads everything); high ratio = clear leader-follower structure. Collapses in crises.</dd>
+
+<dt><strong>Eigenvalue (λ<sub>max</sub>)</strong></dt>
+<dd>The dominant (largest) eigenvalue of a correlation matrix. Normalized by N (number of assets), it gives the spectral radius ρ̂. Dominance = systemic coherence; in crises, ρ̂ rises as assets correlate to one mode.</dd>
+
+<dt><strong>Fragility thermometer</strong></dt>
+<dd>A per-asset 0–100 score combining three channels (persistence, amplitude, tail) that measure how far recent behavior sits above the asset's own historical norm. High ≠ crash; can persist for years. Descriptive, not predictive.</dd>
+
+<dt><strong>Granger causality / lead-lag</strong></dt>
+<dd>Statistical test of whether past values of X help forecast Y more than X's own past alone. "Lead" means X's past is predictive for Y's future; "lag" means the reverse. In markets, this is association driven by mechanics, measurement lag, and overfitting, not true causation.</dd>
+
+<dt><strong>Hawkes process</strong></dt>
+<dd>A self-exciting point process where arrivals (shocks) increase the intensity of future arrivals (branching ratio n). Fitted to daily return shocks ≥2.5σ; branching ratio rises in stress. Realizes your LSAxJEPA temporal shock-clustering λ<sub>i</sub>(t) framework.</dd>
+
+<dt><strong>Ill-conditioned covariance</strong></dt>
+<dd>When a covariance matrix is nearly singular (near-zero or negative eigenvalues), inverse estimates blow up. Shrinkage α or dimension reduction is applied. The console auto-raises α if the matrix becomes ill-conditioned.</dd>
+
+<dt><strong>Mahalanobis distance / turbulence</strong></dt>
+<dd>One-day multivariate generalization of z-score. Measures how unusual today's cross-asset move is relative to the recent covariance. Risen in 2020/2022 (coincident), not before. An active-inference analogue (variational free energy) of per-asset surprise.</dd>
+
+<dt><strong>Manifold / state geometry</strong></dt>
+<dd>The high-dimensional space spanned by historical market states (e.g., 20-asset 10-day returns). A diffusion map embeds it into 2-D; similar regimes cluster. Coincident description of the market's regime geometry, not predictive of next state.</dd>
+
+<dt><strong>Permutation-gated null</strong></dt>
+<dd>Statistical test: reorder (shuffle) the returns of asset j to break any causal link to i, then recompute lead-lag. Only keep links i→j that exceed the null distribution. Filters spurious edges but is conservative.</dd>
+
+<dt><strong>Realized volatility (rvol)</strong></dt>
+<dd>Square root of the sum of squared daily returns over a window, annualized. A measure of magnitude of fluctuations. Rising rvol mostly restates GARCH vol clustering; a coincident metric, not predictive.</dd>
+
+<dt><strong>Recovery rate λ = −ln φ</strong></dt>
+<dd>Derived from AR(1) coefficient φ. λ measures the rate of exponential reversion to mean; rising λ = faster recovery. Sibling of AC1; largely redundant information in markets.</dd>
+
+<dt><strong>Shrinkage (α)</strong></dt>
+<dd>Regularization parameter for covariance estimation: C_shrink = (1−α)×C_sample + α×I. Higher α = more smoothing, better condition number, but less responsiveness to true covariance changes. Default 0.20; auto-raised if ill-conditioned.</dd>
+
+<dt><strong>Snapshot (embedded real history)</strong></dt>
+<dd>10-year pre-computed time series of equities, FX, commodities, credit, rates, and vol indices (starting 2016); ~2.7 years of crypto. Baked into the HTML; always available even if live feeds fail.</dd>
+
+<dt><strong>Spectral radius ρ̂</strong></dt>
+<dd>The dominant eigenvalue of the rolling cross-asset correlation matrix, normalized by N. Measures systemic coupling: ρ̂→1 = tight coupling (all move together); ρ̂ low = loose coupling (independent shocks). Coincident stress metric, not predictive. Your LSAxJEPA κ<sub>B</sub> analogue.</dd>
+
+<dt><strong>Surprise lens (active-inference analogue)</strong></dt>
+<dd>One-step negative log-likelihood of a simple AR(1)+EWMA-volatility model. Rising = today's moves are more surprising to a simple expectation model. An active-inference variational-free-energy analogue, not the full EFE engine. Per-asset, not systemic.</dd>
+
+<dt><strong>Walk-forward validation</strong></dt>
+<dd>Strict backtesting methodology: at any in-sample date, all parameters are estimated using only data up to that date. Forward metrics are computed on future data. Prevents look-ahead bias. The console's Backtest mode does this recomputation.</dd>
+
+</dl></div></section>
+</main>
+</div></body></html>

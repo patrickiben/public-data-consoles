@@ -1,0 +1,108 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>USAID Consequence Console — Field Guide</title>
+<style>
+:root{--bg:#0a1410;--surf:#13261d;--tx:#e9f3ee;--dim:#9fc0b0;--measured:#1d9e75;--modeled:#c98a1a;--interp:#5d8fd0;--red:#e24b4a;--teal:#26c6da;--bd:rgba(255,255,255,.10);--bd2:rgba(255,255,255,.22)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.6}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+header.top{padding:20px 28px;border-bottom:1px solid var(--bd);background:linear-gradient(180deg,#0c1b15,#0a1410)}
+header.top h1{margin:0;font-size:22px}header.top .sub{color:var(--dim);font-size:13px;margin-top:3px}
+.honest{margin:16px 28px;padding:13px 16px;border:1px solid var(--bd2);border-left:3px solid var(--modeled);border-radius:8px;background:#0a1a14;color:#cfe6da;font-size:13.5px}
+.honest b{color:var(--modeled)}
+.wrap{display:flex;gap:26px;padding:8px 28px 60px;align-items:flex-start}
+nav.toc{position:sticky;top:14px;flex:none;width:280px;border:1px solid var(--bd);border-radius:10px;background:var(--surf);padding:14px;max-height:calc(100vh - 28px);overflow:auto}
+nav.toc h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim)}
+nav.toc ol{margin:0;padding-left:20px}nav.toc li{margin:5px 0;font-size:13px}
+main{flex:1;min-width:0;max-width:860px}
+section{background:var(--surf);border:1px solid var(--bd);border-radius:12px;padding:20px 24px;margin-bottom:18px}
+section h2{margin:0 0 12px;font-size:20px;scroll-margin-top:14px}
+section h3{font-size:15.5px;margin:15px 0 5px;color:var(--teal)}
+p{margin:9px 0}ul{margin:9px 0;padding-left:22px}li{margin:4px 0}
+.bdg{font-size:10px;font-weight:800;padding:1px 6px;border-radius:5px}
+.bdg.M{background:rgba(29,158,117,.18);color:#5fe0b0;border:1px solid rgba(29,158,117,.5)}
+.bdg.D{background:rgba(201,138,26,.18);color:#f0c46a;border:1px solid rgba(201,138,26,.5)}
+.bdg.I{background:rgba(93,143,208,.18);color:#9fc0f0;border:1px solid rgba(93,143,208,.5)}
+code{background:#081410;border:1px solid var(--bd);border-radius:4px;padding:1px 5px;font-size:13px}
+.chip{font-size:12.5px;padding:7px 11px;border-radius:7px;margin:4px 0;border:1px solid var(--bd)}
+.chip.read{background:rgba(38,198,218,.08);border-left:3px solid var(--teal)}
+.chip.warn{background:rgba(226,75,74,.08);border-left:3px solid var(--red)}
+@media(max-width:900px){.wrap{flex-direction:column;padding:8px 14px 40px}nav.toc{position:static;width:100%;max-height:none}main{max-width:100%}}
+</style></head><body>
+<header class="top"><h1>USAID Consequence Console — Field Guide</h1>
+<div class="sub">how to read the funding · health · geopolitical console · companion to <code>USAID_Consequence_Console.html</code></div></header>
+<div class="honest"><b>DESCRIPTIVE, NOT PREDICTIVE.</b> Every figure on the console is badged <span class="bdg M">MEASURED</span> (real), <span class="bdg D">MODELED</span> (a projection with a range and a citation), or <span class="bdg I">INTERPRETIVE</span> (qualitative, multi-causal). The modeled death figures are <b>worst-case projections, not counted deaths</b> — this is an analytic tool, not a public-facing death forecast. Read Section 1 first.</div>
+<div class="wrap">
+<nav class="toc"><h3>Contents</h3><ol>
+<li><a href="#s1">What this is — and is NOT</a></li>
+<li><a href="#s2">Reading the three badges</a></li>
+<li><a href="#s3">The funding collapse (live, measured)</a></li>
+<li><a href="#s4">Recipient countries</a></li>
+<li><a href="#s5">The cut→consequence cascade</a></li>
+<li><a href="#s6">Modeled excess deaths — how to read it</a></li>
+<li><a href="#s7">Measured early signals</a></li>
+<li><a href="#sbeyond">★ Beyond lives lost — 5 added panels</a></li>
+<li><a href="#s8">Program exposure ranking</a></li>
+<li><a href="#s9">Influence vacuum — the China correction</a></li>
+<li><a href="#s10">Data sources, honesty &amp; appropriate use</a></li>
+</ol></nav>
+<main>
+<section id="s1"><h2>1 · What this is — and what it is NOT</h2>
+<div class="chip read"><b>Is:</b> an analytic console that pairs the <em>real, measured</em> collapse in U.S. foreign-aid funding with <em>published, modeled</em> projections of the health consequences and an <em>interpretive</em> read of the geopolitical fallout.</div>
+<div class="chip warn"><b>Is NOT:</b> a running death counter, a forecast, or a public-release artifact. Modeled excess-death ranges are inflammatory if misread as counts.</div>
+<p>The console exists to keep three very different kinds of knowledge honestly separated. The <strong>funding cut is real and large</strong> and you can verify it live. The <strong>human toll is a modeled range</strong> with wide uncertainty, contingent on the cuts persisting with no backfill. The <strong>geopolitical fallout is interpretive</strong> and has many causes. Conflating these three is the single most common way this topic is misreported; the badge system is designed to make conflation impossible.</p></section>
+
+<section id="s2"><h2>2 · Reading the three badges</h2>
+<p>Every number carries one of three badges, on the figure itself (not buried in a footnote):</p>
+<ul>
+<li><span class="bdg M">MEASURED</span> — hard accounting or observed data (USAspending obligations, observed service/commodity declines). The most reliable; treat as fact.</li>
+<li><span class="bdg D">MODELED</span> — a published projection with a stated range/CI and a citation. A scenario-dependent estimate, never a count. Always read the range, not the midpoint.</li>
+<li><span class="bdg I">INTERPRETIVE</span> — qualitative, multi-causal assessment (instability, soft power, "who fills the gap"). Read as <em>"associated with"</em>, never <em>"caused by"</em>.</li>
+</ul>
+<p>The header pill and banner restate this; the data-health strip (bottom right) tells you which feeds are live vs frozen.</p></section>
+
+<section id="s3"><h2>3 · The funding collapse <span class="bdg M">MEASURED · LIVE</span></h2>
+<p>The headline chart is USAID (agency 072) total obligations by fiscal year, fetched <strong>live, in your browser</strong>, from the USAspending.gov API — no key, no proxy. It is pure appropriations accounting: <strong>~$38.2B at the FY2023 peak → ~$6.2B in FY2026 (partial, through Q3), about −84%</strong>. FY2026 is partial; the console labels it so — do not annualize it. If the live call fails, the console falls back to a frozen snapshot and says so.</p></section>
+
+<section id="s4"><h2>4 · Where it dropped — recipient countries <span class="bdg M">MEASURED</span></h2>
+<p>Per-country obligations, FY2024 baseline (faint bar) vs FY2026 (red overlay), with the percent drop. Uganda, South Africa, Zimbabwe and others are down 90%+. <strong>Two buckets are deliberately excluded</strong>: the "United States" line (~$24B, home-coded HQ/administration) and "Switzerland" (~$3B, Global Fund / UN pass-through) — neither is a bilateral recipient, and including them would badly distort the picture.</p></section>
+
+<section id="s5"><h2>5 · The cut → consequence cascade</h2>
+<p>A four-step chain showing how a funding decision propagates. The first two steps (<span class="bdg M">the cut</span>; <span class="bdg M">observed service &amp; supply disruption</span>) are measured. The last two (<span class="bdg D">modeled disease resurgence</span>; <span class="bdg I">cross-border &amp; geopolitical spillover</span>) are modeled/interpretive. <strong>Step 3 is the crux and the least certain</strong> — the link from reduced coverage to excess incidence is calibrated on 2015–2024 patterns and is out-of-domain for novel pathogens or drug resistance.</p></section>
+
+<section id="s6"><h2>6 · Modeled excess deaths — how to read it <span class="bdg D">MODELED</span></h2>
+<p>This is the most easily misread panel, so read it carefully:</p>
+<ul>
+<li><strong>Ranges, not points.</strong> Each program shows a low–high range with its scenario and citation (e.g. the aggregate Lancet projection ~14M by 2030, <em>95% UI 8.5–19.7M</em>). Where a source gives no CI (Guttmacher, Gavi) the console says so rather than fake precision.</li>
+<li><strong>Counterfactual = worst case.</strong> The figures assume cuts <em>persist with no donor or national backfill</em>. Documented mitigants already bound the realized harm below the worst case — a Feb-2025 PEPFAR lifesaving-services waiver, a rejected PEPFAR rescission, a ~$9B Gavi replenishment, some reinstated food-aid contracts.</li>
+<li><strong>"Avertable benefit" ≠ "cut-attributable deaths."</strong> Some entries (e.g. malaria's 13.6M cases) are the <em>full program benefit at risk</em>, not the toll of a partial cut — labeled as such.</li>
+<li><strong>Likely under-stated long-run.</strong> One-year models miss onward transmission, lost re-engagement, and eroded trust.</li>
+</ul></section>
+
+<section id="s7"><h2>7 · Measured early signals <span class="bdg M">MEASURED</span></h2>
+<p>Kept deliberately adjacent to the modeled panel so the difference is visible. These are <strong>actually observed</strong> declines — South Africa HIV testing −31% and treatment initiation −30%, Mozambique ART initiation −14%, 14% of 56 countries reporting ≤6 months' ARV stock, RUTF (therapeutic food) shortages in 17 countries, 71% of partners cancelling activities. These are <strong>service/commodity/workforce declines, not deaths</strong>. The measles resurgence card is flagged <span class="bdg I">mixed</span> — it coincides with the cuts but is multi-causal (including U.S. domestic vaccine hesitancy).</p></section>
+
+<section id="sbeyond"><h2>★ Beyond lives lost — five added panels <span class="bdg M">MEASURED</span></h2>
+<p>Mortality is the headline but the least <em>leading</em> and most-contested signal. These five panels (added from a verified research pass — high correlation, citable data, wireable feeds, low overlap with the panels above) add consequences that move just as strongly and surface earlier.</p>
+<h3>Made-in-America blowback — the cut came home</h3>
+<p>Inverts the funding view: the same dollars, seen from the US side. <strong>23,053 confirmed US layoffs across 46 states</strong> (USAIDStopWork — a self-reported floor); Food-for-Peace purchases from US farmers fell from ~1.1M MT / ~$2B to a ~211–417k MT USDA remnant; Johns Hopkins alone cut ~2,200 jobs / ~$800M. The economy-wide "~$23B exports &amp; 200k+ jobs at risk" tile is kept <span class="bdg D">MODELED</span>. The one consequence a domestic audience feels directly.</p>
+<h3>The leading edge — food insecurity &amp; famine</h3>
+<p>One rung below the modeled deaths on the same causal chain, but <em>observed</em> in near-real-time: <strong>266 million people in IPC/CH Phase 3+ (crisis or worse)</strong>, famine confirmed in Gaza and Sudan (first year with two in GRFC history), 35.5M acutely malnourished children. The signature point — <strong>the warning system went dark</strong>: FEWS NET, the USAID-funded famine early-warning system, went offline in 2025, and the GRFC 2026 recorded the lowest data availability in a decade. Phase populations are MEASURED; sole attribution to USAID is <span class="bdg I">interpretive</span> (conflict, climate and an all-donor shortfall also drive it).</p>
+<h3>Displacement &amp; migration pressure</h3>
+<p>Converts the migration story from interpretive to measured: <strong>123.2M forcibly displaced</strong> (UNHCR, live keyless API), WFP reach down from 79.9M to 16.7M, and refugee rations halved from Cox's Bazar ($12.50→$6) to Kenya (40%→28% of basket) to Uganda (1.6M→663k reached). The ration-cut → onward-migration link (≈1.9% more migration per +1pp food insecurity) is kept <span class="bdg D">MODELED</span> and multi-causal.</p>
+<h3>Economic dependency — can the state survive it?</h3>
+<p>The structural counterpart to the recipient-dollars panel: net development aid (ODA) as a share of each recipient's <em>whole economy</em> (% of GNI). Where it is high, an aid collapse is a macro and fiscal shock to the <strong>state itself</strong>, not only its clinics — a consequence no death count captures. The most exposed are <strong>Central African Republic (27%)</strong>, Somalia (20%), Burundi (18%), Afghanistan (18%), Mozambique (15%) — several of which are <em>not</em> the biggest dollar recipients, so the panel is genuinely non-redundant (dollars vs share-of-GDP). It fetches <strong>live, in-browser, from the World Bank</strong> (keyless, CORS-open; 2023 snapshot fallback). The "% of GDP lost from the 2025 cut" projection is a separate MODELED overlay, deliberately not shown as a live figure.</p>
+<h3>The survivors, permanently diminished — education &amp; human capital</h3>
+<p>The "survivors" counterpart to the deaths ledger: the far larger group who <em>live but are permanently diminished</em>. <strong>780,000+ children lost their school meal</strong> (terminated McGovern-Dole programs — the one MEASURED anchor here), a projected <strong>+6 million out of school by end-2026</strong>, and the lasting penalty — a child born today in a low/middle-income country may lose <strong>~51% of lifetime earnings</strong> to nutrition/learning/skills deficits (World Bank HCI+ 2026), with stunting alone cutting national GDP by up to ~7%. This panel is honestly badged <span class="bdg D">mostly MODELED</span>: most figures are projections, and the out-of-school/aid numbers are <em>all-donor</em> (the US is one of ~3 donors driving ~80% of the cuts). Two anti-double-count rules are stated on the panel: it counts <em>survivors</em> (not the child deaths already in the deaths panel) and the human <em>outcome</em> of school feeding (not the McGovern-Dole dollars already in the funding panel).</p>
+<div class="chip read"><b>Wireable feeds:</b> three of the five run on live keyless feeds — USAspending place-of-performance (domestic), the UNHCR Refugee Data Finder API (displacement), and the World Bank WDI API (economic dependency, <code>DT.ODA.ODAT.GN.ZS</code>). Food insecurity is key-gated (IPC → GRFC annual snapshot), and education is mostly modeled projections (World Bank HCI <code>HD.HCI.OVRL</code> is live-wireable, but the headline figures are cited).</div></section>
+
+<section id="s8"><h2>8 · Program exposure ranking <span class="bdg D">MODELED</span></h2>
+<p>A relative-triage ranking — how deeply each program was cut, weighted by how many depend on it (family planning and climate cut hardest by share; PEPFAR/HIV and malaria highest by absolute exposure). It is for <em>prioritizing attention</em>, not absolute prediction, and it inherits the wide CIs of its source models.</p></section>
+
+<section id="s9"><h2>9 · Influence vacuum — the China correction <span class="bdg I">INTERPRETIVE</span></h2>
+<p>This panel <strong>actively corrects the popular story</strong> rather than amplifying it. The best-available evidence is that grant-funded health and humanitarian services mostly <em>stop</em> rather than transfer to another donor: China's grant-equivalent aid is ~$5–8B/yr against the former U.S. ~$63B, and its finance is mostly <em>loans</em> / rescue-lending to governments, not grant health aid. The vacuum is largely <strong>unfilled</strong>. Russia/Gulf activity is selective and narrow. Everything here is "associated with", never "caused by".</p></section>
+
+<section id="s10"><h2>10 · Data sources, honesty &amp; appropriate use</h2>
+<p><strong>Sources.</strong> Funding: USAspending.gov API v2 (live, keyless). Modeled health: Lancet (Rasella et al., 2025), Lancet HIV, PLOS Global Public Health, Topazian/Malaria Atlas Project, Guttmacher, Gavi, IHME. Measured signals: UNAIDS, UNICEF, KFF, aidsmap/Anova, PAHO. Geopolitical: AidData, CGD, Carnegie/ECFR. Each figure carries its citation on the console.</p>
+<p><strong>Honest limits.</strong> The funding data is current and hard; the death projections are modeled bounds with wide uncertainty and a no-backfill counterfactual; the geopolitical layer is interpretive. The snapshot carries a vintage date; modeled figures update on a stated cadence as new epidemiology arrives, not as a live ticker.</p>
+<div class="chip warn"><b>Appropriate use:</b> analytic and operational support for donor, health-bureau, and partner decision-making. <b>Not</b> for public release as a death forecast — modeled excess deaths read as counts are both wrong and inflammatory.</div>
+</section>
+</main></div></body></html>
