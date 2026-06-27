@@ -1,140 +1,723 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Public-Data Consoles — interactive early-warning & decision-support dashboards</title>
-<meta name="description" content="A collection of self-contained, browser-only dashboards built on live public data feeds. Descriptive decision-support, no PHI, no accounts.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Public-Data Consoles — Mission Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0b1020; --panel:#121a30; --panel2:#0f1626; --line:#233155;
-    --ink:#e7ecf6; --muted:#9fb0cf; --dim:#6f7fa3;
-    --accent:#6ea8ff; --accent2:#7ee0c0; --warn:#ffcf6e; --demo:#c79bff;
+    --bg:#0a0c10;
+    --bg-2:#0d1016;
+    --panel:#10141c;
+    --panel-2:#131822;
+    --line:#1d2430;
+    --line-2:#283142;
+    --ink:#e8edf4;
+    --ink-2:#aab4c4;
+    --ink-3:#8b97a6;
+    --cyan:#27e0e0;
+    --cyan-dim:#0e8f9a;
+    --green:#3ddc84;
+    --amber:#f2b03d;
+    --violet:#a98bff;
+    --grid:rgba(255,255,255,.022);
     --radius:14px;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:radial-gradient(1200px 700px at 70% -10%,#16213f 0%,var(--bg) 55%);
-       color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  .wrap{max-width:1120px;margin:0 auto;padding:48px 22px 72px}
-  header h1{font-size:30px;margin:0 0 6px;letter-spacing:-.4px}
-  header p.lead{color:var(--muted);margin:0 0 4px;max-width:760px}
-  .sub{color:var(--dim);font-size:13.5px;max-width:820px;margin-top:14px;
-       border-left:3px solid var(--line);padding:8px 0 8px 14px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;margin-top:30px}
-  .card{background:linear-gradient(180deg,var(--panel) 0%,var(--panel2) 100%);
-        border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px;
-        display:flex;flex-direction:column;transition:.18s border-color,.18s transform}
-  .card:hover{border-color:var(--accent);transform:translateY(-2px)}
-  .card h2{font-size:17px;margin:2px 0 6px;line-height:1.3}
-  .card p{color:var(--muted);font-size:14px;margin:0 0 14px;flex:1}
-  .badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-  .b{font-size:11px;font-weight:600;letter-spacing:.3px;padding:3px 8px;border-radius:999px;
-     border:1px solid var(--line);color:var(--muted);text-transform:uppercase}
-  .b.live{color:var(--accent2);border-color:#2a5a4a;background:#0e2820}
-  .b.modeled{color:var(--warn);border-color:#5a4a24;background:#251e0c}
-  .b.demo{color:var(--demo);border-color:#46356a;background:#1c1430}
-  .links{display:flex;flex-wrap:wrap;gap:8px}
-  .links a{font-size:13px;text-decoration:none;padding:7px 12px;border-radius:9px;
-           border:1px solid var(--line);color:var(--ink);background:#0c1326}
-  .links a.primary{background:var(--accent);color:#08122b;border-color:var(--accent);font-weight:600}
-  .links a:hover{border-color:var(--accent)}
-  footer{margin-top:46px;color:var(--dim);font-size:12.5px;border-top:1px solid var(--line);padding-top:18px}
-  code{background:#0c1326;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:12.5px}
-  a.inline{color:var(--accent)}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    font-family:var(--sans);
+    color:var(--ink);
+    background:var(--bg);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  /* faint dot + grid texture */
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-2;
+    background:
+      radial-gradient(circle at 1px 1px, var(--grid) 1px, transparent 0) 0 0 / 26px 26px,
+      linear-gradient(var(--bg-2),var(--bg));
+    pointer-events:none;
+  }
+  /* corner glow */
+  body::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    background:
+      radial-gradient(60% 50% at 12% -5%, rgba(39,224,224,.10), transparent 60%),
+      radial-gradient(50% 45% at 100% 0%, rgba(169,139,255,.07), transparent 60%);
+    pointer-events:none;
+  }
+
+  a{color:inherit}
+  :focus-visible{
+    outline:2px solid var(--cyan);
+    outline-offset:3px;
+    border-radius:6px;
+  }
+
+  /* skip link */
+  .skip{position:absolute;left:-9999px;top:0;z-index:100}
+  .skip:focus{left:8px;top:8px;background:var(--accent,#3fd0e0);color:#04121a;padding:10px 14px;border-radius:8px;font-weight:700}
+
+  .wrap{max-width:1240px;margin:0 auto;padding:0 22px}
+
+  /* ---------- system status strip ---------- */
+  .statusbar{
+    position:sticky;top:0;z-index:20;
+    background:rgba(9,11,15,.82);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .statusbar .wrap{
+    display:flex;align-items:center;gap:14px;
+    height:46px;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--ink-2);
+    overflow:hidden;white-space:nowrap;
+  }
+  .statusbar .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 0 3px rgba(61,220,132,.16);
+    flex:0 0 auto;
+  }
+  .sb-seg{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto}
+  .sb-sep{color:var(--line-2);flex:0 0 auto}
+  .sb-key{color:var(--cyan)}
+  .sb-scroll{display:flex;align-items:center;gap:14px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+  .sb-scroll::-webkit-scrollbar{display:none}
+  @media (max-width:480px){
+    .statusbar .wrap{height:auto;padding-top:8px;padding-bottom:8px}
+    .sb-scroll{flex-wrap:wrap;gap:6px 12px}
+  }
+
+  /* ---------- masthead ---------- */
+  header.masthead{padding:54px 0 30px;position:relative}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--cyan-dim);
+    display:flex;align-items:center;gap:12px;margin:0 0 22px;
+  }
+  .eyebrow .tick{height:1px;width:46px;background:linear-gradient(90deg,var(--cyan),transparent)}
+  h1{
+    font-size:clamp(2.3rem,6vw,4.1rem);
+    line-height:1.02;
+    letter-spacing:-.03em;
+    font-weight:800;
+    margin:0 0 22px;
+    max-width:16ch;
+  }
+  h1 .accent{
+    background:linear-gradient(180deg,#bdf7f7,var(--cyan) 70%,var(--cyan-dim));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .lead{
+    font-size:clamp(1rem,1.6vw,1.18rem);
+    color:var(--ink-2);
+    max-width:60ch;margin:0 0 26px;
+  }
+  .lead strong{color:var(--ink);font-weight:600}
+
+  .metrics{
+    display:flex;flex-wrap:wrap;gap:0;
+    border:1px solid var(--line);
+    border-radius:12px;
+    overflow:hidden;
+    background:linear-gradient(180deg,var(--panel),var(--bg-2));
+    max-width:640px;
+  }
+  .metric{
+    flex:1 1 130px;
+    padding:14px 18px;
+    border-right:1px solid var(--line);
+    position:relative;
+  }
+  .metric:last-child{border-right:0}
+  .metric .num{
+    font-family:var(--mono);
+    font-size:1.5rem;font-weight:600;
+    color:var(--ink);letter-spacing:-.02em;
+    display:flex;align-items:baseline;gap:6px;
+  }
+  .metric .num .u{font-size:.7rem;color:var(--cyan)}
+  .metric .lbl{
+    font-family:var(--mono);
+    font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--ink-3);margin-top:3px;
+  }
+  @media (max-width:520px){
+    .metric{border-right:0;border-bottom:1px solid var(--line)}
+    .metric:last-child{border-bottom:0}
+  }
+
+  /* ---------- section heading ---------- */
+  .secthead{
+    display:flex;align-items:center;gap:16px;
+    margin:48px 0 22px;
+  }
+  .secthead h2{
+    font-family:var(--mono);
+    font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ink-2);font-weight:500;margin:0;white-space:nowrap;
+  }
+  .secthead .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent)}
+  .secthead .count{
+    font-family:var(--mono);font-size:11px;color:var(--cyan);
+    border:1px solid var(--line-2);border-radius:20px;padding:3px 10px;
+  }
+
+  /* ---------- module grid ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:18px;
+  }
+  @media (max-width:760px){
+    .grid{grid-template-columns:1fr}
+  }
+
+  .module{
+    position:relative;
+    background:linear-gradient(180deg,var(--panel),var(--bg-2));
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:0;
+    display:flex;flex-direction:column;
+    overflow:hidden;
+    transition:border-color .25s ease, transform .25s ease, box-shadow .25s ease;
+  }
+  .module:hover{
+    border-color:var(--line-2);
+    box-shadow:0 18px 50px -28px rgba(0,0,0,.9);
+  }
+  /* top status strip */
+  .module .topstrip{
+    height:3px;width:100%;
+    background:linear-gradient(90deg,var(--accent,#27e0e0),transparent 60%);
+    opacity:.7;
+  }
+  /* corner tick marks */
+  .module .tick{position:absolute;width:9px;height:9px;border:1px solid var(--line-2);opacity:.65;pointer-events:none}
+  .module .tick.tl{top:9px;left:9px;border-right:0;border-bottom:0}
+  .module .tick.tr{top:9px;right:9px;border-left:0;border-bottom:0}
+  .module .tick.bl{bottom:9px;left:9px;border-right:0;border-top:0}
+  .module .tick.br{bottom:9px;right:9px;border-left:0;border-top:0}
+
+  .module .body{padding:20px 22px 22px;display:flex;flex-direction:column;flex:1}
+
+  .mod-head{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+    margin-bottom:14px;
+  }
+  .iconbox{
+    width:46px;height:46px;flex:0 0 auto;
+    border:1px solid var(--line-2);
+    border-radius:11px;
+    display:grid;place-items:center;
+    background:radial-gradient(120% 120% at 30% 20%, rgba(39,224,224,.10), transparent 70%);
+    color:var(--accent,var(--cyan));
+  }
+  .iconbox svg{width:24px;height:24px;display:block}
+
+  .src{
+    font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+    color:var(--ink-3);text-align:right;line-height:1.45;
+    display:flex;flex-direction:column;align-items:flex-end;gap:5px;
+  }
+  .livedot{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2)}
+  .livedot .d{width:7px;height:7px;border-radius:50%;background:var(--accent,var(--cyan));box-shadow:0 0 0 3px rgba(255,255,255,.10)}
+
+  .pills{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px}
+  .pill{
+    font-family:var(--mono);
+    font-size:10px;letter-spacing:.06em;
+    padding:4px 9px;border-radius:6px;
+    display:inline-flex;align-items:center;gap:6px;
+    border:1px solid transparent;white-space:nowrap;
+  }
+  .pill .pd{width:6px;height:6px;border-radius:50%}
+  .pill.live{color:#9af5d6;background:rgba(61,220,132,.10);border-color:rgba(61,220,132,.32)}
+  .pill.live .pd{background:var(--green)}
+  .pill.modeled{color:#ffd99a;background:rgba(242,176,61,.10);border-color:rgba(242,176,61,.32)}
+  .pill.modeled .pd{background:var(--amber)}
+  .pill.demo{color:#d4c4ff;background:rgba(169,139,255,.12);border-color:rgba(169,139,255,.34)}
+  .pill.demo .pd{background:var(--violet)}
+  .pill.scope{color:var(--ink-2);background:rgba(255,255,255,.025);border-color:var(--line-2)}
+
+  .module h3{
+    font-size:1.18rem;line-height:1.25;letter-spacing:-.01em;
+    font-weight:700;margin:0 0 10px;color:var(--ink);
+  }
+  .module p{
+    font-size:.9rem;color:var(--ink-2);margin:0 0 18px;flex:1;
+  }
+
+  .actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:auto}
+  .open{
+    font-family:var(--mono);font-size:12px;letter-spacing:.04em;
+    color:var(--ink);text-decoration:none;font-weight:600;
+    display:inline-flex;align-items:center;gap:8px;
+    min-height:40px;
+    padding:9px 14px;border-radius:9px;
+    border:1px solid var(--line-2);
+    background:rgba(39,224,224,.05);
+    transition:background .2s ease,border-color .2s ease,gap .2s ease,color .2s ease;
+  }
+  .open .arrow{transition:transform .2s ease;color:var(--accent,var(--cyan))}
+  .module:hover .open{border-color:var(--accent,var(--cyan));background:rgba(39,224,224,.10)}
+  .module:hover .open .arrow{transform:translateX(3px)}
+  .sec{
+    font-family:var(--mono);font-size:11px;letter-spacing:.03em;
+    color:var(--ink-2);text-decoration:none;
+    display:inline-flex;align-items:center;gap:6px;
+    min-height:40px;
+    border-bottom:1px dashed transparent;padding:9px 6px;
+    transition:color .2s ease,border-color .2s ease;
+  }
+  .sec:hover{color:var(--cyan);border-bottom-color:rgba(39,224,224,.4)}
+  .sec svg{width:13px;height:13px;opacity:.7}
+
+  /* scanning hairline across each module */
+  .scan{
+    position:absolute;left:0;right:0;top:3px;height:1px;z-index:1;
+    background:linear-gradient(90deg,transparent,var(--accent,var(--cyan)),transparent);
+    opacity:0;pointer-events:none;
+  }
+
+  /* ---------- honesty note ---------- */
+  .honesty{
+    margin:46px 0 0;
+    border:1px solid var(--line);
+    border-left:3px solid var(--amber);
+    border-radius:12px;
+    background:linear-gradient(180deg,var(--panel),var(--bg-2));
+    padding:22px 24px;
+    display:flex;gap:18px;align-items:flex-start;
+  }
+  .honesty .hicon{flex:0 0 auto;color:var(--amber);margin-top:2px}
+  .honesty .hicon svg{width:24px;height:24px}
+  .honesty .htitle{
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--amber);margin:0 0 8px;
+  }
+  .honesty p{margin:0;font-size:.92rem;color:var(--ink-2);max-width:88ch}
+  .honesty p strong{color:var(--ink);font-weight:600}
+
+  /* ---------- footer ---------- */
+  footer{
+    margin-top:54px;
+    border-top:1px solid var(--line);
+    padding:30px 0 60px;
+  }
+  footer .wrap{
+    display:flex;flex-wrap:wrap;gap:14px 26px;align-items:baseline;justify-content:space-between;
+  }
+  footer p{
+    margin:0;font-size:.85rem;color:var(--ink-3);max-width:78ch;
+    font-family:var(--mono);letter-spacing:.01em;line-height:1.6;
+  }
+  footer .ftname{color:var(--ink-2)}
+  footer a.readme{
+    font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+    color:var(--cyan);text-decoration:none;
+    border:1px solid var(--line-2);border-radius:8px;padding:8px 14px;
+    display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;
+    min-height:40px;
+    transition:border-color .2s ease,background .2s ease;
+  }
+  footer a.readme:hover{border-color:var(--cyan);background:rgba(39,224,224,.07)}
+
+  /* ---------- motion ---------- */
+  @media (prefers-reduced-motion: no-preference){
+    .statusbar .dot{animation:pulse 2.4s ease-out infinite}
+    .livedot .d{animation:pulse 2.4s ease-out infinite}
+    .module:hover .scan{animation:scan 1.6s ease-in-out infinite}
+    @keyframes pulse{
+      0%{box-shadow:0 0 0 0 rgba(61,220,132,.45)}
+      70%{box-shadow:0 0 0 7px rgba(61,220,132,0)}
+      100%{box-shadow:0 0 0 0 rgba(61,220,132,0)}
+    }
+    @keyframes scan{
+      0%{opacity:0;transform:translateY(0)}
+      30%{opacity:.8}
+      100%{opacity:0;transform:translateY(180px)}
+    }
+  }
 </style>
 </head>
 <body>
+
+<a class="skip" href="#consoles">Skip to consoles</a>
+
+<div class="statusbar">
+  <div class="wrap">
+    <span class="dot" aria-hidden="true"></span>
+    <div class="sb-scroll">
+      <span class="sb-seg"><span class="sb-key">8</span>&nbsp;CONSOLES</span>
+      <span class="sb-sep" aria-hidden="true">·</span>
+      <span class="sb-seg">PUBLIC&nbsp;FEEDS</span>
+      <span class="sb-sep" aria-hidden="true">·</span>
+      <span class="sb-seg">CLIENT-SIDE</span>
+      <span class="sb-sep" aria-hidden="true">·</span>
+      <span class="sb-seg">NO&nbsp;ACCOUNT</span>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
-  <header>
-    <h1>Public-Data Consoles</h1>
-    <p class="lead">Self-contained, browser-only dashboards built on <strong>live public data feeds</strong>.
-       Each is a single HTML file — open it and it runs; no install, no account, no server.</p>
-    <div class="sub">
-      These are <strong>descriptive, decision-support</strong> tools, not predictions. Data sources are public
-      and labeled on each console (measured / modeled / demo). Nothing here contains protected health information
-      or proprietary data. Readings are coincident indicators — a high value means "large/coupled today," not a forecast.
+
+  <header class="masthead">
+    <p class="eyebrow"><span class="tick" aria-hidden="true"></span>Mission Control — Early-Warning Operations</p>
+    <h1>Public-Data <span class="accent">Consoles</span></h1>
+    <p class="lead">Self-contained, browser-only dashboards built on live public data feeds. Each is a single HTML file — <strong>open it and it runs</strong>; no install, no account, no server.</p>
+
+    <div class="metrics" role="list" aria-label="Key facts">
+      <div class="metric" role="listitem">
+        <div class="num">8<span class="u">live</span></div>
+        <div class="lbl">Consoles</div>
+      </div>
+      <div class="metric" role="listitem">
+        <div class="num">100<span class="u">%</span></div>
+        <div class="lbl">Client-side</div>
+      </div>
+      <div class="metric" role="listitem">
+        <div class="num">0<span class="u">acct</span></div>
+        <div class="lbl">No login</div>
+      </div>
+      <div class="metric" role="listitem">
+        <div class="num">1<span class="u">file</span></div>
+        <div class="lbl">Per console</div>
+      </div>
     </div>
   </header>
 
-  <div class="grid">
-
-    <div class="card">
-      <div class="badges"><span class="b live">Live · USGS</span><span class="b">Global</span></div>
-      <h2>Earthquake Consequence Console</h2>
-      <p>Event-agnostic devastation picture for any significant quake worldwide — PAGER impact ranges, MMI
-         population exposure, OSM lifelines, DYFI / ground-failure, and a directed power→water→hospital cascade.</p>
-      <div class="links"><a class="primary" href="consoles/quake-consequence/">Open console →</a></div>
+  <main>
+    <div class="secthead">
+      <h2>Console Array</h2>
+      <span class="rule" aria-hidden="true"></span>
+      <span class="count">08 / 08 ONLINE</span>
     </div>
 
-    <div class="card">
-      <div class="badges"><span class="b live">Live · NWPS</span><span class="b">U.S. rivers</span></div>
-      <h2>River Flood Propagation</h2>
-      <p>Directed early warning along a river's main stem: which upstream gauge is the <em>transmitter</em>
-         vs. merely the loudest, and the lead time it buys downstream.</p>
-      <div class="links"><a class="primary" href="consoles/river-flood-propagation/">Open console →</a></div>
+    <div class="grid" id="consoles" aria-label="Console array">
+
+      <!-- 1. Earthquake -->
+      <article class="module" style="--accent:#27e0e0">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12h3l2-7 3 14 3-10 2 6 2-3h5"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span>SRC: USGS</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · USGS</span>
+            <span class="pill scope">Global</span>
+          </div>
+          <h3>Earthquake Consequence Console</h3>
+          <p>Event-agnostic devastation picture for any significant quake worldwide — PAGER impact ranges, MMI population exposure, OSM lifelines, DYFI / ground-failure, and a directed power→water→hospital cascade.</p>
+          <div class="actions">
+            <a class="open" href="consoles/quake-consequence/" aria-label="Open Earthquake Consequence Console">Open console <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2. River Flood Propagation -->
+      <article class="module" style="--accent:#27e0e0">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 7c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2"/>
+                <path d="M3 12c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2"/>
+                <path d="M3 17c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span>SRC: NWPS</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · NWPS</span>
+            <span class="pill scope">U.S. rivers</span>
+          </div>
+          <h3>River Flood Propagation</h3>
+          <p>Directed early warning along a river's main stem: which upstream gauge is the transmitter vs. merely the loudest, and the lead time it buys downstream.</p>
+          <div class="actions">
+            <a class="open" href="consoles/river-flood-propagation/" aria-label="Open River Flood Propagation">Open console <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3. River Flood Network -->
+      <article class="module" style="--accent:#27e0e0">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="4" r="2"/>
+                <circle cx="5" cy="13" r="2"/><circle cx="12" cy="13" r="2"/><circle cx="19" cy="13" r="2"/>
+                <circle cx="5" cy="20" r="1.6"/><circle cx="12" cy="20" r="1.6"/>
+                <path d="M12 6v3M12 9l-7 2M12 9v2M12 9l7 2M5 15v3.4M12 15v3.4"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span>SRC: NLDI</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · NLDI</span>
+            <span class="pill scope">U.S. rivers</span>
+          </div>
+          <h3>River Flood Network</h3>
+          <p>Branching-tree view of a basin: which tributary is actually driving the flood. Walks upstream main-stem vs. tributary topology to rank the driver.</p>
+          <div class="actions">
+            <a class="open" href="consoles/river-flood-network/" aria-label="Open River Flood Network">Open console <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 4. Hazards Near You -->
+      <article class="module" style="--accent:#27e0e0">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/>
+                <circle cx="12" cy="10" r="2.6"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span>SRC: NWS/NOAA</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · NWS/NOAA</span>
+            <span class="pill scope">U.S.</span>
+          </div>
+          <h3>Hazards Near You</h3>
+          <p>Type any U.S. location and get current warnings, severe-weather outlook, flood/fire/quake/drought, tides and air quality — all from public NWS, NHC, USGS, FEMA and EPA feeds.</p>
+          <div class="actions">
+            <a class="open" href="consoles/us-local-hazards/" aria-label="Open Hazards Near You">Open console <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 5. NHS Scotland -->
+      <article class="module" style="--accent:#27e0e0">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12h4l2-5 3 10 2-7 2 4h5"/>
+                <path d="M12 3.5v3M10.5 5h3" stroke-width="1.4"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span>SRC: PHS</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · PHS open data</span>
+            <span class="pill scope">Scotland</span>
+          </div>
+          <h3>NHS Scotland — Hospital Strain</h3>
+          <p>A&amp;E 4-hour performance, beds and delayed discharge across 30 named Type-1 EDs, live from the Public Health Scotland open-data API, ranked against the 95% standard.</p>
+          <div class="actions">
+            <a class="open" href="consoles/nhs-scotland-strain/" aria-label="Open NHS Scotland — Hospital Strain">Open console <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="sec" href="consoles/nhs-scotland-strain/wiki.html" aria-label="NHS Scotland — Hospital Strain field guide">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h11a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2V5Z"/><path d="M17 7h3v12H6"/></svg>
+              Field guide
+            </a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 6. USAID -->
+      <article class="module" style="--accent:#f2b03d">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M3 12h18M12 3c2.6 2.4 4 5.6 4 9s-1.4 6.6-4 9c-2.6-2.4-4-5.6-4-9s1.4-6.6 4-9Z"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span>SRC: USAspending</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · USAspending</span>
+            <span class="pill modeled">Modeled</span>
+          </div>
+          <h3>USAID Withdrawal — Consequence</h3>
+          <p>Funding, health and geopolitical consequences of USAID cuts. Honesty-badged throughout: measured (live USAspending), modeled (published estimates with citations), interpretive.</p>
+          <div class="actions">
+            <a class="open" href="consoles/usaid-consequence/" aria-label="Open USAID Withdrawal — Consequence">Open console <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="sec" href="consoles/usaid-consequence/wiki.html" aria-label="USAID Withdrawal — Consequence field guide">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h11a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2V5Z"/><path d="M17 7h3v12H6"/></svg>
+              Field guide
+            </a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 7. VA -->
+      <article class="module" style="--accent:#a98bff">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 21V8l8-5 8 5v13"/>
+                <path d="M9 21v-5h6v5"/>
+                <path d="M12 7.5v4M10 9.5h4" stroke-width="1.4"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>DEMO</span>
+              <span>SRC: TEMPLATE</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill demo"><span class="pd" aria-hidden="true"></span>Demo data</span>
+            <span class="pill scope">Operator template</span>
+          </div>
+          <h3>VA Medical Center — Strain &amp; Capacity</h3>
+          <p>Facility strain index, unit ranking, ED boarding, mental-health access and surge scenarios. Real-time strain is internal/non-public, so this ships with clearly-labeled demo data and hooks to wire live internal feeds.</p>
+          <div class="actions">
+            <a class="open" href="consoles/va-strain/" aria-label="Open VA Medical Center — Strain & Capacity">Open console <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="sec" href="consoles/va-strain/wiki.html" aria-label="VA Medical Center — Strain & Capacity field guide">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h11a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2V5Z"/><path d="M17 7h3v12H6"/></svg>
+              Field guide
+            </a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 8. Resilience Telemetry -->
+      <article class="module" style="--accent:#27e0e0">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 17l5-6 4 3 4-7 5 5"/>
+                <circle cx="8" cy="11" r="1.3" fill="currentColor" stroke="none"/>
+                <circle cx="12" cy="14" r="1.3" fill="currentColor" stroke="none"/>
+                <circle cx="16" cy="7" r="1.3" fill="currentColor" stroke="none"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span>SRC: BINANCE.US/FX</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · crypto/FX</span>
+            <span class="pill scope">Cross-asset</span>
+          </div>
+          <h3>Resilience Telemetry</h3>
+          <p>A cross-asset fragility thermometer and directed-spillover network over 24 instruments — live crypto and FX, with an embedded multi-year equity snapshot floor. Coincident, descriptive, not predictive.</p>
+          <div class="actions">
+            <a class="open" href="consoles/resilience-telemetry/" aria-label="Open Resilience Telemetry">Open console <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="sec" href="consoles/resilience-telemetry/wiki.html" aria-label="Resilience Telemetry operator wiki">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h11a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2V5Z"/><path d="M17 7h3v12H6"/></svg>
+              Operator wiki
+            </a>
+            <a class="sec" href="consoles/resilience-telemetry/roadmap.html" aria-label="Resilience Telemetry roadmap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/><circle cx="19" cy="18" r="1.4"/></svg>
+              Roadmap
+            </a>
+          </div>
+        </div>
+      </article>
+
     </div>
 
-    <div class="card">
-      <div class="badges"><span class="b live">Live · NLDI</span><span class="b">U.S. rivers</span></div>
-      <h2>River Flood Network</h2>
-      <p>Branching-tree view of a basin: "which tributary is actually driving the flood." Walks upstream
-         main-stem vs. tributary topology to rank the driver.</p>
-      <div class="links"><a class="primary" href="consoles/river-flood-network/">Open console →</a></div>
-    </div>
-
-    <div class="card">
-      <div class="badges"><span class="b live">Live · NWS/NOAA</span><span class="b">U.S.</span></div>
-      <h2>Hazards Near You</h2>
-      <p>Type any U.S. location and get current warnings, severe-weather outlook, flood/fire/quake/drought,
-         tides and air quality — all from public NWS, NHC, USGS, FEMA and EPA feeds.</p>
-      <div class="links"><a class="primary" href="consoles/us-local-hazards/">Open console →</a></div>
-    </div>
-
-    <div class="card">
-      <div class="badges"><span class="b live">Live · PHS open data</span><span class="b">Scotland</span></div>
-      <h2>NHS Scotland — Hospital Strain</h2>
-      <p>A&amp;E 4-hour performance, beds and delayed discharge across 30 named Type-1 EDs, live from the
-         Public Health Scotland open-data API, ranked against the 95% standard.</p>
-      <div class="links"><a class="primary" href="consoles/nhs-scotland-strain/">Open console →</a>
-        <a href="consoles/nhs-scotland-strain/wiki.html">Field guide</a></div>
-    </div>
-
-    <div class="card">
-      <div class="badges"><span class="b live">Live · USAspending</span><span class="b modeled">Modeled</span></div>
-      <h2>USAID Withdrawal — Consequence</h2>
-      <p>Funding, health and geopolitical consequences of USAID cuts. Honesty-badged throughout:
-         measured (live USAspending), modeled (published estimates with citations), interpretive.</p>
-      <div class="links"><a class="primary" href="consoles/usaid-consequence/">Open console →</a>
-        <a href="consoles/usaid-consequence/wiki.html">Field guide</a></div>
-    </div>
-
-    <div class="card">
-      <div class="badges"><span class="b demo">Demo data</span><span class="b">Operator template</span></div>
-      <h2>VA Medical Center — Strain &amp; Capacity</h2>
-      <p>Facility strain index, unit ranking, ED boarding, mental-health access and surge scenarios.
-         Real-time strain is internal/non-public, so this ships with clearly-labeled demo data and hooks
-         to wire live internal feeds.</p>
-      <div class="links"><a class="primary" href="consoles/va-strain/">Open console →</a>
-        <a href="consoles/va-strain/wiki.html">Field guide</a></div>
-    </div>
-
-    <div class="card">
-      <div class="badges"><span class="b live">Live · crypto/FX</span><span class="b">Cross-asset</span></div>
-      <h2>Resilience Telemetry</h2>
-      <p>A cross-asset fragility thermometer and directed-spillover network over 24 instruments — live crypto
-         and FX, with an embedded multi-year equity snapshot floor. Coincident, descriptive, not predictive.</p>
-      <div class="links"><a class="primary" href="consoles/resilience-telemetry/">Open console →</a>
-        <a href="consoles/resilience-telemetry/wiki.html">Operator wiki</a>
-        <a href="consoles/resilience-telemetry/roadmap.html">Roadmap</a></div>
-    </div>
-
-  </div>
-
-  <footer>
-    Single-file HTML · runs entirely in your browser · all lookups are client-side and nothing is stored.
-    Some panels need a free public API key you supply yourself (e.g. EPA AirNow) — see the note at the top of that file.
-    Built by Patrick Iben. &nbsp;·&nbsp; See <a class="inline" href="README.md">README</a> for sources and caveats.
-  </footer>
+    <!-- honesty note -->
+    <section class="honesty" aria-label="Honesty note">
+      <span class="hicon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+        </svg>
+      </span>
+      <div>
+        <p class="htitle">Read the instrument honestly</p>
+        <p>These are <strong>descriptive, decision-support tools, not predictions</strong>. Data sources are public and labeled on each console (measured / modeled / demo). Nothing here contains protected health information or proprietary data. Readings are <strong>coincident indicators</strong> — a high value means "large/coupled today," not a forecast.</p>
+      </div>
+    </section>
+  </main>
 </div>
+
+<footer>
+  <div class="wrap">
+    <p>Single-file HTML · runs entirely in your browser · all lookups are client-side and nothing is stored. Some panels need a free public API key you supply yourself (e.g. EPA AirNow). Built by <span class="ftname">Patrick Iben</span>.</p>
+    <a class="readme" href="README.md">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px"><path d="M4 4h9l5 5v11H4z"/><path d="M13 4v5h5"/></svg>
+      README
+    </a>
+  </div>
+</footer>
+
 </body>
 </html>
