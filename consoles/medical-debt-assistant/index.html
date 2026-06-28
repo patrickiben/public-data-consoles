@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medical Debt Assistant — assert your rights</title>
+<meta name="description" content="A step-by-step assistant for reducing or removing U.S. medical debt by asserting your legal rights — debt validation, proof of ownership for debt that has been sold to a debt buyer, itemized bills, nonprofit charity care, and credit-report disputes. Generates the letters. Educational, not legal advice.">
+<style>
+:root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+ --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
+ --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px 56px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+#disc{background:#060f14;color:#bcd2da;font-size:12px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:24px 0 6px}
+h1{margin:0;font-size:25px;font-weight:740;letter-spacing:-.3px}
+h1 .sub{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin-top:5px}
+.banner{margin:13px 0 0;background:rgba(176,142,240,.07);border:1px solid rgba(176,142,240,.3);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink2)}.banner b{color:var(--purple)}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:5px;vertical-align:1px;text-transform:uppercase}
+.b-int{background:rgba(176,142,240,.16);color:#cdb6f5}.b-key{background:rgba(38,198,218,.16);color:#8fe2ed}
+.card{background:linear-gradient(180deg,var(--surf),var(--surf2));border:1px solid var(--line);border-radius:14px;margin-top:16px;overflow:hidden}
+.card>summary,.card .hd{padding:13px 16px;font-weight:650;display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+.card>summary::-webkit-details-marker{display:none}.card>summary .ico,.card .hd .ico{color:var(--teal);font-weight:800}
+.body{padding:6px 16px 16px}.muted{color:var(--dim)}.small{font-size:12px}
+.q{padding:10px 0;border-bottom:1px solid var(--line)}.q:last-child{border-bottom:none}
+.q .ql{font-weight:600;margin-bottom:6px}.q .opts{display:flex;gap:8px;flex-wrap:wrap}
+.opt{background:#0d1826;border:1px solid var(--line2);color:var(--ink2);border-radius:8px;padding:6px 13px;font-size:13px;cursor:pointer}
+.opt.on{background:var(--teal);color:#04181c;font-weight:700;border-color:var(--teal)}
+.step{display:flex;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line)}.step:last-child{border-bottom:none}
+.step .n{width:26px;height:26px;border-radius:8px;background:rgba(38,198,218,.14);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+.step .t{font-weight:650}.step .d{font-size:12.5px;color:var(--ink2);margin-top:2px}
+.step .mk{margin-top:6px}
+.lk{display:inline-block;background:rgba(38,198,218,.12);border:1px solid rgba(38,198,218,.3);color:#bfeaf2;border-radius:7px;padding:4px 10px;font-size:12px;cursor:pointer;margin:3px 5px 0 0}
+.lk:hover{filter:brightness(1.15)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:620px){.grid2{grid-template-columns:1fr}}
+label.f{font-size:11px;color:var(--dim);display:block;margin-bottom:3px}
+input.f,textarea.f{width:100%;background:#0d1826;border:1px solid var(--line2);color:var(--ink);border-radius:9px;padding:9px 11px;font-size:13px;font-family:var(--sans)}
+.letterbox{margin-top:12px;background:#0a141d;border:1px solid var(--line2);border-radius:11px;padding:14px 16px;font-family:var(--mono);font-size:12.5px;white-space:pre-wrap;color:#d6e6ee;max-height:480px;overflow:auto}
+.row{display:flex;gap:9px;margin-top:9px;flex-wrap:wrap}
+button.btn{background:linear-gradient(180deg,#1d6c79,#185863);border:1px solid #2a8593;color:#eaffff;border-radius:9px;padding:8px 15px;font-weight:600;font-size:13px;cursor:pointer}button.btn:hover{filter:brightness(1.1)}
+button.gh{background:transparent;border:1px solid var(--line2);color:var(--ink2)}
+.right{padding:10px 0;border-bottom:1px solid var(--line)}.right:last-child{border-bottom:none}.right .t{font-weight:640}.right .t b{color:var(--teal)}.right .d{font-size:12.5px;color:var(--ink2);margin-top:2px}
+.caveat{font-size:11.5px;color:var(--dim);margin-top:12px;padding:9px 12px;background:rgba(255,255,255,.02);border-left:2px solid var(--line2);border-radius:0 8px 8px 0}
+.reslist{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.reslist a{background:var(--surf2);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:12.5px}
+footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}footer b{color:var(--ink2)}
+</style>
+</head>
+<body>
+<div id="disc"><b>Educational tool — not legal advice.</b> U.S. medical debt only. This helps you <b>assert rights the law already gives you</b>; it does not erase a debt you genuinely owe, and you must never put false statements in a dispute. Laws and the credit-reporting rules change — verify the current status and consider free legal aid.</div>
+<div class="wrap">
+  <header>
+    <h1>Medical Debt Assistant<span class="sub">Reduce or remove medical debt the lawful way — make them prove it's valid, prove they own it, give you charity care you qualify for, and report it accurately</span></h1>
+    <div class="banner"><b>The core leverage.</b> Hospitals routinely <b>sell</b> unpaid bills to <b>debt buyers</b> for pennies on the dollar. The buyer often can't produce proof that it owns your specific debt, or the original itemized bill. Under federal law you can <b>demand that proof</b> — and if a collector can't validate the debt, it generally must <b>stop collecting and stop reporting it</b>. Combined with charity care and accurate-reporting rules, that is how medical debt is lawfully reduced or removed.</div>
+  </header>
+
+  <details class="card" open>
+    <summary><span class="ico">①</span> Tell me about the debt → get a plan</summary>
+    <div class="body">
+      <div class="q" data-q="who"><div class="ql">Who is asking you to pay?</div><div class="opts">
+        <span class="opt" data-v="provider">The original hospital / doctor</span>
+        <span class="opt" data-v="collector">A collection agency</span>
+        <span class="opt" data-v="buyer">A debt buyer (a company that bought the debt)</span>
+        <span class="opt" data-v="unsure">Not sure</span></div></div>
+      <div class="q" data-q="sold"><div class="ql">Has the debt been sold or transferred at least once? (the company contacting you isn't the original hospital)</div><div class="opts">
+        <span class="opt" data-v="yes">Yes / likely</span><span class="opt" data-v="no">No</span><span class="opt" data-v="unsure">Not sure</span></div></div>
+      <div class="q" data-q="np"><div class="ql">Is the original hospital a nonprofit? (most U.S. hospitals are)</div><div class="opts">
+        <span class="opt" data-v="yes">Yes / likely</span><span class="opt" data-v="no">No / for-profit</span><span class="opt" data-v="unsure">Not sure</span></div></div>
+      <div class="q" data-q="credit"><div class="ql">Is it showing on your credit report?</div><div class="opts">
+        <span class="opt" data-v="yes">Yes</span><span class="opt" data-v="no">No / don't know</span></div></div>
+      <div class="q" data-q="itemized"><div class="ql">Did you ever get a fully itemized bill (every charge &amp; code)?</div><div class="opts">
+        <span class="opt" data-v="no">No</span><span class="opt" data-v="yes">Yes</span></div></div>
+      <div class="q" data-q="surprise"><div class="ql">Was it a surprise / out-of-network bill (emergency, or a provider you didn't choose at an in-network facility)?</div><div class="opts">
+        <span class="opt" data-v="yes">Yes / maybe</span><span class="opt" data-v="no">No</span></div></div>
+      <div class="q" data-q="recent"><div class="ql">When did the collector FIRST contact you?</div><div class="opts">
+        <span class="opt" data-v="new">Within the last 30 days</span><span class="opt" data-v="old">Longer ago</span></div></div>
+    </div>
+  </details>
+
+  <div class="card" id="plancard" style="display:none">
+    <div class="hd"><span class="ico">②</span> Your tailored plan <span class="badge b-int" style="margin-left:auto">general steps</span></div>
+    <div class="body"><div id="plan"></div>
+      <div class="caveat">Order matters: <b>validate and demand proof before you pay or promise anything</b> — and in many states, making a payment can <b>restart</b> the statute of limitations on an old debt. Keep copies of everything; send letters by mail with proof of delivery; never admit you owe a specific amount until it's validated.</div>
+    </div>
+  </div>
+
+  <details class="card" open>
+    <summary><span class="ico">③</span> Generate your letters</summary>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:8px">Fill in what you know (leave blanks — you can edit the letter after). Nothing is sent anywhere; this runs entirely in your browser.</div>
+      <div class="grid2">
+        <div><label class="f">Your full name</label><input class="f" id="f_name" placeholder="Jane Q. Public"></div>
+        <div><label class="f">Your address</label><input class="f" id="f_addr" placeholder="123 Main St, City, ST 00000"></div>
+        <div><label class="f">Collector / debt-buyer name</label><input class="f" id="f_coll" placeholder="ABC Recovery LLC"></div>
+        <div><label class="f">Collector address</label><input class="f" id="f_colladdr" placeholder="PO Box ..., City, ST"></div>
+        <div><label class="f">Account / reference number</label><input class="f" id="f_acct" placeholder="as shown on their notice"></div>
+        <div><label class="f">Original hospital / provider</label><input class="f" id="f_orig" placeholder="General Hospital"></div>
+        <div><label class="f">Amount claimed</label><input class="f" id="f_amt" placeholder="$0,000"></div>
+        <div><label class="f">Date of their notice</label><input class="f" id="f_date" placeholder="MM/DD/YYYY"></div>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Pick a letter</div>
+      <div id="letterpicks" style="margin-top:5px"></div>
+      <div id="letterout" style="display:none">
+        <div class="letterbox" id="letter"></div>
+        <div class="row"><button class="btn" id="copy">Copy</button><button class="btn gh" id="download">Download .txt</button><span class="muted small" id="copied" style="align-self:center"></span></div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="ico">④</span> Know your rights <span class="badge b-int">U.S. law</span></summary>
+    <div class="body"><div id="rights"></div>
+      <div class="caveat">This is general information about federal law; states add protections and the details (and the credit-reporting rules) change. Confirm the current rules and your state's, and get help from the free resources below.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="ico">⑤</span> Free help</summary>
+    <div class="body">
+      <div class="small muted">You don't have to do this alone — these are free or nonprofit:</div>
+      <div class="reslist">
+        <a href="https://www.lsc.gov/about-lsc/what-legal-aid/get-legal-help" target="_blank" rel="noopener">Legal aid near you (LSC)</a>
+        <a href="https://www.consumeradvocates.org/find-an-attorney/" target="_blank" rel="noopener">Consumer attorneys (NACA)</a>
+        <a href="https://www.consumerfinance.gov/complaint/" target="_blank" rel="noopener">File a CFPB complaint</a>
+        <a href="https://www.dollarfor.org/" target="_blank" rel="noopener">Dollar For (charity-care help)</a>
+        <a href="https://www.nfcc.org/" target="_blank" rel="noopener">Nonprofit credit counseling (NFCC)</a>
+        <a href="https://www.annualcreditreport.com/" target="_blank" rel="noopener">Free credit reports</a>
+        <a href="https://www.usa.gov/state-attorney-general" target="_blank" rel="noopener">Your state Attorney General</a>
+      </div>
+    </div>
+  </details>
+
+  <footer>
+    <div><b>What this is.</b> A guide and letter generator for asserting consumer rights under the <b>FDCPA</b> (debt validation &amp; collector conduct), the <b>FCRA</b> (credit-report disputes), the Affordable Care Act <b>§501(r)</b> (nonprofit-hospital financial assistance), and the <b>No Surprises Act</b> (surprise out-of-network bills). It reflects the well-documented fact that debt buyers frequently lack the documentation to prove ownership of a specific medical debt.</div>
+    <div style="margin-top:8px"><b>Honesty &amp; limits.</b> <span class="badge b-int">not legal advice</span> The goal is to make a collector <b>prove the debt is valid, prove it owns it, bill it correctly, and report it accurately</b>, and to help you access assistance you may qualify for — not to dodge a debt you legitimately owe. Never include false statements in a dispute (that is illegal). Deadlines are strict (e.g. a 30-day validation window) and the law varies by state and changes over time. For anything you're unsure about — especially a lawsuit or a debt you might still owe — talk to free legal aid or a consumer attorney. No information you type is collected or sent anywhere.</div>
+    <div style="margin-top:8px" class="muted">Compiled 2026-06-27. Verify current credit-reporting rules (they have changed repeatedly) before relying on them.</div>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const A={}; // answers
+document.querySelectorAll('.q').forEach(q=>{const key=q.dataset.q;q.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
+  q.querySelectorAll('.opt').forEach(x=>x.classList.remove('on'));o.classList.add('on');A[key]=o.dataset.v;buildPlan();});});
+
+function buildPlan(){
+ if(Object.keys(A).length<2){return;}
+ $('plancard').style.display='block';
+ const steps=[];
+ const sold=(A.sold==='yes'||A.who==='buyer'||A.who==='collector');
+ // 1. validation / proof of ownership
+ if(A.who==='collector'||A.who==='buyer'||A.who==='unsure'){
+  steps.push(['Demand validation in writing','A debt collector or debt buyer must, on request, validate the debt — the amount, the original creditor, and that it has the right to collect. If you\'re within 30 days of their first notice, this also forces them to pause collection until they prove it.',['validation']]);
+  if(sold||A.sold!=='no')steps.push(['Demand proof they own it (chain of title)','Ask the debt buyer to produce the bill of sale / assignment showing the debt was transferred to <b>them</b>, plus the original signed account documents and a complete itemized statement. Many cannot — and an unvalidated debt generally can\'t be collected or reported.',['ownership']]);
+ } else if(A.who==='provider'){
+  steps.push(['Get the itemized bill first','Before anything else, request a fully itemized bill from the provider and check it for errors, duplicate charges and services you didn\'t receive — billing errors are common.',['itemized']]);
+ }
+ // itemized if missing
+ if(A.itemized==='no'&&A.who!=='provider')steps.push(['Request a fully itemized bill','You\'re entitled to an itemized statement. Errors and inflated charges are common, and a corrected bill is often much smaller.',['itemized']]);
+ // charity care
+ if(A.np==='yes'||A.np==='unsure')steps.push(['Apply for charity care / financial assistance','Nonprofit hospitals are legally required to offer financial assistance and to screen you before aggressive collection. Many people qualify for large discounts or full forgiveness and never apply — you can often apply even after the bill went to collections.',['charity']]);
+ // surprise bill
+ if(A.surprise==='yes')steps.push(['Invoke the No Surprises Act','For emergency care or out-of-network providers you didn\'t choose at an in-network facility, federal law limits what you can be billed. Dispute the balance as a prohibited surprise bill.',[]]);
+ // credit dispute
+ if(A.credit==='yes')steps.push(['Dispute it on your credit report','Medical debt that is paid, under $500, very recent, unvalidated, or inaccurate generally should not be on your report. Dispute it with the credit bureaus in writing.',['dispute']]);
+ // negotiate / settle last
+ steps.push(['Only then negotiate — in writing','If the debt is validated and truly yours, offer a reduced lump-sum settlement and get any "pay-for-delete" or settlement terms <b>in writing before you pay a cent</b>. Don\'t make a payment that could restart the clock on an old debt.',['settle']]);
+
+ $('plan').innerHTML=steps.map((s,i)=>'<div class="step"><div class="n">'+(i+1)+'</div><div><div class="t">'+s[0]+'</div><div class="d">'+s[1]+'</div>'+
+   (s[2].length?'<div class="mk">'+s[2].map(k=>'<span class="lk" data-l="'+k+'">✎ '+LET[k].label+'</span>').join('')+'</div>':'')+'</div></div>').join('');
+ document.querySelectorAll('#plan .lk').forEach(b=>b.onclick=()=>showLetter(b.dataset.l));
+ renderPicks();
+}
+
+// ---- letter templates
+const G=(id,d)=>($(id).value.trim()||d);
+function fields(){return {name:G('f_name','[Your name]'),addr:G('f_addr','[Your address]'),coll:G('f_coll','[Collector / debt-buyer name]'),colladdr:G('f_colladdr','[Collector address]'),acct:G('f_acct','[Account / reference #]'),orig:G('f_orig','[Original hospital / provider]'),amt:G('f_amt','[Amount claimed]'),date:G('f_date','[date of their notice]'),today:'[today\'s date]'};}
+const LET={
+ validation:{label:'Debt validation request',gen:f=>
+`${f.name}
+${f.addr}
+
+${f.today}
+
+${f.coll}
+${f.colladdr}
+
+Re: Account / reference no. ${f.acct} — request for validation
+
+To whom it may concern:
+
+I am writing in response to your notice dated ${f.date} regarding an alleged debt of ${f.amt} you say is owed to ${f.orig}. I do not acknowledge that I owe this debt.
+
+Under the Fair Debt Collection Practices Act (15 U.S.C. § 1692g), I request that you validate this debt. Please provide:
+  1. The amount of the alleged debt and how it was calculated;
+  2. The name and address of the original creditor;
+  3. Documentation that you have the right to collect this debt; and
+  4. A complete itemized statement of the charges.
+
+Until you provide this validation, please cease collection activity. Please also note that I am exercising my right to dispute this debt within the validation period. Communicate with me in writing only.
+
+Sincerely,
+${f.name}`},
+ ownership:{label:'Proof-of-ownership demand',gen:f=>
+`${f.name}
+${f.addr}
+
+${f.today}
+
+${f.coll}
+${f.colladdr}
+
+Re: Account / reference no. ${f.acct} — demand for proof of ownership
+
+To whom it may concern:
+
+You claim the right to collect an alleged debt of ${f.amt} originally associated with ${f.orig}. Because this debt appears to have been sold or assigned, I dispute that you own it and I request that you produce, in writing:
+  1. The bill of sale or assignment agreement transferring this specific account to you, and each prior transfer in the chain of title;
+  2. The original signed agreement or account documents bearing my signature;
+  3. A complete account history, including the original itemized charges and every payment and credit; and
+  4. The license to collect in my state, if one is required.
+
+If you cannot produce documentation that you own and can validate this specific debt, you must cease all collection activity and must not report it to any credit bureau. I do not acknowledge this debt and request written communication only.
+
+Sincerely,
+${f.name}`},
+ itemized:{label:'Itemized-bill request',gen:f=>
+`${f.name}
+${f.addr}
+
+${f.today}
+
+${f.orig}
+Billing / Patient Accounts Department
+
+Re: Account no. ${f.acct} — request for itemized bill
+
+To whom it may concern:
+
+Please send me a fully itemized statement for the above account, including every charge with its date of service, billing code (CPT/HCPCS) and description, the amount billed, and any insurance payments or adjustments applied. I am reviewing the account for accuracy before any payment and am entitled to an itemized bill.
+
+Please send this to the address above.
+
+Sincerely,
+${f.name}`},
+ charity:{label:'Charity-care / financial-assistance request',gen:f=>
+`${f.name}
+${f.addr}
+
+${f.today}
+
+${f.orig}
+Financial Assistance / Patient Financial Services
+
+Re: Account no. ${f.acct} — request for financial assistance
+
+To whom it may concern:
+
+I am requesting a copy of your Financial Assistance Policy and an application for financial assistance (charity care) for the above account. As a patient, I am asking to be screened for assistance before any further collection activity, and to have collection of this account paused while my application is reviewed.
+
+Please also tell me the income and documentation criteria and the deadline to apply. I believe I may qualify for a reduced balance or full assistance.
+
+Thank you,
+${f.name}`},
+ dispute:{label:'Credit-report dispute',gen:f=>
+`${f.name}
+${f.addr}
+
+${f.today}
+
+[Equifax / Experian / TransUnion — send to the bureau reporting it]
+
+Re: Dispute of inaccurate medical collection — account ${f.acct}
+
+To whom it may concern:
+
+I am disputing a medical collection account reported on my credit file, listed by ${f.coll} (alleged original creditor ${f.orig}, amount ${f.amt}). I dispute this item as inaccurate and/or not properly reportable, on the following basis (keep only what is true for you):
+  • The debt has not been validated despite my request;
+  • The amount is incorrect or the charges are unverified;
+  • It is a medical collection that should not be reported under current rules (e.g. paid, under the reporting threshold, or within the post-billing waiting period); and/or
+  • It is otherwise inaccurate or incomplete.
+
+Under the Fair Credit Reporting Act (15 U.S.C. § 1681i), please investigate and delete or correct this item, and send me the results. I am not making any false statement; please verify the item with the furnisher.
+
+Sincerely,
+${f.name}`},
+ settle:{label:'Settlement / pay-for-delete offer',gen:f=>
+`${f.name}
+${f.addr}
+
+${f.today}
+
+${f.coll}
+${f.colladdr}
+
+Re: Account / reference no. ${f.acct} — settlement offer (without admission)
+
+To whom it may concern:
+
+Without admitting that I owe this alleged debt, and only if you have validated it and your right to collect it, I offer to resolve account ${f.acct} for a one-time lump sum of $[amount you can afford], in full and final satisfaction of the account.
+
+As a condition of this payment, you agree in writing that: (1) you accept this sum as payment in full; (2) you will not sell, transfer or pursue any remaining balance; and (3) you will request deletion of any related credit-report entry (or report it as "paid in full / settled"). I will make payment only after I receive these terms in writing on your letterhead. Do not cash any payment except under these terms.
+
+Sincerely,
+${f.name}`}
+};
+
+function renderPicks(){
+ $('letterpicks').innerHTML=Object.keys(LET).map(k=>'<span class="lk" data-l="'+k+'">✎ '+LET[k].label+'</span>').join('');
+ document.querySelectorAll('#letterpicks .lk').forEach(b=>b.onclick=()=>showLetter(b.dataset.l));
+}
+function showLetter(k){const txt=LET[k].gen(fields());$('letterout').style.display='block';$('letter').textContent=txt;$('letter').dataset.k=k;$('letterout').scrollIntoView({block:'nearest',behavior:'smooth'});}
+// regenerate the open letter live as fields change
+document.querySelectorAll('#f_name,#f_addr,#f_coll,#f_colladdr,#f_acct,#f_orig,#f_amt,#f_date').forEach(el=>el.addEventListener('input',()=>{const k=$('letter').dataset.k;if(k&&$('letterout').style.display!=='none')$('letter').textContent=LET[k].gen(fields());}));
+$('copy').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText($('letter').textContent);$('copied').textContent='copied ✓';setTimeout(()=>$('copied').textContent='',1500);};
+$('download').onclick=()=>{const b=new Blob([$('letter').textContent],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=($('letter').dataset.k||'letter')+'.txt';a.click();};
+renderPicks();
+
+// rights
+const RIGHTS=[
+ ['FDCPA — validation &amp; conduct (debt collectors)','You can demand that a collector or debt buyer <b>validate</b> a debt; within 30 days of their first notice, a written dispute forces them to pause until they do. They cannot harass you, call at unreasonable hours, or lie. (Note: this applies to third-party collectors and debt buyers, not the original hospital.)'],
+ ['FCRA — credit-report disputes','You can dispute inaccurate or improperly reported items; the bureaus must investigate, usually within 30 days, and delete what can\'t be verified.'],
+ ['Medical-debt credit-reporting changes','The major bureaus removed <b>paid</b> medical collections, added a <b>~1-year</b> wait before unpaid medical debt can appear, and stopped reporting medical collections <b>under $500</b>. A broader federal rule to remove medical debt from credit reports has been issued but its status has been contested — check the current state.'],
+ ['ACA §501(r) — nonprofit charity care','Nonprofit hospitals must have and publicize a Financial Assistance Policy, limit charges for those who qualify, and screen you before "extraordinary collection actions." You can often still apply after a bill goes to collections.'],
+ ['No Surprises Act — surprise bills','For most emergency care and out-of-network providers at in-network facilities, you\'re protected from surprise balance bills.'],
+ ['Statute of limitations — handle with care','Old debt can become "time-barred" (no longer suable) after a few years (varies by state). Making a payment or even acknowledging the debt can <b>restart</b> that clock — so validate and get advice before paying an old debt.']
+];
+$('rights').innerHTML=RIGHTS.map(r=>'<div class="right"><div class="t"><b>'+r[0]+'</b></div><div class="d">'+r[1]+'</div></div>').join('');
+</script>
+</body>
+</html>

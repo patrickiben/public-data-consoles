@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medical Cost Abroad — estimator</title>
+<meta name="description" content="Enter a medical procedure and what it costs you out-of-pocket in the U.S., and see a rough estimate of the all-in cost in major medical-travel destinations — procedure plus flights and lodging — and the potential savings. Rough estimates from published ranges, not quotes. Medical travel carries real risks; read them.">
+<style>
+:root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+ --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
+ --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px 56px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+#disc{background:#060f14;color:#bcd2da;font-size:12px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:24px 0 6px}
+h1{margin:0;font-size:25px;font-weight:740;letter-spacing:-.3px}
+h1 .sub{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin-top:5px}
+.banner{margin:13px 0 0;background:rgba(243,131,59,.08);border:1px solid rgba(243,131,59,.3);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink2)}.banner b{color:var(--orange)}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:5px;vertical-align:1px;text-transform:uppercase}
+.b-meas{background:rgba(61,220,151,.16);color:#7fe9bd}.b-mod{background:rgba(245,185,69,.16);color:#f5cd85}.b-int{background:rgba(176,142,240,.16);color:#cdb6f5}
+.controls{display:flex;gap:10px;margin:16px 0 4px;flex-wrap:wrap;align-items:center}
+select,input{background:#0d1826;border:1px solid var(--line2);color:var(--ink);border-radius:11px;padding:11px 13px;font-size:14px}
+select{min-width:240px}input{width:170px}
+.lab{font-size:12px;color:var(--dim)}
+.card{background:linear-gradient(180deg,var(--surf),var(--surf2));border:1px solid var(--line);border-radius:14px;margin-top:16px;overflow:hidden}
+.card .hd{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:650;display:flex;gap:9px;align-items:center}.card .hd .ico{color:var(--teal)}.card .hd .sub{margin-left:auto;color:var(--dim);font-weight:400;font-size:12px}
+.body{padding:13px 16px}.muted{color:var(--dim)}.small{font-size:12px}
+.usrow{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;margin-bottom:8px}
+.usrow .big{font-size:26px;font-weight:760}
+.dest{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}.dest:last-child{border-bottom:none}
+.dest .fl{font-size:22px;width:30px;text-align:center;flex:none}
+.dest .nm{width:140px;font-weight:620}.dest .nm small{display:block;color:var(--dim);font-weight:400;font-size:11px}
+.dest .bd{flex:1;min-width:0}
+.dest .breakdown{font-size:11.5px;color:var(--ink2)}
+.dest .tot{width:130px;text-align:right}.dest .tot .v{font-weight:740;font-size:17px}.dest .tot .s{font-size:11.5px}
+.save{color:var(--green)}.nosave{color:var(--amber)}
+.risk{display:flex;gap:11px;padding:9px 2px;border-bottom:1px solid var(--line)}.risk:last-child{border-bottom:none}
+.risk .i{color:var(--orange);font-weight:800;flex:none}.risk .t{font-weight:620}.risk .d{font-size:12.5px;color:var(--ink2);margin-top:1px}
+.caveat{font-size:11.5px;color:var(--dim);margin-top:11px;padding:9px 12px;background:rgba(255,255,255,.02);border-left:2px solid var(--line2);border-radius:0 8px 8px 0}
+footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}footer b{color:var(--ink2)}
+</style>
+</head>
+<body>
+<div id="disc"><b>Rough estimates — not quotes, not medical advice.</b> Figures are mid-points of published price ranges; real prices vary widely by clinic, case complexity and date. <b>Medical travel carries serious risks (below).</b> Always get written quotes from accredited facilities and consult your own doctor first.</div>
+<div class="wrap">
+  <header>
+    <h1>What would this cost abroad?<span class="sub">A rough, all-in estimate — procedure + flights + lodging — of getting a medical procedure in major medical-travel destinations, vs. paying for it in the U.S.</span></h1>
+    <div class="banner"><b>Read this first.</b> Lower price is only one factor. The right comparison is <b>total value and safety</b>, not just the sticker price — complications, follow-up care back home, accreditation and recourse all matter. This tool exists to show the <b>scale</b> of cost differences and prompt better questions, not to recommend traveling for care.</div>
+    <div class="controls">
+      <span class="lab">Procedure</span>
+      <select id="proc"></select>
+      <span class="lab">Your U.S. out-of-pocket (optional)</span>
+      <input id="oop" type="number" placeholder="e.g. 30000" min="0">
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="hd"><span class="ico">⊕</span> <span id="ptitle">—</span> <span class="badge b-mod" style="margin-left:auto">modeled estimate</span></div>
+    <div class="body">
+      <div class="usrow"><span class="lab">Typical U.S. price</span><span class="big" id="uscost">—</span><span class="muted small" id="usnote"></span></div>
+      <div id="dests"></div>
+      <div class="caveat" id="estcaveat">Totals = a mid-range procedure price + an estimated round-trip flight from the U.S. + lodging for a typical recovery stay (one traveler). They exclude a companion, pre-op trips, lost wages, complications, travel insurance, and follow-up at home. Savings compare to your entered out-of-pocket if provided, otherwise to the typical U.S. price.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd"><span class="ico">⚠</span> The risks you're trading against <span class="badge b-int">important</span></div>
+    <div class="body">
+      <div id="risks"></div>
+      <div class="caveat">If you do consider care abroad: choose facilities with international accreditation (e.g. <b>JCI</b>), get the surgeon's credentials and case volume in writing, plan and budget for complications and follow-up <b>at home</b>, avoid flying too soon after surgery (blood-clot risk), arrange records transfer to your home doctor, and consider medical-travel insurance. Bring your home physician into the decision.</div>
+    </div>
+  </div>
+
+  <footer>
+    <div><b>Sources &amp; method.</b> Procedure prices are mid-points of <span class="badge b-mod">modeled</span> ranges widely reported by medical-travel references (e.g. Patients Beyond Borders, Medical Tourism Association) and vary substantially; U.S. prices are typical cash/list figures and differ greatly by region and insurer. Flight and lodging figures are rough <span class="badge b-int">estimates</span>. No live pricing feed exists for international procedures, so everything here is embedded reference data with its assumptions stated.</div>
+    <div style="margin-top:8px"><b>Honesty.</b> These numbers are illustrative, not offers — your real cost could be much higher or lower. This is not an endorsement of medical travel or any provider, and not medical advice. No personal or health information is collected.</div>
+    <div style="margin-top:8px" class="muted">Reference data compiled 2026-06-27.</div>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const money=v=>'$'+Math.round(v).toLocaleString();
+// destinations: round-trip flight from US (est), lodging/night (est), typical recovery-stay nights
+const DEST={
+ 'Mexico':{flag:'🇲🇽',flight:400,lodge:85,nights:7},
+ 'India':{flag:'🇮🇳',flight:1200,lodge:60,nights:14},
+ 'Thailand':{flag:'🇹🇭',flight:1100,lodge:70,nights:14},
+ 'Turkey':{flag:'🇹🇷',flight:900,lodge:80,nights:10},
+ 'Costa Rica':{flag:'🇨🇷',flight:500,lodge:95,nights:7},
+ 'Colombia':{flag:'🇨🇴',flight:500,lodge:70,nights:7},
+ 'Hungary':{flag:'🇭🇺',flight:850,lodge:85,nights:5},
+ 'Czechia':{flag:'🇨🇿',flight:850,lodge:85,nights:7},
+ 'Malaysia':{flag:'🇲🇾',flight:1150,lodge:60,nights:10}
+};
+// procedures: US typical price + destination procedure price (USD, mid-range estimates)
+const PROC={
+ 'Knee replacement':{us:35000,d:{Mexico:14000,India:7000,Thailand:12000,Turkey:10000,'Costa Rica':12500}},
+ 'Hip replacement':{us:40000,d:{Mexico:13500,India:7000,Thailand:13000,Turkey:11000,'Costa Rica':13500}},
+ 'Heart bypass (CABG)':{us:120000,d:{India:9000,Thailand:15000,Mexico:27000,Turkey:14000,Malaysia:13000}},
+ 'Heart valve replacement':{us:170000,d:{India:10000,Thailand:17000,Turkey:17000,Malaysia:13500}},
+ 'Spinal fusion':{us:110000,d:{India:10000,Thailand:9000,Mexico:15000,Turkey:16500}},
+ 'Gastric sleeve (bariatric)':{us:19000,d:{Mexico:4500,Turkey:3800,India:6000,Thailand:9500}},
+ 'Dental implant (single)':{us:4000,d:{Mexico:1000,'Costa Rica':900,Thailand:1700,Hungary:900,Turkey:700,Colombia:1100}},
+ 'Dental crown':{us:1200,d:{Mexico:350,Hungary:300,'Costa Rica':400,Turkey:250}},
+ 'IVF (one cycle)':{us:20000,d:{India:3000,Mexico:5500,Czechia:3500,Thailand:6500,Malaysia:6000}},
+ 'LASIK (both eyes)':{us:4400,d:{India:1000,Mexico:1800,Turkey:1300,Thailand:2200}},
+ 'Cataract surgery (per eye)':{us:3500,d:{India:1000,Mexico:2000,Thailand:2500,Turkey:1500}},
+ 'Hysterectomy':{us:20000,d:{India:3000,Thailand:5500,Mexico:6500,Turkey:6000}},
+ 'Hair transplant':{us:13000,d:{Turkey:2500,Mexico:4000,India:2200,Thailand:4500}},
+ 'Facelift':{us:15000,d:{Mexico:5000,Thailand:5000,Turkey:4000,Colombia:4500}},
+ 'Breast augmentation':{us:8000,d:{Mexico:3800,Thailand:3800,Turkey:3500,Colombia:3000}},
+ 'Liposuction':{us:6000,d:{Mexico:2800,Thailand:2500,Colombia:2500,Turkey:2400}}
+};
+$('proc').innerHTML=Object.keys(PROC).map(p=>'<option>'+p+'</option>').join('');
+
+function render(){
+ const name=$('proc').value, P=PROC[name];
+ const oop=parseFloat($('oop').value);
+ const baseline=(oop&&oop>0)?oop:P.us;
+ $('ptitle').textContent=name;
+ $('uscost').textContent=money(P.us);
+ $('usnote').textContent=(oop&&oop>0)?('· comparing to your out-of-pocket of '+money(oop)):'· typical cash/list price; your insured cost may differ';
+ const rows=Object.keys(P.d).map(dn=>{const D=DEST[dn];const travel=D.flight+D.lodge*D.nights;const tot=P.d[dn]+travel;return {dn,D,proc:P.d[dn],travel,tot,save:baseline-tot};}).sort((a,b)=>a.tot-b.tot);
+ $('dests').innerHTML=rows.map(r=>'<div class="dest"><div class="fl">'+r.D.flag+'</div>'+
+  '<div class="nm">'+r.dn+'<small>~'+r.D.nights+'-night stay</small></div>'+
+  '<div class="bd"><div class="breakdown">procedure '+money(r.proc)+' · flights ~'+money(r.D.flight)+' · lodging ~'+money(r.D.lodge*r.D.nights)+'</div></div>'+
+  '<div class="tot"><div class="v">'+money(r.tot)+'</div><div class="s '+(r.save>0?'save':'nosave')+'">'+(r.save>0?'save ~'+money(r.save):'~'+money(-r.save)+' more')+'</div></div></div>').join('');
+}
+const RISKS=[
+ ['Quality &amp; accreditation vary','Excellent and poor facilities both exist abroad. Without accreditation (e.g. JCI) and verified surgeon credentials, you carry more risk.'],
+ ['Complications follow you home','If something goes wrong after you return, your U.S. doctors must manage it — often without records, and revision surgery can erase any savings.'],
+ ['Continuity &amp; follow-up','Post-op care, physical therapy and adjustments are harder to coordinate across borders and time zones.'],
+ ['Travel risk after surgery','Flying too soon after an operation raises the risk of blood clots; recovery time abroad adds lodging cost and exposure.'],
+ ['Limited legal recourse','Malpractice protections and the ability to sue are far weaker or absent in many destinations.'],
+ ['Hidden &amp; variable costs','Quoted "package" prices may exclude complications, extra nights, implants, or a companion — and currency and case complexity move the real total a lot.']
+];
+$('risks').innerHTML=RISKS.map(r=>'<div class="risk"><div class="i">▲</div><div><div class="t">'+r[0]+'</div><div class="d">'+r[1]+'</div></div></div>').join('');
+$('proc').onchange=render;$('oop').addEventListener('input',render);
+render();
+</script>
+</body>
+</html>

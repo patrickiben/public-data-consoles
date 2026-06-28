@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prescription Savings Finder</title>
+<meta name="description" content="Find more affordable prescription medication: search a drug to see whether a lower-cost generic exists and the price gap (live CDC/CMS NADAC data), plus the full menu of ways to pay less — generics, pharmacy price-shopping, discount cards, manufacturer copay cards and patient-assistance programs. Educational, not medical or pricing advice.">
+<style>
+:root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+ --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
+ --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px 56px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+#disc{background:#060f14;color:#bcd2da;font-size:12px;text-align:center;padding:7px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}
+header{padding:24px 0 6px}
+h1{margin:0;font-size:25px;font-weight:740;letter-spacing:-.3px}
+h1 .sub{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin-top:5px}
+.banner{margin:13px 0 0;background:rgba(38,198,218,.07);border:1px solid rgba(38,198,218,.25);border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink2)}.banner b{color:var(--teal)}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:5px;vertical-align:1px;text-transform:uppercase}
+.b-meas{background:rgba(61,220,151,.16);color:#7fe9bd}.b-mod{background:rgba(245,185,69,.16);color:#f5cd85}.b-int{background:rgba(176,142,240,.16);color:#cdb6f5}
+.searchbar{display:flex;gap:10px;margin:16px 0 4px;flex-wrap:wrap}
+.searchbar input{flex:1;min-width:220px;background:#0d1826;border:1px solid var(--line2);color:var(--ink);border-radius:11px;padding:12px 15px;font-size:15px}
+button.btn{background:linear-gradient(180deg,#1d6c79,#185863);border:1px solid #2a8593;color:#eaffff;border-radius:11px;padding:11px 20px;font-weight:650;font-size:14px;cursor:pointer}button.btn:hover{filter:brightness(1.1)}
+.ex{font-size:12px;color:var(--dim);margin-top:7px}.ex a{cursor:pointer}
+.card{background:linear-gradient(180deg,var(--surf),var(--surf2));border:1px solid var(--line);border-radius:14px;margin-top:16px;overflow:hidden}
+.card .hd{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:650;display:flex;gap:9px;align-items:center}.card .hd .ico{color:var(--teal)}
+.body{padding:13px 16px}
+.muted{color:var(--dim)}.small{font-size:12px}.spin{display:inline-block;width:13px;height:13px;border:2px solid #ffffff33;border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px}@keyframes s{to{transform:rotate(360deg)}}
+.reveal{display:flex;gap:18px;align-items:stretch;flex-wrap:wrap}
+.pricebox{flex:1;min-width:190px;background:#0f1d30;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.pricebox.brand{border-color:rgba(239,84,102,.4)}.pricebox.generic{border-color:rgba(61,220,151,.4)}
+.pricebox .t{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--dim)}
+.pricebox .nm{font-weight:680;margin:3px 0}.pricebox .pr{font-size:24px;font-weight:760}.pricebox .u{font-size:12px;color:var(--ink2)}
+.savecallout{margin-top:13px;background:rgba(61,220,151,.08);border:1px solid rgba(61,220,151,.3);border-radius:11px;padding:12px 15px;font-size:14px}
+.savecallout b{color:var(--green)}
+.bioeq{margin-top:13px;background:#0f1d30;border:1px solid var(--line);border-radius:11px;padding:12px 15px}
+.bioeq .bh{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);margin-bottom:5px}
+.bioeq .bt{font-weight:680;font-size:14px}.bioeq .bd2{font-size:12.5px;color:var(--ink2);margin-top:4px}.bioeq .bsrc{font-size:11px;color:var(--dim);margin-top:6px;font-family:var(--mono)}
+.hit{display:flex;gap:10px;align-items:center;padding:7px 2px;border-bottom:1px solid var(--line)}.hit:last-child{border-bottom:none}
+.hit .cl{width:64px;flex:none}.hit .nm{flex:1;font-size:13px}.hit .pr{width:120px;text-align:right;font-variant-numeric:tabular-nums;font-weight:640}
+.tg{font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:5px}.tg.g{background:rgba(61,220,151,.16);color:#7fe9bd}.tg.b{background:rgba(239,84,102,.16);color:#f0808e}
+.strat{display:flex;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line)}.strat:last-child{border-bottom:none}
+.strat .n{width:26px;height:26px;border-radius:8px;background:rgba(38,198,218,.14);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+.strat .t{font-weight:640}.strat .d{font-size:12.5px;color:var(--ink2);margin-top:2px}
+.caveat{font-size:11.5px;color:var(--dim);margin-top:11px;padding:9px 12px;background:rgba(255,255,255,.02);border-left:2px solid var(--line2);border-radius:0 8px 8px 0}
+footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px}footer b{color:var(--ink2)}
+.reslist{display:flex;flex-wrap:wrap;gap:8px}.reslist a{background:var(--surf2);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:12.5px}
+</style>
+</head>
+<body>
+<div id="disc"><b>Educational tool — not medical or pricing advice.</b> Prices shown are CMS <b>NADAC</b> pharmacy <b>acquisition</b> costs (what pharmacies pay), <b>not</b> your retail or insured price. <b>Never start, stop, switch or split a medication without your prescriber.</b> U.S.-focused.</div>
+<div class="wrap">
+  <header>
+    <h1>Prescription Savings Finder<span class="sub">Is there a cheaper version of your medication — and every legitimate way to pay less for it?</span></h1>
+    <div class="banner"><b>How this helps.</b> The single biggest lever on drug cost is the <b>generic</b>. Search your drug below: if an FDA‑approved generic exists, you'll see the gap between the brand and generic <b>acquisition cost</b> (live CMS data) — often <b>10× to 500×</b>. Then below, the full menu of ways to pay less, whether you're insured, uninsured, or on Medicare.</div>
+    <div class="searchbar">
+      <input id="q" placeholder="Type a medication name, e.g. Lipitor, Crestor, Januvia, metformin" autocomplete="off">
+      <button class="btn" id="go">Find savings</button>
+    </div>
+    <div class="ex">Try: <a data-q="LIPITOR">Lipitor</a> · <a data-q="CRESTOR">Crestor</a> · <a data-q="JANUVIA">Januvia</a> · <a data-q="ELIQUIS">Eliquis</a> · <a data-q="ADVAIR">Advair</a> · <a data-q="HUMIRA">Humira</a> · <a data-q="METFORMIN">metformin</a></div>
+  </header>
+
+  <div class="card" id="result" style="display:none">
+    <div class="hd"><span class="ico">℞</span> <span id="rtitle">—</span> <span class="badge b-meas" id="rbadge" style="margin-left:auto">live CMS NADAC</span></div>
+    <div class="body" id="rbody"></div>
+  </div>
+
+  <div class="card">
+    <div class="hd"><span class="ico">◆</span> Ways to pay less <span class="badge b-int">curated</span></div>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:6px">These apply to almost any drug. The right mix depends on your insurance and income — they are <b>not</b> ranked, and you should compare for your specific drug and pharmacy.</div>
+      <div id="strats"></div>
+      <div style="margin-top:14px;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Free resources</div>
+      <div class="reslist" style="margin-top:7px">
+        <a href="https://www.needymeds.org/" target="_blank" rel="noopener">NeedyMeds (assistance database)</a>
+        <a href="https://www.rxassist.org/" target="_blank" rel="noopener">RxAssist (PAP directory)</a>
+        <a href="https://costplusdrugs.com/" target="_blank" rel="noopener">Mark Cuban Cost Plus Drugs</a>
+        <a href="https://www.goodrx.com/" target="_blank" rel="noopener">GoodRx</a>
+        <a href="https://www.singlecare.com/" target="_blank" rel="noopener">SingleCare</a>
+        <a href="https://www.medicare.gov/basics/costs/help/drug-costs" target="_blank" rel="noopener">Medicare Extra Help (LIS)</a>
+        <a href="https://www.ssa.gov/medicare/part-d-extra-help" target="_blank" rel="noopener">SSA — Extra Help</a>
+        <a href="https://findahealthcenter.hrsa.gov/" target="_blank" rel="noopener">Find a community health center (340B)</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd"><span class="ico">⚗</span> Compounding — a custom-made option <span class="badge b-int">situational</span></div>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:6px">A licensed <b>compounding pharmacy</b> custom-makes a medication for you. It's a niche route — most standard drugs are cheaper as ordinary generics — but it can help, and sometimes save money, in specific situations:</div>
+      <div id="compound"></div>
+      <div class="caveat"><b>Important.</b> Compounded drugs are <b>not FDA‑approved</b> and are <b>not</b> tested for bioequivalence — potency and quality can vary between pharmacies. Use a reputable, accredited one (look for <b>PCAB</b> accreditation; <b>503A</b> pharmacies make individual prescriptions, <b>503B</b> outsourcing facilities meet higher manufacturing standards). You need a prescriber and a legitimate clinical reason, and insurance often won't cover it. Some heavily‑marketed compounded drugs (e.g. certain weight‑loss injections sold during shortages) become tightly restricted once the FDA shortage ends — verify what's currently legal and available.</div>
+    </div>
+  </div>
+
+  <footer>
+    <div><b>Sources.</b> Live drug pricing: <a href="https://data.medicaid.gov/dataset/dfa2ab14-06c2-457a-9e36-5cb6d80f8d93" target="_blank" rel="noopener">CMS National Average Drug Acquisition Cost (NADAC)</a>, updated weekly. Drug name &amp; generic matching: <a href="https://lhncbc.nlm.nih.gov/RxNav/" target="_blank" rel="noopener">NLM RxNorm/RxNav</a>. Bioequivalence — FDA Orange Book therapeutic-equivalence codes: <a href="https://open.fda.gov/" target="_blank" rel="noopener">openFDA</a>. All are public, free APIs.</div>
+    <div style="margin-top:8px"><b>Honesty.</b> NADAC is the average price pharmacies <b>pay</b> to acquire a drug — a benchmark, <span class="badge b-meas">measured</span> and dated, but <b>not</b> the price you pay (that depends on your insurance, pharmacy and any discount card). It illustrates the size of the generic gap; your real savings will differ. The strategies list is <span class="badge b-int">curated</span> general information. This is not medical advice and not an endorsement of any program; verify eligibility yourself. No personal or health information is collected — searches go directly from your browser to the public CMS/NLM APIs.</div>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let NADAC_DS='fbb83258-11c7-47f5-8b18-5f8e79f7e704'; // current NADAC dataset (auto-refreshed below)
+const MQ='https://data.medicaid.gov/api/1/metastore/schemas/dataset/items?limit=400';
+const DQ=ds=>'https://data.medicaid.gov/api/1/datastore/query/'+ds+'/0';
+const RX='https://rxnav.nlm.nih.gov/REST/drugs.json?name=';
+const money=v=>v==null||isNaN(v)?'—':'$'+(+v<1?(+v).toFixed(4):(+v).toFixed(2));
+
+// keep the NADAC dataset id current (CMS rotates weekly); fall back to the hardcoded id
+async function refreshDataset(){
+ try{const r=await fetch(MQ);const items=await r.json();
+  const nad=items.filter(it=>(it.title||'').trim().toUpperCase().startsWith('NADAC')&&!(it.title||'').toUpperCase().includes('COMPARISON'))
+    .sort((a,b)=>(b.modified||'').localeCompare(a.modified||''));
+  if(nad[0]&&nad[0].identifier)NADAC_DS=nad[0].identifier;
+ }catch(e){/* keep fallback */}
+}
+
+async function nadac(name){
+ const u=DQ(NADAC_DS)+'?limit=40&conditions[0][property]=ndc_description&conditions[0][value]='+encodeURIComponent(name.toUpperCase()+'%')+'&conditions[0][operator]=like';
+ const r=await fetch(u);if(!r.ok)throw r.status;const j=await r.json();return j.results||j.data||[];
+}
+async function rxGeneric(name){
+ try{const r=await fetch(RX+encodeURIComponent(name));const j=await r.json();
+  const groups=(j.drugGroup&&j.drugGroup.conceptGroup)||[];
+  // SCD/SBD concept names contain the ingredient; grab the first ingredient-ish token set
+  let ings=new Set();
+  groups.forEach(g=>(g.conceptProperties||[]).forEach(c=>{if(c.name)ings.add(c.name);}));
+  return [...ings].slice(0,1)[0]||null;
+ }catch(e){return null;}
+}
+
+// FDA Orange Book therapeutic-equivalence (bioequivalence) codes via openFDA
+async function bioeq(name){
+ try{
+  const q=u=>fetch('https://api.fda.gov/drug/drugsfda.json?'+u).then(r=>r.ok?r.json():{results:[]});
+  const codes={};let gen=null;
+  const collect=res=>(res||[]).forEach(r=>{const gn=r.openfda&&r.openfda.generic_name&&r.openfda.generic_name[0];if(gn&&!gen)gen=gn;(r.products||[]).forEach(p=>{if(p.te_code)codes[p.te_code]=(codes[p.te_code]||0)+1;});});
+  const j=await q('search=products.brand_name:"'+name.toUpperCase()+'"&limit=50');collect(j.results);
+  if(!Object.keys(codes).some(c=>c[0]==='A')){const gname=(gen||name).toUpperCase();const j2=await q('search=openfda.generic_name:"'+gname+'"&limit=80');collect(j2.results);}
+  return {codes,gen};
+ }catch(e){return null;}
+}
+function bioBlock(be){
+ if(!be)return '';
+ const codes=Object.keys(be.codes||{});const a=codes.filter(c=>c[0]==='A').sort();const bc=codes.filter(c=>c[0]==='B').sort();
+ const gen=be.gen?' ('+be.gen.toLowerCase()+')':'';let inner;
+ if(a.length)inner='<div class="bt" style="color:#7fe9bd">✓ FDA‑rated '+a[0]+' — bioequivalent &amp; substitutable</div><div class="bd2">The generic'+gen+' is in the FDA Orange Book as <b>therapeutically equivalent</b> (an "A" rating): it is tested to deliver the same active drug to your bloodstream as the brand, so a pharmacist can substitute it automatically. Switching is well‑supported.</div>';
+ else if(bc.length)inner='<div class="bt" style="color:#f5cd85">⚠ Rated '+bc[0]+' — not an automatic substitute</div><div class="bd2">The FDA has <b>not</b> established therapeutic equivalence for the products found (a "B" rating — bioequivalence not demonstrated, or product‑specific concerns). A lower‑cost version may still suit you, but it is not an automatic swap — ask your prescriber, who can specify the exact product.</div>';
+ else inner='<div class="bt" style="color:#9fb4bd">No FDA therapeutic‑equivalence rating found</div><div class="bd2">If this is a <b>biologic</b> (an injected or infused medicine such as Humira, insulin, or many cancer &amp; autoimmune drugs), its lower‑cost copies are <b>biosimilars</b> — and an <b>interchangeable</b> biosimilar can be substituted much like a generic. Ask your prescriber or pharmacist about a biosimilar; otherwise confirm equivalence with your pharmacist.</div>';
+ return '<div class="bioeq"><div class="bh">Is the cheaper version a true substitute? (bioequivalence)</div>'+inner+'<div class="bsrc">FDA Orange Book therapeutic-equivalence codes · via openFDA</div></div>';
+}
+async function search(name){
+ $('result').style.display='block';$('rtitle').textContent=name;
+ $('rbody').innerHTML='<span class="muted"><span class="spin"></span> checking live CMS pricing &amp; FDA equivalence…</span>';
+ try{
+  const [rows,be]=await Promise.all([nadac(name),bioeq(name)]);
+  if(!rows.length){$('rbody').innerHTML='<div class="muted">No exact match in the CMS NADAC file for “'+name+'”. Try the active-ingredient (generic) name, a brand spelling, or a shorter term. NADAC covers most outpatient drugs but not every product.</div>'+bioBlock(be)+altNote();return;}
+  // dedupe by description, prefer rows with a value
+  const seen={};rows.forEach(r=>{const k=r.ndc_description;if(!seen[k]||(+r.nadac_per_unit&&!+seen[k].nadac_per_unit))seen[k]=r;});
+  const list=Object.values(seen).filter(r=>+r.nadac_per_unit).sort((a,b)=>+b.nadac_per_unit-+a.nadac_per_unit);
+  const brand=list.find(r=>r.classification_for_rate_setting==='B'&&+r.corresponding_generic_drug_nadac_per_unit>0);
+  const eff=list[0]&&list[0].effective_date;
+  let html='';
+  if(brand){const bp=+brand.nadac_per_unit, gp=+brand.corresponding_generic_drug_nadac_per_unit, x=(bp/gp);
+   html+='<div class="reveal"><div class="pricebox brand"><div class="t">Brand</div><div class="nm">'+brand.ndc_description+'</div><div class="pr">'+money(bp)+'</div><div class="u">per unit (acquisition)</div></div>'+
+    '<div class="pricebox generic"><div class="t">Generic equivalent</div><div class="nm">same active ingredient</div><div class="pr">'+money(gp)+'</div><div class="u">per unit (acquisition)</div></div></div>'+
+    '<div class="savecallout">A generic of this drug costs about <b>'+(x>=10?Math.round(x)+'×':x.toFixed(1)+'×')+' less</b> to acquire ('+money(bp)+' → '+money(gp)+' per unit). Ask your prescriber or pharmacist whether the <b>generic</b> is right for you — by law, an FDA‑approved generic must match the brand on active ingredient, strength and quality.</div>';
+  }else{
+   const anyG=list.find(r=>r.classification_for_rate_setting==='G');
+   if(anyG)html+='<div class="savecallout">A <b>generic</b> version appears to be available (shown below at '+money(+anyG.nadac_per_unit)+'/unit). Generics are the biggest single way to cut drug cost — ask your prescriber or pharmacist.</div>';
+   else html+='<div class="savecallout" style="background:rgba(245,185,69,.08);border-color:rgba(245,185,69,.3)"><b style="color:var(--amber)">No generic equivalent found in NADAC.</b> Many newer brand drugs have no generic yet. The strategies below — manufacturer copay cards, patient-assistance programs, and asking about a cheaper drug in the same class — matter most here.</div>';
+  }
+  html+='<div style="margin-top:14px;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Matches in NADAC '+(eff?'· prices effective '+eff:'')+'</div>';
+  html+=list.slice(0,8).map(r=>'<div class="hit"><div class="cl"><span class="tg '+(r.classification_for_rate_setting==='B'?'b">brand':'g">generic')+'</span></div><div class="nm">'+r.ndc_description+'</div><div class="pr">'+money(+r.nadac_per_unit)+'</div></div>').join('');
+  html+=bioBlock(be);
+  html+=altNote();
+  $('rbody').innerHTML=html;
+ }catch(e){$('rbody').innerHTML='<div class="muted">Couldn\'t reach the live CMS pricing service right now. The savings strategies below still apply; you can also look the drug up directly at <a href="https://data.medicaid.gov/" target="_blank" rel="noopener">data.medicaid.gov</a> or a discount-card site.</div>';}
+}
+function altNote(){return '<div class="caveat">Acquisition cost is a benchmark, not your price. Your actual cost depends on insurance, pharmacy and discount cards — and a discount-card cash price sometimes beats an insurance copay, so compare both.</div>';}
+
+const STRATS=[
+ ['Ask for the generic','If an FDA‑approved generic exists, it is the same active ingredient at a fraction of the price. Ask your prescriber to write "generic OK" and your pharmacist to substitute.'],
+ ['Compare pharmacies — cash prices vary wildly','The same generic can cost $4 at one pharmacy and $40 at another. Independent and warehouse pharmacies are often cheapest; always ask the cash price.'],
+ ['Use a discount card (and compare to insurance)','GoodRx, SingleCare and similar are free and can beat both cash and insurance copays. You can\'t combine them with insurance, so check the price both ways.'],
+ ['Try transparent-cost pharmacies','Mark Cuban Cost Plus Drugs and similar sell many generics at cost + a small markup — sometimes dramatically below retail.'],
+ ['$4 generic lists & 90-day supplies','Walmart, Costco, Amazon Pharmacy and grocery chains keep low-price generic lists; a 90-day supply usually costs less per pill than three 30-day fills.'],
+ ['Manufacturer copay cards (brand-name)','For brand drugs, the maker often offers a copay/savings card that cuts your cost sharply — if you have commercial insurance (these usually exclude Medicare & Medicaid).'],
+ ['Patient Assistance Programs (PAPs)','Drug makers give brand medicines free or cheap to lower-income, uninsured patients. Find them via NeedyMeds or RxAssist, or the manufacturer\'s site.'],
+ ['Ask about a cheaper drug in the same class','Often an older, generic medicine in the same class works as well — e.g. a different statin, blood-pressure pill or antidepressant. Only your prescriber can decide.'],
+ ['Medicare: Extra Help & the new out-of-pocket cap','Low-income Medicare enrollees can get "Extra Help" (LIS); Part D now caps annual out-of-pocket drug spending — confirm your plan details.'],
+ ['Community health centers (340B) & state programs','Federally qualified health centers and 340B pharmacies offer sliding-scale prices; many states run pharmaceutical assistance programs.']
+];
+$('strats').innerHTML=STRATS.map((s,i)=>'<div class="strat"><div class="n">'+(i+1)+'</div><div><div class="t">'+s[0]+'</div><div class="d">'+s[1]+'</div></div></div>').join('');
+
+const COMPOUND=[
+ ['A needed drug with no affordable version','When a brand has no generic and is very expensive, a compounding pharmacy can sometimes prepare the active ingredient far more cheaply — ask your prescriber whether that is appropriate and safe for your drug.'],
+ ['Manufacturer shortages','During an official drug shortage, compounders may legally fill the gap with a custom-made version.'],
+ ['A dose or form you can\'t buy off the shelf','A custom strength (so you don\'t buy two products), a liquid or topical for someone who can\'t swallow pills, or two medicines combined into one.'],
+ ['Allergen- or dye-free versions','For patients who react to a filler, preservative or dye in the commercial product.']
+];
+$('compound').innerHTML=COMPOUND.map((s,i)=>'<div class="strat"><div class="n">⚗</div><div><div class="t">'+s[0]+'</div><div class="d">'+s[1]+'</div></div></div>').join('');
+
+$('go').onclick=()=>{const v=$('q').value.trim();if(v)search(v);};
+$('q').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click();});
+[...document.querySelectorAll('.ex a')].forEach(a=>a.onclick=()=>{$('q').value=a.dataset.q;search(a.dataset.q);});
+refreshDataset();
+</script>
+</body>
+</html>
