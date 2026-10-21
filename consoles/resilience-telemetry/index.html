@@ -122,7 +122,7 @@
     <select id="selasset"></select>
   </label>
   <span class="clock" id="clock"></span>
-  <span class="pill" id="asofpill" title="Date of the oldest series end — cross-asset panels only use dates every market shares. Amber = more than 4 days old (the embedded snapshot, or a series the live feeds did not update)."><span class="dot" style="background:var(--dim)"></span><span id="asoftx">data as of —</span></span>
+  <span class="pill" id="asofpill" title="Date of the oldest series end — cross-asset panels only use dates every market in the panel shares (the network: all 51 markets; coupling, turbulence and the manifold: the 48 non-crypto names). Amber = more than 4 days old (the embedded snapshot, or a series the live feeds did not update)."><span class="dot" style="background:var(--dim)"></span><span id="asoftx">data as of —</span></span>
   <span class="pill" id="threat"><span class="dot" style="background:var(--green)"></span><span id="threattx">—</span></span>
 </header>
 
@@ -175,7 +175,7 @@
       <div id="rc-sent"></div>
     </div>
     <div class="card" id="rc-simcard" data-page="risk">
-      <h2>Scenario stress-test — synthetic crises to size against <span class="tag" style="float:right;color:var(--dim)">FHS · not a forecast</span></h2>
+      <h2>Scenario stress-test — synthetic crises to stress-test a size you already chose <span class="tag" style="float:right;color:var(--dim)">FHS · not a forecast</span></h2>
       <div class="cap">The transparent cousin of a generative model: thousands of synthetic next-month paths, each resampling real vol-standardized moves re-scaled to today's volatility. A fuller range of bad months than the few real crises — to stress-test your sizing, never to predict.</div>
       <div id="rc-sim"></div>
     </div>
@@ -298,7 +298,7 @@
 
     <details class="card" id="premia" data-page="risk" open style="border-left:3px solid var(--green2)">
       <summary style="cursor:pointer;font-weight:700;font-size:13px">Premia allocator + stress-test — your passive-income plan, made concrete <span class="tag" style="color:var(--dim)">education · not advice</span></summary>
-      <div class="cap" style="margin-top:8px">Set how much you put in each <b>risk premium</b> and see the honest tradeoff: the <b>income</b> you'd passively collect, an illustrative <b>total return</b>, and the <b>worst-case drawdown</b> your mix actually took through 2020 — the price of that income. This is the plan's core lesson in one place: higher income always buys a deeper drawdown. <b>No forecast, no recommendation.</b></div>
+      <div class="cap" style="margin-top:8px">Set how much you put in each <b>risk premium</b> and see the honest tradeoff: the <b>income</b> you'd passively collect, an illustrative <b>total return</b>, and the <b>drawdown</b> your mix actually took in one real stress window, the COVID crash (Feb–Apr 2020), next to its <b>deepest drawdown</b> anywhere in the embedded history (with dates) — the COVID window is not necessarily the worst. Income is not what costs you drawdown here: the highest-yield sleeves (cash, Treasuries, IG credit) are the defensive ones. Across the presets, a larger equity share raises the illustrative total return and deepens the drawdown, while income falls. <b>No forecast, no recommendation.</b></div>
       <div class="rowflex" style="gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
         <div class="seg" id="pr-preset"><button data-p="cons">Conservative</button><button data-p="bal" class="on">Balanced</button><button data-p="grow">Growth</button></div>
         <label style="font-size:11px;color:var(--dim)">capital $ <input type="number" id="pr-cap" value="100000" min="0" step="1000" style="width:90px;background:var(--surf2);color:var(--tx);border:1px solid var(--bd);border-radius:4px;font-size:11px"></label>
@@ -315,7 +315,7 @@
 
     <div class="card" id="metacard" data-page="pred">
       <h2>Forecast reliability — the meta-learning layer <span class="tag" style="float:right;color:var(--dim)">regime-conditional</span></h2>
-      <div class="cap">A layer <i>above</i> the forecasts: it does not predict — it says <b>when</b> each forecast can be trusted. Volatility is learnable, but more so in some regimes than others; direction is learnable in none. Use it to gate and size, not to call direction.</div>
+      <div class="cap">A layer <i>above</i> the forecasts: it does not predict — it says <b>when</b> each forecast can be trusted. Volatility is learnable, but more so in some regimes than others; direction is learnable in none. It describes forecast reliability only — it is not an input to exposure, and it never calls direction.</div>
       <div id="metabody"></div>
     </div>
 
@@ -450,7 +450,7 @@
 
     <div class="card" id="feedcard" data-page="both">
       <h2>Data health</h2>
-      <div class="cap">Embedded real-history snapshot is the floor; live endpoints refresh the tail when reachable. A single feed failure never blanks the console. Cross-asset panels (network, coupling, turbulence, manifold) only use dates <i>every</i> market shares, so they stop at the <b>oldest</b> series end shown below. Macro (FRED) and CAPE (Shiller) are embedded only — no live refresh.</div>
+      <div class="cap">Embedded real-history snapshot is the floor; live endpoints refresh the tail when reachable. A single feed failure never blanks the console. Cross-asset panels only use dates <i>every</i> market in the panel shares: all 51 for the directed network (so in Backtest it is empty before crypto starts on 2023-09-21), and the 48 non-crypto names for coupling, turbulence and the manifold (back to 2016). A series that stops early holds back every panel that includes it, so the as-of date is the <b>oldest</b> series end shown below. Macro (FRED) and CAPE (Shiller) are embedded only — no live refresh.</div>
       <div class="feeds" id="feeds"></div>
     </div>
   </div>
@@ -515,9 +515,9 @@ let MODE='live', SEL=ASSET_IDS[0], CURSOR=null, SORTKEY='order', SURR=false, SCE
 const feedStatus={Snapshot:'loaded',Binance:'idle',Frankfurter:'idle',YahooProxy:'idle'};
 const W_IND=252, B_TREND=60, L_LAG=4, H_FWD=60;
 
-/* data freshness: cross-asset panels use only dates every market shares, so the honest "as of" is the OLDEST series end, not the newest */
+/* data freshness: cross-asset panels use only dates every market in the panel shares, so the honest "as of" is the OLDEST series end, not the newest */
 function dataAsOf(){let lo=Infinity,hi=0;for(const id of ASSET_IDS){const v=STORE[id].vintage;if(v<lo)lo=v;if(v>hi)hi=v;}return {lo,hi};}
-function asOfInfo(){const {lo,hi}=dataAsOf();const age=Math.floor((Date.now()-dayToMs(lo))/86400000);const live=['Binance','Frankfurter','YahooProxy'].some(k=>feedStatus[k]==='live');
+function asOfInfo(){const {lo,hi}=dataAsOf();const age=Math.floor((Date.now()-dayToMs(lo))/86400000);const live=ASSET_IDS.some(id=>STORE[id].src!=='Snapshot'); // some data in use came from a live feed (sticky: a later failed refresh does not change STORE)
   return {date:msToDateStr(dayToMs(lo)),newest:msToDateStr(dayToMs(hi)),age,stale:age>4,live,src:live?'oldest series end':'embedded snapshot'};}
 const MACRO_LAST=Object.values(MACRO).map(m=>m.d[m.d.length-1]);
 function initStore(){for(const id of ASSET_IDS){const a=SNAP[id];const close=a.c.slice();const dayk=a.d.slice();const ret=[0];for(let i=1;i<close.length;i++)ret.push(Math.log(close[i]/close[i-1]));STORE[id]={name:a.name,cls:a.cls,dayk,close,ret,vintage:dayk[dayk.length-1],src:'Snapshot'};}}
@@ -543,7 +543,7 @@ function fragilityFromReturns(ret,dayk){const L=ret.length;const ind={ac1:[],rec
   function pct(zv){return clamp(Math.round(100*normCDF(zv)),0,100);}
   return {ind,idx,z,sub:{persist:persist.map(pct),ampl:ampl.map(pct),tail:tail.map(pct)},F};
 }
-function computeAll(){for(const id of ASSET_IDS){COMP[id]=fragilityFromReturns(STORE[id].ret,STORE[id].dayk);}}
+function computeAll(){DATA_VER++;AR252_CACHE.clear();for(const id of ASSET_IDS){COMP[id]=fragilityFromReturns(STORE[id].ret,STORE[id].dayk);}}
 
 /* index into COMP[id].idx for a given asOf day */
 function compAt(id,asOf){const idx=COMP[id].idx;if(!idx.length)return -1;if(asOf==null)return idx.length-1;let p=-1;for(let i=0;i<idx.length;i++){if(idx[i]<=asOf)p=i;else break;}return p;}
@@ -656,6 +656,7 @@ function drawSurprise(){const ids=ASSET_IDS;let h='';
   $('#surprise').innerHTML=h;}
 
 function drawNetwork(){const S=NETSTATE;const ids=ASSET_IDS;const W=760,Hh=380,pad=56;
+  if(netThin()){const d0=$('#netcard').querySelector('.drill');if(d0)d0.remove();$('#net').innerHTML=NET_THIN_MSG();if(SCEN!=='none')$('#netcard').insertAdjacentHTML('beforeend','<div class="drill">DRILL — SYNTHETIC</div>');$('#dirratio').innerHTML=`directedness: n/a — too little shared history at this date (n=${S?S.n:0}d; needs at least ${3*L_LAG}d; the network uses only days all ${ASSET_IDS.length} markets share, and crypto starts 2023-09-21)`;return;}
   const ranked=ids.slice().sort((a,b)=>S.NET[b]-S.NET[a]);
   const lanes=6;const pos={};ranked.forEach((id,i)=>{const x=pad+(W-2*pad)*(i/(ranked.length-1||1));const lane=i%lanes;const y=44+lane*((Hh-88)/(lanes-1));pos[id]={x,y};});
   let mxNet=0,mxA=0;for(const id of ids)mxNet=Math.max(mxNet,Math.abs(S.NET[id]));for(const i of ids)for(const j of ids)if(i!==j)mxA=Math.max(mxA,Math.abs(S.A[i][j]));
@@ -676,17 +677,17 @@ function drawNetwork(){const S=NETSTATE;const ids=ASSET_IDS;const W=760,Hh=380,p
     <text x="${pad}" y="16" font-size="10" fill="var(--dim)">◀ net transmitters</text><text x="${W-pad}" y="16" text-anchor="end" font-size="10" fill="var(--dim)">net receivers ▶</text>
     ${arrows}${nodes}</svg>`;
   if(drill)$('#netcard').insertAdjacentHTML('beforeend',drill);
-  const dr=S.ratio;$('#dirratio').innerHTML=netThin()?`directedness: n/a — no shared history at this date (n=${S.n}d; the network uses only days all ${ASSET_IDS.length} markets share, and crypto starts 2023-09-21)`:`directedness Σ|A|/ΣD = <b style="color:var(--tx)">${dr.toFixed(2)}</b> · <b style="color:var(--tx)">${S._nsig||0}</b> of the ${Math.min(12,S._npairs||0)} drawn links pass the permutation gate (solid, labeled with peak lead in days; dashed = drawn but below significance) · ${S._nsigAll||0} of ${S._npairs||0} directed pairs pass overall, where ~${Math.round(0.05*(S._npairs||0))} would pass by chance alone (5% per pair)${(S._nsigAll||0)<=0.05*(S._npairs||0)*1.2?' — so the drawn links are not, as a set, beyond what chance produces':''}. Most surviving leads peak at 1d (≈contemporaneous) — the honest finding. n=${S.n}d`;
+  const dr=S.ratio;$('#dirratio').innerHTML=`directedness Σ|A|/ΣD = <b style="color:var(--tx)">${dr.toFixed(2)}</b> · <b style="color:var(--tx)">${S._nsig||0}</b> of the ${Math.min(12,S._npairs||0)} drawn links pass the permutation gate (solid, labeled with peak lead in days; dashed = drawn but below significance) · ${S._nsigAll||0} of ${S._npairs||0} directed pairs pass overall, where ~${Math.round(0.05*(S._npairs||0))} would pass by chance alone (5% per pair)${(S._nsigAll||0)<=0.05*(S._npairs||0)*1.2?' — so the drawn links are not, as a set, beyond what chance produces':''}. Most surviving leads peak at 1d (≈contemporaneous) — the honest finding. n=${S.n}d`;
 }
 
-function drawHeat(){const S=NETSTATE;const ids=ASSET_IDS;const n=ids.length;const cell=Math.min(34,Math.floor(300/n));const fs=Math.min(9,cell*0.95).toFixed(1),top=Math.round(cell>=8?18:6*fs);const W=cell*n+60,Hh=cell*n+top+6;
+function drawHeat(){if(netThin()){$('#heat').innerHTML=NET_THIN_MSG();return;}const S=NETSTATE;const ids=ASSET_IDS;const n=ids.length;const cell=Math.min(34,Math.floor(300/n));const fs=Math.min(9,cell*0.95).toFixed(1),top=Math.round(cell>=8?18:6*fs);const W=cell*n+60,Hh=cell*n+top+6;
   let mxA=1e-9;for(const i of ids)for(const j of ids)if(i!==j)mxA=Math.max(mxA,Math.abs(S.A[i][j]));
   let cells='';ids.forEach((ri,r)=>{ids.forEach((cj,c)=>{const x=54+c*cell,y=top+r*cell;let col='#0a1820';if(ri!==cj){const a=S.A[ri][cj]/mxA;const t=clamp(Math.abs(a),0,1);col=a>0?`rgba(226,75,74,${0.12+0.8*t})`:`rgba(55,138,221,${0.12+0.8*t})`;}cells+=`<rect x="${x}" y="${y}" width="${cell-1}" height="${cell-1}" fill="${col}"/>`;});
     cells+=`<text x="50" y="${(top+r*cell+cell*0.8).toFixed(1)}" text-anchor="end" font-size="${fs}" fill="var(--dim)">${shortLbl(ri)}</text>`;});
   ids.forEach((cj,c)=>{const cx=(54+c*cell+cell*0.75).toFixed(1);cells+=`<text x="${cx}" y="${top-2}" transform="rotate(-90 ${cx} ${top-2})" font-size="${fs}" fill="var(--dim)">${shortLbl(cj)}</text>`;});
   $('#heat').innerHTML=`<svg viewBox="0 0 ${W} ${Hh}">${cells}</svg><div class="small" style="margin-top:4px">rows = source i, cols = target j · red i→j (i leads), blue j leads i</div>`;}
 
-function drawNetBars(){const S=NETSTATE;const ids=ASSET_IDS.slice().sort((a,b)=>S.NET[b]-S.NET[a]);let mx=1e-9;for(const id of ids)mx=Math.max(mx,Math.abs(S.NET[id]));
+function drawNetBars(){if(netThin()){$('#netbars').innerHTML='';return;}const S=NETSTATE; /* thin: the asymmetry card's message shows once, in #heat — no all-zero NET/TO/FROM table */const ids=ASSET_IDS.slice().sort((a,b)=>S.NET[b]-S.NET[a]);let mx=1e-9;for(const id of ids)mx=Math.max(mx,Math.abs(S.NET[id]));
   let h='<table class="tbl"><tr><th>asset</th><th>NET</th><th>TO</th><th>FROM</th><th></th></tr>';
   for(const id of ids){const net=S.NET[id];const w=50*Math.abs(net)/mx;const col=net>=0?'var(--red)':'var(--blue)';
     h+=`<tr><td>${id}</td><td>${net>=0?'+':''}${net.toFixed(2)}</td><td>${S.TO[id].toFixed(2)}</td><td>${S.FROM[id].toFixed(2)}</td>
@@ -719,7 +720,7 @@ function escalate(){let mx=0,hot=null;for(const id of ASSET_IDS){const p=compAt(
   let lvl='calm',col='var(--green)',tx='Resilient';if(mx>=85){lvl='stress';col='var(--red)';tx='Least resilient vs recent norm';}else if(mx>=60){lvl='watch';col='var(--amber)';tx='Reduced resilience — watch';}
   $('#threat').innerHTML=`<span class="dot" style="background:${col}"></span><span>${tx}</span>`;
   const dr=NETSTATE?NETSTATE.ratio:0;
-  $('#banner').innerHTML=`<b>DESCRIPTIVE, NOT PREDICTIVE.</b> A resilience thermometer, not a crash detector. Highest reading ${MODE==='backtest'&&CURSOR!=null?'at the cursor date':(()=>{if(!hot)return 'now';const v=STORE[hot].vintage,age=Math.floor((Date.now()-dayToMs(v))/86400000);return age>4?`on data through ${msToDateStr(dayToMs(v))} (${age} days old${asOfInfo().live?'':' — embedded snapshot'})`:'now';})()}: <b style="color:${col}">${hot||'—'} ${mx.toFixed(0)}/100</b> — i.e. ${hot||'—'}'s fragility indicators (swing size, persistence, asymmetry) ${mx>=60?'have been rising unusually fast':'are rising no faster than usual'} versus its own history <i>(descriptive — not a forecast)</i>. Directedness Σ|A|/ΣD=${netThin()?'n/a (no shared history at this date)':dr.toFixed(2)}. A high reading can persist for months or years with nothing happening, and declines also start from low readings. The critical-slowing-down framing is an <b>analogy</b> from physics (these signals were largely <i>absent</i> before historical meltdowns); the volatility channel mostly restates GARCH. Lead-lag is association, not causation. Not financial advice or a trading signal.`;}
+  $('#banner').innerHTML=`${SCEN!=='none'?'<b style="color:var(--amber)">DRILL — SYNTHETIC ACTIVE.</b> ':''}<b>DESCRIPTIVE, NOT PREDICTIVE.</b> A resilience thermometer, not a crash detector. Highest reading ${MODE==='backtest'&&CURSOR!=null?'at the cursor date':(()=>{if(!hot)return 'now';const v=STORE[hot].vintage,age=Math.floor((Date.now()-dayToMs(v))/86400000);return age>4?`on data through ${msToDateStr(dayToMs(v))} (${age} days old${STORE[hot].src!=='Snapshot'?'':' — embedded snapshot'})`:'now';})()}: <b style="color:${col}">${hot||'—'} ${mx.toFixed(0)}/100</b> — i.e. ${hot||'—'}'s fragility indicators (swing size, persistence, asymmetry) ${mx>=60?'have been rising unusually fast':'are rising no faster than usual'} versus its own history <i>(descriptive — not a forecast)</i>. Directedness Σ|A|/ΣD=${netThin()?'n/a (too little shared history at this date)':dr.toFixed(2)}. A high reading can persist for months or years with nothing happening, and declines also start from low readings. The critical-slowing-down framing is an <b>analogy</b> from physics (these signals were largely <i>absent</i> before historical meltdowns); the volatility channel mostly restates GARCH. Lead-lag is association, not causation. Not financial advice or a trading signal.`;}
 
 /* ===================== systemic engine (eigen core, turbulence, Hawkes) ===================== */
 let SYS=null, TURB=null, HAWK=null, TURB_A=0.2, HAWK_THETA=2.5;
@@ -732,8 +733,15 @@ function corrMat(sub,ids){const N=ids.length,nn=sub[ids[0]].length;if(nn<3)retur
 function powerIter(C,its){const N=C.length;let v=new Array(N).fill(1/Math.sqrt(N));its=its||90;let lam=0;
   for(let it=0;it<its;it++){const w=matVec(C,v);const nrm=Math.sqrt(w.reduce((a,b)=>a+b*b,0))||1;v=w.map(x=>x/nrm);}
   const Cv=matVec(C,v);for(let i=0;i<N;i++)lam+=v[i]*Cv[i];return {lam,v};}
-function deflatedTopK(C,k){const N=C.length;const M=C.map(r=>r.slice());const out=[];
-  for(let e=0;e<k;e++){const {lam,v}=powerIter(M,90);out.push({lam,v});for(let i=0;i<N;i++)for(let j=0;j<N;j++)M[i][j]-=lam*v[i]*v[j];}return out;}
+// same arithmetic, in the same order, as powerIter(M,90) + deflation on nested arrays (bit-identical results), on flat reused buffers: the rolling absorption histories call it hundreds of times
+function deflatedTopK(C,k){const N=C.length;const M=new Float64Array(N*N);for(let i=0;i<N;i++)for(let j=0;j<N;j++)M[i*N+j]=C[i][j];const out=[];
+  const v=new Float64Array(N),w=new Float64Array(N),v0=1/Math.sqrt(N);
+  for(let e=0;e<k;e++){v.fill(v0);
+    for(let it=0;it<90;it++){for(let i=0;i<N;i++){let s=0;const o=i*N;for(let j=0;j<N;j++)s+=M[o+j]*v[j];w[i]=s;}let ss=0;for(let i=0;i<N;i++)ss+=w[i]*w[i];const nrm=Math.sqrt(ss)||1;for(let i=0;i<N;i++)v[i]=w[i]/nrm;}
+    let lam=0;for(let i=0;i<N;i++){let s=0;const o=i*N;for(let j=0;j<N;j++)s+=M[o+j]*v[j];lam+=v[i]*s;}
+    out.push({lam,v:Array.from(v)});for(let i=0;i<N;i++){const o=i*N;for(let j=0;j<N;j++)M[o+j]-=lam*v[i]*v[j];}}return out;}
+const AR252_CACHE=new Map();let DATA_VER=0;
+const AR252_TAG=()=>`${DATA_VER}|${SCEN}|${SCEN==='vol'?SEL:''}`;
 function computeSystemic(){const asOf=(MODE==='backtest')?CURSOR:null;const ids=basisIds(),N=ids.length;
   const cur=alignedReturns(asOf,252,ids);
   if(cur.n<3*N){SYS={ok:false,n:cur.n,need:3*N};return;}
@@ -743,8 +751,16 @@ function computeSystemic(){const asOf=(MODE==='backtest')?CURSOR:null;const ids=
   const loadings=ids.map((id,i)=>({id,w:eig[0].v[i]}));
   const full=alignedReturns(asOf,99999,ids);const T=full.n,Wc=60,step=7,rollR=[],rollAR=[];
   for(let end=Wc;end<=T;end+=step){const sub={};for(const id of ids)sub[id]=full.mat[id].slice(end-Wc,end);const cc=corrMat(sub,ids);if(!cc)continue;const e2=deflatedTopK(cc,k);rollR.push(e2[0].lam/N);rollAR.push(e2.reduce((a,e)=>a+e.lam,0)/N);}
+  // like-for-like history for the CURRENT absorption (a 252-day window): the same 252-day measure, anchored at the latest day and sampled every 21 trading days.
+  // The 60-day series above (sparkline, δ) runs systematically higher from sampling noise, so ranking a 252-day value against it pinned the percentile near zero.
+  // 252-day absorption history on a FIXED grid (every 21 trading days from the start of the aligned history) plus the current window;
+  // each window's value depends only on its end date, the data and the drill, so it is cached across Backtest scrubs
+  const Wl=252,stepL=21,rollAR252=[],ends=[];for(let end=Wl;end<T;end+=stepL)ends.push(end);if(T>=Wl)ends.push(T);
+  for(const end of ends){const key=`${AR252_TAG()}|${full.dates[end-1]}`;let v=AR252_CACHE.get(key);
+    if(v===undefined){const sub={};for(const id of ids)sub[id]=full.mat[id].slice(end-Wl,end);const cc=corrMat(sub,ids);v=cc?deflatedTopK(cc,k).reduce((a,e)=>a+e.lam,0)/N:null;AR252_CACHE.set(key,v);}
+    if(v!=null)rollAR252.push(v);}
   let delta=0;if(rollAR.length>30){const rec=rollAR.slice(-3),base=rollAR.slice(0,-3),mb=mean(base),sb=std(base)||1;delta=(mean(rec)-mb)/sb;}
-  SYS={ok:true,n:cur.n,N,k,rho,ar,loadings,rollR,rollAR,delta,lam0:eig[0].lam,lam1:eig[1]?eig[1].lam:null};}
+  SYS={ok:true,n:cur.n,N,k,rho,ar,loadings,rollR,rollAR,rollAR252,delta,lam0:eig[0].lam,lam1:eig[1]?eig[1].lam:null};}
 function matInv(M){const N=M.length;const A=M.map((r,i)=>r.concat(Array.from({length:N},(_,j)=>i===j?1:0)));
   for(let c=0;c<N;c++){let p=c;for(let r=c+1;r<N;r++)if(Math.abs(A[r][c])>Math.abs(A[p][c]))p=r;if(Math.abs(A[p][c])<1e-12)return null;[A[c],A[p]]=[A[p],A[c]];const d=A[c][c];for(let j=0;j<2*N;j++)A[c][j]/=d;for(let r=0;r<N;r++){if(r===c)continue;const f=A[r][c];for(let j=0;j<2*N;j++)A[r][j]-=f*A[c][j];}}
   return A.map(r=>r.slice(N));}
@@ -897,8 +913,11 @@ function computeAnticipation(){_seed=20260616;
   const tti=argmax(dytr.NET),lli=argmax(absR.map(r=>mean(r.slice(0,split)))),h=5,agg=te.map(row=>mean(row));
   const ser=idx=>{const x=[],y=[];for(let t=0;t+h<te.length;t++){x.push(te[t][idx]);y.push(agg[t+h]);}return [x,y];};
   const [xt,yt]=ser(tti),[xl,yl]=ser(lli),corrT=pearson(xt,yt),corrL=pearson(xl,yl),adv=corrT-corrL,n=xt.length,bl=Math.max(5,Math.round(Math.sqrt(n)));
-  let pos=0,B=200;for(let b=0;b<B;b++){const idx=[];while(idx.length<n){const st=Math.floor(rnd()*Math.max(1,n-bl));for(let k=0;k<bl&&idx.length<n;k++)idx.push((st+k)%n);}
-    if(pearson(idx.map(i=>xt[i]),idx.map(i=>yt[i]))-pearson(idx.map(i=>xl[i]),idx.map(i=>yl[i]))>0)pos++;}
+  // fairer baselines than "the loudest": the basket's own 5-day stress persistence, and the transmitter's rank among all basis markets on the same test
+  const pa=[],pb=[];for(let t=0;t+h<te.length;t++){pa.push(agg[t]);pb.push(agg[t+h]);}const corrP=pearson(pa,pb);
+  const allC=ids.map((_,i)=>{const [x,y]=ser(i);return pearson(x,y);}),rankT=1+allC.filter(c=>c>corrT).length,medC=allC.slice().sort((a,b)=>a-b)[Math.floor(N/2)];
+  let pos=0,posP=0,B=200;for(let b=0;b<B;b++){const idx=[];while(idx.length<n){const st=Math.floor(rnd()*Math.max(1,n-bl));for(let k=0;k<bl&&idx.length<n;k++)idx.push((st+k)%n);}
+    const cT=pearson(idx.map(i=>xt[i]),idx.map(i=>yt[i]));if(cT-pearson(idx.map(i=>xl[i]),idx.map(i=>yl[i]))>0)pos++;if(cT-pearson(idx.map(i=>pa[i]),idx.map(i=>pb[i]))>0)posP++;}
   // QCv5: transmitter-identity uncertainty (block-bootstrap refit) + NET credible intervals (deng2022 / mantalos2010 robustness)
   let tboot=null,netDist=null,stable=true;
   try{const B2=100,bl2=Math.max(8,Math.round(Math.sqrt(T))),netS=ids.map(()=>[]),ranks=[];let obsTop=0;
@@ -912,18 +931,20 @@ function computeAnticipation(){_seed=20260616;
   }catch(e){console.warn('transmitter bootstrap',e);}
   ANTIC={ok:true,N,transmitter:ids[ti],loudest:ids[li],netT:dy.NET[ti],netOfLoudest:dy.NET[li],totalConn:dy.totalConn,gap:ti!==li,direct:dy.direct,
     boot:tboot,netDist,stable,
-    oos:{transmitter:ids[tti],loudest:ids[lli],corrT,corrL,adv,posFrac:pos/B,n}};
+    oos:{transmitter:ids[tti],loudest:ids[lli],corrT,corrL,adv,posFrac:pos/B,corrP,rankT,medC,posFracP:posP/B,n}};
 }
 function drawAnticipation(){const el=$('#antic');if(!ANTIC||!ANTIC.ok){el.innerHTML='<div class="caveat">Insufficient history for the anticipation engine.</div>';return;}
   const A=ANTIC,tc=Math.round(A.totalConn);
   let verdict,vc;
   if(!A.gap){verdict=`The transmitter <b>is</b> the loudest market (${A.transmitter}). Anticipating and reacting point at the same place — no structural edge to anticipation here.`;vc='var(--dim)';}
   else if(tc<35||A.direct<0.12){verdict=`The spillover is ${tc<35?`weakly coupled (${tc}%)`:`nearly symmetric (directedness ${A.direct.toFixed(2)})`} — no clear upstream source, so anticipation has little edge over reacting.`;vc='var(--dim)';}
-  else{verdict=`Directionally asymmetric (directedness ${A.direct.toFixed(2)}): the upstream <b style="color:var(--red)">transmitter ${A.transmitter}</b> exports stress while the loudest market <b style="color:var(--blue)">${A.loudest}</b> receives it. Per the directed-asymmetry regularity, <b>watching the transmitter has structural leverage the loudest does not</b> — for attention, not for trades.`;vc='var(--teal)';}
-  const o=A.oos,lead=o.adv>0,strong=o.adv>0&&o.posFrac>=0.9;
+  else{verdict=`Directionally asymmetric (directedness ${A.direct.toFixed(2)}): the upstream <b style="color:var(--red)">transmitter ${A.transmitter}</b> exports stress while the loudest market <b style="color:var(--blue)">${A.loudest}</b> receives it. In this full-sample decomposition the transmitter is the top net exporter of spillover — a place to direct attention, not a trade; whether that buys any real lead is tested out of sample below.`;vc='var(--teal)';}
+  // the verdict is keyed to the fair baseline (the basket's own 5-day stress persistence), not to the loudest market, which VIX wins by construction
+  const o=A.oos,lead=o.adv>0,strong=lead&&o.corrT>o.corrP&&o.posFracP>=0.9;
+  const dg=o.corrT.toFixed(2)===o.corrP.toFixed(2)?3:2; // show a third decimal when the transmitter and the persistence baseline round alike
   const oosVerdict = strong
-    ? `a modest, reasonably robust out-of-sample lead — but the absolute correlation (${o.corrT.toFixed(2)}) is small, so it sharpens <b>where</b> stress originates, not <b>whether</b> to trade.`
-    : lead ? `a <b>positive but not robust</b> lead — echoing the companion paper's own real-data result (positive, not significant). Treat as suggestive, not a signal.`
+    ? `a small out-of-sample lead that also beats the basket's own 5-day stress persistence (${o.corrP.toFixed(dg)}) in ${Math.round(o.posFracP*100)}% of resamples — still small in absolute terms (${o.corrT.toFixed(dg)}), so it sharpens <b>where</b> stress originates, not <b>whether</b> to trade.`
+    : lead ? `${o.transmitter}'s stress does precede basket stress (${o.corrT.toFixed(dg)}), but it ranks ${ord(o.rankT)} of ${A.N} markets on this test (median ${o.medC.toFixed(2)}, net receivers included) and ${o.corrT>o.corrP?'only narrowly beats':'does not beat'} the basket's own 5-day persistence (${o.corrP.toFixed(dg)}; ahead in ${Math.round(o.posFracP*100)}% of resamples). So this test <b>cannot tell transmitter leadership apart from ordinary volatility clustering</b>; the ${Math.round(o.posFrac*100)}% figure above compares it only with ${o.loudest}.`
     : `<b>no</b> out-of-sample lead on this split.`;
   el.innerHTML=`
    <div class="kv"><span>Net transmitter (who exports stress — the anticipation target)</span><b style="color:var(--red)">${A.transmitter}</b></div>
@@ -934,18 +955,25 @@ function drawAnticipation(){const el=$('#antic');if(!ANTIC||!ANTIC.ok){el.innerH
    <div class="kv"><span>Directedness of the spillover (0 = no leaders, 1 = one-way)</span><b>${A.direct.toFixed(2)}</b></div>
    <div style="margin:7px 0;padding:7px 9px;border-left:3px solid ${vc};background:#0a1820;border-radius:0 6px 6px 0;font-size:12px">${verdict}</div>
    <div style="margin-top:6px;font-weight:700;font-size:12.5px">Out-of-sample test (train 60% → test 40%)</div>
-   <div class="kv"><span>Transmitter ${o.transmitter} leads basket stress (corr, 5d)</span><b>${o.corrT.toFixed(2)}</b></div>
+   <div class="kv"><span>Transmitter ${o.transmitter} leads basket stress (corr, 5d)</span><b>${o.corrT.toFixed(dg)}</b></div>
    <div class="kv"><span>Loudest ${o.loudest} leads basket stress (corr, 5d)</span><b>${o.corrL.toFixed(2)}</b></div>
-   <div class="kv"><span>Transmitter's out-of-sample lead advantage</span><b style="color:${strong?'var(--green)':lead?'var(--amber)':'var(--dim)'}">${o.adv>=0?'+':''}${o.adv.toFixed(2)} (positive in ${Math.round(o.posFrac*100)}% of resamples)</b></div>
+   <div class="kv"><span>Baseline: basket's own stress persistence (corr, 5d)</span><b>${o.corrP.toFixed(dg)}</b></div>
+   <div class="kv"><span>Transmitter's rank on this test among all ${A.N} basis markets</span><b>${o.rankT} of ${A.N}</b></div>
+   <div class="kv"><span>Transmitter's lead advantage over the loudest (weak comparator)</span><b style="color:${strong?'var(--green)':lead?'var(--amber)':'var(--dim)'}">${o.adv>=0?'+':''}${o.adv.toFixed(2)} (positive in ${Math.round(o.posFrac*100)}% of resamples)</b></div>
    ${STORE[o.loudest]&&STORE[o.loudest].cls==='vol'?`<div class="small" style="margin-top:3px">Note: ${o.loudest} is a volatility index whose daily log changes dwarf every asset's, so it wins "loudest" by construction — treat this transmitter-vs-loudest comparison as a weak baseline.</div>`:''}
-   <div class="caveat" style="margin-top:7px">⚠ This is the companion paper's actual engine (Diebold–Yılmaz directed volatility spillover) made live, on the ${A.N} long-history macro names. It maps <b>where anticipation has structural leverage</b> and whether the transmitter <b>actually leads out-of-sample</b> — ${oosVerdict} It is <b>not</b> a price/return forecast or a buy/sell signal; lead is association, not causation. On non-stationary regimes the net-transmitter migrates across most rolling windows, so a single transmitter identity is a stationary-system assumption, not a fixed fact — read the stability bootstrap above.<span style="display:block;margin-top:5px;font-size:11px;color:var(--dim)">⚠ Variance spillover can distort linear Granger-causal inference (Mantalos &amp; Shukur 2010); this is a forecast-error-variance decomposition, not impulse-response causality, and a nonlinear-Granger check (Wismüller et al. 2021) is the upstream robustness alternative.</span></div>`;
+   <div class="caveat" style="margin-top:7px">⚠ This is the companion paper's actual engine (Diebold–Yılmaz directed volatility spillover) made live, on the ${A.N} long-history macro names. It maps who exports volatility spillover and tests whether that market <b>actually leads out-of-sample</b> — ${oosVerdict} It is <b>not</b> a price/return forecast or a buy/sell signal; lead is association, not causation. On non-stationary regimes the net-transmitter migrates across most rolling windows, so a single transmitter identity is a stationary-system assumption, not a fixed fact — read the stability bootstrap above.<span style="display:block;margin-top:5px;font-size:11px;color:var(--dim)">⚠ Variance spillover can distort linear Granger-causal inference (Mantalos &amp; Shukur 2010); this is a forecast-error-variance decomposition, not impulse-response causality, and a nonlinear-Granger check (Wismüller et al. 2021) is the upstream robustness alternative.</span></div>`;
 }
 
 /* ===================== plain-English readout ===================== */
 function pctOf(arr,v){if(!arr||!arr.length)return null;let c=0;for(const x of arr)if(x<=v)c++;return Math.round(100*c/arr.length);}
+// absorption percentile, like for like: today's 252-day absorption ranked in the rolling history of the same 252-day measure (needs ≥12 monthly samples, so a very early Backtest cursor shows none)
+function arPctl(){return (SYS&&SYS.ok&&SYS.rollAR252&&SYS.rollAR252.length>=12)?pctOf(SYS.rollAR252,SYS.ar):null;}
 function drawBriefing(){
   const asOf=(MODE==='backtest'&&CURSOR!=null)?CURSOR:null;
-  let mx=0,hot=null,nElev=0,cnt=0;for(const id of ASSET_IDS){const p=compAt(id,asOf);if(p<0)continue;cnt++;const f=COMP[id].F[p];if(f>=60)nElev++;if(f>mx){mx=f;hot=id;}}
+  const AI=asOfInfo();
+  // per-market readings use the date the heading prints (the cursor, or the oldest series end when stale) — the same end as the cross-asset panels
+  const rd=asOf!=null?asOf:(AI.stale?dataAsOf().lo:null);
+  let mx=0,hot=null,nElev=0,cnt=0;for(const id of ASSET_IDS){const p=compAt(id,rd);if(p<0)continue;cnt++;const f=COMP[id].F[p];if(f>=60)nElev++;if(f>mx){mx=f;hot=id;}}
   const frac=cnt?nElev/cnt:0, cp=(SYS&&SYS.ok)?pctOf(SYS.rollR,SYS.rho):0, tp=(TURB&&TURB.ok)?TURB.pct:0;
   // overall regime = SYSTEMIC (coupling + turbulence + breadth of elevated assets), not one stretched name
   let word,color;
@@ -953,31 +981,40 @@ function drawBriefing(){
   else if(tp>=60||cp>=65||frac>=0.25){word='Elevated — watch';color='var(--amber)';}
   else if(tp>=45||cp>=45||frac>=0.12){word='Slightly elevated';color='var(--green2)';}
   else {word='Calm';color='var(--green)';}
-  const AI=asOfInfo();const when=asOf!=null?('As of '+msToDateStr(dayToMs(asOf))):AI.stale?`As of ${AI.date} <span style="font-size:11px;font-weight:400;color:var(--amber)">(${AI.src} · ${AI.age} days old)</span>`:'Right now';
+  const when=asOf!=null?('As of '+msToDateStr(dayToMs(asOf))):AI.stale?`As of ${AI.date} <span style="font-size:11px;font-weight:400;color:var(--amber)">(${AI.src} · ${AI.age} days old)</span>`:'Right now';
+  // the bullets' time words match the heading: "today / right now" only when the data are fresh and no cursor is set
+  const isNow=(asOf==null&&!AI.stale);
+  const dayW=isNow?"Today's":asOf!=null?"That day's":AI.live?`The latest shared day's (${AI.date})`:`The ${AI.date} snapshot's`;
+  const nowW=isNow?'right now':asOf!=null?'as of that date':AI.live?'in the latest data':'in the latest snapshot data';
   const S=[];
-  S.push(`Across these ${ASSET_IDS.length} markets, conditions look <b style="color:${color}">${word.toLowerCase()}</b>. The most stretched is <b>${hot||'—'}</b> — its swings have been ${mx>=60?'growing larger and more persistent unusually fast':'changing at a normal pace'} for it.`);
+  S.push(`Across these ${ASSET_IDS.length} markets, conditions look <b style="color:${color}">${word.toLowerCase()}</b>. The most stretched is <b>${hot||'—'}</b>${(rd!=null&&asOf==null&&hot&&STORE[hot].vintage>rd)?` (reading on ${AI.date}, the date all ${ASSET_IDS.length} markets share; the banner shows each market's newest bar)`:''} — its swings have been ${mx>=60?'growing larger and more persistent unusually fast':'changing at a normal pace'} for it.`);
   if(SYS&&SYS.ok){const rp=pctOf(SYS.rollR,SYS.rho);
     const cw=rp>=85?'moving almost as one block':rp>=65?'moving closely together':rp>=40?'moving somewhat together':'moving fairly independently';
     S.push(`The markets are <b>${cw}</b> — their tendency to move together is higher than ${rp}% of the last several years. The more they move together, the less that spreading money across them protects you.`);}
-  if(SYS&&SYS.ok&&SYS.delta>=1.0) S.push(`The way these markets share risk is <b>reorganising right now</b> — the absorption-ratio jumped ${SYS.delta>=0?'+':''}${SYS.delta.toFixed(1)}σ above its baseline. This standardized shift is the <i>one</i> construct here with a weak tendency to lead, but it is sample-dependent, hasn't held out of sample, and reads as <b>coincident</b> regime instability — not a turn forecast.`);
+  if(SYS&&SYS.ok&&SYS.delta>=1.0) S.push(`The way these markets share risk is <b>reorganising ${nowW}</b> — the absorption-ratio jumped ${SYS.delta>=0?'+':''}${SYS.delta.toFixed(1)}σ above its baseline. This standardized shift is the <i>one</i> construct here with a weak tendency to lead, but it is sample-dependent, hasn't held out of sample, and reads as <b>coincident</b> regime instability — not a turn forecast.`);
   if(TURB&&TURB.ok){const tp=Math.round(TURB.pct);
     const tw=tp>=85?'an unusually large combined move':tp>=60?'a bigger-than-usual combined move':'an ordinary day';
-    S.push(`Today's overall move across everything is <b>${tw}</b> versus the recent past (${tp} /100).`);}
+    S.push(`${dayW} overall move across everything is <b>${tw}</b> versus the recent past (${tp} /100).`);}
   if(NETSTATE&&NETSTATE.NET&&netThin())S.push(`The lead-lag network has too little shared history at this date to say whether any market leads (it uses only days all ${ASSET_IDS.length} markets share, and crypto starts 2023-09-21).`);
   else if(NETSTATE&&NETSTATE.NET){const ids=ASSET_IDS.slice().sort((a,b)=>NETSTATE.NET[b]-NETSTATE.NET[a]);const tx=ids[0];
-    // the market tx leads most strongly (largest A(tx→j)), not merely the system's biggest net receiver
-    const rx=ASSET_IDS.filter(j=>j!==tx).reduce((best,j)=>NETSTATE.A[tx][j]>NETSTATE.A[tx][best]?j:best,ASSET_IDS.find(j=>j!==tx));
-    if(NETSTATE.ratio>0.25&&NETSTATE.NET[tx]>0) S.push(`Lately, <b>${tx}</b>'s moves have tended to come <b>before</b> others' — most of all ahead of <b>${rx}</b>. That's a recent pattern, not a cause, and it can flip.`);
-    else S.push(`No single market is clearly leading the others right now — moves are mostly simultaneous.`);}
-  if(DMAP&&DMAP._brief&&DMAP._brief.analog) S.push(`Today's overall market "shape" most resembles <b>${DMAP._brief.analog}</b> in the record — a resemblance in conditions, <b>not</b> a prediction of what happens next.`);
+    // same chance test as the network card footer (drawNetwork runs first in renderAll); directedness alone is not evidence
+    const nAll=NETSTATE._nsigAll||0,nP=NETSTATE._npairs||0,expC=0.05*nP,beyond=nAll>expC*1.2;
+    // the gate-passing market tx leads most strongly, not merely the system's biggest net receiver
+    const sigOut=ASSET_IDS.filter(j=>j!==tx&&NETSTATE.A[tx][j]>NETSTATE.thrPair[tx][j]).sort((a,b)=>NETSTATE.A[tx][b]-NETSTATE.A[tx][a]);
+    const rx=sigOut[0],mech=rx&&STORE[rx].cls==='intl'&&STORE[tx].cls!=='intl';
+    if(!beyond) S.push(`The lead-lag network finds <b>no lead-lag structure beyond chance</b> ${nowW}: ${nAll} of ${nP} directed pairs pass its significance test, ${nAll<0.8*expC?'fewer than':'about'} what chance alone would give (~${Math.round(expC)}). Treat any "leader" on the Diagnostic tab as noise, not a pattern.`);
+    else if(NETSTATE.NET[tx]>0&&rx) S.push(`Lately, <b>${tx}</b>'s moves have tended to come <b>before</b> others' — most clearly ahead of <b>${rx}</b>${mech?' (an international ETF that trades US hours, so part of that "lead" is mechanical)':''}. That's a recent pattern, not a cause, and it can flip.`);
+    else S.push(`No single market is clearly leading the others ${nowW} — moves are mostly simultaneous.`);}
+  if(DMAP&&DMAP._brief&&DMAP._brief.analog) S.push(`${dayW} overall market "shape" most resembles <b>${DMAP._brief.analog}</b> in the record — a resemblance in conditions, <b>not</b> a prediction of what happens next.`);
   if(HAWK&&HAWK.ok){const n=HAWK.fit.n;const hw=n>=0.7?'strongly clustering':n>=0.4?'starting to cluster':'mostly isolated';
-    S.push(`Large daily moves are <b>${hw}</b> right now${n>=0.7?' — which usually means aftershocks of a move already underway, not a new shock arriving':''}.`);}
-  if(ANTIC&&ANTIC.ok){const ld=ANTIC.oos&&ANTIC.oos.adv>0;
-    S.push(`To get <i>ahead</i> of trouble, the market whose stress tends to lead the others is <b>${ANTIC.transmitter}</b>${ld?", and it held a small out-of-sample lead over the loudest market":''}${ANTIC.stable===false?", though that lead is <b>unstable</b> across bootstrap resamples right now — the leadership itself is reshuffling":''}. That's where anticipation has structural leverage — still not a trade signal.`);}
+    S.push(`Large daily moves are <b>${hw}</b> ${nowW}${n>=0.7?' — which usually means aftershocks of a move already underway, not a new shock arriving':''}.`);}
+  if(ANTIC&&ANTIC.ok){const o=ANTIC.oos,same=o&&o.transmitter===ANTIC.transmitter,beat=o&&o.adv>0&&o.corrT>o.corrP&&o.posFracP>=0.9;
+    const oosTxt=!o?'':!same?` (the out-of-sample test, which picks its transmitter on the earlier 60% of the data, tested ${o.transmitter}${beat?' and found a small lead beyond the basket\'s own persistence':' and found no lead beyond ordinary volatility persistence'})`:beat?", and out of sample its stress led the basket's slightly better than the basket's own persistence (a small correlation)":o.adv>0?(o.corrT>o.corrP?` — but out of sample it only narrowly beat the basket's own volatility persistence (ahead in ${Math.round(o.posFracP*100)}% of resamples, not reliably), so it is a place to look, not a proven leader`:` — but out of sample it did not beat the basket's own volatility persistence (${o.corrT.toFixed(o.corrT.toFixed(2)===o.corrP.toFixed(2)?3:2)} vs ${o.corrP.toFixed(o.corrT.toFixed(2)===o.corrP.toFixed(2)?3:2)}), so this test cannot tell it apart from ordinary volatility clustering — a place to look, not a proven leader`):" — and out of sample it showed no lead";
+    S.push(`On the full history, the market the spillover decomposition ranks as the top net exporter of stress is <b>${ANTIC.transmitter}</b>${oosTxt}${ANTIC.stable===false?", and that ranking is <b>unstable</b> across bootstrap resamples":''}. Association, not cause — and not a trade signal.`);}
   const el=$('#briefing');if(el) el.innerHTML=
-    `<div style="font-size:16px;font-weight:700;margin-bottom:7px">${when}: <span style="color:${color}">${word}</span></div>`+
+    `<div style="font-size:16px;font-weight:700;margin-bottom:7px">${when}: <span style="color:${color}">${word}</span>${SCEN!=='none'?' <span style="font-size:11px;font-weight:800;color:var(--amber)">· DRILL — SYNTHETIC (scenario sandbox active; coupling, turbulence, Hawkes and network readings are not real data)</span>':''}</div>`+
     '<ul style="margin:0;padding-left:18px">'+S.map(s=>`<li style="margin:5px 0">${s}</li>`).join('')+'</ul>'+
-    `<div class="caveat" style="margin-top:9px;border-top:1px solid var(--bd);padding-top:8px"><b>Bottom line:</b> this describes conditions ${asOf!=null?'on that date':AI.stale?'on '+AI.date+(AI.live?' (not today — some series were not updated by the live feeds)':' (not today — live feeds did not update the snapshot)'):'today'} — it does <b>not</b> forecast a crash and is <b>not</b> advice to buy or sell. A stretched reading can persist a long time with nothing happening, and sharp drops also start from calm readings.</div>`;
+    `<div class="caveat" style="margin-top:9px;border-top:1px solid var(--bd);padding-top:8px"><b>Bottom line:</b> this describes conditions ${asOf!=null?'on that date':AI.stale?'on '+AI.date+(AI.live?' (not today — the live feeds have not brought every series up to date)':' (not today — live feeds did not update the snapshot)'):'today'} — it does <b>not</b> forecast a crash and is <b>not</b> advice to buy or sell. A stretched reading can persist a long time with nothing happening, and sharp drops also start from calm readings.</div>`;
   const rl=$('#regimeline');
   if(rl){const cp=(SYS&&SYS.ok)?pctOf(SYS.rollR,SYS.rho):null;
     const cpl=cp==null?'—':cp>=65?'high':cp>=40?'moderate':'low';
@@ -993,7 +1030,7 @@ function drawPerspectives(){const el=$('#persp');if(!el)return;
   const idxAt=id=>{const A=STORE[id];if(!A)return -1;if(asOf==null)return A.close.length-1;let p=-1;for(let i=0;i<A.dayk.length;i++){if(A.dayk[i]<=asOf)p=i;else break;}return p;};
   const mv=(id,k)=>{k=k||20;const A=STORE[id];if(!A)return 0;const p=idxAt(id);return p>k?A.close[p]/A.close[p-k]-1:0;};
   const lvlPct=id=>{const A=STORE[id];if(!A)return null;const p=idxAt(id);if(p<0)return null;const cur=A.close[p];let c=0;for(let i=0;i<=p;i++)if(A.close[i]<=cur)c++;return Math.round(100*c/(p+1));};
-  const cp=(SYS&&SYS.ok)?pctOf(SYS.rollR,SYS.rho):null, ar=(SYS&&SYS.ok)?SYS.ar:null, arp=(SYS&&SYS.ok&&SYS.rollAR&&SYS.rollAR.length)?pctOf(SYS.rollAR,SYS.ar)/100:null /* absorption vs its own history: the raw 10-mode share sits at ~76–90% on this basket, so absolute cut-offs were always on */, tp=(TURB&&TURB.ok)?Math.round(TURB.pct):null;
+  const cp=(SYS&&SYS.ok)?pctOf(SYS.rollR,SYS.rho):null, ar=(SYS&&SYS.ok)?SYS.ar:null, arp=(()=>{const q=arPctl();return q==null?null:q/100;})() /* 252-day absorption vs its own rolling 252-day history (like for like; 60-day windows run systematically higher from sampling noise); the raw 10-mode share sits at ~76–90% on this basket, so absolute cut-offs were always on */, tp=(TURB&&TURB.ok)?Math.round(TURB.pct):null;
   let mx=0,hot=null;for(const id of ASSET_IDS){const p=compAt(id,asOf);if(p<0)continue;const f=COMP[id].F[p];if(f>mx){mx=f;hot=id;}}
   if(PERSP_LENS==='aggregate'){
     let nElev=0,cnt=0;for(const id of ASSET_IDS){const pp=compAt(id,asOf);if(pp<0)continue;cnt++;if(COMP[id].F[pp]>=60)nElev++;}
@@ -1010,7 +1047,7 @@ function drawPerspectives(){const el=$('#persp');if(!el)return;
       Soros:(cp!=null&&cp>=70)?'a reflexive, one-mode tape — late-stage characterisation':'no single self-reinforcing mode dominating',
       Templeton:extreme?'near "maximum pessimism" — the regime a contrarian <i>stance</i> leans into (a stance, not a signal; nothing here says what is cheap)':'no extreme to lean against — "nothing to do"',
       Stevenson:(mv('TLT')>0.01?'duration firm — consistent with a rates-stay-low lean':'duration mixed / leaning to normalise')+`; backdrop stark (top-1% ${t1?t1.v.toFixed(0):'—'}% vs bottom-half ${b50?b50.v.toFixed(0):'—'}%, saving ${sav?sav.v.toFixed(1):'—'}%)`,
-      Livermore:(ANTIC&&ANTIC.ok&&ANTIC.totalConn>=50?'a coherent trend with a clear leader':'a loose, leaderless tape — the kind his rules sat out')+`; his sizing rule would read ${vix==null?'—':vix<40?'“add”':vix<70?'“trim”':'“minimal”'} (his rule, not advice)`,
+      Livermore:(ANTIC&&ANTIC.ok&&ANTIC.totalConn>=50?`stress spillover is high (${Math.round(ANTIC.totalConn)}%, ${ANTIC.transmitter} the net transmitter; full-history estimate) — a measure of how volatility shocks travel, not a price trend (this lens reads no trend; the Factor companion's 12−1-month trend count is descriptive, never a trigger)`:'stress spillover is loose — no single market driving the others (full-history estimate)')+'; his sizing discipline was a rule written in advance, so this card does not apply it to today\'s VIX',
       Bogle:(typeof ALPHA!=='undefined'&&ALPHA)?((ALPHA.inconclusive?'the timing edge is inconclusive net of cost':'a thin net edge')+`, vs SPY buy&hold ${ALPHA.mbh?(ALPHA.mbh.total*100>=0?'+':'')+(ALPHA.mbh.total*100).toFixed(0)+'%':''} — costs dominate`):'costs dominate any thin edge',
       Minsky:(vix!=null&&vix<45&&((cp!=null&&cp>=55)||(arp!=null&&arp>=0.7)))?'calm over building coupling — stability breeding instability':'no calm-over-coupling build-up tell now',
       Mandelbrot:'assume fat tails &amp; clustering — Gaussian risk numbers understate the tail'+(tp!=null?` (turbulence ${tp}/100)`:''),
@@ -1032,11 +1069,17 @@ function drawPerspectives(){const el=$('#persp');if(!el)return;
   const sent=[];let quote='',caveat='',who='';
   if(PERSP_LENS==='burry'){who='Michael Burry';
     const vix=lvlPct('VIX');
-    if(vix!=null&&vix<40&&((cp!=null&&cp>=65)||(arp!=null&&arp>=0.8))) sent.push(`A quiet tape (VIX in its lower ${ord(vix)} percentile) sits on top of ${cp!=null?`high systemic coupling (${ord(cp)} pct)`:'tight coupling'} and a ${ar!=null?Math.round(ar*100):'—'}% absorption ratio (high for its own history) — the surface-calm-over-latent-crowding configuration a margin-of-safety reader distrusts. Described, not a reason to act.`);
+    if(vix!=null&&vix<40&&((cp!=null&&cp>=65)||(arp!=null&&arp>=0.8))){
+      // each clause states only what holds: the sentence fires on EITHER coupling or absorption
+      const cHi=cp!=null&&cp>=65,aHi=arp!=null&&arp>=0.8,ap=arp!=null?Math.round(arp*100):null;
+      const cTxt=cp==null?'coupling (not available)':cHi?`high systemic coupling (${ord(cp)} pct)`:`systemic coupling at the ${ord(cp)} pct (not elevated)`;
+      const aTxt=`a ${ar!=null?Math.round(ar*100):'—'}% absorption ratio`+(aHi?` (high for its own history, ${ord(ap)} pct)`:ap!=null?` (${ord(ap)} pct of its own history, not elevated)`:'');
+      sent.push(`A quiet tape (VIX in its lower ${ord(vix)} percentile) sits on top of ${cTxt} and ${aTxt} — the surface-calm-over-latent-crowding configuration a margin-of-safety reader distrusts. Described, not a reason to act.`);
+    }
     else if(vix!=null&&vix<40&&cp!=null&&cp<45) sent.push(`Both VIX (${ord(vix)} pct) and coupling (${ord(cp)} pct) are subdued — in this frame that reads as genuinely benign breadth, not hidden crowding.`);
     else sent.push(`VIX is not the quiet part of the picture right now${vix!=null?` (${ord(vix)} pct)`:''}, so the calm-over-crowding mismatch this lens looks for is not today's dominant feature.`);
-    const w=arp==null?'—':arp>=0.95?'almost one trade':arp>=0.8?'increasingly one trade':'reasonably diversified';
-    sent.push(`Cross-asset variance is <b>${w}</b>${ar!=null?` (absorption ${Math.round(ar*100)}%)`:''}; the more the basket loads on one mode, the narrower the exit if everyone moves at once.`);
+    const w=arp==null?null:arp>=0.95?'almost one trade':arp>=0.8?'increasingly one trade':'reasonably diversified';
+    sent.push(w!=null?`Cross-asset variance is <b>${w}</b>${ar!=null?` (absorption ${Math.round(ar*100)}%)`:''}; the more the basket loads on one mode, the narrower the exit if everyone moves at once.`:`Cross-asset variance: absorption ${ar!=null?Math.round(ar*100)+'%':'not available'} — too little 252-day history at this date to rank it against its own past; the more the basket loads on one mode, the narrower the exit if everyone moves at once.`);
     if(mx>=60) sent.push(`Fragility rising fastest versus its own history: <b>${hot}</b> (${mx.toFixed(0)}/100) — in this frame a reason for margin of safety in the abstract; a description, neither an exit nor an entry cue.`);
     if(mv('GLD')>0.01&&mv('TLT')<0) sent.push(`Gold (GLD) firm while long Treasuries (TLT) soften reads as a seek-real-assets texture here — though the console has no farmland or water proxy, so that is only partly observable.`);
     quote=`<div style="font-style:italic;color:var(--dim);font-size:11.5px;margin-top:5px">“The theatre keeps getting more crowded, but the exit door is the same as it always was.” — M. Burry, 2019 (a documented quote on crowding &amp; illiquidity; shown for posture, not as a comment on today)</div>`;
@@ -1046,11 +1089,15 @@ function drawPerspectives(){const el=$('#persp');if(!el)return;
     if(tlt>0.01) sent.push(`Long Treasuries (TLT) are leaning firm and long yields easing — consistent with (never proof of) a rates-stay-low, weak-demand regime in this frame.`);
     else if(tlt<-0.01) sent.push(`Long Treasuries (TLT) are soft with long rates pushing higher — the rates-normalize configuration, which cuts <b>against</b> this lens rather than confirming it.`);
     else sent.push(`The duration tape (TLT) is mixed — no clean rates-stay-low versus rates-normalize lean right now.`);
-    const stress=(cp!=null&&cp>=60)||(tp!=null&&tp>=60)||(hy<ig-0.005);
-    if(eqs>0&&stress) sent.push(`Equities are firm while coupling, turbulence, or credit signal stress — the asset-strength-amid-macro-stress pattern this lens reads as inequality-driven. The distributional backdrop his thesis points to is now shown below (top-1% vs bottom-50% wealth, income, saving) — though prices alone still cannot confirm an inequality <i>cause</i>.`);
+    const hyO=macroAt('BAMLH0A0HYM2',asOf);
+    // credit stress = high yield actually falling and lagging IG, or the HY spread past the Forward-macro "stress building" line; a pure relative-return gap in a rates rally is duration, not credit stress
+    const credStress=(hy<0&&hy<ig-0.005)||(hyO!=null&&hyO.v>4.5);
+    const why=[];if(cp!=null&&cp>=60)why.push(`coupling (${ord(cp)} pct)`);if(tp!=null&&tp>=60)why.push(`turbulence (${tp}/100)`);if(credStress)why.push(hyO!=null&&hyO.v>4.5?`credit (HY spread ${hyO.v.toFixed(2)}%)`:`credit (high-yield ${(hy*100).toFixed(1)}% vs IG ${(ig*100).toFixed(1)}% over 20 days)`);
+    const stress=why.length>0;
+    if(eqs>0&&stress) sent.push(`Equities are firm while ${why.join(', ')} signal${why.length>1?'':'s'} stress — the asset-strength-amid-macro-stress pattern this lens reads as inequality-driven. The distributional backdrop his thesis points to is now shown below (top-1% vs bottom-50% wealth, income, saving) — though prices alone still cannot confirm an inequality <i>cause</i>.`);
     else sent.push(`Equity strength and the macro-stress signals are roughly aligned here, so the divergence this lens keys on is not present.`);
     if(gld>0.01&&tlt>0) sent.push(`Gold firm with long rates easing is the coherent low-real-rate, store-of-value configuration in this frame.`);
-    if(hy>=ig-0.005&&(cp==null||cp<60)) sent.push(`High-yield and investment-grade credit look calm together — in this lens, calm credit is when fragility is said to quietly build; shown as context, not a credit call.`);
+    if(!credStress&&(cp==null||cp<60)) sent.push(`High-yield and investment-grade credit look calm together — in this lens, calm credit is when fragility is said to quietly build; shown as context, not a credit call.`);
     const t1=macroAt('WFRBST01134',asOf),b50=macroAt('WFRBSB50215',asOf),incM=macroAt('MEHOINUSA672N',asOf),savM=macroAt('PSAVERT',asOf),incD=macroDelta('MEHOINUSA672N',10,asOf);
     if(t1&&b50) sent.push(`On the actual numbers (Structural backdrop): the top 1% hold <b>${t1.v.toFixed(1)}%</b> of net worth to the bottom half's <b>${b50.v.toFixed(1)}%</b>${incM&&incD!=null?`, real median income ${incD>=0?'+':''}${incD.toFixed(0)}% over a decade`:''}${savM?`, saving rate ${savM.v.toFixed(1)}%`:''} — facts consistent with his frame, shown as context.`);
     caveat=`<b>Now partly grounded:</b> the wealth-share, income, saving and labor-share data his argument rests on are shown in the Structural backdrop panel below — but they are quarterly/annual, lagged, and US-centric, and they document the distribution without proving it drives asset prices or rates (correlation, not the causal mechanism). <b>Contested:</b> his "most profitable Citi trader" claim is disputed by former colleagues (via the FT) and some recent specific calls have not materialised; treat as one contested lens among several (savings-glut, demographics, policy).`;
@@ -1058,7 +1105,7 @@ function drawPerspectives(){const el=$('#persp');if(!el)return;
   else if(PERSP_LENS==='soros'){who='George Soros';
     if(cp!=null&&cp>=70) sent.push(`Coupling is high (${ord(cp)} pct) — correlations collapsing toward one mode is the fingerprint of a self-reinforcing, reflexive trend where price and belief feed each other. Late-stage characterisation, not a timing call.`);
     else sent.push(`Coupling is moderate${cp==null?'':` (${ord(cp)} pct)`} — no single self-reinforcing mode dominating, so the reflexive late-trend fingerprint is not the feature right now.`);
-    if(ANTIC&&ANTIC.ok) sent.push(`One market (<b>${ANTIC.transmitter}</b>) is driving the system${ANTIC.stable?'':' — and its lead is unstable across resamples: a shifting structure, described, not a turn foretold'}.`);
+    if(ANTIC&&ANTIC.ok) sent.push(`<b>${ANTIC.transmitter}</b> is the top net transmitter of volatility spillover on the full history (association, not causation)${ANTIC.stable?'':' — and that ranking is unstable across resamples: a shifting structure, described, not a turn foretold'}.`);
     sent.push(`Reflexivity's sharp edge for <i>you</i>: any thin statistical advantage here is perishable — if it is real, capital crowds in and arbitrages it toward zero (see the Alpha Lab's net-of-cost line).`);
     caveat=`This reads the <i>regime</i>, not the flawed-belief or the asymmetric bet that were Soros's actual edge — those are judgment the console cannot supply. Reflexivity also means observing or acting on a signal can change it.`;
   }
@@ -1071,9 +1118,9 @@ function drawPerspectives(){const el=$('#persp');if(!el)return;
   }
   else if(PERSP_LENS==='livermore'){who='Jesse Livermore';
     const vix=lvlPct('VIX');
-    if(ANTIC&&ANTIC.ok&&ANTIC.totalConn>=50) sent.push(`The directed structure is coherent (spillover ${Math.round(ANTIC.totalConn)}%, <b>${ANTIC.transmitter}</b> leading) — a trend with a clear driver is the tape this lens trades <i>with</i>, not against.`);
-    else sent.push(`The directed structure is loose right now — no clean trend-with-a-leader to align with; this lens's discipline was to sit out tapes like this.`);
-    if(vix!=null) sent.push(`His position-sizing rule (described, not recommended) would read stress as ${vix<40?'benign — the only condition his rule allowed adding size in':vix<70?'elevated — his rule trims rather than presses':'high — his rule goes to smallest size or flat'} (VIX ${ord(vix)} pct; basket fragility peak ${mx.toFixed(0)}/100).`);
+    if(ANTIC&&ANTIC.ok&&ANTIC.totalConn>=50) sent.push(`Stress spillover is high (total connectedness ${Math.round(ANTIC.totalConn)}%, full-history estimate), with <b>${ANTIC.transmitter}</b> the net transmitter. That describes how volatility shocks travel between markets. It is not a price trend: this lens reads no trend, and a trend is what his method followed. The Factor companion on the Predictive tab counts 12−1-month uptrends descriptively, and that count is never an entry trigger either.`);
+    else sent.push(`Stress spillover is loose (full-history estimate): no single market is driving the others' volatility. This lens reads no price trend either way (the Factor companion's 12−1-month trend count is a separate, descriptive reading, never a trigger).`);
+    sent.push(`His discipline (described, not recommended): position size was set by rules written <i>before</i> the trade and cut when the market proved him wrong. On this console the only equivalent is the down-only comfort band you set on the Risk tab. No gauge here is mapped to a size${vix!=null?` (VIX: ${ord(vix)} pct of its own history; basket fragility peak ${mx.toFixed(0)}/100)`:''}.`);
     caveat=`The cautionary half is the point: Livermore knew these rules, traded a real edge, and still went bankrupt repeatedly. Risk control and survival — not the signal — decide the outcome; this is a sizing discipline, never an entry trigger.`;
   }
   else if(PERSP_LENS==='bogle'){who='John Bogle';
@@ -1089,7 +1136,10 @@ function drawPerspectives(){const el=$('#persp');if(!el)return;
     else sent.push(`The calm-over-building-coupling tell is not dominant now${vix!=null?` (VIX ${ord(vix)} pct)`:''} — in this frame the quietly-fragile phase is when low stress and high coupling coincide.`);
     const hy=mv('HYG'),ig=mv('LQD');
     if(Math.abs(hy-ig)<0.005&&(tp==null||tp<55)) sent.push(`Credit looks calm (high-yield and investment-grade moving together) — in Minsky's frame, placid credit is precisely when hedge financing quietly tips toward speculative and Ponzi financing.`);
-    if(typeof NETSTRUCT!=='undefined'&&NETSTRUCT) sent.push(`And the plumbing is loaded: a single shock would currently reach <b>${Math.round(100*NETSTRUCT.ampl)}%</b> of the system (${NETSTRUCT.ampl>=0.4?'an amplifier':'a milder'} topology) — fragility built up under the calm.`);
+    if(netThin()) sent.push(`The lead-lag network has too little shared history at this date to say how far a shock would travel (it uses only days all ${ASSET_IDS.length} markets share, and crypto starts 2023-09-21).`);
+    else if(typeof NETSTRUCT!=='undefined'&&NETSTRUCT&&!((NETSTATE._nsigAll||0)>0.05*(NETSTATE._npairs||0)*1.2)) sent.push(`The lead-lag network finds no lead-lag structure beyond chance at this date (${NETSTATE._nsigAll||0} of ${NETSTATE._npairs||0} directed pairs pass its significance test; ~${Math.round(0.05*(NETSTATE._npairs||0))} would by chance alone), so its shock-reach figure (${Math.round(100*NETSTRUCT.ampl)}% on the ungated estimate) describes noise, not amplification, and this frame reads nothing from it.`);
+    else if(typeof NETSTRUCT!=='undefined'&&NETSTRUCT){const aw=NETSTRUCT.ampl>=0.4?'an amplifier':NETSTRUCT.ampl>=0.2?'a mild-amplifier':'a suppressor',rch=`on the estimated (ungated) lead-lag network a single shock would reach <b>${Math.round(100*NETSTRUCT.ampl)}%</b> of the system (${aw} topology)`;
+      sent.push(calm?`And ${rch} — in this frame, wide reach under a calm tape is the kind of coupling that builds up unnoticed (a description of the estimate, not a measured leverage build-up).`:`For reference, ${rch}. With the calm tell above not firing, this frame reads it as standing structure, not a build-up under calm.`);}
     caveat=`The Minsky <i>moment</i> is famously un-timeable — this reads the slow BUILD-UP (calm + coupling + placid credit), never the ignition. And it infers fragility from price coupling, not the balance-sheet leverage data his hypothesis is actually about (not on this console).`;
   }
   else if(PERSP_LENS==='mandelbrot'){who='Benoît Mandelbrot';
@@ -1101,17 +1151,17 @@ function drawPerspectives(){const el=$('#persp');if(!el)return;
   }
   else if(PERSP_LENS==='thorp'){who='Edward Thorp';
     const v5=(typeof VOLLAB!=='undefined'&&VOLLAB)?VOLLAB.vol5:null,d5=(typeof VOLLAB!=='undefined'&&VOLLAB)?VOLLAB.dir5R2:null;
-    sent.push(`The systematic verdict: there is <b>no edge in calling direction</b> here (forward-direction R²${d5!=null?'='+d5.toFixed(2):'≈0'}, the vol lab) — the only mathematically honest edge is in <b>sizing and risk control</b>. Volatility <i>is</i> forecastable${v5!=null?` (R²≈${v5.toFixed(2)})`:''}, so in Thorp's frame bet <i>size</i>, not bet direction, is where the math earns its keep — a principle for rules you set in advance, not a reading to act on.`);
-    if(typeof META!=='undefined'&&META&&META.reg) sent.push(`In his frame the vol forecast deserves more weight in stress than calm (${META.reg.map(g=>g.name.toLowerCase()+' '+g.volR2.toFixed(2)).join(' → ')}) — a note for how you design sizing rules, not an instruction to resize now.`);
+    sent.push(`The systematic verdict: there is <b>no edge in calling direction</b> here (forward-direction R²${d5!=null?'='+d5.toFixed(2):'≈0'}, the vol lab) — the only mathematically honest edge is in <b>sizing and risk control</b>. Volatility <i>is</i> forecastable${v5!=null?` (R²≈${v5.toFixed(2)})`:''}, so in Thorp's frame bet <i>size</i>, not bet direction, is where the math earns its keep — a principle, not a reading to act on. On this console the only sizing mechanism is your own pre-set, down-only band on SPY's trailing 20-day volatility, and this forecast is not wired to it.`);
+    if(typeof META!=='undefined'&&META&&META.reg) sent.push(`The meta layer shows how reliable the vol forecast is in each 20-day-vol tercile (R² ${META.reg.map(g=>g.name.toLowerCase()+' '+g.volR2.toFixed(2)).join(' → ')}) — a description of forecast reliability, not an input to exposure and not an instruction to resize.`);
     sent.push(`And treat every apparent edge as guilty until proven innocent (the Alpha Lab's Deflated Sharpe / PBO): a Kelly bettor who over-sizes a phantom edge goes broke fastest.`);
     caveat=`Thorp's real edges — blackjack card-counting, convertible-arbitrage mispricing — were genuine <b>information/structural</b> advantages, none of which this console has. The transferable lesson is purely the discipline: size by edge-over-variance, control risk, survive. A method for <i>betting well</i>, not a claim there is a bet here.`;
   }
   else if(PERSP_LENS==='dalio'){who='Ray Dalio';
     const pr=(typeof FACTORS!=='undefined'&&FACTORS)?FACTORS.PR:null,big=(typeof FACTORS!=='undefined'&&FACTORS&&FACTORS.clusters[0])?FACTORS.clusters[0]:null;
-    sent.push(`All-weather view: real diversification is across independent <b>risk factors</b>, not the count of names or nominal classes.${pr!=null?` The factor panel shows these ${ASSET_IDS.length} markets collapse to only ~<b>${pr.toFixed(1)} effective factors</b>`:''} — a book spread across dozens of tickers but loaded on one factor is <b>not</b> diversified.`);
-    if(big) sent.push(`The dominant basket — <b>${big.label}</b> — holds ${big.size} of the markets here; concentration in it is the diversification illusion this lens exists to expose.`);
+    sent.push(`All-weather view: real diversification is across independent <b>risk factors</b>, not the count of names or nominal classes.${pr!=null?` The factor panel shows the ${FACTORS.N} non-crypto markets here collapse to only ~<b>${pr.toFixed(1)} effective factors</b>, averaged over every day they share (${FACTORS.nDates} days, about ten years, crises included)`:''} — a book spread across dozens of tickers but loaded on one factor is <b>not</b> diversified.`);
+    if(big) sent.push(`The dominant basket — <b>${big.label}</b> — holds ${big.size} of those ${FACTORS.N} markets; concentration in it is the diversification illusion this lens exists to expose.`);
     sent.push(`Balance is by risk <i>contribution</i>, not dollars: assets that look distinct (equities, high-yield, EM) can be one bet, while a small slug of a genuinely orthogonal factor (duration, gold, dollar) carries more of the real diversification.`);
-    caveat=`Risk parity needs forward volatility/correlation estimates and leverage to equalise risk — none of which this console supplies. It reads the <b>current</b> factor structure descriptively (what is and isn't independent now), not an allocation; and correlations rewire in a crisis, exactly when the balance is needed.`;
+    caveat=`Risk parity needs forward volatility/correlation estimates and leverage to equalise risk — none of which this console supplies. It describes the factor structure <b>averaged over the whole shared history</b> (what has and hasn't moved independently), not today's structure and not an allocation; and correlations rewire in a crisis, exactly when the balance is needed.`;
   }
   const footer=`<div class="caveat" style="margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">${caveat}<br><span style="color:var(--dim)">Crowding (coupling/absorption) measures how-much-together; the transmitter measures who-leads — orthogonal, so a crowded tape can still have no clear leader. In the spirit of ${who}'s publicly documented thesis — <b>not</b> their words, endorsement, or advice; ${who} has no connection to this console. Descriptive and coincident, not a forecast.</span></div>`;
   const fundNote=`<div class="caveat" style="color:var(--dim);margin-top:6px;border-top:1px dashed var(--bd);padding-top:6px"><b>Not on this console:</b> Graham, Buffett, T. Rowe Price, Lynch, Neff and Icahn earned their names on valuation, business quality, growth runway, and multi-year (or activist) holding — none of which a risk console measures. The one transferable echo is temperament: Graham's "Mr. Market" and Buffett's "fearful when others are greedy" — high turbulence / VIX / fragility marks the crowd's <i>fear</i>, never a value verdict.</div>`;
@@ -1159,12 +1209,12 @@ function runBacktest(p){if(!ALPHA_DATA)computeAlphaData();const {d,legRet,corr,T
     for(let t=t0;t<t1;t++){if(d[t]==null){daily.push(0);grossD.push(0);continue;}
       const regimeOK=(p.stance==='contrarian')?true:(corr[t]<=0.2);
       if(!inT){if(d[t]>tau&&regimeOK){inT=true;held=0;trades++;daily.push(-gross*p.costBps/1e4*p.size);grossD.push(0);}else{daily.push(0);grossD.push(0);}}
-      else{let r=0;for(const L of legs)r+=Wt[L]*(legRet[L][t]||0);r*=p.size;held++;const ex=(held>=p.horizon)||(d[t]<tau*0.8)||(p.stance!=='contrarian'&&corr[t]>0.2);let c=0;if(ex){inT=false;c=gross*p.costBps/1e4*p.size;}daily.push(r-c);grossD.push(r);}}
+      else{let r=0;for(const L of legs)r+=Wt[L]*Math.expm1(legRet[L][t]||0);r*=p.size;held++; /* legRet holds log returns; a portfolio day is the weighted SIMPLE return */const ex=(held>=p.horizon)||(d[t]<tau*0.8)||(p.stance!=='contrarian'&&corr[t]>0.2);let c=0;if(ex){inT=false;c=gross*p.costBps/1e4*p.size;}daily.push(r-c);grossD.push(r);}}
     return {daily,grossD,trades};}
   function met(a){const m=mean(a),sd=std(a),sh=sd>0?m/sd*Math.sqrt(252):0;let eq=1,pk=1,mdd=0;const c=[];for(const x of a){eq*=(1+x);c.push(eq);pk=Math.max(pk,eq);mdd=Math.min(mdd,eq/pk-1);}return {sharpe:sh,total:eq-1,mdd,curve:c};}
   const t0=p.walkforward?split:valid[0];
   const test=sim(t0,T),train=sim(valid[0],split),mt=met(test.daily),mtr=met(train.daily),mg=met(test.grossD);
-  const bh=[];for(let t=t0;t<T;t++)bh.push(legRet['SPY'][t]||0);const mbh=met(bh);
+  const bh=[];for(let t=t0;t<T;t++)bh.push(Math.expm1(legRet['SPY'][t]||0));const mbh=met(bh); /* met() compounds simple returns */
   const act=test.daily.filter(x=>x!==0),winRate=act.length?act.filter(x=>x>0).length/act.length:0;
   const costPct=mg.total>1e-6?(1-mt.total/mg.total)*100:null;
   ALPHA={p,tau,mt,mtr,mbh,mg,winRate,trades:test.trades,trainTrades:train.trades,costPct,inconclusive:(mt.sharpe<0.1||mt.total<=0||test.trades<20),overfit:(mtr.sharpe-mt.sharpe>0.5)};}
@@ -1213,10 +1263,10 @@ function simConfig(stance,tauPct,costBps,horizon,size){const {d,legRet,corr,T}=A
   const legs=Object.keys(Wt),gross=legs.reduce((s,L)=>s+Math.abs(Wt[L]),0);const daily=[];let inT=false,held=0;
   for(let t=valid[0];t<T;t++){if(d[t]==null){daily.push(0);continue;}const rOK=(stance==='contrarian')?true:(corr[t]<=0.2);
     if(!inT){if(d[t]>tau&&rOK){inT=true;held=0;daily.push(-gross*costBps/1e4*size);}else daily.push(0);}
-    else{let r=0;for(const L of legs)r+=Wt[L]*(legRet[L][t]||0);r*=size;held++;const ex=(held>=horizon)||(d[t]<tau*0.8)||(stance!=='contrarian'&&corr[t]>0.2);let c=0;if(ex){inT=false;c=gross*costBps/1e4*size;}daily.push(r-c);}}
+    else{let r=0;for(const L of legs)r+=Wt[L]*Math.expm1(legRet[L][t]||0);r*=size; /* legRet holds log returns: same weighted SIMPLE return as the backtest above */held++;const ex=(held>=horizon)||(d[t]<tau*0.8)||(stance!=='contrarian'&&corr[t]>0.2);let c=0;if(ex){inT=false;c=gross*costBps/1e4*size;}daily.push(r-c);}}
   return daily;}
 function computeValidation(p){if(!ALPHA_DATA)computeAlphaData();const stances=['riskoff','contrarian','spread'],taus=[50,60,70,80,90];
-  // score the grid point nearest your slider (contrarian always runs at τ=90); an off-grid τ used to fall back silently to risk-off @ τ50
+  // score the grid point nearest your slider (contrarian is always scored at τ=90; the sweep still includes it at every τ); an off-grid τ used to fall back silently to risk-off @ τ50
   const tSel=p.stance==='contrarian'?90:taus.reduce((a,b)=>Math.abs(b-p.tauPct)<Math.abs(a-p.tauPct)?b:a);
   const M=[],srs=[];let cur=0;for(const st of stances)for(const tt of taus){const dl=simConfig(st,tt,p.costBps,p.horizon,p.size);M.push(dl);const m=mean(dl),sd=std(dl);srs.push(sd>0?m/sd:0);if(st===p.stance&&tt===tSel)cur=M.length-1;}
   const N=M.length,sr0=expectedMaxSR(variance(srs),N),sk=skewKurt(M[cur]),dsr=psr(srs[cur],sr0,M[cur].length,sk.skew,sk.kurt+3);
@@ -1239,7 +1289,7 @@ function computeVolLab(){if(!ALPHA_DATA)computeAlphaData();const {d,legRet,corr,
   const vmap=new Map();{const A=STORE['VIX'];if(A)for(let i=0;i<A.dayk.length;i++)vmap.set(A.dayk[i],A.close[i]);}const vix=dates.map(dk=>vmap.has(dk)?vmap.get(dk):0);
   const Fb=[],Ff=[],yv=[],yv5=[],ydd=[],ydir=[],ydir5=[],persist=[];
   for(let t=40;t<T-H;t++){if(d[t]==null)continue;const pw=spy.slice(t-20,t),rv=Math.sqrt(252*variance(pw));const fw=spy.slice(t+1,t+1+H);
-    let cum=1,mn=1;for(const r of fw){cum*=(1+r);mn=Math.min(mn,cum);}
+    let cum=1,mn=1;for(const r of fw){cum*=(1+Math.expm1(r));mn=Math.min(mn,cum);} /* fw holds log returns */
     Fb.push([1,rv,d[t],corr[t]]);Ff.push([1,rv,d[t],corr[t],curve[t],hyoas[t],nfci[t],vix[t],realr[t]]);
     yv.push(Math.sqrt(252*variance(fw)));yv5.push(Math.sqrt(252*variance(spy.slice(t+1,t+1+5))));ydd.push(mn-1);ydir.push(fw.reduce((a,b)=>a+b,0));ydir5.push(spy.slice(t+1,t+1+5).reduce((a,b)=>a+b,0));persist.push(rv);}
   const n=yv.length;if(n<150){VOLLAB=null;return;}const K=5,lam=1.0;
@@ -1258,7 +1308,7 @@ function drawVolLab(){const el=$('#vl-body');if(!el)return;if(!VOLLAB){el.innerH
    <div class="kv" style="border-top:1px dashed var(--bd);padding-top:3px"><span>Forward <b>direction</b> (cumulative return) — <b>control</b>, same features</span><b style="color:var(--dim)">5d R²=${V.dir5R2.toFixed(2)} · 20d R²=${V.dirR2.toFixed(2)} (≤0 = no signal)</b></div>
    <div class="kv"><span>— <b>+ forward-macro</b> (curve · HY spread · conditions · VIX · real rate)</span><b style="color:${col(V.volFull)}">R²=${V.volFull.toFixed(2)} <span style="color:${lift>=0?'var(--green2)':'var(--red)'}">${lift>=0?'▲':'▼'}${Math.abs(lift).toFixed(2)}</span></b></div>
    <div class="kv"><span>— baseline: today's volatility alone (persistence)</span><b>R²=${V.baseR2.toFixed(2)}</b></div>
-   <div class="caveat" style="margin-top:6px">Out-of-sample, purged + embargoed 5-fold CV. Short-horizon forward <b>volatility</b> is genuinely learnable — at a <b>5-day</b> horizon (R²≈${V.vol5.toFixed(2)}) as well as 20-day (≈${V.volBase.toFixed(2)}) — from simple price-state features. The 5-day reads <i>higher</i> than the 20-day because volatility clustering is strongest at short lags (more autocorrelated near-term) — it does <b>not</b> mean the model is "more predictive": forward <b>direction</b> is flat (~0) at <i>both</i> horizons. Adding the "best free" forward-content macro data (yield curve, HY spread, financial conditions) <b>did not improve it — it slightly degraded</b> the out-of-sample fit. That is the lesson, on your own data: <b>more/better data ≠ better prediction</b> — slow, correlated features add parameters that overfit even under regularization (the "shallow wins" result). Those macro series carry real signal, but at the <b>recession / regime horizon (months)</b> — read it in the Forward-macro panel below — not inside a 20-day model. Forward <b>direction</b> stays ~0. Short-horizon prediction is only good for <i>risk</i> context (and only inside sizing rules you set in advance — never as a reason to trade); read macro at its own horizon.</div>`;}
+   <div class="caveat" style="margin-top:6px">Out-of-sample, purged + embargoed 5-fold CV. Short-horizon forward <b>volatility</b> is genuinely learnable — at a <b>5-day</b> horizon (R²≈${V.vol5.toFixed(2)}) as well as 20-day (≈${V.volBase.toFixed(2)}) — from simple price-state features. The 5-day reads <i>higher</i> than the 20-day because volatility clustering is strongest at short lags (more autocorrelated near-term) — it does <b>not</b> mean the model is "more predictive": forward <b>direction</b> is flat (~0) at <i>both</i> horizons. Adding the "best free" forward-content macro data (yield curve, HY spread, financial conditions) <b>did not improve it — it slightly degraded</b> the out-of-sample fit. That is the lesson, on your own data: <b>more/better data ≠ better prediction</b> — slow, correlated features add parameters that overfit even under regularization (the "shallow wins" result). Those macro series carry real signal, but at the <b>recession / regime horizon (months)</b> — read it in the Forward-macro panel below — not inside a 20-day model. Forward <b>direction</b> stays ~0. Short-horizon prediction is only good for <i>risk</i> context — never a reason to trade, hedge or resize. This ridge model is not wired to the Risk tab's sizing dial; the dial applies only your own pre-set, down-only band to SPY's trailing 20-day volatility. Read macro at its own horizon.</div>`;}
 
 function drawForwardMacro(){const el=$('#fmacro');if(!el)return;const asOf=(MODE==='backtest'&&CURSOR!=null)?CURSOR:null;
   const rows=[['RECPROUSM156N','Recession probability (Chauvet–Piger nowcast)'],['T10Y2Y','Yield curve: 10y − 2y'],['T10Y3M','Yield curve: 10y − 3mo'],['BAMLH0A0HYM2','High-yield credit spread (OAS)'],['NFCI','Financial conditions (>0 = tight)'],['ICSA','Initial jobless claims'],['UNRATE','Unemployment rate']];
@@ -1286,7 +1336,7 @@ function computeCrisisReplay(){
   const cal=STORE['SPY'].dayk.filter(dk=>dk>=d0&&dk<=d1);
   const cov={};for(const [k] of CR_SLEEVES){let c=0;for(const dk of cal)if(retmap[k].has(dk))c++;cov[k]=cal.length?c/cal.length:0;}
   function portCurve(weights){let eq=1;const curve=[1];const rets=[];
-    for(const dk of cal){let num=0,den=0;for(const [k] of CR_SLEEVES){const wk=weights[k]||0;if(wk<=0)continue;const r=retmap[k].get(dk);if(r==null){continue;}num+=wk*r;den+=wk;}
+    for(const dk of cal){let num=0,den=0;for(const [k] of CR_SLEEVES){const wk=weights[k]||0;if(wk<=0)continue;const r=retmap[k].get(dk);if(r==null){continue;}num+=wk*Math.expm1(r);den+=wk;} /* A.ret is a log return; the daily-rebalanced mix earns the weighted SIMPLE return */
       const pr=den>0?num/den:0;eq*=(1+pr);curve.push(eq);rets.push(pr);}
     return {curve,rets};}
   const wYou={};for(const [k] of CR_SLEEVES)wYou[k]=raw[k]/tot;
@@ -1333,7 +1383,14 @@ function drawOvernight(){const el=$('#on-body');if(!el||!ONIGHT)return;const O=O
   const pct=x=>(x>=0?'+':'')+(100*x).toFixed(1)+'%';const intraNeg=S.annIN<0;
   const svg=crCurveSVG([{curve:S.cON,col:'var(--teal)'},{curve:S.cIN,col:'var(--red)'},{curve:S.cBH,col:'var(--blue)'}],440,120);
   $('#on-curve').innerHTML=svg+`<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:10.5px;color:var(--dim);margin:2px 0 8px"><span style="color:var(--teal)">▬ overnight only (close→open)</span><span style="color:var(--red)">▬ intraday only (open→close)</span><span style="color:var(--blue)">▬ buy &amp; hold</span></div>`;
-  const shareTxt=intraNeg?`<b>All</b> of the buy-and-hold return came <b>overnight</b> — holding only during the trading day actually <b>lost</b> money.`:`<b>${Math.round(100*S.shareON)}%</b> of the buy-and-hold return accrued <b>overnight</b> (close→open).`;
+  // buy & hold compounds the two halves exactly, so its sign decides whether a "share of the return" makes sense at all
+  const shareTxt=S.annBH<0
+    ?(S.annON<0&&S.annIN<0
+      ?`Buy-and-hold <b>lost</b> money, and <b>both</b> halves lost: overnight ${pct(S.annON)}/yr, intraday ${pct(S.annIN)}/yr.`
+      :S.annON<0
+        ?`Buy-and-hold <b>lost</b> money, and the loss came <b>overnight</b> (${pct(S.annON)}/yr close→open). Holding only during the trading day actually <b>gained</b> (${pct(S.annIN)}/yr), the reverse of the equity split.`
+        :`Buy-and-hold <b>lost</b> money, and the loss came <b>intraday</b> (${pct(S.annIN)}/yr open→close). The overnight half actually <b>gained</b> (${pct(S.annON)}/yr).`)
+    :intraNeg?`<b>All</b> of the buy-and-hold return came <b>overnight</b> — holding only during the trading day actually <b>lost</b> money.`:`<b>${Math.round(100*S.shareON)}%</b> of the buy-and-hold return accrued <b>overnight</b> (close→open).`;
   el.innerHTML=`<div style="font-weight:700;margin:2px 0 6px">${O.id} · ${ON_NAME[O.id]} · ${O.win==='recent'?'last ~3 years':'full history (2016–2026)'}</div>
    <table style="width:100%;font-size:12px;border-collapse:collapse">
      <tr style="color:var(--dim)"><td></td><td style="text-align:right;color:var(--teal)">Overnight</td><td style="text-align:right;color:var(--red)">Intraday</td><td style="text-align:right;color:var(--blue)">Buy &amp; hold</td></tr>
@@ -1389,35 +1446,38 @@ const PREMIA_SLEEVES=[
  {k:'useq',nm:'US equity',    tk:'SPY',yld:1.4,tot:7.0},
  {k:'intl',nm:'International', tk:'EFA',yld:3.2,tot:6.5},
  {k:'gold',nm:'Gold / real',  tk:'GLD',yld:0.0,tot:3.8}];
-function premiaDrawdown(w){
-  const d0=crDay('2020-02-19'),d1=crDay('2020-04-30');
+// a window [a,b] (ISO dates), or the whole embedded history when omitted; returns the max drawdown with its peak and trough days
+function premiaDrawdown(w,a,b){
+  const d0=a?crDay(a):-Infinity,d1=b?crDay(b):Infinity;
   const cal=STORE['SPY'].dayk.filter(dk=>dk>=d0&&dk<=d1);
   const rm={};for(const s of PREMIA_SLEEVES){const A=STORE[s.tk];const m=new Map();if(A)for(let i=1;i<A.dayk.length;i++)m.set(A.dayk[i],A.ret[i]);rm[s.k]=m;}
-  let eq=1,peak=1,mdd=0;const curve=[1];
-  for(const dk of cal){let num=0,den=0;for(const s of PREMIA_SLEEVES){const wk=w[s.k]||0;if(wk<=0)continue;const r=rm[s.k].get(dk);if(r==null)continue;num+=wk*r;den+=wk;}
-    const pr=den>0?num/den:0;eq*=(1+pr);curve.push(eq);if(eq>peak)peak=eq;mdd=Math.min(mdd,eq/peak-1);}
-  return {mdd,curve};
+  let eq=1,peak=1,mdd=0,pkd=cal[0],pk=null,tr=null;const curve=[1];
+  for(const dk of cal){let num=0,den=0;for(const s of PREMIA_SLEEVES){const wk=w[s.k]||0;if(wk<=0)continue;const r=rm[s.k].get(dk);if(r==null)continue;num+=wk*Math.expm1(r);den+=wk;} /* log → simple return */
+    const pr=den>0?num/den:0;eq*=(1+pr);curve.push(eq);if(eq>peak){peak=eq;pkd=dk;}const dd=eq/peak-1;if(dd<mdd){mdd=dd;pk=pkd;tr=dk;}}
+  return {mdd,curve,pk,tr};
 }
 function computePremia(){
   let raw={},tot=0;for(const s of PREMIA_SLEEVES){const e=$('#pr-w-'+s.k);const v=e?Math.max(0,+e.value||0):0;raw[s.k]=v;tot+=v;}
   tot=tot||1;const w={};for(const s of PREMIA_SLEEVES)w[s.k]=raw[s.k]/tot;
   let income=0,total=0;for(const s of PREMIA_SLEEVES){income+=w[s.k]*s.yld;total+=w[s.k]*s.tot;}
   const cap=$('#pr-cap')?Math.max(0,+$('#pr-cap').value||0):0;
-  const dd=premiaDrawdown(w);
-  PREMIA={w,income,total,cap,dd:dd.mdd,curve:dd.curve};
+  const dd=premiaDrawdown(w,'2020-02-19','2020-04-30'),all=premiaDrawdown(w);
+  PREMIA={w,income,total,cap,dd:dd.mdd,curve:dd.curve,ddAll:all.mdd,ddAllPk:all.pk,ddAllTr:all.tr};
 }
 function drawPremia(){const el=$('#pr-body');if(!el||!PREMIA)return;const P=PREMIA;
   const dollarInc=P.cap>0?'$'+Math.round(P.cap*P.income/100).toLocaleString('en-US'):'—';
-  const ddc=P.dd<=-0.25?'var(--red)':P.dd<=-0.12?'var(--amber)':'var(--green2)';
+  const ddcol=x=>x<=-0.25?'var(--red)':x<=-0.12?'var(--amber)':'var(--green2)',ddc=ddcol(P.dd);
+  const dstr=dk=>dk==null?'—':msToDateStr(dayToMs(dk));
   const curve=crCurveSVG([{curve:P.curve,col:'var(--teal)'}],440,64);
   el.innerHTML=`<div style="display:flex;gap:20px;flex-wrap:wrap;margin:4px 0 8px">
      <div><div style="font-size:23px;font-weight:800;color:var(--green2)">${P.income.toFixed(1)}%</div><div class="cap">annual income (yield)</div></div>
      <div><div style="font-size:23px;font-weight:800">${dollarInc}</div><div class="cap">income / yr on capital</div></div>
      <div><div style="font-size:23px;font-weight:800;color:var(--teal)">${P.total.toFixed(1)}%</div><div class="cap">illustrative total return</div></div>
-     <div><div style="font-size:23px;font-weight:800;color:${ddc}">${(100*P.dd).toFixed(1)}%</div><div class="cap">worst drawdown (COVID 2020)</div></div>
+     <div><div style="font-size:23px;font-weight:800;color:${ddc}">${(100*P.dd).toFixed(1)}%</div><div class="cap">drawdown in the COVID crash (Feb–Apr 2020)</div></div>
+     <div><div style="font-size:23px;font-weight:800;color:${ddcol(P.ddAll)}">${(100*P.ddAll).toFixed(1)}%</div><div class="cap">deepest drawdown in the embedded history (${dstr(P.ddAllPk)} → ${dstr(P.ddAllTr)})</div></div>
    </div>
-   <div style="font-size:10.5px;color:var(--dim);margin-bottom:3px">The worst real stress path your mix took (COVID Feb–Apr 2020) — what you must hold without selling:</div>${curve}
-   <div class="caveat" style="margin-top:6px"><b>Education, not advice; yields/returns are illustrative assumptions</b> — read the current curve/credit/real-rate off the Forward-macro panel and tune. <b>Income</b> = the weighted yield you collect passively; <b>drawdown</b> = the real historical path, not a forecast. Every step toward more income/return buys a deeper drawdown — that tradeoff, which you must be able to <i>hold</i>, is the entire decision. Tax-advantaged accounts first; lowest fees win; rebalance on a rule, never on a signal.</div>`;}
+   <div style="font-size:10.5px;color:var(--dim);margin-bottom:3px">One real stress path your mix took (COVID crash, Feb–Apr 2020; not necessarily its worst) — what you must hold without selling:</div>${curve}
+   <div class="caveat" style="margin-top:6px"><b>Education, not advice; yields/returns are fixed illustrative assumptions</b> (not live quotes, not editable) — compare them with the curve and credit-spread rows of the Forward-macro panel (an embedded snapshot) only to judge how dated they are; never change the mix because of a market reading. <b>Income</b> = the weighted yield you collect passively; <b>drawdown</b> = the real historical path, not a forecast. In these presets, more equity means a higher illustrative return and a deeper drawdown, while income falls (equities yield less than the defensive sleeves). Whether you can <i>hold</i> that drawdown is the decision; neither the income nor the return is a forecast. Tax-advantaged accounts first; lowest fees win; rebalance on a rule, never on a signal.</div>`;}
 function prRun(){computePremia();drawPremia();}
 
 let PAGE='diag';
@@ -1497,10 +1557,10 @@ function computeMeta(){
   const bins=[[],[],[]];for(const x of rows){const b=x.rv20<=q1?0:x.rv20<=q2?1:2;bins[b].push(x);}
   function r2(arr,fx,fy){const x=arr.map(fx),y=arr.map(fy);const mx=mean(x),my=mean(y);let sxy=0,sxx=0,syy=0;
     for(let i=0;i<x.length;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2;syy+=(y[i]-my)**2;}const c=sxy/Math.sqrt(sxx*syy||1e-9);return c*c;}
-  const nm=['Calm','Normal','Stressed'];
+  const nm=['Low-vol','Mid-vol','High-vol']; // terciles of SPY's own 20-day vol, not stress alarms
   const reg=bins.map((b,i)=>({name:nm[i],n:b.length,volR2:r2(b,x=>x.tv,x=>x.fv),dirR2:r2(b,x=>x.tr,x=>x.fr)}));
   const rvNow=Math.sqrt(variance(r.slice(n-20,n)));const curReg=rvNow<=q1?0:rvNow<=q2?1:2;
-  META={reg,curReg};
+  META={reg,curReg,rvNow,q1,q2,asOf:msToDateStr(dayToMs(A.dayk[n-1]))};
 }
 function drawMeta(){const el=$('#metabody');if(!el||!META)return;const M=META;const V=(typeof VOLLAB!=='undefined')?VOLLAB:null;
   let regRows=M.reg.map((g,i)=>`<div class="kv"${i===M.curReg?' style="background:rgba(38,198,218,.10);border-radius:4px;padding:2px 5px"':''}><span>${g.name} regime${i===M.curReg?' <b style="color:var(--teal)">← you are here</b>':''} <span style="color:var(--dim)">${g.n}d</span></span><b>vol R²=${g.volR2.toFixed(2)} · <span style="color:var(--dim)">dir R²=${g.dirR2.toFixed(2)}</span></b></div>`).join('');
@@ -1509,7 +1569,7 @@ function drawMeta(){const el=$('#metabody');if(!el||!META)return;const M=META;co
    <div class="kv"><span>Direction · 5-day / 20-day</span><b style="color:var(--dim)">R²=${V.dir5R2.toFixed(2)} / ${V.dirR2.toFixed(2)} (≤0 = none)</b></div>`:''}
    <div style="font-weight:700;margin:9px 0 3px">Meta-layer — <i>when</i> can you trust the vol forecast?</div>
    ${regRows}
-   <div class="caveat" style="margin-top:8px">The meta-layer conditions reliability on the current regime (a slow 20-day-vol tercile). Two honest facts fall out: volatility is <b>more</b> forecastable when stress is already elevated (clustering is strongest in turmoil), and <b>direction stays unforecastable in every regime</b>. This is meta-labeling in the only honest sense — a gate that tells you <b>how much to trust and size</b> the <i>risk</i> forecast, never a way to manufacture a directional bet. Right now you are in the <b>${M.reg[M.curReg].name}</b> regime.</div>`;
+   <div class="caveat" style="margin-top:8px">The meta-layer conditions reliability on the current regime (a slow 20-day-vol tercile). Two honest facts fall out: volatility is <b>more</b> forecastable when stress is already elevated (clustering is strongest in turmoil), and <b>direction stays unforecastable in every regime</b>. It tells you <b>how much to trust</b> the <i>risk</i> forecast. It describes reliability; it is not an input to exposure (the only sizing mechanism on this console is your own pre-set, down-only band on the Risk tab, which takes no regime input) and never a directional bet. As of ${M.asOf} (SPY's latest day in the data the console holds, including any live update; full history; it does not follow the Backtest cursor), SPY's 20-day vol of ${(M.rvNow*Math.sqrt(252)*100).toFixed(1)}% annualised falls in the <b>${M.reg[M.curReg].name}</b> tercile (tercile boundaries ${(M.q1*Math.sqrt(252)*100).toFixed(1)}% and ${(M.q2*Math.sqrt(252)*100).toFixed(1)}%). That is a vol tercile, not a stress alarm.</div>`;
 }
 
 let CASCADE=null, GAMELENS=null;
@@ -1645,11 +1705,14 @@ function drawCrashCtx(){const el=$('#rc-crash');if(!el)return;
   const A=STORE['SPY'];let sk=null;if(A){const r=A.ret.slice(-60),m=mean(r),s=std(r);if(s>0)sk=r.reduce((a,x)=>a+((x-m)/s)**3,0)/r.length;}
   let flags=0;const items=[];
   if(tp!=null){const hot=tp>=70;items.push(['Turbulence',tp+'/100',hot]);if(hot)flags++;}
-  // absolute ≥60% can never switch off here (the top-10-mode share runs ~76–90% on this basket), so flag it vs its own rolling history
-  if(ar!=null){const ap=pctOf(SYS.rollAR,ar),hot=ap!=null&&ap>=80;items.push(['Absorption (top-10-mode share) · vs own history',Math.round(ar*100)+'%'+(ap!=null?' · '+ord(ap)+' pct':''),hot]);if(hot)flags++;}
+  // absolute ≥60% can never switch off here (the top-10-mode share runs ~76–90% on this basket), so flag it vs the rolling history of the same 252-day measure
+  if(ar!=null){const ap=arPctl(),hot=ap!=null&&ap>=80;items.push(['Absorption (top-10-mode share) · vs own history',Math.round(ar*100)+'%'+(ap!=null?' · '+ord(ap)+' pct':''),hot]);if(hot)flags++;}
   if(hk!=null){const hot=hk>=0.6;items.push(['Shock clustering (Hawkes)',hk.toFixed(2),hot]);if(hot)flags++;}
   if(sk!=null){const hot=sk<=-0.3;items.push(['Return skew (60d)',sk.toFixed(2),hot]);if(hot)flags++;}
-  const word=flags>=3?'Elevated left-tail regime — now':flags>=1?'Mixed — some tail signals up':'Benign tail regime — now';
+  // date stamp: "now" only when the data are fresh; the cursor date in Backtest (turbulence, absorption and Hawkes follow it, skew does not)
+  const AI=asOfInfo(),bt=MODE==='backtest'&&CURSOR!=null;
+  const when=bt?` — as of ${msToDateStr(dayToMs(CURSOR))} (skew: latest data, ${msToDateStr(dayToMs(STORE['SPY'].vintage))})`:AI.stale?` — as of ${AI.date} (${AI.src} · ${AI.age} days old)`:' — now';
+  const word=(flags>=3?'Elevated left-tail regime':flags>=1?'Mixed — some tail signals up':'Benign tail regime')+when;
   const col=flags>=3?'var(--red)':flags>=1?'var(--amber)':'var(--green2)';
   const rows=items.map(it=>{const c=it[2]?'var(--amber)':'var(--dim)';return `<div class="kv"><span>${it[0]}</span><b style="color:${c}">${it[1]}</b></div>`;}).join('');
   el.innerHTML=`<div style="font-weight:700;color:${col};margin-bottom:5px">${word}</div>${rows}<div class="caveat" style="margin-top:8px"><b>Coincident, not a forecast.</b> Every one of these rises <i>during</i> 2020/2022, not before, and skew flips on a single bad day. It describes the regime you are <b>already</b> in — wired to nothing, moves no dial, predicts nothing. You read it; you decide.</div>`;
@@ -1659,7 +1722,7 @@ function computeSizing(){const A=STORE['SPY'];if(!A)return;const r=A.ret,n=r.len
   const sig=t=>Math.sqrt(252*variance(r.slice(Math.max(1,t-20),t)));
   const sigNow=sig(n);const expo=Math.max(0.3,Math.min(1,tv/(sigNow||1)));
   let eqU=1,eqS=1,pu=1,ps=1,mddU=0,mddS=0,tov=0,prev=1;
-  for(let t=21;t<n;t++){const s=Math.max(0.3,Math.min(1,tv/(sig(t)||1)));eqU*=(1+r[t]);eqS*=(1+prev*r[t]);tov+=Math.abs(s-prev);prev=s;pu=Math.max(pu,eqU);mddU=Math.min(mddU,eqU/pu-1);ps=Math.max(ps,eqS);mddS=Math.min(mddS,eqS/ps-1);}
+  for(let t=21;t<n;t++){const s=Math.max(0.3,Math.min(1,tv/(sig(t)||1)));const g=Math.expm1(r[t]);eqU*=(1+g);eqS*=(1+prev*g);tov+=Math.abs(s-prev);prev=s;pu=Math.max(pu,eqU);mddU=Math.min(mddU,eqU/pu-1);ps=Math.max(ps,eqS);mddS=Math.min(mddS,eqS/ps-1);}
   SIZING={tv,sigNow,expo,mddU,mddS,tov,yrs:(n-21)/252};
 }
 function drawSizing(){const el=$('#rc-sizing');if(!el||!SIZING)return;const S=SIZING;if($('#rc-tvv'))$('#rc-tvv').textContent=Math.round(S.tv*100);
@@ -1683,7 +1746,7 @@ function computeRDiv(){const ids=basisIds();const N=ids.length;
   const dr=sig.reduce((a,b)=>a+w*b,0)/sp;
   const rc=ids.map((id,i)=>{let m=0;for(let j=0;j<N;j++)m+=w*cov[i][j];return {id,rc:w*m/sp};});
   const tot=rc.reduce((a,b)=>a+b.rc,0)||1;rc.sort((a,b)=>b.rc-a.rc);
-  RDIV={N,pr:(typeof FACTORS!=='undefined'&&FACTORS)?FACTORS.PR:null,dr,top3:rc.slice(0,3).reduce((a,b)=>a+b.rc,0)/tot,topRC:rc.slice(0,4).map(x=>({id:x.id,sh:x.rc/tot})),ar:(SYS&&SYS.ok)?SYS.ar:null};
+  RDIV={N,pr:(typeof FACTORS!=='undefined'&&FACTORS)?FACTORS.PR:null,dr,top3:rc.slice(0,3).reduce((a,b)=>a+b.rc,0)/tot,topRC:rc.slice(0,4).map(x=>({id:x.id,sh:x.rc/tot})),ar:(SYS&&SYS.ok)?SYS.ar:null,arp:arPctl()};
 }
 function drawRDiv(){const el=$('#rc-div');if(!el||!RDIV)return;const D=RDIV;
   const rows=D.topRC.map(x=>`<div class="kv"><span><span style="color:${colFor(x.id)}">${x.id}</span></span><b>${Math.round(100*x.sh)}% of portfolio risk</b></div>`).join('');
@@ -1693,7 +1756,7 @@ function drawRDiv(){const el=$('#rc-div');if(!el||!RDIV)return;const D=RDIV;
    <div class="kv"><span>Diversification ratio (higher = more diversified)</span><b>${D.dr.toFixed(2)}</b></div>
    <div class="kv"><span>Top-3 names' share of total risk</span><b>${Math.round(100*D.top3)}%</b></div>
    ${rows}
-   <div class="caveat" style="margin-top:8px"><b>A fair-weather number.</b> ${D.N} names collapse to ~${prtxt} effective bets <i>averaged over the whole 10-year history</i> (crises included); the diversification ratio and risk shares use the last two years. Averages <b>overstate</b> diversification exactly when it matters: in a crisis correlations rush to one (absorption ${D.ar!=null?Math.round(100*D.ar)+'%':'—'} of variance in the top 10 modes now) and the effective count collapses further toward a single factor. Describes past correlations, not a promise they hold under stress.</div>`;
+   <div class="caveat" style="margin-top:8px"><b>A fair-weather number.</b> ${D.N} names collapse to ~${prtxt} effective bets <i>averaged over the whole 10-year history</i> (crises included); the diversification ratio and risk shares use the last two years. Averages <b>overstate</b> diversification exactly when it matters: in a crisis correlations rush to one and the effective count collapses further toward a single factor. For reference, absorption (variance share of the top 10 modes) reads ${D.ar!=null?Math.round(100*D.ar)+'%'+(D.arp!=null?' — '+ord(D.arp)+' pct of its own history':''):'—'} ${(MODE==='backtest'&&CURSOR!=null)?'at the cursor date':asOfInfo().stale?'as of '+asOfInfo().date:'now'}; a level, not a forecast. Describes past correlations, not a promise they hold under stress.</div>`;
 }
 function computeSent(){const vixp=(function(){const A=STORE['VIX'];if(!A)return null;const p=A.close.length-1;const cur=A.close[p];let c=0;for(let i=0;i<=p;i++)if(A.close[i]<=cur)c++;return Math.round(100*c/(p+1));})();const capep=(typeof VALUATION!=='undefined'&&VALUATION)?VALUATION.pctAll:null;const tp=(TURB&&TURB.ok)?Math.round(TURB.pct):null;
   let word='Neutral — ignore',leg='no extreme leg firing',col='var(--dim)';
@@ -1712,7 +1775,7 @@ function drawSent(){const el=$('#rc-sent');if(!el||!SENT)return;const S=SENT;con
    <div style="font-weight:700;margin:6px 0 3px">Proof it's not a clock: next-month return from <i>here</i> (same 20-day-vol tercile as today, n=${S.n})</div>
    <div class="kv"><span>25th · median · 75th pct</span><b>${p(S.p25)} · ${p(S.med)} · ${p(S.p75)}</b></div>
    <div class="kv"><span>Share positive</span><b>${Math.round(100*S.pos)}% vs ${Math.round(100*S.posAll)}% on all days — ${Math.abs(S.pos-S.posAll)<0.06?'the bucket adds ~nothing over the base rate':'differs from the base rate, on a few overlapping samples'}; both directions live</b></div>
-   <div class="caveat" style="margin-top:8px"><b>Thermometer, not a clock — context only.</b> A high reading does <b>not</b> signal a turn: the forward distribution from here is roughly symmetric, and extremes <b>persist and deepen for months</b> (2000, 2021). CAPE carries ~zero short-horizon info; the greed leg is the weaker half. No trade, no "buy the panic," no buy/sell — at most it is context for the holding plan you set in advance. A panic reading is not a rebound call; markets can keep falling while it reads panic.</div>`;
+   <div class="caveat" style="margin-top:8px"><b>Thermometer, not a clock — context only.</b> A high reading does <b>not</b> signal a turn: from here the middle half of next-month outcomes runs from ${p(S.p25)} to ${p(S.p75)} around a ${p(S.med)} median${S.p25<0&&S.p75>0?' (both directions live)':''}, with ${Math.abs(S.pos-S.posAll)<0.06?'about SPY\'s usual share of up months — its ordinary drift, not a reversal pattern':'a share of up months that differs from SPY\'s usual share only on a few overlapping samples — not a reliable reversal pattern'}; and extremes <b>persist and deepen for months</b> (2000, 2021). CAPE carries ~zero short-horizon info; the greed leg is the weaker half. No trade, no "buy the panic," no buy/sell — at most it is context for the holding plan you set in advance. A panic reading is not a rebound call; markets can keep falling while it reads panic.</div>`;
 }
 function rtLoad(k){try{return JSON.parse(localStorage.getItem(k)||'[]');}catch(e){return [];}}
 function rtSave(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -1755,7 +1818,7 @@ function drawSim(){const el=$('#rc-sim');if(!el||!SIM)return;const S=SIM;const p
   el.innerHTML=`<div class="kv"><span>Synthetic paths (filtered historical simulation)</span><b>${S.N} × ${S.H}-day</b></div>
    <div class="kv"><span>Next-month return — 5th · median · 95th</span><b>${p(S.r5)} · ${p(S.r50)} · ${p(S.r95)}</b></div>
    <div class="kv"><span>Worst dip within the month — median · 5%-tail · worst path</span><b style="color:var(--amber)">${p(S.dd50)} · ${p(S.dd05)} · ${p(S.ddWorst)}</b></div>
-   <div class="caveat" style="margin-top:8px"><b>A stress distribution, not a forecast.</b> Each path resamples real volatility-standardized daily moves and re-inflates them to <i>today's</i> vol — <b>filtered historical simulation</b>, the transparent cousin of a GAN: same idea (synthetic crises to size against), no black box, no mode-collapse. It keeps the fat tails of real moves (each path is scaled to today's volatility; it does not re-create clustering inside a path), so it shows a <b>fuller range of bad months than the handful of real crises</b>. But it <b>cannot invent a crisis worse than the residual pool</b> it samples — no novel black swan, no 2008 if 2008 isn't in the data. Richer stress test, never a prediction.</div>`;
+   <div class="caveat" style="margin-top:8px"><b>A stress distribution, not a forecast.</b> Each path resamples real volatility-standardized daily moves and re-inflates them to <i>today's</i> vol — <b>filtered historical simulation</b>, the transparent cousin of a GAN: same idea (synthetic crises to stress-test a size you already chose), no black box, no mode-collapse. It keeps the fat tails of real moves (each path is scaled to today's volatility; it does not re-create clustering inside a path), so it shows a <b>fuller range of bad months than the handful of real crises</b>. But it <b>cannot invent a crisis worse than the residual pool</b> it samples — no novel black swan, no 2008 if 2008 isn't in the data. Richer stress test, never a prediction.</div>`;
 }
 function computeDrift(){if(typeof CR_SLEEVES==='undefined')return;const reps=CR_SLEEVES;
   const W={};let tot=0;for(const s of reps){const e=$('#cr-w-'+s[0]);const w=e?Math.max(0,+e.value||0):0;W[s[0]]=w;tot+=w;}
@@ -1785,14 +1848,14 @@ function drawBallast(){const el=$('#rc-ballast');if(!el)return;const A=STORE['SP
 }
 
 /* ===================== orchestration ===================== */
-function renderAll(){computeNetwork();computeSystemic();computeTurbulence();computeHawkes();drawNetwork();drawHeat();drawNetBars();drawSystemic();drawTurbulence();drawManifold();drawAnticipation();drawHawkes();drawThermo();drawIndic();drawSurprise();drawFeeds();if(MODE==='backtest')drawBaseRate();escalate();drawBriefing();drawPerspectives();drawBackdrop();drawForwardMacro();drawOBI();cascRun();computeNetStruct();drawNetStruct();computeGameLens();drawGameLens();}
+function renderAll(){computeNetwork();computeSystemic();computeTurbulence();computeHawkes();drawNetwork();drawHeat();drawNetBars();drawSystemic();drawTurbulence();drawManifold();drawAnticipation();drawHawkes();drawThermo();drawIndic();drawSurprise();drawFeeds();if(MODE==='backtest')drawBaseRate();escalate();drawBriefing();computeNetStruct();drawPerspectives();drawBackdrop();drawForwardMacro();drawOBI();cascRun();drawNetStruct();computeGameLens();drawGameLens();if(PAGE==='risk'&&typeof drawRiskCockpit==='function')drawRiskCockpit();}
 function drawFeeds(){const el=$('#feeds');const map={Snapshot:'embedded real history',Binance:'crypto (Binance.US)',Frankfurter:'FX (ECB/Frankfurter)',YahooProxy:'equities & ETFs (Yahoo via proxy)'};
   let h='';for(const k in feedStatus){const s=feedStatus[k];const c=s==='live'?'var(--green)':s==='loaded'?'var(--teal)':s==='loading'||s==='gap'?'var(--amber)':s==='unavailable'?'var(--red)':'var(--dim)';
     h+=`<div class="f"><span class="dot" style="background:${c}"></span>${map[k]} <span style="opacity:.7">${s==='gap'?'gap — snapshot too old to bridge':s}</span></div>`;}
   // vintages: the oldest series end bounds every cross-asset panel
   const A=asOfInfo(),mlo=msToDateStr(dayToMs(Math.min(...MACRO_LAST))).slice(0,7),mhi=msToDateStr(dayToMs(Math.max(...MACRO_LAST)));
   const capeAsOf=(typeof VAL!=='undefined'&&VAL&&VAL.cur)?`${Math.floor(VAL.cur.date)}-${String(Math.round((VAL.cur.date%1)*100)).padStart(2,'0')}`:'—';
-  h+=`<div class="f"><span class="dot" style="background:${A.stale?'var(--amber)':'var(--teal)'}"></span>markets as of <b>${A.date}</b>${A.newest!==A.date?` (newest series ${A.newest})`:''} · ${A.age} days old</div>`;
+  h+=`<div class="f"><span class="dot" style="background:${A.stale?'var(--amber)':'var(--teal)'}"></span>markets as of <b>${A.date}</b>${A.newest!==A.date?` (newest series ${A.newest})`:''} · ${A.age} days old${(()=>{const so=A.live?ASSET_IDS.filter(id=>STORE[id].src==='Snapshot'):[];return so.length?` · still snapshot: ${so.length<=6?so.join(', '):so.length+' series'}`:'';})()}</div>`;
   h+=`<div class="f"><span class="dot" style="background:var(--dim)"></span>macro (FRED, embedded) latest points ${mlo} (annual) … ${mhi} (daily)</div>`;
   h+=`<div class="f"><span class="dot" style="background:var(--dim)"></span>CAPE (Shiller, embedded) through ${capeAsOf}</div>`;
   el.innerHTML=h;
@@ -1831,7 +1894,7 @@ async function liveRefresh(){for(const k of ['Binance','Frankfurter','YahooProxy
   await Promise.allSettled(tasks);
   for(const k of ['Binance','Frankfurter','YahooProxy'])if(feedStatus[k]==='loading')feedStatus[k]='unavailable';
   if(!LIVE_CHANGES){drawFeeds();return;}
-  computeAll();computeManifold();computeAnticipation();renderAll();}
+  computeAll();computeManifold();computeAnticipation();computeMeta();renderAll();if(PAGE==='pred')drawMeta();}
 
 /* ===================== controls ===================== */
 function initControls(){
