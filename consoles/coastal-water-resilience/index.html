@@ -543,8 +543,10 @@ function getJSON(url,headers){var c=new AbortController(),to=setTimeout(function
 var FEEDS={wl:{label:'Water level'},pred:{label:'Tide predictions'},ofs:{label:'OFS forecast'},nhc:{label:'NHC'},nws:{label:'NWS alerts'}};
 Object.keys(FEEDS).forEach(function(k){FEEDS[k].state='loading';});
 function setFeed(k,state,dataTime,note){var f=FEEDS[k],prev=f.state;f.state=state;f.dataTime=dataTime||null;f.checked=Date.now();f.note=note||'';if(state!=='unavailable')f.err=null;
- if(f.seen&&prev!==state)$('live').textContent=f.label+' feed is now '+(state==='stale'&&k==='ofs'?'stale (nowcast)':state)+'.';f.seen=true;renderStrip();}
-function fmtStamp(t){var d=new Date(t),n=new Date();return (d.getUTCFullYear()===n.getUTCFullYear()&&d.getUTCMonth()===n.getUTCMonth()&&d.getUTCDate()===n.getUTCDate()?'':MON[d.getUTCMonth()]+' '+d.getUTCDate()+' ')+fmtHM(t);}
+ if(f.seen&&prev!==state)announce(f.label,state==='stale'&&k==='ofs'?'stale (nowcast)':state);f.seen=true;renderStrip();}
+/* Screen-reader announcements: state changes within one refresh are grouped into a single sentence. */
+var ANN={},annT=null;function announce(label,state){(ANN[state]=ANN[state]||[]).push(label);clearTimeout(annT);annT=setTimeout(function(){$('live').textContent=Object.keys(ANN).map(function(st){return 'Now '+st+': '+ANN[st].join(', ')+'.';}).join(' ');ANN={};},400);}
+function fmtStamp(t){var d=new Date(t),n=new Date();return (d.getUTCFullYear()===n.getUTCFullYear()&&d.getUTCMonth()===n.getUTCMonth()&&d.getUTCDate()===n.getUTCDate()&&Math.abs(t-n)<=12*3600e3?'':MON[d.getUTCMonth()]+' '+d.getUTCDate()+' ')+fmtHM(t);}
 var stripHTML='';
 function renderStrip(){var h=Object.keys(FEEDS).map(function(k){var f=FEEDS[k],t;
   if(f.state==='loading')t='loading';
@@ -598,15 +600,17 @@ function loadWL(){return getJSON(CO+'?range=48&station=8726520&product=water_lev
   setFeed('wl',age>WL_STALE_MIN?'stale':'live',last.t);}).catch(function(e){WL=null;FEEDS.wl.err=e.message;setFeed('wl','unavailable');});}
 function loadPred(){var now=new Date();var url=CO+'?station=8726520&product=predictions&interval=6&datum=MLLW&units=english&time_zone=gmt&format=json&begin_date='+ymd(new Date(now-48*3600e3))+'&end_date='+ymd(new Date(now.getTime()+24*3600e3));
  return getJSON(url).then(function(j){var rows=coRows(j).filter(function(r){return r.v!=null;});if(!rows.length)throw new Error('no predictions returned');
-  var lastT=rows[rows.length-1].t;PRED={rows:rows,last:lastT};var covers=rows[0].t<=Date.now()&&lastT>=Date.now();setFeed('pred',covers?'live':'stale',covers?null:lastT,covers?'covers now':'ends before now');})
+  var lastT=rows[rows.length-1].t,firstT=rows[0].t,nowT=Date.now();PRED={rows:rows,last:lastT,first:firstT};var covers=firstT<=nowT&&lastT>=nowT;
+  setFeed('pred',covers?'live':'stale',covers?null:(firstT>nowT?firstT:lastT),covers?'covers now':(firstT>nowT?'starts after now':'ends before now'));})
   .catch(function(e){PRED=null;FEEDS.pred.err=e.message;setFeed('pred','unavailable');});}
 function predAt(t){if(!PRED)return null;var b=null,bd=Infinity;PRED.rows.forEach(function(r){var d=Math.abs(r.t-t);if(d<bd){bd=d;b=r;}});return bd<=6*60e3?b.v:null;}
-function predCell(pv){var f=FEEDS.pred;if(pv!=null)return pv.toFixed(2)+' ft MLLW';if(f.state==='loading')return 'loading';if(f.state==='stale'&&PRED)return 'stale: predictions end '+esc(fmtUTC(PRED.last));return 'unavailable';}
+function predCell(pv){var f=FEEDS.pred;if(pv!=null)return pv.toFixed(2)+' ft MLLW';if(f.state==='loading')return 'loading';if(f.state==='stale'&&PRED)return PRED.first>Date.now()?'stale: predictions start '+esc(fmtUTC(PRED.first)):'stale: predictions end '+esc(fmtUTC(PRED.last));return 'unavailable';}
 function predNote(){var f=FEEDS.pred;return f.state==='unavailable'?'<div class="muted">Tide predictions could not be loaded'+(f.err?' ('+esc(f.err)+')':'')+'. Checked '+esc(fmtUTC(f.checked))+'.</div>':'';}
-function renderGauge(){var el=$('gauge');
+function renderGauge(){keepFocus(function(){var d=$('gauge').querySelector('details.dt'),o=d&&d.open;renderGauge_();d=$('gauge').querySelector('details.dt');if(o&&d)d.open=true;});}
+function renderGauge_(){var el=$('gauge');
  if(!WL&&FEEDS.wl.state==='loading')return;
  if(!WL){unavailable(el,'wl','The observed water level at gauge 8726520');
-  if(PRED){var pv=predAt(Date.now());el.innerHTML+='<div class="row" style="margin-top:8px"><span class="l">Predicted tide now '+stateTag('pred')+'</span><span class="v">'+f2(pv)+' ft MLLW</span></div><div class="row"><span class="l">Anomaly</span><span class="v">unavailable (needs the observation)</span></div>';}
+  if(PRED){var pv=predAt(Date.now());el.innerHTML+='<div class="row" style="margin-top:8px"><span class="l">Predicted tide now '+stateTag('pred')+'</span><span class="v">'+predCell(pv)+'</span></div>'+predNote()+'<div class="row"><span class="l">Anomaly</span><span class="v">unavailable (needs the observation)</span></div>';}
   else el.innerHTML+='<div class="row" style="margin-top:8px"><span class="l">Predicted tide '+stateTag('pred')+'</span><span class="v">'+predCell(null)+'</span></div>'+predNote();
   return;}
  var o=WL.last,pv=predAt(o.t),an=pv!=null?o.v-pv:null,plane=planeOf(o.v),n=countAt(plane),step=o.v<2.5?null:nearestStep(o.v);
@@ -638,7 +642,8 @@ function loadOFS(){var now=new Date();var url=CO+'?station=8726520&product=ofs_w
   var win=fresh?rows.filter(function(r){return r.t>nowT&&r.t<=nowT+48*3600e3;}):rows;var pk=win.reduce(function(a,b){return b.v>a.v?b:a;},win[0]);
   OFS={rows:rows,fresh:fresh,last:last,peak:pk};if(fresh)setFeed('ofs','live',null,'peak '+fmtStamp(pk.t)+' · runs to '+fmtStamp(last));else setFeed('ofs','stale',last,'last value');})
   .catch(function(e){OFS=null;FEEDS.ofs.err=e.message;setFeed('ofs','unavailable');}).then(applyDefaultSurge);}
-function renderOFS(){var el=$('ofs');if(FEEDS.ofs.state==='loading')return;
+function renderOFS(){keepFocus(function(){var d=$('ofs').querySelector('details.dt'),o=d&&d.open;renderOFS_();d=$('ofs').querySelector('details.dt');if(o&&d)d.open=true;});}
+function renderOFS_(){var el=$('ofs');if(FEEDS.ofs.state==='loading')return;
  if(!OFS){unavailable(el,'ofs','The OFS water-level forecast');el.innerHTML+='<div class="muted" style="margin-top:6px">With no fresh forecast, the surge ladder defaults to 6 ft.</div>';return;}
  var pk=OFS.peak,plane=planeOf(pk.v),step=nearestStep(pk.v),h='';
  if(OFS.fresh){var hrs=Math.round((pk.t-Date.now())/3600e3);
@@ -732,7 +737,8 @@ var CLS_COL={exp:'var(--exp)',ring:'var(--ring)',dry:'var(--dry)'},CLS_TXT={exp:
 /* Re-renders keep keyboard focus: remember the focused control, rebuild, then refocus its replacement. */
 function keepFocus(fn){var a=document.activeElement,key=null;
  if(a&&a!==document.body){if(a.id)key='#'+a.id;else if(a.getAttribute('data-lv')&&a.closest('.ladder'))key='#'+a.closest('.ladder').id+' [data-lv="'+a.getAttribute('data-lv')+'"]';
-  else if(a.getAttribute('data-ph'))key='#phases [data-ph="'+a.getAttribute('data-ph')+'"]';else if(a.tagName==='SUMMARY'&&a.closest('#tm'))key='#tm details[data-n="'+a.parentNode.getAttribute('data-n')+'"] > summary';}
+  else if(a.getAttribute('data-ph'))key='#phases [data-ph="'+a.getAttribute('data-ph')+'"]';else if(a.tagName==='SUMMARY'&&a.closest('#tm'))key='#tm details[data-n="'+a.parentNode.getAttribute('data-n')+'"] > summary';
+  else if(a.tagName==='SUMMARY'&&a.closest('#gauge,#ofs'))key='#'+a.closest('#gauge,#ofs').id+' details.dt > summary';else if(a.classList&&a.classList.contains('ov')&&a.closest('.chart'))key='#'+a.closest('.chart').id+' .ov';}
  fn();if(key){var n=document.querySelector(key);if(n&&n!==document.activeElement)n.focus({preventScroll:true});}}
 var OPEN_TM={};document.addEventListener('toggle',function(e){var d=e.target;if(d&&d.matches&&d.matches('#tm details'))OPEN_TM[d.getAttribute('data-n')]=d.open;},true);
 function renderSurge(){keepFocus(function(){TM=tenMetrics();renderLadders();renderLadderChart();renderLadderSum();updateMap();renderTM();renderCheck();renderTimeline();renderStationTable();});}
