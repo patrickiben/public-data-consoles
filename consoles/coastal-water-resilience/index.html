@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coastal Water Resilience: surge monitor and response plan</title>
+<meta name="description" content="Live coastal-surge monitoring at NOAA tide gauge 8726520 (St. Petersburg, FL) joined to a hurricane response plan built on the contamination-resilient cluster-randomized-trial (CRT) ten-metric suite, run on a synthetic lift-station network calibrated to network-level public data. Descriptive decision support; not a forecast and not an official source.">
+<style>
+:root{--bg:#0f1b2a;--panel:#16273d;--panel2:#1b3050;--ink:#eaf1f8;--ink2:#aebfd2;--dim:#7e93ad;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+ --sea:#3fa9f5;--ok:#34c98a;--action:#f0b429;--minor:#f97316;--moderate:#ef5350;--major:#b46ff0;
+ --obs:#3987e5;--pred:#d95926;--exp:#ef5350;--ring:#f0b429;--dry:#5f7f9f;--up:#b46ff0;
+ --land:#1d3350;--water:#0b1624;--grid:#22364f;--axis:#36506e;
+ --r:15px;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:radial-gradient(1100px 560px at 72% -10%,#1a3252,#0f1b2a 55%) fixed,#0f1b2a;color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1320px;margin:0 auto;padding:0 16px}
+#disc{position:sticky;top:0;z-index:30;background:#0a1422;color:#c6d6e8;font-size:12.5px;text-align:center;padding:8px 14px;border-bottom:1px solid var(--line)}#disc b{color:#fff}#disc a{color:#9fd2f0}
+header{padding:24px 0 10px}
+header h1{margin:0;font-size:27px;font-weight:760;letter-spacing:-.3px;background:linear-gradient(90deg,#eaf1f8,#9fd0ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+header .s{color:var(--ink2);font-size:14.5px;margin-top:7px;max-width:860px}
+.strip{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 4px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600}
+.chip .dot{width:9px;height:9px;border-radius:50%;flex:none}.chip small{color:var(--ink2);font-weight:500}
+.chip.live .dot{background:var(--ok)}.chip.stale .dot{background:var(--action)}.chip.unavailable .dot{background:var(--moderate)}.chip.loading .dot{background:var(--dim)}
+.btn{border:1px solid var(--line2);background:var(--panel2);color:var(--ink);border-radius:999px;padding:6px 13px;font:600 12.5px var(--sans);cursor:pointer}.btn:hover{background:#22406a}
+.btn:focus-visible,.tab:focus-visible,.lv:focus-visible,.ph:focus-visible,summary:focus-visible,select:focus-visible{outline:2px solid var(--sea);outline-offset:2px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 16px;border-bottom:1px solid var(--line2);padding-bottom:10px}
+.tab{border:1px solid var(--line);background:transparent;color:var(--ink2);border-radius:10px;padding:8px 15px;font:650 14px var(--sans);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--panel2);color:var(--ink);border-color:var(--sea)}
+.grid{display:grid;gap:16px;margin-bottom:16px;align-items:start}
+.g4{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.gmap{grid-template-columns:minmax(330px,470px) minmax(0,1fr)}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.col{display:grid;gap:16px;min-width:0}
+[hidden]{display:none!important}
+.card{background:linear-gradient(180deg,var(--panel),#14253b);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;min-width:0;position:relative}
+.ch{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:8px}
+.ch h2{margin:0;font-size:15.5px;font-weight:680;margin-right:auto}
+.hbs{display:flex;flex-wrap:wrap;gap:5px}
+.hb{font:700 10px/1.25 var(--mono);letter-spacing:.05em;padding:3px 7px;border-radius:6px;border:1px solid;white-space:normal;overflow-wrap:anywhere;max-width:100%}
+.hb.ms{color:#86e3bb;border-color:rgba(52,201,138,.45);background:rgba(52,201,138,.09)}
+.hb.md{color:#d6b8ff;border-color:rgba(180,111,240,.5);background:rgba(180,111,240,.09)}
+.hb.ip{color:#f3d27a;border-color:rgba(240,180,41,.45);background:rgba(240,180,41,.08)}
+.sub{color:var(--dim);font-size:12px;margin:-2px 0 10px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px}.row:last-child{border:none}
+.row .l{color:var(--ink2)}.row .v{font-weight:650;text-align:right}
+.big{font-size:26px;font-weight:740;line-height:1.15}
+.muted{color:var(--dim);font-size:12.5px}.small{font-size:12.5px}.mono{font-family:var(--mono)}
+.warn{color:#ffb4a8}
+.state{display:inline-block;font:700 11px var(--mono);padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:1px}
+.state.live{background:rgba(52,201,138,.14);color:#86e3bb}.state.stale{background:rgba(240,180,41,.14);color:#f3d27a}.state.unavailable{background:rgba(239,83,80,.15);color:#ffb4a8}.state.loading{background:rgba(255,255,255,.07);color:var(--ink2)}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line2);border-top-color:var(--sea);border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px;margin-right:5px}@keyframes s{to{transform:rotate(360deg)}}
+.chart{position:relative;margin-top:8px}.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink2);margin-top:6px}.legend .k{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:4px;margin-right:6px}
+.legend .sw{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:6px}
+.tip{position:absolute;pointer-events:none;background:#0a1422;border:1px solid var(--line2);border-radius:9px;padding:7px 9px;font-size:12px;line-height:1.45;color:var(--ink2);box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:5;min-width:140px;max-width:260px}
+.tip b{color:var(--ink);font-weight:700}.tip .kk{display:inline-block;width:12px;border-top:2px solid;vertical-align:3px;margin-right:5px}
+.ladder{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.lv{border:1px solid var(--line2);background:var(--panel2);color:var(--ink);border-radius:9px;padding:6px 0;width:52px;font:700 13px var(--sans);cursor:pointer}
+.lv[aria-pressed="true"]{background:var(--sea);border-color:var(--sea);color:#06223c}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:13px}.kv dt{color:var(--ink2)}.kv dd{margin:0;font-weight:600}
+.sys{border-left:3px solid var(--dim);background:rgba(255,255,255,.03);border-radius:9px;padding:8px 11px;margin-bottom:8px}
+.sys.near{border-color:var(--action);background:rgba(240,180,41,.07)}.sys .t{font-weight:680}.sys .m{font-size:12px;color:var(--ink2);margin-top:2px}
+.al{border-left:3px solid var(--action);background:rgba(240,180,41,.08);border-radius:9px;padding:8px 11px;margin-bottom:8px}.al.sev{border-color:var(--moderate);background:rgba(239,83,80,.1)}
+.al .t{font-weight:650}.al .m{font-size:12px;color:var(--ink2);margin-top:2px}
+.mapwrap{position:relative}.mapwrap svg{display:block;width:100%;height:auto;border-radius:11px;border:1px solid var(--line2);background:var(--water);touch-action:manipulation}
+.stn{cursor:pointer}.stn .hit{fill:transparent}
+.detail{margin-top:10px;font-size:13px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+select{background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:5px 8px;font:13px var(--sans);max-width:100%}
+.tblw{overflow-x:auto;max-width:100%}
+table.tbl{border-collapse:collapse;width:100%;font-size:12.5px}
+.tbl th{text-align:left;color:var(--ink2);font-weight:650;border-bottom:1px solid var(--line2);padding:6px 8px;white-space:nowrap}
+.tbl td{border-bottom:1px solid var(--line);padding:6px 8px;vertical-align:top;font-variant-numeric:tabular-nums}
+.tbl tr.sel td{background:rgba(63,169,245,.09)}
+details.dt{margin-top:10px}details.dt>summary{cursor:pointer;color:var(--sea);font-size:12.5px;font-weight:600}
+.tm{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;background:rgba(255,255,255,.02)}
+.tm>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:26px minmax(0,1.5fr) minmax(0,1.3fr) auto;gap:4px 10px;align-items:center;padding:8px 10px}
+.tm>summary::-webkit-details-marker{display:none}
+.tm .n{width:24px;height:24px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font:700 11.5px var(--mono);color:var(--ink2)}
+.tm .nm{font-weight:650;font-size:13.5px}.tm .nm small{display:block;color:var(--dim);font-weight:500;font-size:11.5px}
+.tm .val{font-size:12.5px}.tm .val .syn{color:var(--ink);font-weight:650}.tm .val .real{display:block;color:var(--dim);font-size:11.5px}
+.flag{font:700 11px var(--mono);padding:3px 8px;border-radius:999px;white-space:nowrap}
+.flag.bad{background:rgba(239,83,80,.15);color:#ffb4a8}.flag.ok{background:rgba(52,201,138,.13);color:#86e3bb}
+.tmb{padding:2px 12px 12px 46px;font-size:13px;color:var(--ink2)}.tmb p{margin:7px 0}.tmb b{color:var(--ink)}
+.pill{display:inline-block;font:700 10.5px var(--mono);padding:2px 7px;border-radius:999px;background:var(--panel2);color:var(--ink2);margin:0 4px 3px 0}
+.pill.bad{background:rgba(239,83,80,.15);color:#ffb4a8}.pill.ok{background:rgba(52,201,138,.12);color:#86e3bb}
+.phases{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.ph{border:1px solid var(--line2);background:var(--panel2);color:var(--ink);border-radius:9px;padding:7px 11px;font:650 12.5px var(--sans);cursor:pointer;position:relative}
+.ph[aria-pressed="true"]{background:var(--sea);border-color:var(--sea);color:#06223c}
+.ph.sugg::after{content:"suggested";position:absolute;top:-8px;right:-6px;font:700 9px var(--mono);background:var(--action);color:#2a1d00;border-radius:999px;padding:1px 5px}
+.grp{border:1px solid var(--line);border-radius:11px;padding:9px 12px;margin-bottom:9px}
+.grp.cur{border-color:var(--sea);background:rgba(63,169,245,.06)}
+.grp h3{margin:0 0 3px;font-size:13.5px}.grp .dec{font-size:12px;color:var(--dim);margin-bottom:5px}
+.chk{display:flex;gap:9px;align-items:flex-start;padding:5px 0;font-size:13px}.chk input{margin-top:3px;accent-color:var(--sea)}
+.chk span b{color:var(--ink)}
+ul.f{margin:4px 0;padding-left:19px}ul.f li{margin:5px 0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--sea);border-radius:11px;padding:12px 15px;margin-bottom:10px;color:var(--ink2);font-size:12.5px}
+#foot{color:var(--dim);font-size:12px;padding:6px 0 36px}
+code{font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:5px}
+@media(max-width:980px){.gmap,.g2{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:560px){header h1{font-size:23px}#disc{font-size:11.5px;line-height:1.4;padding:6px 10px}.tm>summary{grid-template-columns:24px minmax(0,1fr) auto}.tm .n{grid-column:1;grid-row:1}.tm .nm{grid-column:2;grid-row:1}.tm .flag{grid-column:3;grid-row:1;justify-self:end}.tm .val{grid-column:2/4;grid-row:2}.tmb{padding-left:12px}.big{font-size:22px}}
+.nw{white-space:nowrap}
+@media print{#disc{position:static}}
+</style>
+</head>
+<body>
+<div id="disc"><b>Descriptive decision support, not a forecast and not an official source.</b> The lift-station network is <b>synthetic</b>, calibrated to network-level public data for St. Petersburg, FL, with <b>no real station locations</b>. Follow the <a href="https://www.weather.gov/tbw/" target="_blank" rel="noopener">National Weather Service</a> and local emergency management. <b>In an emergency, call 911.</b></div>
+<div class="wrap">
+<header>
+ <h1>Coastal Water Resilience</h1>
+ <div class="s">Live coastal-surge monitoring at NOAA tide gauge 8726520 (St. Petersburg, FL), joined to a hurricane response plan built on the ten-metric diagnostic suite from a contamination-resilient cluster-randomized-trial (CRT) design. Exposed and unexposed lift stations at a surge level play the two trial arms; each metric pairs an analytical and an operational mitigation. The network it runs on is synthetic.</div>
+ <div class="strip" id="strip" aria-label="Feed status"></div><div class="sr" id="live" aria-live="polite"></div>
+ <div class="strip"><button class="btn" id="refresh" type="button">Refresh feeds</button><span class="muted" id="refreshed">Feeds refresh every 6 minutes.</span></div>
+</header>
+<nav class="tabs" role="tablist" aria-label="Console pages">
+ <button class="tab" role="tab" type="button" data-tab="monitor" id="tab-monitor">Monitor</button>
+ <button class="tab" role="tab" type="button" data-tab="plan" id="tab-plan">Response plan</button>
+ <button class="tab" role="tab" type="button" data-tab="backtest" id="tab-backtest">Backtest</button>
+ <button class="tab" role="tab" type="button" data-tab="about" id="tab-about">About</button>
+</nav>
+
+<!-- ======================= MONITOR ======================= -->
+<section class="grid g4" data-page="monitor">
+ <div class="card" data-page="monitor" id="c-gauge">
+  <div class="ch"><h2>Gauge now</h2><div class="hbs"><span class="hb ms" title="Live public feed">MEASURED · NOAA CO-OPS 8726520</span><span class="hb md" title="Synthetic network count">MODELED · station count</span></div></div>
+  <div class="sub">St. Petersburg, Tampa Bay · water level and tide prediction, ft above MLLW</div>
+  <div id="gauge"><div class="muted"><span class="spin"></span>loading water level and tide predictions</div></div>
+ </div>
+ <div class="card" data-page="monitor" id="c-ofs">
+  <div class="ch"><h2>OFS forecast</h2><div class="hbs"><span class="hb ms" title="Live public feed (model guidance)">MEASURED · NOAA OFS via CO-OPS</span><span class="hb md">MODELED · stations screened</span></div></div>
+  <div class="sub">Operational Forecast System total water level at the gauge, next 48 h</div>
+  <div id="ofs"><div class="muted"><span class="spin"></span>loading the OFS forecast</div></div>
+ </div>
+ <div class="card" data-page="monitor" id="c-nhc">
+  <div class="ch"><h2>NHC systems</h2><div class="hbs"><span class="hb ms" title="Live public feed">MEASURED · NOAA NHC via Esri</span></div></div>
+  <div class="sub">Active tropical systems worldwide; Atlantic and East Pacific first, with the closest forecast approach to the gauge</div>
+  <div id="nhc"><div class="muted"><span class="spin"></span>loading active tropical systems</div></div>
+ </div>
+ <div class="card" data-page="monitor" id="c-nws">
+  <div class="ch"><h2>NWS alerts</h2><div class="hbs"><span class="hb ms" title="Live public feed">MEASURED · NWS api.weather.gov</span></div></div>
+  <div class="sub">Active watches, warnings and advisories at the gauge point (27.773, -82.640)</div>
+  <div id="nws"><div class="muted"><span class="spin"></span>loading NWS alerts</div></div>
+ </div>
+</section>
+
+<section class="grid gmap" data-page="monitor">
+ <div class="card" data-page="monitor" id="c-net">
+  <div class="ch"><h2>Synthetic network</h2><div class="hbs"><span class="hb md" title="Synthetic network; no real locations">MODELED · synthetic, no real locations</span></div></div>
+  <div class="sub" id="net-sub">130 synthetic lift stations on a fictional peninsula, colored by exposure at the selected surge level. Select a station to trace its upstream set.</div>
+  <div class="mapwrap" id="mapwrap"><div id="map"></div><div class="tip" id="maptip" hidden></div></div>
+  <div class="legend" id="map-legend"></div>
+  <div class="detail" id="stn-detail"></div>
+  <div style="margin-top:8px"><label class="muted" for="stn-pick">Select a station: </label><select id="stn-pick"></select></div>
+  <details class="dt" id="stn-table-d"><summary id="stn-table-s">Station table</summary><div class="tblw" id="stn-table"></div></details>
+ </div>
+ <div class="col" data-page="monitor">
+  <div class="card" data-page="monitor" id="c-ladder">
+   <div class="ch"><h2>Surge ladder</h2><div class="hbs"><span class="hb md">MODELED · synthetic counts</span><span class="hb ms" title="Real-network counts at each ladder step">MEASURED · real network counts</span></div></div>
+   <div class="sub">Surge level in ft above MLLW at the gauge. The flood plane is the level minus 1.48 ft (MLLW to NAVD88); a station is exposed when its ground elevation sits at or below the plane.</div>
+   <div class="ladder" id="ladder" role="group" aria-label="Surge level"></div>
+   <div class="muted" id="ladder-note"></div>
+   <div class="chart" id="ladder-chart"></div>
+   <div id="ladder-sum" style="margin-top:8px"></div>
+  </div>
+  <div class="card" data-page="monitor" id="c-tm">
+   <div class="ch"><h2>Ten-metric suite</h2><div class="hbs"><span class="hb md">MODELED · synthetic network</span><span class="hb ms" title="Computed on the real network">MEASURED · real network, 2026-09-04</span><span class="hb ip">INTERPRETIVE · mitigations</span></div></div>
+   <div class="sub" id="tm-sub"></div>
+   <div id="tm"></div>
+  </div>
+ </div>
+</section>
+
+<!-- ======================= RESPONSE PLAN ======================= -->
+<section class="grid g2" data-page="plan">
+ <div class="col" data-page="plan">
+  <div class="card" data-page="plan" id="c-phase">
+   <div class="ch"><h2>Phase</h2><div class="hbs"><span class="hb ip" title="Derived from the NHC feed by a fixed rule">INTERPRETIVE · suggested from NHC</span></div></div>
+   <div class="sub">If an Atlantic or East Pacific system's forecast track passes within 300 km of the gauge, its closest-approach forecast hour suggests the phase: up to 24 h → T−24h, up to 48 h → T−48h, up to 72 h → T−72h, otherwise T−120h. With no such system, Pre-season.</div>
+   <div id="phase-sugg"><div class="muted"><span class="spin"></span>waiting for the NHC feed</div></div>
+   <div class="phases" id="phases" role="group" aria-label="Timeline phase"></div>
+  </div>
+  <div class="card" data-page="plan" id="c-check">
+   <div class="ch"><h2>Live action checklist</h2><div class="hbs"><span class="hb md">MODELED · synthetic network</span><span class="hb ip">INTERPRETIVE · actions</span></div></div>
+   <div class="sub">The operational mitigations of the metrics that are sub-optimal at the selected surge level, grouped by the timeline phases that address them.</div>
+   <div class="ladder" id="ladder2" role="group" aria-label="Surge level"></div>
+   <div id="check"></div>
+  </div>
+ </div>
+ <div class="col" data-page="plan">
+  <div class="card" data-page="plan" id="c-timeline">
+   <div class="ch"><h2>Timeline</h2><div class="hbs"><span class="hb ip">INTERPRETIVE · plan</span><span class="hb md">MODELED · dimension status</span></div></div>
+   <div class="sub">Decisions by phase and the metric dimensions each addresses. Chips show each dimension's status at the selected surge level.</div>
+   <div class="tblw" id="timeline"></div>
+  </div>
+  <div class="card" data-page="plan" id="c-findings">
+   <div class="ch"><h2>Key findings</h2><div class="hbs"><span class="hb ms" title="Real network, public storm data">MEASURED · real network</span></div></div>
+   <ul class="f">
+    <li><b>Exposure is a cliff.</b> A two-foot difference between 6 and 8 ft takes 15 stations to 56.</li>
+    <li><b>The fixed 6 ft screen understated Helene by 4.6x</b> (15 vs 69). It was in effect calibrated to Idalia (15 vs 15).</li>
+    <li><b>Milton screened 2 stations, correctly,</b> because it pushed water out of the bay.</li>
+    <li><b>72 of 131 stations (55%) are in Zone A, and 52 of Helene's 69 were.</b> So access, not pump capacity, is the binding constraint once Zone A is ordered, which argues for pre-staging and remote monitoring.</li>
+    <li><b>The criticality flag does not encode surge exposure.</b></li>
+   </ul>
+  </div>
+ </div>
+</section>
+
+<!-- ======================= BACKTEST ======================= -->
+<section class="grid" data-page="backtest">
+ <div class="card" data-page="backtest" id="c-bt">
+  <div class="ch"><h2>Three storms on the ladder</h2><div class="hbs"><span class="hb ms" title="NOAA gauge 8726520 history and the real network">MEASURED · NOAA 8726520, real network</span><span class="hb md">MODELED · synthetic column</span></div></div>
+  <div class="sub">Peak water level at the gauge, its anomaly over the tide prediction, the flood plane (peak minus 1.48 ft), and the stations at or below that plane.</div>
+  <div class="tblw" id="bt-table"></div>
+ </div>
+</section>
+<section class="grid g2" data-page="backtest">
+ <div class="card" data-page="backtest" id="c-bt-obs">
+  <div class="ch"><h2>The observed side</h2><div class="hbs"><span class="hb ms" title="Public reports">MEASURED · FDEP, City, press</span></div></div>
+  <div class="row"><span class="l"><b style="color:var(--ink)">Helene</b>, released</span><span class="v">1,431,895 gal</span></div>
+  <ul class="f small">
+   <li>1,020,000 gal from a treatment plant de-energized by surge</li>
+   <li>407,495 gal from 26 manholes</li>
+   <li>4,400 gal post-storm</li>
+  </ul>
+  <div class="muted">Cause: storm surge. Sources: FDEP Public Notice of Pollution and City disclosures.</div>
+  <div class="row" style="margin-top:12px"><span class="l"><b style="color:var(--ink)">Milton</b>, released</span><span class="v">at least 5.9 million gal</span></div>
+  <div class="muted">Per the City as quoted in the press; no itemized volumes. Causes: wind, about 18 in of rain, and power loss at two plants. The City reported no storm surge.</div>
+ </div>
+ <div class="card" data-page="backtest" id="c-bt-concl">
+  <div class="ch"><h2>What the backtest says</h2><div class="hbs"><span class="hb ip">INTERPRETIVE</span></div></div>
+  <ul class="f">
+   <li><b>Helene's biggest failure was the plant,</b> which is outside a lift-station ladder's scope.</li>
+   <li><b>The reporting unit is the manhole,</b> so no station-level hit rate is possible from public data.</li>
+   <li><b>Milton released about four times Helene's sewage volume with zero surge.</b> That is the strongest argument for treating grid power and rainfall inflow as first-class hazards, and against a surge-only console.</li>
+  </ul>
+ </div>
+</section>
+
+<!-- ======================= ABOUT ======================= -->
+<section class="grid g2" data-page="about">
+ <div class="col" data-page="about">
+  <div class="card" data-page="about" id="c-method">
+   <div class="ch"><h2>Method</h2><div class="hbs"><span class="hb ip">INTERPRETIVE</span></div></div>
+   <p class="small">The console applies the ten-metric diagnostic suite from a contamination-resilient cluster-randomized-trial (CRT) design to a wastewater lift-station network. At a given surge level the stations at or below the flood plane are one arm (exposed) and the rest are the other (unexposed). In a trial, contamination between arms biases the estimate; in a sewer, failure propagates across force-main connections, so the same geometry that governs contamination bias in a trial governs cascade in a network.</p>
+   <p class="small">The suite has three pillars: <b>Statistical Interchangeability</b> (metrics 1 to 3), <b>Topological and Spatial Cohesion</b> (4 to 7) and <b>Contamination Resilience</b> (8 to 10). Each metric has a threshold; when it is crossed, the console shows the sub-optimal condition, an analytical mitigation (how to read the numbers) and an operational mitigation (what to do in the field). The response plan collects the operational mitigations of the sub-optimal metrics into timeline phases.</p>
+   <p class="small">Live feeds set context only: the gauge reading and the OFS forecast map onto the ladder, and the NHC track suggests a phase. Nothing here predicts which station fails.</p>
+  </div>
+  <div class="card" data-page="about" id="c-calib">
+   <div class="ch"><h2>How the synthetic network was calibrated</h2><div class="hbs"><span class="hb md">MODELED · computed live</span><span class="hb ms" title="Network-level aggregates of the real network">MEASURED · real aggregates</span></div></div>
+   <p class="small">The network is generated in your browser from a fixed seed (mulberry32, seed 20260904), so every visitor sees the same 130 stations. Ground elevations are drawn inside bands whose counts reproduce the real network's surge ladder and storm planes exactly, with a few fixed values pinning the published quantiles. Stations sit on a fictional peninsula in a local kilometer frame (barrier islands and keys, causeways, tidal creeks, an inland ridge): lower stations on islands, shorelines and creek lowlands, higher ones inland. The 15-edge force-main topology, evacuation zones and criticality flags are set to match the real network's aggregates. The three treatment plants are the terminals: each force-main sink links, schematically, to its basin's plant (these links are not counted as edges). The real network lists 131 stations; the published calibration aggregates (elevation ladder, zone split) cover 130 of them, so the synthetic network has 130. The table below is recomputed from the generated network each time the page loads.</p>
+   <div class="tblw" id="calib"></div>
+  </div>
+  <div class="card" data-page="about" id="c-withheld">
+   <div class="ch"><h2>What is withheld, and why</h2><div class="hbs"><span class="hb ip">INTERPRETIVE</span></div></div>
+   <p class="small">This public version withholds every real station name, coordinate, facility ID and per-station value (elevation, zone, topology, criticality). A map of which wastewater stations sit lowest, which are choke points and which back up first is a map of critical infrastructure; it belongs with the utility, not on a public page. What remains is what is already public or aggregate: NOAA gauge readings, storm-level backtest counts, publicly reported sewage volumes, and network-level summaries (counts, shares, the ten metric values). The synthetic IDs (LS-001 to LS-130) and names are neutral and do not correspond to real facilities.</p>
+  </div>
+ </div>
+ <div class="col" data-page="about">
+  <div class="card" data-page="about" id="c-sources">
+   <div class="ch"><h2>Data sources</h2><div class="hbs"><span class="hb ms">MEASURED · public feeds</span></div></div>
+   <ul class="f small">
+    <li><a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8726520" target="_blank" rel="noopener">NOAA CO-OPS station 8726520</a>, St. Petersburg, Tampa Bay: observed water level (6-minute), tide predictions, and the Operational Forecast System (OFS) water-level guidance, via the CO-OPS Data API.</li>
+    <li><a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">NOAA National Hurricane Center</a> forecast and observed positions, via the Esri Living Atlas Active Hurricanes feature service.</li>
+    <li><a href="https://www.weather.gov/documentation/services-web-api" target="_blank" rel="noopener">National Weather Service API</a> (api.weather.gov), active alerts at the gauge point.</li>
+    <li>Calibration aggregates: the real network's ground elevations from USGS 3DEP, evacuation zones and force-main topology, summarized at network level only (real network, 2026-09-04).</li>
+    <li>Backtest volumes: FDEP Public Notice of Pollution, City of St. Petersburg disclosures, and press reports quoting the City.</li>
+   </ul>
+   <p class="muted">All feeds are keyless and fetched by your browser. Nothing is stored or sent anywhere else.</p>
+  </div>
+  <div class="card" data-page="about" id="c-caveats">
+   <div class="ch"><h2>Caveats</h2><div class="hbs"><span class="hb ip">INTERPRETIVE</span></div></div>
+   <ul class="f small">
+    <li><b>Ground elevation is not wet-well or panel elevation.</b> The real calibration uses USGS 3DEP ground elevation, so the ladder tiers are screening flags, not flood lines.</li>
+    <li><b>Topology direction is inferred from elevation</b> (force mains point downhill), not traced from as-builts.</li>
+    <li><b>The gauge is one point.</b> Surge varies across a bay; a single gauge reading stands in for the whole network.</li>
+    <li><b>Surge is one hazard.</b> Grid power and rainfall inflow drove Milton's releases; this console does not model them.</li>
+    <li><b>Feeds can lag or drop.</b> Every panel shows its feed state and timestamp; a stale or unavailable feed is labeled as such.</li>
+   </ul>
+  </div>
+  <div class="card" data-page="about" id="c-hook">
+   <div class="ch"><h2>Utility hook</h2><div class="hbs"><span class="hb md">MODELED · empty by default</span></div></div>
+   <p class="small">The script defines <code>STATUS_OVERRIDE = {}</code>. A utility could wire it to SCADA: keys are station IDs and values look like <code>{status: 'down' | 'surcharged' | 'ok', note: '...'}</code>. An overridden station is drawn with a cross on the map and its status appears in the station panel. In this public copy it is empty, so nothing is overridden.</p>
+   <div class="muted" id="hook-state"></div>
+  </div>
+  <div class="card" data-page="about" id="c-credit">
+   <div class="ch"><h2>Credit</h2><div class="hbs"><span class="hb ip">INTERPRETIVE</span></div></div>
+   <p class="small">Built by <b>Patrick Iben</b>. The framework comes from his contamination-resilient cluster-randomized-trial design manuscript (preprint, Zenodo, DOI 10.5281/zenodo.23486177).<!-- DOI left unlinked: its resolution could not be verified when this console was built. Link it once it resolves. --> The private console and response plan this public version generalizes were built for a Gulf-coast city's wastewater network.</p>
+  </div>
+ </div>
+</section>
+
+<div id="foot">
+ <div class="note"><b>Related tools.</b> <a href="../us-local-hazards/">Hazards Near You</a> (NWS warnings, tides, flood zones) · <a href="../river-flood-propagation/">River Flood Propagation</a> · <a href="../../">All consoles</a></div>
+ <div>Unofficial and descriptive. The lift-station network is synthetic. Always follow the National Weather Service and local emergency management; call 911 in an emergency.</div>
+</div>
+</div>
+
+<script>
+/* ===== SYNTHETIC NETWORK (deterministic; mulberry32 seed) ===== */
+var SEED=20260904;
+var TOPO_RANKS=[[7,4],[84,10],[76,5],[73,46],[46,25],[25,20],[80,31],[88,33],[61,21],[50,26],[111,91],[95,69],[77,58],[129,128],[87,59]];
+var LAYOUT={top:14.2,K:[2,2,2,2],n4:[.4,1.2],n5:[.5,1.4],n6:[.8,2.5],n7:[1.5,9]};
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* Fictional peninsula in a local km frame (x east, y north). Gulf to the west, bay to the east. */
+var GEO={
+ mainland:[[-6.0,14.6],[-5.6,13.5],[-4.9,11],[-5.3,8.5],[-4.6,6],[-4.9,3],[-4.3,0.5],[-4.8,-2.5],[-4.2,-5.5],[-3.9,-8],[-2.8,-10.6],[-1.2,-12.6],[0.6,-14.0],[2.2,-13.2],[3.4,-11.0],[4.4,-8.2],[5.3,-5.6],[4.9,-2.6],[5.6,0.2],[5.1,3.2],[5.8,6.0],[5.2,8.8],[5.9,11.5],[5.6,14.6]],
+ islands:{
+  BIN:{label:'North Barrier Isle',line:[[-8.3,12.8],[-8.6,9.5],[-8.9,6.0]],hw:.38},
+  BIM:{label:'Middle Barrier Isle',line:[[-9.1,2.9],[-9.3,0],[-9.0,-2.9]],hw:.38},
+  BIS:{label:'South Barrier Isle',line:[[-8.7,-4.9],[-8.4,-7.8],[-7.6,-10.7]],hw:.38},
+  SK:{label:'South Key',line:[[-0.6,-17.2],[1.0,-17.6],[2.3,-17.1]],hw:.42},
+  KE:{label:'East Key',line:[[7.2,5.1],[8.6,4.4]],hw:.45},
+  KSE:{label:'Southeast Key',line:[[7.0,-5.1],[8.0,-6.0]],hw:.4}},
+ causeways:{
+  CWN:{label:'North Causeway',line:[[-8.62,9.2],[-5.15,9.2]]},
+  CWM:{label:'Middle Causeway',line:[[-9.28,0.2],[-4.4,0.2]]},
+  CWS:{label:'South Causeway',line:[[-8.42,-7.6],[-3.95,-7.6]]},
+  CWK:{label:'Key Causeway',line:[[0.7,-13.95],[0.9,-17.55]]},
+  CWE:{label:'East Causeway',line:[[5.45,4.6],[7.25,5.0]]},
+  CWSE:{label:'Southeast Causeway',line:[[5.2,-5.35],[7.05,-5.2]]}},
+ creeks:{
+  CRN:{label:'North Creek',line:[[5.5,7.0],[3.8,7.4],[2.2,7.0],[1.0,7.6]]},
+  CRC:{label:'Central Creek',line:[[4.8,-2.4],[3.4,-2.0],[2.0,-1.6],[0.6,-1.0]]},
+  CRW:{label:'West Creek',line:[[-4.05,-5.3],[-2.8,-5.0],[-1.6,-4.4],[-0.6,-3.4]]}},
+ basinLines:[[[-12,5.2],[-4.6,5.2],[-1.6,3.4],[1.4,4.6],[3.6,2.8],[12,2.8]],[[-12,-6.0],[-4.2,-6.0],[-2.2,-4.2],[0.2,-5.6],[2.6,-3.4],[12,-3.4]]],   /* sewershed boundaries: North above line 0, South below line 1 */
+ plants:[{id:'TP-1',name:'Treatment Plant 1',x:3.9,y:10.6,basin:'N'},{id:'TP-2',name:'Treatment Plant 2',x:-3.6,y:-1.2,basin:'C'},{id:'TP-3',name:'Treatment Plant 3',x:-1.4,y:-10.9,basin:'S'}]
+};
+function lineY(L,x){for(var i=0;i<L.length-1;i++){if(x<=L[i+1][0]){var f=(x-L[i][0])/(L[i+1][0]-L[i][0]);return L[i][1]+f*(L[i+1][1]-L[i][1]);}}return L[L.length-1][1];}
+function basinOf(x,y){return y>lineY(GEO.basinLines[0],x)?'N':(y>lineY(GEO.basinLines[1],x)?'C':'S');}
+function inPoly(x,y,P){var c=false;for(var i=0,j=P.length-1;i<P.length;j=i++){var xi=P[i][0],yi=P[i][1],xj=P[j][0],yj=P[j][1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c;}return c;}
+function segDist(x,y,a,b){var dx=b[0]-a[0],dy=b[1]-a[1],L=dx*dx+dy*dy,t=L?((x-a[0])*dx+(y-a[1])*dy)/L:0;t=Math.max(0,Math.min(1,t));var px=a[0]+t*dx-x,py=a[1]+t*dy-y;return Math.sqrt(px*px+py*py);}
+function coastDist(x,y){var P=GEO.mainland,b=1e9;for(var i=0;i<P.length-1;i++){var d=segDist(x,y,P[i],P[i+1]);if(d<b)b=d;}return b;} /* open polyline: the north map edge is not coast */
+function alongLine(L,t){var segs=[],tot=0;for(var i=0;i<L.length-1;i++){var d=Math.hypot(L[i+1][0]-L[i][0],L[i+1][1]-L[i][1]);segs.push(d);tot+=d;}
+ var want=t*tot;for(var k=0;k<segs.length;k++){if(want<=segs[k]||k===segs.length-1){var f=segs[k]?Math.min(1,want/segs[k]):0;var a=L[k],b=L[k+1];var dx=b[0]-a[0],dy=b[1]-a[1],n=Math.hypot(dx,dy)||1;return {x:a[0]+f*dx,y:a[1]+f*dy,nx:-dy/n,ny:dx/n};}want-=segs[k];}}
+
+/* Elevation bands (ft NAVD88). Exact counts per band reproduce the real ladder; fixed values pin the quantiles. */
+var ELEV_FIXED=[-0.8,4.06,4.13,4.18,4.22,4.41,5.58,5.61,5.66,5.72,5.79,5.85,5.91,5.97,6.55,6.6,6.64,6.69,6.73,6.77,6.81,6.86,6.88,6.92,6.95,6.98,10.65,10.72,
+ 30.4,34.4,38.4,40.2,42.0,45.8,46.0,47.5,49.0,51.0,51.5,52.5,53.3,54.1,54.4];
+var ELEV_BANDS=[[-0.7,-0.1,1],[2.6,2.98,1],[3.05,3.48,3],[3.56,3.98,4],[4.65,4.98,3],[5.03,5.49,14],[6.03,6.49,16],[7.01,7.07,1],[7.1,7.5,10],[7.56,7.98,2],[8.03,8.49,4],[8.55,8.98,2],[9.05,9.97,5],[10.03,10.49,4],
+ [11.05,11.95,4],[13.1,13.9,1],[14.1,14.9,1],[16.1,16.9,2],[17.1,17.9,1],[18.1,18.9,4],[19.1,19.9,1],[20.1,20.9,1],[21.1,21.9,1],[22.1,22.9,1]];
+
+function buildNetwork(){
+ var R=mulberry32(SEED);
+ var e=ELEV_FIXED.slice();
+ ELEV_BANDS.forEach(function(b){for(var k=0;k<b[2];k++)e.push(Math.round((b[0]+(b[1]-b[0])*(k+.15+.7*R())/b[2])*100)/100);});
+ e.sort(function(a,b){return a-b;});
+ var pts=[]; /* pts[rank] = {x,y,site,kind} */
+ function put(rank,x,y,site,kind){pts[rank]={x:x,y:y,site:site,kind:kind};}
+ function onIsland(key,t,lat){var I=GEO.islands[key],p=alongLine(I.line,t);var o=(lat==null?(R()-.5)*1.2:lat)*I.hw;return [p.x+p.nx*o,p.y+p.ny*o];}
+ function onCause(key,t){var p=alongLine(GEO.causeways[key].line,t);return [p.x+(R()-.5)*.08,p.y+(R()-.5)*.08];}
+ function nearShore(ax,ay,spread,dmin,dmax){for(var k=0;k<400;k++){var x=ax+(R()*2-1)*spread,y=ay+(R()*2-1)*spread;if(inPoly(x,y,GEO.mainland)){var d=coastDist(x,y);if(d>=dmin&&d<=dmax)return [x,y];}}return [ax,ay];}
+ function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(R()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+ function range(a,b){var r=[];for(var i=a;i<=b;i++)r.push(i);return r;}
+ function onCreek(key,t){var p=alongLine(GEO.creeks[key].line,t);return [p.x+(R()-.5)*.16,p.y+(R()-.5)*.16];}
+ function jit(x,y,j){return [x+(R()-.5)*j,y+(R()-.5)*j];}
+ function placeAll(ranks,specs){var k=0;specs.forEach(function(sp){var key=sp[0],kind=sp[1];sp[2].forEach(function(a){var p=kind==='island'?onIsland(key,a,null):kind==='causeway'?onCause(key,a):kind==='creek'?onCreek(key,a):jit(a[0],a[1],.2);
+   put(ranks[k++],p[0],p[1],key,kind==='pt'?'shore':kind);});});if(k!==ranks.length)throw new Error('tier size '+k+' vs '+ranks.length);}
+ /* --- tier 1: ranks 0-14 (<=4.52 ft, exposed at 6 ft): 11 separate low groups --- */
+ placeAll([0,1].concat(shuffle(range(2,14))),[['BIN','island',[.06,.2,.48]],['BIM','island',[.4,.55]],['BIS','island',[.02,.32]],['SK','island',[.5]],['KE','island',[.25,.75]],
+  ['TIP','pt',[[0.7,-13.55]]],['CRN','creek',[0,.2]],['CRC','creek',[1]],['CRW','creek',[1]]]);
+ /* --- tier 2: ranks 15-55 (4.52-6.52 ft, exposed at 8 ft): the same low areas grow inland, plus two new pockets --- */
+ placeAll(shuffle(range(15,55)),[['BIN','island',[.3,.62,.76,.9]],['BIM','island',[.08,.22,.7,.88]],['BIS','island',[.16,.48,.64,.8]],['SK','island',[.15]],['KE','island',[0,1]],['KSE','island',[.1,.5,.9]],
+  ['TIP','pt',[[-0.25,-13.1],[1.6,-13.2],[0.8,-12.6]]],['CRN','creek',[.33,.47,.6,.73,.87,1]],['CRC','creek',[0,.17,.33,.5,.67,.83]],['CRW','creek',[0,.2,.4,.6,.8]],['GULFN','pt',[[-4.75,11.4],[-4.55,10.6],[-4.95,9.8]]]]);
+ /* --- tier 3: ranks 56-68 (6.52-7.08): island crowns, causeways, creek banks and the shore ring --- */
+ placeAll(shuffle(range(56,68)),[['BIN','island',[.4]],['BIM','island',[.3]],['BIS','island',[.56]],['CWN','causeway',[.5]],['CWM','causeway',[.45]],['CWS','causeway',[.55]],['CWE','causeway',[.5]],
+  ['NEAR','pt',[[2.6,8.3],[2.6,-0.5],[-2.3,-3.8],[0.2,-11.9],[4.4,1.6],[-3.8,4.6]]]]);
+ /* --- tiers 4-7: inland, quasi-regular (best-candidate sampling), higher with distance from the coast --- */
+ var t4=shuffle(range(69,84)),k4=5;
+ placeAll(t4.slice(0,5),[['KE','island',[.5]],['BIM','island',[.62]],['BIN','island',[.55]],['CWSE','causeway',[.5]],['CWK','causeway',[.5]]]);
+ function placed(){return pts.filter(Boolean);}
+ function lowDist(x,y){var m=1e9;for(var r=0;r<56;r++){var q=pts[r];var d=Math.hypot(q.x-x,q.y-y);if(d<m)m=d;}return m;}
+ function bestCand(ok,ymin,ymax,K){var best=null,bs=-1,P=placed();for(var k=0;k<K;k++){var c=null;for(var tries=0;tries<2000&&!c;tries++){var x=-5.5+R()*11.6,y=ymin+R()*(ymax-ymin);if(inPoly(x,y,GEO.mainland)&&ok(x,y))c=[x,y];}
+   if(!c)continue;var m=1e9;P.forEach(function(q){var dd=Math.hypot(q.x-c[0],q.y-c[1]);if(dd<m)m=dd;});if(m>bs){bs=m;best=c;}}return best;}
+ function band(cmin,cmax,lmin,lmax){return function(x,y){var c=coastDist(x,y),l=lowDist(x,y);return c>=cmin&&c<=cmax&&l>=lmin&&l<=lmax;};}
+ var LP=LAYOUT;
+ while(k4<t4.length){var p=bestCand(band(.5,3,LP.n4[0],LP.n4[1]),-12.5,LP.top,LP.K[0]);put(t4[k4++],p[0],p[1],'INL','inland');}
+ range(85,95).forEach(function(r){var p=bestCand(band(1.2,4,LP.n5[0],LP.n5[1]),-11.5,LP.top,LP.K[1]);put(r,p[0],p[1],'INL','inland');});
+ range(96,114).forEach(function(r){var p=bestCand(band(2.2,6,LP.n6[0],LP.n6[1]),-9.5,LP.top,LP.K[2]);put(r,p[0],p[1],'INL','inland');});
+ range(115,129).forEach(function(r){var p=bestCand(band(3.2,6,LP.n7[0],LP.n7[1]),-2.5,LP.top-.5,LP.K[3]);put(r,p[0],p[1],'RIDGE','ridge');});
+ /* --- stations with neutral IDs (seeded shuffle so ID order does not reveal elevation) --- */
+ var ids=shuffle(range(1,130));
+ var LABEL={GULFN:'Gulf Shore',TIP:'South Point',NEAR:'Shore Ring',INL:null,RIDGE:'Ridge'};
+ var st=e.map(function(el,r){var p=pts[r];var lab=GEO.islands[p.site]?GEO.islands[p.site].label:GEO.causeways[p.site]?GEO.causeways[p.site].label:GEO.creeks[p.site]?GEO.creeks[p.site].label:LABEL[p.site];
+  var b=basinOf(p.x,p.y);if(!lab)lab={N:'North Inland',C:'Central Inland',S:'South Inland'}[b];
+  var X=Math.round(p.x*1000)/1000,Y=Math.round(p.y*1000)/1000;
+  return {fid:'LS-'+('00'+ids[r]).slice(-3),rank:r,elev:el,x:X,y:Y,lat:Y/111,lng:X/111,kind:p.kind,site:p.site,area:lab,basin:b};});
+ var cnt={};st.slice().sort(function(a,b){return a.fid<b.fid?-1:1;}).forEach(function(s){cnt[s.area]=(cnt[s.area]||0)+1;s.name=s.area+' '+cnt[s.area];});
+ /* --- evacuation zones, matching the real split (A 72, B 10, C 2, D 4, E 4, M 1, 37 not resolved).
+    Not resolved = the key is absent. Of the 69 stations under Helene's plane, 52 are Zone A; unresolved skews to island and causeway sites. --- */
+ function setZones(ranks,plan){var k=0;plan.forEach(function(p){for(var i=0;i<p[1];i++){var s=st[ranks[k++]];if(p[0])s.zone=p[0];}});}
+ var low=range(0,68),isl=shuffle(low.filter(function(r){return st[r].kind==='island'||st[r].kind==='causeway';})),unres={};
+ isl.slice(0,17).forEach(function(r){unres[r]=1;});
+ low.forEach(function(r){if(!unres[r])st[r].zone='A';});
+ range(69,84).forEach(function(r){if(st[r].kind==='inland')st[r].zone='A';});
+ setZones(shuffle(range(85,95)),[['A',9],['B',2]]);
+ setZones(shuffle(range(96,114)),[['B',8],['C',2],[null,9]]);
+ setZones(shuffle(range(115,129)),[['D',4],['E',4],['M',1],[null,6]]);
+ /* --- criticality flag: 10 stations, all above the 7 ft NAVD88 plane (the real finding: the flag does not encode surge exposure) --- */
+ shuffle(range(69,129)).slice(0,10).forEach(function(r){st[r].crit=true;});
+ /* --- force-main topology: 15 directed edges among 28 stations, [upstream rank, downstream rank], all downhill --- */
+ var topo={},rev={};TOPO_RANKS.forEach(function(e){var u=st[e[0]].fid,d=st[e[1]].fid;topo[u]=d;(rev[d]=rev[d]||[]).push(u);});
+ return {stations:st,topo:topo,rev:rev};
+}
+
+/* ===== TEN-METRIC ENGINE (ported from the manuscript's engine as used on the real network) ===== */
+var SURGE_LEVELS=[3,4,5,6,7,8,10,12];
+var MLLW_TO_NAVD=1.48;
+function hav(a,b){var R=6371,toR=Math.PI/180,dLat=(b.lat-a.lat)*toR,dLng=(b.lng-a.lng)*toR,
+ h=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(a.lat*toR)*Math.cos(b.lat*toR)*Math.sin(dLng/2)*Math.sin(dLng/2);return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));}
+function upstreamOf(fid){var out=new Set(),st=[fid];while(st.length){var c=st.pop(),ups=TOPO_REV[c]||[];for(var i=0;i<ups.length;i++){if(!out.has(ups[i])){out.add(ups[i]);st.push(ups[i]);}}}return out;}
+function surgeAt(ft){var plane=Math.round((ft-MLLW_TO_NAVD)*100)/100;
+ return {plane:plane,list:stations.filter(function(s){return s.elev!=null&&s.elev<=plane;}).sort(function(a,b){return a.elev-b.elev;})};}
+function tmSets(){var cur=surgeAt(surgeSel),ids=new Set(cur.list.map(function(s){return s.fid;}));
+ return {T:cur.list,C:stations.filter(function(s){return s.elev!=null&&!ids.has(s.fid);}),plane:cur.plane,ids:ids};}
+function tmUp(fid){return upstreamOf(fid).size;}
+function tmMeanNN(set){if(set.length<2)return null;var tot=0;set.forEach(function(a){var b=1e9;set.forEach(function(o){if(o!==a){var d=hav(a,o);if(d<b)b=d;}});tot+=b;});return tot/set.length;}
+function tmComponents(set,km){var n=set.length,seen=[],comp=0;for(var i=0;i<n;i++)seen.push(false);
+ for(var i=0;i<n;i++){if(seen[i])continue;comp++;var st=[i];seen[i]=true;while(st.length){var c=st.pop();for(var j=0;j<n;j++){if(!seen[j]&&hav(set[c],set[j])<=km){seen[j]=true;st.push(j);}}}}return comp;}
+function tmW1(a,b){if(!a.length||!b.length)return null;var A=a.slice().sort(function(x,y){return x-y;}),B=b.slice().sort(function(x,y){return x-y;}),q=20,t=0;
+ for(var i=0;i<q;i++){var pr=(i+.5)/q;t+=Math.abs(A[Math.floor(pr*A.length)]-B[Math.floor(pr*B.length)]);}return t/q;}
+function tmTrap(xs,ys){var a=0;for(var i=0;i<xs.length-1;i++)a+=(ys[i]+ys[i+1])/2*(xs[i+1]-xs[i]);return a/(xs[xs.length-1]-xs[0]);}
+function tmEdges(){return Object.keys(TOPO).map(function(u){return [u,TOPO[u]];});}
+
+var PILLARS={1:'Statistical Interchangeability',2:'Topological and Spatial Cohesion',3:'Contamination Resilience'};
+var TM_TEXT=[
+ ['Population Balance',1,'The exposed set carries a larger share of traced upstream flow than its station count implies, so consequence concentrates where the count-based view looks moderate.','Rank response by traced upstream dependents rather than by station count. A count-based triage is the unadjusted estimate; flow-weighting is the doubly robust one (the manuscript\'s TMLE/AIPW shift).','Allocate bypass pumping and portable generation in proportion to upstream flow, not to the number of stations in a zone (the targeted-quota principle).'],
+ ['Wasserstein Distance (Shape Imbalance)',1,'The exposed set is not just lower on average; it has a heavy low tail (stations near or below sea level) that dominates the outcome regardless of the mean.','Report the ladder by elevation quantile, not by mean (the quantile-treatment-effect move).','Give the lowest-decile stations a dedicated crew instead of folding them into a zone rotation. They are the tail and they go first.'],
+ ['Density Symmetry',1,'One set is packed into a dense pocket while the other is dispersed, so identical station counts imply very different time-to-station.','Report exposure by basin or neighborhood stratum, not network-wide (regional strata as fixed effects).','Size fleets by dispersion: a dense pocket needs one staged crew; a dispersed exposed set needs proportionally more vehicles to match arrival time.'],
+ ['Euler Characteristic (Contiguity)',2,'The exposed stations form many disconnected islands (causeways, barrier islands, isolated peninsulas), each a separate response front that can be cut off.','Treat each island as its own response unit with its own status roll-up (CAR / Matérn structure for fragmented clusters).','Stage at hubs on shared corridors, on the mainland side of each causeway, rather than inside the islands. Islands lose road access before they lose power.'],
+ ['Persistence Gap',2,'Many stations sit within a foot of the forecast plane, so a small forecast error flips the exposed set.','Use the full elevation ladder, not a binary above/below, and report the one-foot margin band as the uncertainty set.','Equip the margin band for either outcome: pre-position sandbags and generators at every station within a foot of the forecast plane.'],
+ ['Spatial Mixing (scale-stability)',2,'Exposure rises steeply as the assumed surge widens; a two-foot forecast bust multiplies the exposed set (the manuscript\'s ratio well above unity).','Plan on the core set that stays dry under a +2 ft forecast error and treat the ring between the two planes as the perimeter cohort (the manuscript\'s fried-egg spatial censoring).','Harden the ring first, then the core (buffer-first saturation). The +2 ft band is where a forecast bust lands.'],
+ ['Variational Free Energy',2,'Failure propagation crosses basin boundaries, so administrative basins do not contain a cascade and a basin roll-up carries residual dependence.','Model the cascade on the traced graph, not on basin membership (the GEE / spatial-lag correction).','Position staging along the propagation paths (force-main corridors to the plant), not at basin centroids.'],
+ ['Contamination AUC',3,'High integrated exposure across the whole surge spectrum, not only at the forecast plane.','Score each station by integrated exposure over the ladder, not status at one plane (the distance-weighted spillover matrix).','Put level sensors and telemetry where exposure integrates highest (the light-trap surveillance principle applied to water).'],
+ ['Frontier Risk (Buffer Depth AUC)',3,'A large share of unexposed upstream flow sits on the interface with the exposed set, so the next failure lands on the frontier.','Rank unexposed stations by distance to the nearest exposed one; distance-to-boundary isolates where the externality falls (the spatial RDD).','Patrol the interface first after landfall: high-frequency boundary surveillance on frontier stations.'],
+ ['Mobility Network Leakage',3,'Traced flow crosses between exposed and unexposed sets, so unexposed stations upstream of an exposed one surcharge though they never flood.','Weight each unexposed station by the exposed stations downstream of it; net exporters of backflow risk are the choke points (directed source/sink accounting).','Hold the choke points: a bypass at a station with upstream dependents stops the leak for everything above it.']
+];
+
+function tenMetrics(){
+ var S=tmSets(),T=S.T,C=S.C,all=T.concat(C),out=[];
+ function row(i,value,disp,bad,extra){var t=TM_TEXT[i];var r={n:i+1,name:t[0],pillar:t[1],pillarName:PILLARS[t[1]],value:value,display:disp,bad:value==null?false:!!bad,cond:t[2],anal:t[3],oper:t[4]};if(extra)for(var k in extra)r[k]=extra[k];out.push(r);}
+ function pct(x){return Math.round(x*100)+'%';}
+ /* 1 Population Balance */
+ var upT=0,upAll=0;T.forEach(function(s){upT+=tmUp(s.fid);});all.forEach(function(s){upAll+=tmUp(s.fid);});
+ var shareStn=all.length?T.length/all.length:0,shareFlow=(upT+T.length)/(upAll+all.length);
+ row(0,shareFlow,pct(shareFlow)+' of network flow-weight in '+pct(shareStn)+' of stations',shareFlow>shareStn+0.08,{shareStn:shareStn});
+ /* 2 Wasserstein */
+ var w=tmW1(T.map(function(s){return s.elev;}),C.map(function(s){return s.elev;}));
+ row(1,w,w==null?'not defined (an arm is empty)':w.toFixed(1)+' ft mean quantile gap',w>6);
+ /* 3 Density Symmetry */
+ var nT=tmMeanNN(T),nC=tmMeanNN(C),ds=null;if(nT&&nC){var DT=1/nT,DC=1/nC;ds=1-Math.abs(DT-DC)/(DT+DC);}
+ row(2,ds,ds==null?'not defined (fewer than 2 stations in an arm)':ds.toFixed(2),ds<0.6,{nnT:nT,nnC:nC});
+ /* 4 Euler */
+ var comp=T.length?tmComponents(T,1.5):0;
+ row(3,comp,comp+' disconnected island'+(comp===1?'':'s')+' at 1.5 km',comp>=6);
+ /* 5 Persistence Gap */
+ var pg=all.filter(function(s){return Math.abs(s.elev-S.plane)<=1;}).length;
+ row(4,pg,pg+' stations within 1 ft of the plane',pg>=15);
+ /* 6 Spatial Mixing */
+ var hi=surgeAt(surgeSel+2).list.length,ratio=T.length?hi/T.length:null;
+ row(5,ratio,ratio==null?'not defined (no exposed stations)':hi+' vs '+T.length+', ratio '+ratio.toFixed(1),ratio>1.5,{hi:hi});
+ /* 7 Variational Free Energy */
+ var E=tmEdges(),byFid={};stations.forEach(function(s){byFid[s.fid]=s;});
+ var cross=E.filter(function(e){return byFid[e[0]].basin!==byFid[e[1]].basin;}).length,vfe=E.length?cross/E.length:0;
+ row(6,vfe,pct(vfe)+' of force-main edges cross a basin line',vfe>0.3);
+ /* 8 Contamination AUC */
+ var fr=SURGE_LEVELS.map(function(l){return surgeAt(l).list.length/all.length;});
+ var auc=0;for(var i=0;i<SURGE_LEVELS.length-1;i++)auc+=(fr[i]+fr[i+1])/2*(SURGE_LEVELS[i+1]-SURGE_LEVELS[i]);auc/=9;
+ row(7,auc,pct(auc)+' integrated exposure over 3 to 12 ft',auc>0.45);
+ /* 9 Frontier Risk */
+ var RADII=[.5,1,2,3,5],wC=C.map(function(c){var d=1e9;T.forEach(function(t){var x=hav(c,t);if(x<d)d=x;});return {d:d,w:1+tmUp(c.fid)};});
+ var wTot=wC.reduce(function(a,b){return a+b.w;},0);
+ var fy=RADII.map(function(r){return wTot?wC.filter(function(x){return x.d<=r;}).reduce(function(a,b){return a+b.w;},0)/wTot:0;});
+ var fra=T.length&&C.length?tmTrap(RADII,fy):null;
+ row(8,fra,fra==null?'not defined':pct(fra)+' of unexposed flow-weight on the frontier',fra>0.5,{curve:fy});
+ /* 10 Mobility Network Leakage */
+ var lk=E.filter(function(e){return S.ids.has(e[0])!==S.ids.has(e[1]);}).length,share=E.length?lk/E.length:0;
+ var back=new Set();T.forEach(function(t){upstreamOf(t.fid).forEach(function(u){if(!S.ids.has(u))back.add(u);});});
+ row(9,share,pct(share)+' / '+back.size+' back up',back.size>=3||share>0.3,{backup:back.size,backupIds:Array.from(back)});
+ return out;
+}
+
+/* ===== NETWORK + STATE (globals so the engine above can read them) ===== */
+var NET=buildNetwork(),stations=NET.stations,TOPO=NET.topo,TOPO_REV=NET.rev,surgeSel=6;
+/* Utility hook: map station ID to {status:'down'|'surcharged'|'ok', note:'...'} (for example from SCADA). Empty in the public copy. */
+var STATUS_OVERRIDE={};
+
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var GAUGE={id:'8726520',lat:27.7606,lng:-82.6269};
+var NWS_POINT='27.773,-82.640';
+var CO='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter';
+var NHC='https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Active_Hurricanes_v1/FeatureServer/';
+var REFRESH_MS=6*60*1000,TIMEOUT_MS=15000,WL_STALE_MIN=36;
+
+/* ---------- real-network reference values (network-level aggregates only) ---------- */
+var REAL_DATE='2026-09-04';
+var REAL_LADDER={3:2,4:2,5:6,6:15,7:32,8:56,10:85,12:96};
+var REAL_TM={6:{exposed:15,bad:6,v:[['12% in 12%',0],['10.4 ft',1],['0.64',0],['11 islands',1],['26',1],['56 vs 15, ratio 3.7',1],['40%',1],['35%',0],['55%',1],['13% / 2 back up',0]]},
+ 8:{exposed:56,bad:7,v:[['47% in 43%',0],['12.9 ft',1],['0.90',0],['11 islands',1],['47',1],['85 vs 56, ratio 1.5',1],['40%',1],['35%',0],['70%',1],['40% / 6 back up',1]]}};
+var THRESH=['sub-optimal when flow share exceeds station share by more than 8 points','sub-optimal above 6 ft','sub-optimal below 0.60','sub-optimal at 6 or more islands','sub-optimal at 15 or more stations','sub-optimal above a ratio of 1.5','sub-optimal above 30%','sub-optimal above 45%','sub-optimal above 50%','sub-optimal at 3 or more backing up, or above 30% of edges'];
+var STORMS=[{name:'Helene',date:'2024-09-27',peak:8.56,anom:6.77,plane:7.08,n:69,share:'53%'},{name:'Idalia',date:'2023-08-30',peak:6.11,anom:4.65,plane:4.63,n:15,share:'12%'},{name:'Milton',date:'2024-10-09',peak:3.34,anom:1.07,plane:1.86,n:2,share:'2%'}];
+var PHASES=[
+ {id:'pre',label:'Pre-season',dec:'Survey wet-well and panel elevations; load-test generators; refresh the vulnerable-facility roster; pre-position fuel and chemical contracts; name the choke points',dims:[2,5,10]},
+ {id:'t120',label:'T−120h',dec:'Storm enters the cone; brief the ride-out roster; stage at mainland hubs for each island',dims:[4]},
+ {id:'t72',label:'T−72h',dec:'Set the ladder to the forecast level; read the ten-metric panel; draw down storage; pre-lower wet wells',dims:[6,8]},
+ {id:'t48',label:'T−48h',dec:'Harden the +2 ft ring first, then the core; sandbag and generator the one-foot margin band; fuel to full',dims:[5,6]},
+ {id:'t24',label:'T−24h',dec:'Lift telemetry above the plane; complete field work before sustained wind reaches 40 mph; islands now cut off',dims:[4,9]},
+ {id:'land',label:'Landfall',dec:'No field response; monitor only; watch frontier stations and choke points',dims:[9,10]},
+ {id:'post',label:'T+0 to 72h',dec:'Re-entry in evacuation-zone order; rotate generators by upstream flow, not station count; patrol the interface first',dims:[1,9,10]},
+ {id:'rec',label:'Recovery',dec:'Sequence restoration by flow-weight and vulnerable-facility exposure; inspect where propagation crossed basin lines',dims:[1,7]}];
+var BASIN_NAME={N:'North',C:'Central',S:'South'};
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function p2(n){return (n<10?'0':'')+n;}
+function fmtUTC(d){if(!d||isNaN(d))return 'unknown time';d=new Date(d);return MON[d.getUTCMonth()]+' '+d.getUTCDate()+' '+p2(d.getUTCHours())+':'+p2(d.getUTCMinutes())+' UTC';}
+function fmtHM(d){d=new Date(d);return p2(d.getUTCHours())+':'+p2(d.getUTCMinutes())+'Z';}
+function fmtAgo(d){var m=(Date.now()-d)/60000;if(m<0)return 'in '+fmtSpan(-m);return fmtSpan(m)+' ago';}
+function fmtSpan(m){return m<1?'under a minute':m<90?Math.round(m)+' min':m<48*60?Math.round(m/60)+' h':Math.round(m/1440)+' d';}
+function ymd(d){return d.toISOString().slice(0,10).replace(/-/g,'');}
+function f2(v){return v==null||!isFinite(v)?'n/a':v.toFixed(2);}
+function sgn(v){return (v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(2);}
+function parseCO(t){return Date.parse(String(t).replace(' ','T')+':00Z');}
+function coRows(j){var a=(j&&(j.data||j.predictions))||[];if(!a.length&&j)for(var k in j){if(Array.isArray(j[k])&&j[k].length&&j[k][0]&&'t' in j[k][0]){a=j[k];break;}}
+ return a.map(function(r){return {t:parseCO(r.t),v:(r.v===''||r.v==null||isNaN(+r.v))?null:+r.v};}).filter(function(r){return isFinite(r.t);});}
+function planeOf(ft){return Math.round((ft-MLLW_TO_NAVD)*100)/100;}
+function countAt(plane){return stations.filter(function(s){return s.elev!=null&&s.elev<=plane;}).length;}
+function nearestStep(v){var b=SURGE_LEVELS[0];SURGE_LEVELS.forEach(function(l){if(Math.abs(l-v)<Math.abs(b-v)||(Math.abs(l-v)===Math.abs(b-v)&&l>b))b=l;});return b;}
+function byFid(){var m={};stations.forEach(function(s){m[s.fid]=s;});return m;}
+var FID=byFid();
+function zoneTxt(s){return ('zone' in s)?'Zone '+s.zone:'not resolved';}
+function getJSON(url,headers){var c=new AbortController(),to=setTimeout(function(){c.abort();},TIMEOUT_MS);
+ return fetch(url,{signal:c.signal,headers:headers||{},cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(function(j){if(j&&j.error){var e=j.error;throw new Error(typeof e==='string'?e:(e.message||e.details||JSON.stringify(e)).toString().slice(0,160));}return j;})
+  .catch(function(e){throw new Error(e&&e.name==='AbortError'?'timed out after '+TIMEOUT_MS/1000+' s':(e&&e.message)||'network error');})
+  .finally(function(){clearTimeout(to);});}
+
+/* ---------- feed state + status strip ---------- */
+var FEEDS={wl:{label:'Water level'},pred:{label:'Tide predictions'},ofs:{label:'OFS forecast'},nhc:{label:'NHC'},nws:{label:'NWS alerts'}};
+Object.keys(FEEDS).forEach(function(k){FEEDS[k].state='loading';});
+function setFeed(k,state,dataTime,note){var f=FEEDS[k],prev=f.state;f.state=state;f.dataTime=dataTime||null;f.checked=Date.now();f.note=note||'';if(state!=='unavailable')f.err=null;
+ if(f.seen&&prev!==state)announce(f.label,state==='stale'&&k==='ofs'?'stale (nowcast)':state);f.seen=true;renderStrip();}
+/* Screen-reader announcements: state changes within one refresh are grouped into a single sentence. */
+var ANN={},annT=null;function announce(label,state){(ANN[state]=ANN[state]||[]).push(label);clearTimeout(annT);annT=setTimeout(function(){$('live').textContent=Object.keys(ANN).map(function(st){return 'Now '+st+': '+ANN[st].join(', ')+'.';}).join(' ');ANN={};},400);}
+function fmtStamp(t){var d=new Date(t),n=new Date();return (d.getUTCFullYear()===n.getUTCFullYear()&&d.getUTCMonth()===n.getUTCMonth()&&d.getUTCDate()===n.getUTCDate()&&Math.abs(t-n)<=12*3600e3?'':MON[d.getUTCMonth()]+' '+d.getUTCDate()+' ')+fmtHM(t);}
+var stripHTML='';
+function renderStrip(){var h=Object.keys(FEEDS).map(function(k){var f=FEEDS[k],t;
+  if(f.state==='loading')t='loading';
+  else if(f.state==='unavailable')t='unavailable · checked '+fmtStamp(f.checked);
+  else t=(f.state==='stale'?(k==='ofs'?'stale (nowcast)':'stale'):'live')+(f.dataTime?' · '+fmtStamp(f.dataTime):'')+(f.note?' · '+f.note:'');
+  return '<span class="chip '+f.state+'" title="'+esc(f.label+': '+t+(f.err?' ('+f.err+')':''))+'"><span class="dot" aria-hidden="true"></span>'+esc(f.label)+' <small>'+esc(t)+'</small></span>';}).join('');if(h!==stripHTML){stripHTML=h;$('strip').innerHTML=h;}}
+function stateTag(k){var f=FEEDS[k];var lab=f.state==='stale'&&k==='ofs'?'stale (nowcast)':f.state;return '<span class="state '+f.state+'">'+esc(lab)+'</span>';}
+function unavailable(el,k,what){var f=FEEDS[k];el.innerHTML='<div class="big warn">unavailable</div><div class="muted" style="margin-top:4px">'+esc(what)+' could not be loaded'+(f.err?' ('+esc(f.err)+')':'')+'. Checked '+esc(fmtUTC(f.checked))+'. The console keeps trying every 6 minutes; see <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8726520" target="_blank" rel="noopener">NOAA</a>, <a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">NHC</a> or <a href="https://www.weather.gov/tbw/" target="_blank" rel="noopener">NWS Tampa Bay</a> directly.</div>';}
+
+/* ---------- line chart (inline SVG, crosshair tooltip, table twin) ---------- */
+function lineChart(host,cfg){
+ var W=Math.max(260,Math.round(host.clientWidth||520)),H=cfg.height||150,m={l:38,r:12,t:8,b:22};
+ var all=[];cfg.series.forEach(function(s){s.pts.forEach(function(p){if(p.v!=null)all.push(p.v);});});
+ if(!all.length){host.innerHTML='<div class="muted">No values to plot.</div>';return;}
+ var lo=Math.min.apply(null,all),hi=Math.max.apply(null,all);(cfg.refs||[]).forEach(function(r){if(r.v<=hi+1.2&&r.v>=lo-1.2){lo=Math.min(lo,r.v);hi=Math.max(hi,r.v);}});
+ var pad=Math.max(.25,(hi-lo)*.12);lo-=pad;hi+=pad;
+ var x0=cfg.x0,x1=cfg.x1,X=function(t){return m.l+(t-x0)/(x1-x0)*(W-m.l-m.r);},Y=function(v){return m.t+(hi-v)/(hi-lo)*(H-m.t-m.b);};
+ var step=(hi-lo)>6?2:(hi-lo)>3?1:.5,ticks=[];for(var v=Math.ceil(lo/step)*step;v<=hi;v+=step)ticks.push(+v.toFixed(2));
+ var s='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="'+esc(cfg.label)+'">';
+ ticks.forEach(function(t){s+='<line x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+Y(t).toFixed(1)+'" y2="'+Y(t).toFixed(1)+'" stroke="var(--grid)" stroke-width="1"/><text x="'+(m.l-6)+'" y="'+(Y(t)+4).toFixed(1)+'" fill="var(--dim)" font-size="10.5" text-anchor="end" style="font-variant-numeric:tabular-nums">'+t+'</text>';});
+ var hstep=cfg.hstep||12*3600e3;if((W-m.l-m.r)/((x1-x0)/hstep)<44)hstep=24*3600e3;for(var t=Math.ceil(x0/hstep)*hstep;t<=x1;t+=hstep){var xx=X(t).toFixed(1),td=new Date(t),tl=td.getUTCHours()===0?MON[td.getUTCMonth()]+' '+td.getUTCDate():p2(td.getUTCHours())+'Z';s+='<line x1="'+xx+'" x2="'+xx+'" y1="'+(H-m.b)+'" y2="'+(H-m.b+4)+'" stroke="var(--axis)"/><text x="'+xx+'" y="'+(H-6)+'" fill="var(--dim)" font-size="10.5" text-anchor="middle">'+tl+'</text>';}
+ s+='<line x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+(H-m.b)+'" y2="'+(H-m.b)+'" stroke="var(--axis)"/>';
+ (cfg.refs||[]).forEach(function(r){if(r.v<lo||r.v>hi)return;var y=Y(r.v).toFixed(1);s+='<line x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+y+'" y2="'+y+'" stroke="'+r.color+'" stroke-width="1" stroke-dasharray="4 4" opacity=".8"/><text x="'+(m.l+4)+'" y="'+(Y(r.v)-4).toFixed(1)+'" fill="var(--ink2)" font-size="10.5">'+esc(r.label)+'</text>';});
+ cfg.series.forEach(function(se){var d='',pen=false;se.pts.forEach(function(p){if(p.v==null){pen=false;return;}d+=(pen?'L':'M')+X(p.t).toFixed(1)+','+Y(p.v).toFixed(1);pen=true;});
+  s+='<path d="'+d+'" fill="none" stroke="'+se.color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"'+(se.dash?' stroke-dasharray="'+se.dash+'"':'')+'/>';});
+ cfg.series.forEach(function(se){var last=null;se.pts.forEach(function(p){if(p.v!=null)last=p;});if(last&&se.endDot)s+='<circle cx="'+X(last.t).toFixed(1)+'" cy="'+Y(last.v).toFixed(1)+'" r="4.5" fill="'+se.color+'" stroke="var(--panel)" stroke-width="2"/>';});
+ (cfg.marks||[]).forEach(function(mk){s+='<circle cx="'+X(mk.t).toFixed(1)+'" cy="'+Y(mk.v).toFixed(1)+'" r="4.5" fill="'+mk.color+'" stroke="var(--panel)" stroke-width="2"/><text x="'+Math.min(W-m.r-2,X(mk.t)+7).toFixed(1)+'" y="'+(Y(mk.v)-7).toFixed(1)+'" fill="var(--ink)" font-size="11" font-weight="650" text-anchor="'+(X(mk.t)>W-90?'end':'start')+'">'+esc(mk.label)+'</text>';});
+ s+='<line class="xh" x1="0" x2="0" y1="'+m.t+'" y2="'+(H-m.b)+'" stroke="var(--ink2)" stroke-width="1" visibility="hidden"/>';
+ s+='<rect class="ov" x="'+m.l+'" y="'+m.t+'" width="'+(W-m.l-m.r)+'" height="'+(H-m.t-m.b)+'" fill="transparent" tabindex="0" aria-label="'+esc(cfg.label)+': use arrow keys to read values"/></svg><div class="tip" hidden></div>';
+ host.innerHTML=s;
+ var svg=host.querySelector('svg'),xh=host.querySelector('.xh'),ov=host.querySelector('.ov'),tip=host.querySelector('.tip');
+ var grid=(cfg.series.filter(function(se){return se.pts.length;})[0]||{pts:[]}).pts,idx=-1;
+ function near(pts,t){var b=null,bd=Infinity;for(var i=0;i<pts.length;i++){var d=Math.abs(pts[i].t-t);if(d<bd){bd=d;b=pts[i];}}return bd<=(cfg.snapMs||7*60e3)?b:null;}
+ function show(t){var xx=X(t);xh.setAttribute('x1',xx);xh.setAttribute('x2',xx);xh.setAttribute('visibility','visible');
+  var rows=cfg.series.map(function(se){var p=near(se.pts,t);return '<div><span class="kk" style="border-color:'+se.color+'"></span><b>'+(p&&p.v!=null?p.v.toFixed(2)+' ft':'n/a')+'</b> '+esc(se.name)+'</div>';}).join('');
+  var extra=cfg.extra?cfg.extra(t,near):'';tip.innerHTML='<div class="muted">'+esc(fmtUTC(t))+'</div>'+rows+extra;tip.hidden=false;
+  var sw=svg.getBoundingClientRect().width/W;var left=xx*sw+12;if(left>host.clientWidth-170)left=xx*sw-172;tip.style.left=Math.max(0,left)+'px';tip.style.top='4px';}
+ function hide(){xh.setAttribute('visibility','hidden');tip.hidden=true;}
+ ov.addEventListener('pointermove',function(e){var r=svg.getBoundingClientRect(),px=(e.clientX-r.left)*(W/r.width);var t=x0+(px-m.l)/(W-m.l-m.r)*(x1-x0);var p=near(grid,t)||{t:t};show(p.t);});
+ ov.addEventListener('pointerleave',hide);ov.addEventListener('blur',hide);
+ ov.addEventListener('keydown',function(e){if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;e.preventDefault();var g=grid.filter(function(p){return p.t%(3600e3)===0;});if(!g.length)g=grid;
+  idx=idx<0?g.length-1:Math.max(0,Math.min(g.length-1,idx+(e.key==='ArrowRight'?1:-1)));show(g[idx].t);});
+ ov.addEventListener('focus',function(){var g=grid;if(g.length)show(g[g.length-1].t);});
+}
+
+/* ===================== GAUGE NOW ===================== */
+var WL=null,PRED=null;
+function loadWL(){return getJSON(CO+'?range=48&station=8726520&product=water_level&datum=MLLW&units=english&time_zone=gmt&format=json').then(function(j){
+  var rows=coRows(j),valid=rows.filter(function(r){return r.v!=null;});if(!valid.length)throw new Error('no valid readings in the last 48 h');
+  var last=valid[valid.length-1];WL={rows:rows,last:last};var age=(Date.now()-last.t)/60000;
+  setFeed('wl',age>WL_STALE_MIN?'stale':'live',last.t);}).catch(function(e){WL=null;FEEDS.wl.err=e.message;setFeed('wl','unavailable');});}
+function loadPred(){var now=new Date();var url=CO+'?station=8726520&product=predictions&interval=6&datum=MLLW&units=english&time_zone=gmt&format=json&begin_date='+ymd(new Date(now-48*3600e3))+'&end_date='+ymd(new Date(now.getTime()+24*3600e3));
+ return getJSON(url).then(function(j){var rows=coRows(j).filter(function(r){return r.v!=null;});if(!rows.length)throw new Error('no predictions returned');
+  var lastT=rows[rows.length-1].t,firstT=rows[0].t,nowT=Date.now();PRED={rows:rows,last:lastT,first:firstT};var covers=firstT<=nowT&&lastT>=nowT;
+  setFeed('pred',covers?'live':'stale',covers?null:(firstT>nowT?firstT:lastT),covers?'covers now':(firstT>nowT?'starts after now':'ends before now'));})
+  .catch(function(e){PRED=null;FEEDS.pred.err=e.message;setFeed('pred','unavailable');});}
+function predAt(t){if(!PRED)return null;var b=null,bd=Infinity;PRED.rows.forEach(function(r){var d=Math.abs(r.t-t);if(d<bd){bd=d;b=r;}});return bd<=6*60e3?b.v:null;}
+function predCell(pv){var f=FEEDS.pred;if(pv!=null)return pv.toFixed(2)+' ft MLLW';if(f.state==='loading')return 'loading';if(f.state==='stale'&&PRED)return PRED.first>Date.now()?'stale: predictions start '+esc(fmtUTC(PRED.first)):'stale: predictions end '+esc(fmtUTC(PRED.last));return 'unavailable';}
+function predNote(){var f=FEEDS.pred;return f.state==='unavailable'?'<div class="muted">Tide predictions could not be loaded'+(f.err?' ('+esc(f.err)+')':'')+'. Checked '+esc(fmtUTC(f.checked))+'.</div>':'';}
+function renderGauge(){keepFocus(function(){var d=$('gauge').querySelector('details.dt'),o=d&&d.open;renderGauge_();d=$('gauge').querySelector('details.dt');if(o&&d)d.open=true;});}
+function renderGauge_(){var el=$('gauge');
+ if(!WL&&FEEDS.wl.state==='loading')return;
+ if(!WL){unavailable(el,'wl','The observed water level at gauge 8726520');
+  if(PRED){var pv=predAt(Date.now());el.innerHTML+='<div class="row" style="margin-top:8px"><span class="l">Predicted tide now '+stateTag('pred')+'</span><span class="v">'+predCell(pv)+'</span></div>'+predNote()+'<div class="row"><span class="l">Anomaly</span><span class="v">unavailable (needs the observation)</span></div>';}
+  else el.innerHTML+='<div class="row" style="margin-top:8px"><span class="l">Predicted tide '+stateTag('pred')+'</span><span class="v">'+predCell(null)+'</span></div>'+predNote();
+  return;}
+ var o=WL.last,pv=predAt(o.t),an=pv!=null?o.v-pv:null,plane=planeOf(o.v),n=countAt(plane),step=o.v<2.5?null:nearestStep(o.v);
+ var h='<div class="big">'+o.v.toFixed(2)+' <span style="font-size:15px;color:var(--ink2);font-weight:600">ft MLLW observed</span></div>'+
+  '<div class="muted">'+stateTag('wl')+' '+esc(fmtUTC(o.t))+' ('+esc(fmtAgo(o.t))+')'+(FEEDS.wl.state==='stale'?'. The latest reading is older than '+WL_STALE_MIN+' minutes.':'')+'</div>'+
+  '<div class="row" style="margin-top:8px"><span class="l">Predicted tide '+stateTag('pred')+'</span><span class="v">'+predCell(pv)+'</span></div>'+predNote()+
+  '<div class="row"><span class="l">Surge anomaly (observed minus predicted)</span><span class="v">'+(an!=null?sgn(an)+' ft':'unavailable')+'</span></div>'+
+  '<div class="row"><span class="l">Plane now (ft NAVD88)</span><span class="v">'+plane.toFixed(2)+'</span></div>'+
+  '<div class="row"><span class="l">Synthetic stations at or below this plane <span class="hb md" style="margin-left:4px">MODELED</span></span><span class="v">'+n+' of '+stations.length+'</span></div>'+
+  '<div class="row"><span class="l">Equivalent ladder step</span><span class="v">'+(step?step+' ft (nearest)':'below the 3 ft step')+'</span></div>';
+ h+='<div class="chart" id="g-chart"></div><div class="legend"><span><span class="k" style="border-color:var(--obs)"></span>Observed</span>'+(PRED?'<span><span class="k" style="border-color:var(--pred);border-top-style:dashed"></span>Predicted tide</span>':'<span class="muted">Predicted tide not plotted ('+esc(FEEDS.pred.state)+')</span>')+'</div>';
+ h+='<details class="dt"><summary>Hourly data table</summary><div class="tblw" id="g-table"></div></details>';
+ el.innerHTML=h;drawGaugeChart();
+ var hours=WL.rows.filter(function(r){return r.t%3600e3===0;}).slice(-48).reverse();
+ $('g-table').innerHTML='<table class="tbl"><thead><tr><th>Time (UTC)</th><th>Observed</th><th>Predicted</th><th>Anomaly</th></tr></thead><tbody>'+hours.map(function(r){var p=predAt(r.t);return '<tr><td>'+esc(fmtUTC(r.t))+'</td><td>'+f2(r.v)+'</td><td>'+f2(p)+'</td><td>'+(r.v!=null&&p!=null?sgn(r.v-p):'n/a')+'</td></tr>';}).join('')+'</tbody></table>';
+}
+function drawGaugeChart(){var host=$('g-chart');if(!host||!WL||!host.offsetParent)return;var now=Date.now();
+ var series=[{name:'Observed',color:'var(--obs)',pts:WL.rows,endDot:true}];
+ if(PRED)series.push({name:'Predicted tide',color:'var(--pred)',dash:'5 4',pts:PRED.rows.filter(function(r){return r.t>=now-48*3600e3&&r.t<=now;})});
+ lineChart(host,{label:'Observed and predicted water level at gauge 8726520, last 48 hours, ft MLLW',series:series,x0:now-48*3600e3,x1:now,height:150,
+  refs:[{v:3,label:'3 ft step',color:'var(--ring)'}],
+  extra:function(t,near){var o=near(WL.rows,t),p=PRED?near(PRED.rows,t):null;return o&&p&&o.v!=null&&p.v!=null?'<div>anomaly <b>'+sgn(o.v-p.v)+' ft</b></div>':'';}});}
+
+/* ===================== OFS FORECAST ===================== */
+var OFS=null;
+function loadOFS(){var now=new Date();var url=CO+'?station=8726520&product=ofs_water_level&datum=MLLW&units=english&time_zone=gmt&format=json&begin_date='+ymd(now)+'&end_date='+ymd(new Date(now.getTime()+2*864e5));
+ return getJSON(url).then(function(j){var rows=coRows(j).filter(function(r){return r.v!=null;});if(!rows.length)throw new Error('no forecast values returned');
+  var last=rows[rows.length-1].t,nowT=Date.now(),fresh=last>nowT;
+  var win=fresh?rows.filter(function(r){return r.t>nowT&&r.t<=nowT+48*3600e3;}):rows;var pk=win.reduce(function(a,b){return b.v>a.v?b:a;},win[0]);
+  OFS={rows:rows,fresh:fresh,last:last,peak:pk};if(fresh)setFeed('ofs','live',null,'peak '+fmtStamp(pk.t)+' · runs to '+fmtStamp(last));else setFeed('ofs','stale',last,'last value');})
+  .catch(function(e){OFS=null;FEEDS.ofs.err=e.message;setFeed('ofs','unavailable');}).then(applyDefaultSurge);}
+function renderOFS(){keepFocus(function(){var d=$('ofs').querySelector('details.dt'),o=d&&d.open;renderOFS_();d=$('ofs').querySelector('details.dt');if(o&&d)d.open=true;});}
+function renderOFS_(){var el=$('ofs');if(FEEDS.ofs.state==='loading')return;
+ if(!OFS){unavailable(el,'ofs','The OFS water-level forecast');el.innerHTML+='<div class="muted" style="margin-top:6px">With no fresh forecast, the surge ladder defaults to 6 ft.</div>';return;}
+ var pk=OFS.peak,plane=planeOf(pk.v),step=nearestStep(pk.v),h='';
+ if(OFS.fresh){var hrs=Math.round((pk.t-Date.now())/3600e3);
+  h='<div class="big">'+pk.v.toFixed(2)+' <span style="font-size:15px;color:var(--ink2);font-weight:600">ft MLLW, 48 h peak</span></div>'+
+   '<div class="muted">'+stateTag('ofs')+' peak at '+esc(fmtUTC(pk.t))+' (in about '+hrs+' h). The forecast runs to '+esc(fmtUTC(OFS.last))+'.</div>';}
+ else h='<div class="big" style="color:#f3d27a">stale (nowcast)</div><div class="muted">'+stateTag('ofs')+' The latest value returned is '+esc(fmtUTC(OFS.last))+', which is not in the future, so this is a hindcast or nowcast rather than a forecast. It does not set the ladder and screens no stations.</div>'+
+  '<div class="row" style="margin-top:8px"><span class="l">Hindcast maximum (not a forecast)</span><span class="v">'+pk.v.toFixed(2)+' ft MLLW at '+esc(fmtUTC(pk.t))+'</span></div><div class="row"><span class="l">Window returned</span><span class="v">'+esc(fmtUTC(OFS.rows[0].t))+' to '+esc(fmtUTC(OFS.last))+'</span></div>';
+ if(OFS.fresh)h+='<div class="row" style="margin-top:8px"><span class="l">Peak plane (ft NAVD88)</span><span class="v">'+plane.toFixed(2)+'</span></div>'+
+  '<div class="row"><span class="l">Synthetic stations it screens <span class="hb md" style="margin-left:4px">MODELED</span></span><span class="v">'+countAt(plane)+' of '+stations.length+'</span></div>'+
+  '<div class="row"><span class="l">Nearest ladder step</span><span class="v">'+step+' ft ('+countAt(planeOf(step))+' stations)</span></div>';
+ var hrs2=OFS.rows.filter(function(r){return r.t%3600e3===0&&(!OFS.fresh||(r.t>Date.now()&&r.t<=Date.now()+48*3600e3));});
+ h+='<div class="chart" id="o-chart"></div><details class="dt"><summary>Hourly data table</summary><div class="tblw"><table class="tbl"><thead><tr><th>Time (UTC)</th><th>'+(OFS.fresh?'OFS forecast':'OFS (nowcast)')+' (ft MLLW)</th></tr></thead><tbody>'+hrs2.map(function(r){return '<tr><td>'+esc(fmtUTC(r.t))+'</td><td>'+f2(r.v)+'</td></tr>';}).join('')+'</tbody></table></div></details>';el.innerHTML=h;drawOFSChart();}
+function drawOFSChart(){var host=$('o-chart');if(!host||!OFS||!host.offsetParent)return;var x0=OFS.fresh?Date.now():OFS.rows[0].t,x1=OFS.fresh?Date.now()+48*3600e3:OFS.last;
+ var pts=OFS.rows.filter(function(r){return r.t>=x0&&r.t<=x1;});if(pts.length<2)pts=OFS.rows;
+ lineChart(host,{label:'OFS total water level forecast at gauge 8726520, ft MLLW',series:[{name:OFS.fresh?'OFS forecast':'OFS (nowcast)',color:'var(--obs)',pts:pts}],x0:pts[0].t,x1:pts[pts.length-1].t,height:120,snapMs:40*60e3,
+  marks:OFS.fresh?[{t:OFS.peak.t,v:OFS.peak.v,color:'var(--obs)',label:'peak '+OFS.peak.v.toFixed(2)}]:[],refs:[{v:3,label:'3 ft step',color:'var(--ring)'}]});}
+
+/* ===================== DEFAULT SURGE ===================== */
+var surgeUser=false,surgeNote='Defaults to 6 ft while the OFS forecast loads.';
+function applyDefaultSurge(){renderOFS();if(surgeUser)return;var was=surgeSel,wasNote=surgeNote;
+ if(OFS&&OFS.fresh){surgeSel=nearestStep(OFS.peak.v);surgeNote='Default '+surgeSel+' ft: the live OFS 48 h peak of '+OFS.peak.v.toFixed(2)+' ft MLLW, rounded to the nearest ladder step.';}
+ else{surgeSel=6;surgeNote='Default 6 ft: the OFS forecast is '+(OFS?'stale (nowcast)':'unavailable')+', so the ladder falls back to 6 ft.';}
+ if(surgeSel!==was||!TM)renderSurge();else if(surgeNote!==wasNote)$('ladder-note').textContent=surgeNote;}
+function setSurge(l,byUser){if(SURGE_LEVELS.indexOf(l)<0)return;surgeSel=l;if(byUser){surgeUser=true;surgeNote='Set by you. Reload the page to return to the forecast default.';}renderSurge();}
+
+/* ===================== NHC ===================== */
+var NHCS=null,NHC_PART={};
+function toLatLon(a,g,sr){var lat=+a.LAT,lon=+a.LON;if(isFinite(lat)&&isFinite(lon)&&a.LAT!==null&&a.LON!==null)return {lat:lat,lng:lon};
+ if(g&&isFinite(g.x)&&isFinite(g.y)){var w=sr&&(sr.latestWkid||sr.wkid);if(w===102100||w===3857){return {lng:g.x/6378137*180/Math.PI,lat:(2*Math.atan(Math.exp(g.y/6378137))-Math.PI/2)*180/Math.PI};}return {lat:g.y,lng:g.x};}return null;}
+function ymdh(s){var y=+s.slice(0,4),mo=+s.slice(4,6),d=+s.slice(6,8),h=+s.slice(8,10);return y>=1990&&y<=2100&&mo>=1&&mo<=12&&d>=1&&d<=31&&h<=23?Date.UTC(y,mo-1,d,h):null;}
+/* DTG may arrive as epoch ms (Esri date), as a YYYYMMDDHH number or string (NHC convention), or as a date string. Times more than 2 days ahead are rejected. */
+function parseDTG(v){if(v==null||v==='')return null;var t=null;
+ if(typeof v==='number'){var a=/^\d{10}$/.test(String(v))?ymdh(String(v)):null;t=a!=null?a:(v>1e11?v:(v>1e9?v*1000:null));}
+ else{var s=String(v).trim();t=/^\d{10}$/.test(s)?ymdh(s):Date.parse(s);}
+ return t!=null&&isFinite(t)&&t<Date.now()+2*864e5?t:null;}
+/* Closest approach of a forecast track to the gauge: checks each forecast point and the straight segment between consecutive points (TAU interpolated). */
+function closestApproach(fc){var pts=fc.filter(function(p){return isFinite(p.tau);}).sort(function(a,b){return a.tau-b.tau;});if(!pts.length)pts=fc.slice();var best=null;
+ pts.forEach(function(p){var d=hav(p,GAUGE);if(!best||d<best.km)best={km:d,tau:p.tau,wind:p.wind,dvl:p.dvl,lbl:p.lbl,between:false};});
+ var k=Math.cos(GAUGE.lat*Math.PI/180),P=function(p){return {x:(p.lng-GAUGE.lng)*111.32*k,y:(p.lat-GAUGE.lat)*110.57};};
+ for(var i=0;i<pts.length-1;i++){var A=pts[i],B=pts[i+1];if(!isFinite(A.tau)||!isFinite(B.tau)||Math.abs(B.lng-A.lng)>30)continue;var a=P(A),b=P(B),dx=b.x-a.x,dy=b.y-a.y,L2=dx*dx+dy*dy;if(!L2)continue;
+  var t=-(a.x*dx+a.y*dy)/L2;if(t<=0||t>=1)continue;var q={lat:A.lat+t*(B.lat-A.lat),lng:A.lng+t*(B.lng-A.lng)},d=hav(q,GAUGE);
+  if(d<best.km)best={km:d,tau:Math.round(A.tau+t*(B.tau-A.tau)),wind:A.wind,dvl:A.dvl,lbl:'',between:true};}
+ return best;}
+function basinNorm(b,id){var x=String(b||'').trim().toLowerCase();if(!x&&id)x=String(id).slice(0,2).toLowerCase();return x;}
+var BASIN_LABEL={al:'Atlantic',ep:'East Pacific',cp:'Central Pacific',wp:'West Pacific',io:'North Indian',sh:'Southern Hemisphere'};
+function loadNHC(){var q='/query?where=1%3D1&outFields=*&returnGeometry=true&f=json';
+ function layer(n){return getJSON(NHC+n+q).catch(function(e){return {__err:e.message};});}
+ return Promise.all([layer(0),layer(1)]).then(function(r){var fc=r[0],ob=r[1],S={};
+  if(fc.__err&&ob.__err)throw new Error(fc.__err===ob.__err?fc.__err:'forecast: '+fc.__err+'; observed: '+ob.__err);
+  NHC_PART={fcErr:fc.__err||null,obErr:ob.__err||null};if(fc.__err)fc={features:[]};if(ob.__err)ob={features:[]};
+  function key(n){return String(n||'unnamed').trim().toUpperCase();}
+  (ob.features||[]).forEach(function(f){var a=f.attributes||{},k=key(a.STORMNAME),p=toLatLon(a,f.geometry,ob.spatialReference);if(!p)return;var s=S[k]=S[k]||{name:a.STORMNAME||'Unnamed',fc:[],obs:[]};
+   s.id=s.id||a.STORMID;s.basin=s.basin||basinNorm(a.BASIN,a.STORMID);s.obs.push({lat:p.lat,lng:p.lng,t:parseDTG(a.DTG),int:a.INTENSITY,ss:a.SS});});
+  (fc.features||[]).forEach(function(f){var a=f.attributes||{},k=key(a.STORMNAME),p=toLatLon(a,f.geometry,fc.spatialReference);if(!p)return;var s=S[k]=S[k]||{name:a.STORMNAME||'Unnamed',fc:[],obs:[]};
+   s.basin=basinNorm(a.BASIN)||s.basin;s.fc.push({lat:p.lat,lng:p.lng,tau:+a.TAU,wind:a.MAXWIND,dvl:a.TCDVLP,lbl:a.FLDATELBL});});
+  var list=Object.keys(S).map(function(k){var s=S[k];s.obs.sort(function(a,b){return (a.t||0)-(b.t||0);});s.latest=s.obs.length?s.obs[s.obs.length-1]:null;
+   s.close=s.fc.length?closestApproach(s.fc):null;
+   s.nowKm=s.latest?hav(s.latest,GAUGE):null;s.pri=(s.basin==='al'||s.basin==='ep')?0:1;return s;});
+  list.sort(function(a,b){return a.pri-b.pri||((a.close?a.close.km:1e9)-(b.close?b.close.km:1e9));});
+  NHCS=list;var newest=null;list.forEach(function(s){if(s.latest&&s.latest.t&&(!newest||s.latest.t>newest))newest=s.latest.t;});
+  setFeed('nhc','live',newest,list.length+' system'+(list.length===1?'':'s')+(NHC_PART.fcErr?' · forecast layer unavailable':NHC_PART.obErr?' · observed layer unavailable':''));})
+  .catch(function(e){NHCS=null;NHC_PART={};FEEDS.nhc.err=e.message;setFeed('nhc','unavailable');}).then(function(){renderNHC();renderPhase();});}
+function renderNHC(){var el=$('nhc');if(FEEDS.nhc.state==='loading')return;
+ if(!NHCS){unavailable(el,'nhc','The NHC active-storm feed');return;}
+ var part=NHC_PART.fcErr?'<div class="muted warn" style="margin-bottom:6px">Forecast positions unavailable ('+esc(NHC_PART.fcErr)+'); closest approach and the phase suggestion need them.</div>':NHC_PART.obErr?'<div class="muted warn" style="margin-bottom:6px">Observed positions unavailable ('+esc(NHC_PART.obErr)+'); forecast positions shown.</div>':'';
+ if(!NHCS.length&&!NHC_PART.fcErr&&!NHC_PART.obErr){el.innerHTML='<div class="big" style="color:#86e3bb">No active systems</div><div class="muted" style="margin-top:4px">'+stateTag('nhc')+' The NHC feed lists no active tropical systems anywhere. That is the normal state for much of the year, including outside the June 1 to November 30 Atlantic season. Checked '+esc(fmtUTC(FEEDS.nhc.checked))+'.</div>';return;}
+ el.innerHTML=part+'<div class="muted" style="margin-bottom:8px">'+stateTag('nhc')+' '+NHCS.length+' active system'+(NHCS.length===1?'':'s')+'. Checked '+esc(fmtUTC(FEEDS.nhc.checked))+'.</div>'+NHCS.map(function(s){
+  var near=s.pri===0&&s.close&&s.close.km<=300,L=s.latest;
+  return '<div class="sys'+(near?' near':'')+'"><div class="t">'+esc(s.name)+' <span class="muted">'+esc(BASIN_LABEL[s.basin]||(s.basin?s.basin.toUpperCase():'basin unknown'))+(s.id?' · '+esc(s.id):'')+'</span></div>'+
+   '<div class="m">Latest position: '+(L?L.lat.toFixed(1)+', '+L.lng.toFixed(1)+(L.int!=null&&L.int!==''?' · '+esc(L.int)+' kt':'')+(L.t?' · '+esc(fmtUTC(L.t)):'')+' · '+Math.round(s.nowKm).toLocaleString()+' km from the gauge':'not reported')+'</div>'+
+   '<div class="m">Closest forecast approach: '+(s.close?Math.round(s.close.km).toLocaleString()+' km at '+(s.close.between?'about ':'')+'TAU '+(isFinite(s.close.tau)?s.close.tau:'?')+' h'+(s.close.between?' (between forecast points)':'')+(s.close.wind!=null&&s.close.wind!==''?' · '+esc(s.close.wind)+' kt':'')+(s.close.lbl?' · '+esc(s.close.lbl):''):'no forecast points')+(near?' · <b style="color:#f3d27a">within 300 km</b>':'')+'</div></div>';}).join('');}
+
+/* ===================== NWS ===================== */
+var NWSA=null;
+function loadNWS(){return getJSON('https://api.weather.gov/alerts/active?point='+NWS_POINT,{'Accept':'application/geo+json'}).then(function(j){
+  NWSA={list:(j.features||[]).map(function(f){return f.properties||{};}),updated:Date.parse(j.updated)||null};setFeed('nws','live',NWSA.updated,NWSA.list.length+' active');})
+  .catch(function(e){NWSA=null;FEEDS.nws.err=e.message;setFeed('nws','unavailable');}).then(renderNWS);}
+function renderNWS(){var el=$('nws');if(FEEDS.nws.state==='loading')return;
+ if(!NWSA){unavailable(el,'nws','The NWS alert feed');return;}
+ var rank={Extreme:0,Severe:1,Moderate:2,Minor:3,Unknown:4},rk=function(v){return Object.prototype.hasOwnProperty.call(rank,v)?rank[v]:4;},
+  L=NWSA.list.slice().sort(function(a,b){return rk(a.severity)-rk(b.severity);}),shown=L.filter(function(p,i){return i<8||rk(p.severity)<=1;});
+ var head='<div class="muted" style="margin-bottom:8px">'+stateTag('nws')+' '+(NWSA.updated?'updated '+esc(fmtUTC(NWSA.updated)):'checked '+esc(fmtUTC(FEEDS.nws.checked)))+'</div>';
+ el.innerHTML=head+(L.length?shown.map(function(p){var sev=p.severity==='Extreme'||p.severity==='Severe';
+  return '<div class="al'+(sev?' sev':'')+'"><div class="t">'+esc(p.event||'Alert')+'</div><div class="m">'+esc(p.headline||'')+'</div><div class="m">'+esc(p.severity||'')+(p.expires?' · expires '+esc(fmtUTC(Date.parse(p.expires))):'')+'</div></div>';}).join('')+(L.length>shown.length?'<div class="muted">and '+(L.length-shown.length)+' more at weather.gov</div>':'')
+  :'<div class="big" style="color:#86e3bb">No active alerts</div><div class="muted" style="margin-top:4px">No NWS watches, warnings or advisories are in effect at the gauge point.</div>');}
+
+/* ===================== SURGE-DEPENDENT VIEWS ===================== */
+var TM=null;
+function classOf(s,plane){return s.elev<=plane?'exp':(s.elev<=plane+2?'ring':'dry');}
+var CLS_COL={exp:'var(--exp)',ring:'var(--ring)',dry:'var(--dry)'},CLS_TXT={exp:'exposed',ring:'+2 ft ring',dry:'dry'};
+/* Re-renders keep keyboard focus: remember the focused control, rebuild, then refocus its replacement. */
+function keepFocus(fn){var a=document.activeElement,key=null;
+ if(a&&a!==document.body){if(a.id)key='#'+a.id;else if(a.getAttribute('data-lv')&&a.closest('.ladder'))key='#'+a.closest('.ladder').id+' [data-lv="'+a.getAttribute('data-lv')+'"]';
+  else if(a.getAttribute('data-ph'))key='#phases [data-ph="'+a.getAttribute('data-ph')+'"]';else if(a.tagName==='SUMMARY'&&a.closest('#tm'))key='#tm details[data-n="'+a.parentNode.getAttribute('data-n')+'"] > summary';
+  else if(a.tagName==='SUMMARY'&&a.closest('#gauge,#ofs'))key='#'+a.closest('#gauge,#ofs').id+' details.dt > summary';else if(a.classList&&a.classList.contains('ov')&&a.closest('.chart'))key='#'+a.closest('.chart').id+' .ov';}
+ fn();if(key){var n=document.querySelector(key);if(n&&n!==document.activeElement)n.focus({preventScroll:true});}}
+var OPEN_TM={};document.addEventListener('toggle',function(e){var d=e.target;if(d&&d.matches&&d.matches('#tm details'))OPEN_TM[d.getAttribute('data-n')]=d.open;},true);
+function renderSurge(){keepFocus(function(){TM=tenMetrics();renderLadders();renderLadderChart();renderLadderSum();updateMap();renderTM();renderCheck();renderTimeline();renderStationTable();});}
+function renderLadders(){['ladder','ladder2'].forEach(function(id){var el=$(id);if(!el.children.length)el.innerHTML=SURGE_LEVELS.map(function(l){return '<button type="button" class="lv" data-lv="'+l+'">'+l+' ft</button>';}).join('');
+  el.querySelectorAll('.lv').forEach(function(b){var l=+b.getAttribute('data-lv');b.setAttribute('aria-pressed',String(l===surgeSel));b.setAttribute('aria-label',l+' ft: '+surgeAt(l).list.length+' synthetic stations exposed, real network '+REAL_LADDER[l]);});});
+ $('ladder-note').textContent=surgeNote;}
+function renderLadderChart(){var host=$('ladder-chart');if(!host.offsetParent)return;var W=Math.max(260,Math.round(host.clientWidth||460)),H=150,m={l:8,r:8,t:18,b:34},n=SURGE_LEVELS.length,bw=(W-m.l-m.r)/n,max=stations.length;
+ var s='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="Synthetic stations exposed at each ladder step">';
+ s+='<line x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+(H-m.b)+'" y2="'+(H-m.b)+'" stroke="var(--axis)"/>';
+ SURGE_LEVELS.forEach(function(l,i){var c=surgeAt(l).list.length,h=(H-m.t-m.b)*c/max,w=Math.min(24,bw*.55),x=m.l+i*bw+(bw-w)/2,y=H-m.b-h,sel=l===surgeSel;
+  var r=Math.min(4,h/2),d='M'+x+','+(H-m.b)+'V'+(y+r)+'Q'+x+','+y+' '+(x+r)+','+y+'H'+(x+w-r)+'Q'+(x+w)+','+y+' '+(x+w)+','+(y+r)+'V'+(H-m.b)+'Z';
+  s+='<g class="lvc" data-lv="'+l+'" style="cursor:pointer"><rect x="'+(m.l+i*bw)+'" y="'+m.t+'" width="'+bw+'" height="'+(H-m.t)+'" fill="transparent"/>'+(h>0?'<path d="'+d+'" fill="'+(sel?'var(--sea)':'#2f5f8f')+'"/>':'')+
+   '<text x="'+(x+w/2)+'" y="'+(y-5)+'" fill="var(--ink)" font-size="11" font-weight="650" text-anchor="middle" style="font-variant-numeric:tabular-nums">'+c+'</text>'+
+   '<text x="'+(x+w/2)+'" y="'+(H-m.b+14)+'" fill="'+(sel?'var(--ink)':'var(--dim)')+'" font-size="11" font-weight="'+(sel?700:500)+'" text-anchor="middle">'+l+' ft</text>'+
+   '<text x="'+(x+w/2)+'" y="'+(H-m.b+27)+'" fill="var(--dim)" font-size="9.5" text-anchor="middle">real '+REAL_LADDER[l]+'</text></g>';});
+ host.innerHTML=s+'</svg>';
+ host.querySelectorAll('.lvc').forEach(function(g){g.addEventListener('click',function(){setSurge(+g.getAttribute('data-lv'),true);});});}
+function renderLadderSum(){var cur=surgeAt(surgeSel),T=cur.list,p=cur.plane,ring=stations.filter(function(s){return s.elev>p&&s.elev<=p+2;}).length,band=stations.filter(function(s){return Math.abs(s.elev-p)<=1;}).length;
+ var z={};T.forEach(function(s){var k=('zone' in s)?'Zone '+s.zone:'not resolved';z[k]=(z[k]||0)+1;});
+ var zk=Object.keys(z).sort(function(a,b){return (a==='not resolved')-(b==='not resolved')||a.localeCompare(b);});
+ var crit=stations.filter(function(s){return s.crit;}),critExp=crit.filter(function(s){return s.elev<=p;}).length;
+ $('ladder-sum').innerHTML='<div class="row"><span class="l">At '+surgeSel+' ft MLLW, plane '+p.toFixed(2)+' ft NAVD88</span><span class="v">'+T.length+' of '+stations.length+' exposed ('+Math.round(100*T.length/stations.length)+'%)</span></div>'+
+  '<div class="row"><span class="l">Real network at this step</span><span class="v">'+REAL_LADDER[surgeSel]+' (matches by construction)</span></div>'+
+  '<div class="row"><span class="l">+2 ft ring (plane to plane + 2 ft)</span><span class="v">'+ring+' more stations</span></div>'+
+  '<div class="row"><span class="l">One-foot margin band (within 1 ft of the plane)</span><span class="v">'+band+' stations</span></div>'+
+  '<div class="row"><span class="l">Exposed by evacuation zone</span><span class="v">'+(zk.length?zk.map(function(k){return esc(k)+' '+z[k];}).join(' · '):'none')+'</span></div>'+
+  '<div class="row"><span class="l">Criticality-flagged stations exposed</span><span class="v">'+critExp+' of '+crit.length+'</span></div>';}
+
+/* ---------- metrics panel ---------- */
+function renderTM(){var real=REAL_TM[surgeSel],bad=TM.filter(function(r){return r.bad;}).length;
+ $('tm-sub').innerHTML='At <b>'+surgeSel+' ft</b>: the synthetic network has <b>'+bad+' of 10</b> metrics sub-optimal'+(real?'; the real network ('+REAL_DATE+') had <b>'+real.bad+' of 10</b> with '+real.exposed+' exposed.':'. Real-network values are published for 6 and 8 ft only.')+' Exposed stations are one arm, the rest the other. Open a row for its condition and mitigations.';
+ var html='',lastP=0;
+ TM.forEach(function(r,i){if(r.pillar!==lastP){lastP=r.pillar;html+='<div class="muted" style="margin:10px 0 5px;font-weight:650;letter-spacing:.02em">Pillar '+r.pillar+': '+esc(r.pillarName)+'</div>';}
+  var rv=real?real.v[i]:null;
+  html+='<details class="tm" data-n="'+r.n+'"'+(OPEN_TM[r.n]?' open':'')+'><summary><span class="n">'+r.n+'</span><span class="nm">'+esc(r.name)+'<small>'+esc(THRESH[i])+'</small></span>'+
+   '<span class="val"><span class="syn">'+esc(r.display)+'</span><span class="real">'+(rv?'real network: '+esc(rv[0])+', '+(rv[1]?'sub-optimal':'ok'):'real network: published for 6 and 8 ft')+'</span></span>'+
+   '<span class="flag '+(r.bad?'bad':'ok')+'">'+(r.bad?'▲ sub-optimal':'✓ ok')+'</span></summary>'+
+   '<div class="tmb"><p><b>Sub-optimal condition.</b> '+esc(r.cond)+'</p><p><b>Analytical mitigation.</b> '+esc(r.anal)+'</p><p><b>Operational mitigation.</b> '+esc(r.oper)+'</p></div></details>';});
+ $('tm').innerHTML=html;}
+
+/* ===================== MAP ===================== */
+var MAP={S:20,x0:-10.3,x1:9.3,y0:-18.5,y1:14.6},selFid=null;
+/* The 3 treatment plants are the terminals: each force-main sink (a station with upstream edges but no downstream edge) links, schematically, to its basin's plant. These links are not TOPO edges, so they do not enter the metrics. */
+var PLANT_BY_BASIN={};GEO.plants.forEach(function(p){PLANT_BY_BASIN[p.basin]=p;});
+var SINKS=[];(function(){var seen={};Object.keys(TOPO).forEach(function(u){var d=TOPO[u];if(!TOPO[d]&&!seen[d]){seen[d]=1;SINKS.push(d);}});})();
+function inTopo(f){return !!(TOPO[f]||TOPO_REV[f]);}
+function MX(x){return ((x-MAP.x0)*MAP.S).toFixed(1);}function MY(y){return ((MAP.y1-y)*MAP.S).toFixed(1);}
+function pathOf(L){return L.map(function(p,i){return (i?'L':'M')+MX(p[0])+','+MY(p[1]);}).join('');}
+function buildMap(){var W=(MAP.x1-MAP.x0)*MAP.S,H=(MAP.y1-MAP.y0)*MAP.S,s='';
+ s+='<svg id="netsvg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Map of the synthetic lift-station network on a fictional peninsula"><defs>'+
+  '<marker id="arw" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,1L10,5L0,9z" fill="#9fb6cf"/></marker>'+
+  '<marker id="arwh" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,1L10,5L0,9z" fill="var(--up)"/></marker></defs>';
+ s+='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="var(--water)"/>';
+ s+='<path d="'+pathOf(GEO.mainland)+'Z" fill="var(--land)" stroke="#2c4a6b" stroke-width="1.2"/>';
+ Object.keys(GEO.islands).forEach(function(k){var I=GEO.islands[k];s+='<path d="'+pathOf(I.line)+'" fill="none" stroke="var(--land)" stroke-width="'+(2*I.hw*MAP.S).toFixed(1)+'" stroke-linecap="round" stroke-linejoin="round"/>';});
+ Object.keys(GEO.causeways).forEach(function(k){s+='<path d="'+pathOf(GEO.causeways[k].line)+'" fill="none" stroke="#3a5878" stroke-width="3" stroke-linecap="round"/>';});
+ Object.keys(GEO.creeks).forEach(function(k){s+='<path d="'+pathOf(GEO.creeks[k].line)+'" fill="none" stroke="#24527d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';});
+ GEO.basinLines.forEach(function(L){var pts=L.map(function(p){return [Math.max(MAP.x0,Math.min(MAP.x1,p[0])),p[1]];});s+='<path d="'+pathOf(pts)+'" fill="none" stroke="#8aa0bb" stroke-width="1.4" stroke-dasharray="6 5" opacity=".75"/>';});
+ s+='<text x="'+MX(-9.9)+'" y="'+MY(14.0)+'" fill="#5c7fa6" font-size="12" font-weight="700" letter-spacing="2">GULF</text><text x="'+MX(8.9)+'" y="'+MY(14.0)+'" fill="#5c7fa6" font-size="12" font-weight="700" letter-spacing="2" text-anchor="end">BAY</text>';
+ GEO.plants.forEach(function(p){s+='<rect x="'+(MX(p.x)-6)+'" y="'+(MY(p.y)-6)+'" width="12" height="12" rx="2" fill="#0a1422" stroke="var(--sea)" stroke-width="2"/><text x="'+(+MX(p.x)+10)+'" y="'+(+MY(p.y)+4)+'" fill="var(--sea)" font-size="10.5" font-weight="700">'+p.id+'</text>';});
+ s+='<g id="plinks">';SINKS.forEach(function(f){var a=FID[f],pl=PLANT_BY_BASIN[a.basin];s+='<line data-sink="'+f+'" x1="'+MX(a.x)+'" y1="'+MY(a.y)+'" x2="'+MX(pl.x)+'" y2="'+MY(pl.y)+'" stroke="#5c7fa6" stroke-width="1.2" stroke-dasharray="2 4" opacity=".7"/>';});s+='</g>';
+ s+='<g id="edges">';Object.keys(TOPO).forEach(function(u){var a=FID[u],b=FID[TOPO[u]],x1=+MX(a.x),y1=+MY(a.y),x2=+MX(b.x),y2=+MY(b.y),dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1;
+  s+='<line data-u="'+u+'" x1="'+(x1+dx/L*6).toFixed(1)+'" y1="'+(y1+dy/L*6).toFixed(1)+'" x2="'+(x2-dx/L*8).toFixed(1)+'" y2="'+(y2-dy/L*8).toFixed(1)+'" stroke="#9fb6cf" stroke-width="1.6" marker-end="url(#arw)"/>';});s+='</g>';
+ s+='<g id="stns">';stations.forEach(function(st){s+='<g class="stn" data-fid="'+st.fid+'">'+(st.crit?'<circle class="crit" cx="'+MX(st.x)+'" cy="'+MY(st.y)+'" r="8" fill="none" stroke="#eaf1f8" stroke-width="1.3"/>':'')+'<circle class="dot" cx="'+MX(st.x)+'" cy="'+MY(st.y)+'" r="4.5" stroke="var(--land)" stroke-width="2"/></g>';});s+='</g><g id="ovr"></g>';
+ [['North basin',-3.4,7.9],['Central basin',-2.8,1.4],['South basin',3.0,-8.3]].forEach(function(b){s+='<text x="'+MX(b[1])+'" y="'+MY(b[2])+'" fill="#8aa0bb" font-size="11" font-weight="650" text-anchor="middle" stroke="var(--land)" stroke-width="3" paint-order="stroke">'+b[0]+'</text>';});
+ var sb0=+MX(4.8),sb1=+MX(6.8),sby=+MY(-16.6);s+='<line x1="'+sb0+'" x2="'+sb1+'" y1="'+sby+'" y2="'+sby+'" stroke="var(--ink2)" stroke-width="2"/><text x="'+((sb0+sb1)/2)+'" y="'+(sby-6)+'" fill="var(--ink2)" font-size="10.5" text-anchor="middle">2 km</text>';
+ s+='<text x="'+MX(7.6)+'" y="'+MY(-18.0)+'" fill="var(--dim)" font-size="10" text-anchor="middle">N ↑ · fictional</text></svg>';
+ $('map').innerHTML=s;
+ $('map-legend').innerHTML='<span><span class="sw" style="background:var(--exp)"></span>Exposed (at or below the plane)</span><span><span class="sw" style="background:var(--ring)"></span>+2 ft ring</span><span><span class="sw" style="background:var(--dry)"></span>Dry</span>'+
+  '<span><span class="sw" style="background:transparent;border:1.3px solid #eaf1f8"></span>Criticality flag</span><span><span class="k" style="border-color:#9fb6cf"></span>Force main (downhill)</span><span><span class="sw" style="border-radius:2px;background:#0a1422;border:2px solid var(--sea)"></span>Treatment plant</span><span><span class="k" style="border-color:#8aa0bb;border-top-style:dashed"></span>Basin line</span><span><span class="k" style="border-color:#5c7fa6;border-top-style:dotted"></span>Sink to plant (schematic)</span>';
+ var svg=$('netsvg'),tip=$('maptip');
+ /* Pointer picks the nearest station within 14 map units (about a 24 px target), so a neighbor never hides a dot. */
+ function nearest(e){var m=svg.getScreenCTM();if(!m)return null;var pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;var q=pt.matrixTransform(m.inverse()),best=null,bd=14;
+  stations.forEach(function(st){var d=Math.hypot(+MX(st.x)-q.x,+MY(st.y)-q.y);if(d<bd){bd=d;best=st;}});return best;}
+ svg.addEventListener('click',function(e){var st=nearest(e);selectStation(st?st.fid:null);});
+ svg.addEventListener('pointermove',function(e){var st=nearest(e);svg.style.cursor=st?'pointer':'default';if(!st){tip.hidden=true;return;}var g=svg.querySelector('.stn[data-fid="'+st.fid+'"]'),p=surgeAt(surgeSel).plane,c=classOf(st,p);
+  tip.innerHTML='<b>'+esc(st.fid)+'</b> '+esc(st.name)+'<br><b>'+st.elev.toFixed(2)+' ft</b> NAVD88 · '+CLS_TXT[c]+' at '+surgeSel+' ft<br>'+esc(zoneTxt(st))+' · '+BASIN_NAME[st.basin]+' basin'+(STATUS_OVERRIDE[st.fid]?'<br>override: '+esc(STATUS_OVERRIDE[st.fid].status):'');
+  var r=svg.getBoundingClientRect(),w=$('mapwrap').getBoundingClientRect(),dot=g.querySelector('.dot').getBoundingClientRect();var left=dot.left-w.left+14;if(left>w.width-200)left=dot.left-w.left-214;
+  tip.style.left=Math.max(0,left)+'px';tip.style.top=Math.max(0,dot.top-w.top-10)+'px';tip.hidden=false;});
+ svg.addEventListener('pointerleave',function(){tip.hidden=true;});
+ var opts=stations.slice().sort(function(a,b){return a.fid<b.fid?-1:1;}).map(function(s){return '<option value="'+s.fid+'">'+s.fid+' · '+esc(s.name)+'</option>';}).join('');
+ $('stn-pick').innerHTML='<option value="">(none)</option>'+opts;$('stn-pick').addEventListener('change',function(){selectStation(this.value||null);});}
+function downPath(fid){var out=[],c=fid,seen={};while(TOPO[c]&&!seen[c]){seen[c]=1;out.push(TOPO[c]);c=TOPO[c];}return out;}
+function updateMap(){var p=surgeAt(surgeSel).plane,up=selFid?upstreamOf(selFid):new Set(),dn=selFid?downPath(selFid):[];
+ document.querySelectorAll('#stns .stn').forEach(function(g){var st=FID[g.getAttribute('data-fid')],c=classOf(st,p),d=g.querySelector('.dot');
+  d.setAttribute('fill',CLS_COL[c]);d.setAttribute('r',c==='exp'?5.5:4.5);
+  var isSel=st.fid===selFid,isUp=up.has(st.fid),isDn=dn.indexOf(st.fid)>=0;d.setAttribute('stroke',isSel?'#ffffff':isUp?'var(--up)':isDn?'#9fd0ff':'var(--land)');d.setAttribute('stroke-width',isSel||isUp||isDn?3:2);
+  g.setAttribute('opacity',selFid&&!(isSel||isUp||isDn)?.55:1);});
+ document.querySelectorAll('#edges line').forEach(function(l){var u=l.getAttribute('data-u'),on=selFid&&(up.has(u)||u===selFid||dn.indexOf(u)>=0);
+  l.setAttribute('stroke',on?'var(--up)':'#9fb6cf');l.setAttribute('marker-end',on?'url(#arwh)':'url(#arw)');l.setAttribute('stroke-width',on?2.6:1.6);});
+ var term=selFid?(dn.length?dn[dn.length-1]:selFid):null;document.querySelectorAll('#plinks line').forEach(function(l){var on=term&&l.getAttribute('data-sink')===term;l.setAttribute('stroke',on?'#9fd0ff':'#5c7fa6');l.setAttribute('stroke-width',on?2:1.2);});
+ var ov='';Object.keys(STATUS_OVERRIDE).forEach(function(f){var st=FID[f];if(!st)return;var x=+MX(st.x),y=+MY(st.y);ov+='<path d="M'+(x-6)+','+(y-6)+'L'+(x+6)+','+(y+6)+'M'+(x+6)+','+(y-6)+'L'+(x-6)+','+(y+6)+'" stroke="#ffffff" stroke-width="2.2"/>';});$('ovr').innerHTML=ov;
+ var T=surgeAt(surgeSel).list.length;$('net-sub').textContent='130 synthetic lift stations on a fictional peninsula, colored by exposure at '+surgeSel+' ft MLLW (plane '+p.toFixed(2)+' ft NAVD88): '+T+' exposed. Select a station to trace its upstream set.';
+ renderDetail();}
+function selectStation(fid){selFid=fid&&FID[fid]?fid:null;$('stn-pick').value=selFid||'';updateMap();renderStationTable();}
+function renderDetail(){var el=$('stn-detail');if(!selFid){el.innerHTML='<span class="muted">No station selected. Select one on the map or from the list to see its upstream set (violet) and its downstream path (light blue).</span>';return;}
+ var st=FID[selFid],p=surgeAt(surgeSel).plane,c=classOf(st,p),up=Array.from(upstreamOf(selFid)).sort(),dn=downPath(selFid),ov=STATUS_OVERRIDE[selFid];
+ var expUp=up.filter(function(f){return FID[f].elev<=p;}).length,expDn=dn.filter(function(f){return FID[f].elev<=p;}).length,bk=TM&&TM[9].backupIds?TM[9].backupIds:[];
+ el.innerHTML='<div style="font-weight:700;margin-bottom:4px">'+esc(st.fid)+' · '+esc(st.name)+' <span class="muted">('+esc(st.kind)+')</span></div><dl class="kv">'+
+  '<dt>Ground elevation</dt><dd>'+st.elev.toFixed(2)+' ft NAVD88</dd><dt>At '+surgeSel+' ft</dt><dd><span class="sw" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+CLS_COL[c]+';margin-right:5px"></span>'+CLS_TXT[c]+' ('+(st.elev-p>=0?'+':'')+(st.elev-p).toFixed(2)+' ft vs the plane)</dd>'+
+  '<dt>Evacuation zone</dt><dd>'+esc(zoneTxt(st))+'</dd><dt>Basin</dt><dd>'+BASIN_NAME[st.basin]+'</dd><dt>Criticality flag</dt><dd>'+(st.crit?'yes':'no')+'</dd>'+
+  '<dt>Upstream set</dt><dd>'+(up.length?up.length+': '+up.map(esc).join(', ')+(expUp?' ('+expUp+' exposed)':''):'none')+'</dd>'+
+  '<dt>Downstream path</dt><dd>'+(inTopo(selFid)?(dn.length?dn.map(esc).join(' → ')+' → ':'')+PLANT_BY_BASIN[(dn.length?FID[dn[dn.length-1]]:st).basin].id+' (sink to plant link is schematic)'+(expDn?'; '+expDn+' exposed on the way':''):'not on a traced force main; basin plant '+PLANT_BY_BASIN[st.basin].id)+'</dd>'+
+  (c!=='exp'&&bk.indexOf(selFid)>=0?'<dt>Choke point</dt><dd>unexposed, upstream of an exposed station'+(up.length?'; a bypass here also covers its '+up.length+' upstream station'+(up.length===1?'':'s'):'')+'</dd>':'')+
+  (ov?'<dt>Override</dt><dd>'+esc(ov.status)+(ov.note?': '+esc(ov.note):'')+'</dd>':'')+'</dl>';}
+function renderStationTable(){var p=surgeAt(surgeSel).plane,list=stations.slice().sort(function(a,b){return a.elev-b.elev;}),nExp=list.filter(function(s){return s.elev<=p;}).length;
+ $('stn-table-s').textContent='Station table: all 130, lowest first ('+nExp+' exposed at '+surgeSel+' ft)';
+ if(!$('stn-table-d').open&&$('stn-table').innerHTML)return;
+ $('stn-table').innerHTML='<table class="tbl"><thead><tr><th>ID</th><th>Name</th><th>Elev (ft)</th><th>At '+surgeSel+' ft</th><th>Zone</th><th>Basin</th><th>Upstream</th><th>Crit</th></tr></thead><tbody>'+list.map(function(s){var c=classOf(s,p);
+  return '<tr'+(s.fid===selFid?' class="sel"':'')+'><td class="mono">'+s.fid+'</td><td>'+esc(s.name)+'</td><td>'+s.elev.toFixed(2)+'</td><td>'+CLS_TXT[c]+'</td><td>'+esc(('zone' in s)?s.zone:'not resolved')+'</td><td>'+BASIN_NAME[s.basin]+'</td><td>'+tmUp(s.fid)+'</td><td>'+(s.crit?'yes':'')+'</td></tr>';}).join('')+'</tbody></table>';}
+
+/* ===================== RESPONSE PLAN ===================== */
+var phaseSel=null,phaseUser=false,phaseSugg=null,phaseWhy='',CHECKED={};
+function suggestPhase(){if(!NHCS)return {id:null,why:FEEDS.nhc.state==='loading'?'Waiting for the NHC feed.':'Suggestion unavailable: the NHC feed is unavailable (checked '+esc(fmtUTC(FEEDS.nhc.checked))+'). Pick a phase manually.'};
+ if(NHC_PART.fcErr)return {id:null,why:'Suggestion unavailable: NHC forecast positions are unavailable (checked '+esc(fmtUTC(FEEDS.nhc.checked))+'). Pick a phase manually.'};
+ var c=NHCS.filter(function(s){return s.pri===0&&s.close&&s.close.km<=300&&isFinite(s.close.tau);}).sort(function(a,b){return a.close.tau-b.close.tau;});
+ if(!c.length)return {id:'pre',why:'No Atlantic or East Pacific system has a forecast track within 300 km of the gauge'+(NHCS.length?' ('+NHCS.length+' active system'+(NHCS.length===1?'':'s')+' elsewhere)':' (no active systems)')+', so the rule suggests Pre-season.'};
+ var s=c[0],tau=s.close.tau,id=tau<=24?'t24':tau<=48?'t48':tau<=72?'t72':'t120';
+ return {id:id,why:esc(s.name)+'\'s forecast passes '+Math.round(s.close.km)+' km from the gauge at '+(s.close.between?'about ':'')+'TAU '+tau+' h, which suggests '+PHASES.filter(function(p){return p.id===id;})[0].label+'.'};}
+function renderPhase(){keepFocus(renderPhase_);}
+function renderPhase_(){var sg=suggestPhase();phaseSugg=sg.id;phaseWhy=sg.why;if(!phaseUser)phaseSel=phaseSugg||'pre';
+ $('phase-sugg').innerHTML='<div class="row"><span class="l">Suggested phase '+stateTag('nhc')+'</span><span class="v">'+(phaseSugg?PHASES.filter(function(p){return p.id===phaseSugg;})[0].label:'none')+'</span></div><div class="muted" style="margin:4px 0 6px">'+sg.why+'</div>';
+ var ph=$('phases');if(!ph.children.length)ph.innerHTML=PHASES.map(function(p){return '<button type="button" class="ph" data-ph="'+p.id+'">'+p.label+'</button>';}).join('');
+ ph.querySelectorAll('.ph').forEach(function(b){var id=b.getAttribute('data-ph');b.setAttribute('aria-pressed',String(id===phaseSel));b.classList.toggle('sugg',id===phaseSugg);b.setAttribute('aria-label',b.textContent+(id===phaseSugg?' (suggested)':''));});
+ if(TM){renderCheck();renderTimeline();}}
+function renderCheck(){if(!TM)return;var bad=TM.filter(function(r){return r.bad;}),badN={};bad.forEach(function(r){badN[r.n]=r;});var acts=0;
+ var h='<div class="muted" style="margin-bottom:8px">At <b>'+surgeSel+' ft</b>: '+bad.length+' of 10 metrics sub-optimal on the synthetic network'+(REAL_TM[surgeSel]?' (real network: '+REAL_TM[surgeSel].bad+' of 10)':'')+'.</div>';
+ PHASES.forEach(function(p){var items=p.dims.filter(function(d){return badN[d];});acts+=items.length;
+  h+='<div class="grp'+(p.id===phaseSel?' cur':'')+'"><h3>'+p.label+(p.id===phaseSugg?' <span class="pill">suggested</span>':'')+(p.id===phaseSel?' <span class="pill">selected</span>':'')+'</h3><div class="dec">'+esc(p.dec)+'.</div>'+
+   (items.length?items.map(function(d){var r=badN[d],id='ck-'+p.id+'-'+d;return '<label class="chk" for="'+id+'"><input type="checkbox" id="'+id+'"'+(CHECKED[id]?' checked':'')+'><span><b>#'+d+' '+esc(r.name)+'.</b> '+esc(r.oper)+'</span></label>';}).join('')
+   :'<div class="muted">No sub-optimal dimension among '+p.dims.map(function(d){return '#'+d;}).join(', ')+' at this level; the phase decision above still applies.</div>')+'</div>';});
+ var mapped={};PHASES.forEach(function(p){p.dims.forEach(function(d){mapped[d]=1;});});var un=bad.filter(function(r){return !mapped[r.n];});
+ if(un.length)h+='<div class="grp"><h3>Not tied to a timeline phase</h3><div class="dec">No timeline phase lists these dimensions, so their operational mitigations are collected here.</div>'+un.map(function(r){var id='ck-any-'+r.n;return '<label class="chk" for="'+id+'"><input type="checkbox" id="'+id+'"'+(CHECKED[id]?' checked':'')+'><span><b>#'+r.n+' '+esc(r.name)+'.</b> '+esc(r.oper)+'</span></label>';}).join('')+'</div>';
+ $('check').innerHTML=h;}
+function renderTimeline(){if(!TM)return;
+ $('timeline').innerHTML='<table class="tbl"><thead><tr><th>Phase</th><th>Decision</th><th>Dimensions</th></tr></thead><tbody>'+PHASES.map(function(p){
+  return '<tr'+(p.id===phaseSel?' class="sel"':'')+'><td style="white-space:nowrap;font-weight:650">'+p.label+(p.id===phaseSugg?'<div class="muted" style="font-weight:500">suggested</div>':'')+'</td><td>'+esc(p.dec)+'</td><td>'+p.dims.map(function(d){var r=TM[d-1];return '<span class="pill '+(r.bad?'bad':'ok')+'" title="'+esc(r.name)+': '+(r.bad?'sub-optimal':'ok')+'">#'+d+' '+(r.bad?'▲':'✓')+'</span>';}).join('')+'</td></tr>';}).join('')+'</tbody></table>';}
+
+/* ===================== BACKTEST + ABOUT ===================== */
+function renderBacktest(){$('bt-table').innerHTML='<table class="tbl"><thead><tr><th>Storm</th><th>Date</th><th>Peak (ft MLLW)</th><th>Anomaly (ft)</th><th>Plane (ft NAVD88)</th><th>Stations (real)</th><th>Share (real)</th><th>Synthetic stations</th><th>Synthetic share</th></tr></thead><tbody>'+
+ STORMS.map(function(s){var n=countAt(s.plane);return '<tr><td style="font-weight:650">'+s.name+'</td><td class="nw">'+s.date+'</td><td>'+s.peak.toFixed(2)+'</td><td>'+s.anom.toFixed(2)+'</td><td>'+s.plane.toFixed(2)+'</td><td>'+s.n+'</td><td>'+s.share+'</td><td>'+n+(n===s.n?' <span class="pill ok">✓ matches</span>':' <span class="pill bad">differs</span>')+'</td><td>'+Math.round(100*n/stations.length)+'%</td></tr>';}).join('')+'</tbody></table>'+
+ '<div class="muted" style="margin-top:8px">Synthetic counts match by construction: the elevation bands were sized so the number of stations at or below each storm plane equals the real count (for example, no synthetic station sits between the 6 ft ladder plane, 4.52 ft, and Idalia\'s plane, 4.63 ft). Share is out of the 130 stations with ground elevations.</div>';}
+function quant(a,p){var h=(a.length-1)*p,l=Math.floor(h);return a[l]+(h-l)*((a[l+1]!=null?a[l+1]:a[l])-a[l]);}
+function renderCalib(){var e=stations.map(function(s){return s.elev;}).sort(function(a,b){return a-b;});
+ var lad=SURGE_LEVELS.map(function(l){return surgeAt(l).list.length;}).join(', ');
+ var storms=STORMS.map(function(s){return countAt(s.plane);}).join(' / ');
+ var q=[e[0],quant(e,.1),quant(e,.25),quant(e,.5),quant(e,.75),quant(e,.9),e[e.length-1]].map(function(v){return v.toFixed(1);}).join(' / ');
+ var Z={};stations.forEach(function(s){var k=('zone' in s)?s.zone:'not resolved';Z[k]=(Z[k]||0)+1;});var zs=['A','B','C','D','E','M','not resolved'].map(function(k){return k+' '+(Z[k]||0);}).join(' · ');
+ var hel=stations.filter(function(s){return s.elev<=7.08;}),helA=hel.filter(function(s){return s.zone==='A';}).length;
+ var crit=stations.filter(function(s){return s.crit;}),critMin=Math.min.apply(null,crit.map(function(s){return s.elev;}));
+ var E=Object.keys(TOPO),nodes=new Set();E.forEach(function(u){nodes.add(u);nodes.add(TOPO[u]);});var cross=E.filter(function(u){return FID[u].basin!==FID[TOPO[u]].basin;}).length;
+ var isl=stations.filter(function(s){return s.kind==='island'||s.kind==='causeway';}),islU=isl.filter(function(s){return !('zone' in s);}).length,mainU=stations.filter(function(s){return !(s.kind==='island'||s.kind==='causeway')&&!('zone' in s);}).length;
+ var comp6=tmComponents(surgeAt(6).list,1.5);
+ var REALH=[[-1,2],[2,1],[3,7],[4,8],[5,22],[6,28],[7,13],[8,6],[9,5],[10,6],[11,4],[13,1],[14,1],[16,2],[17,1],[18,4],[19,1],[20,1],[21,1],[22,1],[30,15]],hm=0;
+ REALH.forEach(function(b){var n=b[0]===30?e.filter(function(v){return v>=30;}).length:e.filter(function(v){return v>=b[0]&&v<b[0]+1;}).length;if(n===b[1])hm++;});
+ var rows=[['Stations with ground elevations','130','130'],['Ladder count at 3 / 4 / 5 / 6 / 7 / 8 / 10 / 12 ft','2, 2, 6, 15, 32, 56, 85, 96',lad],['Helene / Idalia / Milton planes (7.08 / 4.63 / 1.86 ft)','69 / 15 / 2',storms],
+  ['Elevation min / p10 / p25 / median / p75 / p90 / max (ft)','-0.8 / 4.2 / 5.6 / 6.9 / 10.7 / 34.8 / 54.4',q],['1 ft histogram bins matched','21 of 21',hm+' of 21'],['Evacuation zones','A 72 · B 10 · C 2 · D 4 · E 4 · M 1 · not resolved 37',zs],
+  ['Helene-plane stations in Zone A','52 of 69',helA+' of '+hel.length],['Not resolved: island and causeway sites vs the rest','skews to island and causeway sites',islU+' of '+isl.length+' vs '+mainU+' of '+(stations.length-isl.length)],
+  ['Criticality flag','about 10, none below 7 ft',crit.length+', lowest at '+critMin.toFixed(2)+' ft'],['Force-main edges and stations','15 among 28',E.length+' among '+nodes.size],['Edges crossing a basin line','about 40%',Math.round(100*cross/E.length)+'%'],
+  ['Islands at 1.5 km among stations exposed at 6 ft','11',String(comp6)],['Treatment plants (terminals) and basins','3 plants, 3 basins',GEO.plants.length+' plants, '+new Set(stations.map(function(s){return s.basin;})).size+' basins; '+SINKS.length+' sinks linked to their basin plant']];
+ $('calib').innerHTML='<table class="tbl"><thead><tr><th>Target</th><th>Real network</th><th>Synthetic</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>';}).join('')+'</tbody></table>';
+ $('hook-state').textContent='STATUS_OVERRIDE currently holds '+Object.keys(STATUS_OVERRIDE).length+' entries.';}
+
+/* ===================== PAGES + WIRING ===================== */
+var PAGES=['monitor','plan','backtest','about'];
+function setPage(p){if(PAGES.indexOf(p)<0)p='monitor';document.querySelectorAll('[data-page]').forEach(function(el){el.hidden=el.getAttribute('data-page')!==p;});
+ document.querySelectorAll('.tab').forEach(function(b){b.setAttribute('aria-selected',String(b.getAttribute('data-tab')===p));});
+ try{if(location.hash!=='#'+p)history.replaceState(null,'','#'+p);}catch(e){}
+ if(p==='monitor'){drawGaugeChart();drawOFSChart();renderLadderChart();}}
+window.setPage=setPage;
+document.querySelectorAll('.tab').forEach(function(b){b.addEventListener('click',function(){setPage(b.getAttribute('data-tab'));});});
+document.addEventListener('click',function(e){var b=e.target.closest('.lv');if(b){setSurge(+b.getAttribute('data-lv'),true);return;}
+ var ph=e.target.closest('.ph');if(ph){phaseSel=ph.getAttribute('data-ph');phaseUser=true;renderPhase();}});
+document.addEventListener('change',function(e){var t=e.target;if(t&&t.id&&t.id.indexOf('ck-')===0)CHECKED[t.id]=t.checked;});
+$('stn-table-d').addEventListener('toggle',function(){if(this.open){$('stn-table').innerHTML='';renderStationTable();}});
+var rz=null;window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){drawGaugeChart();drawOFSChart();renderLadderChart();},150);});
+
+function refreshAll(){$('refreshed').textContent='Refreshing feeds...';
+ var a=Promise.all([loadWL().then(renderGauge),loadPred().then(renderGauge)]);
+ return Promise.all([a,loadOFS(),loadNHC(),loadNWS()]).then(function(){$('refreshed').textContent='Last refresh '+fmtUTC(Date.now())+'. Feeds refresh every 6 minutes.';});}
+$('refresh').addEventListener('click',refreshAll);
+
+window.addEventListener('hashchange',function(){setPage((location.hash||'').slice(1));});
+function padTop(){document.documentElement.style.scrollPaddingTop=($('disc').offsetHeight+8)+'px';}padTop();window.addEventListener('resize',padTop);
+buildMap();renderStrip();setPage((location.hash||'').slice(1));renderSurge();renderPhase();renderBacktest();renderCalib();
+refreshAll();setInterval(refreshAll,REFRESH_MS);
+
+/* exposed for inspection and tests */
+window.CWR={stations:stations,TOPO:TOPO,FEEDS:FEEDS,setSurge:setSurge,setPage:setPage,tenMetrics:tenMetrics,surgeAt:surgeAt,countAt:countAt,refreshAll:refreshAll,
+ state:function(){return {surgeSel:surgeSel,surgeNote:surgeNote,phaseSel:phaseSel,phaseSugg:phaseSugg,OFS:OFS,NHCS:NHCS};}};
+})();
+</script>
+</body>
+</html>
