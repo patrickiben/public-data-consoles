@@ -1272,7 +1272,8 @@ function computeValidation(p){if(!ALPHA_DATA)computeAlphaData();const stances=['
   const N=M.length,sr0=expectedMaxSR(variance(srs),N),sk=skewKurt(M[cur]),dsr=psr(srs[cur],sr0,M[cur].length,sk.skew,sk.kurt+3);
   VALID={N,sr0,srCur:srs[cur],dsr,pbo:pbo(M,10),stance:p.stance,tau:tSel};}
 function drawValidation(){const el=$('#al-valid');if(!el||!VALID)return;const V=VALID;
-  const verdict=V.pbo>=0.5?'<b style="color:var(--red)">likely overfit</b>':V.pbo>=0.3?'<b style="color:var(--amber)">fragile</b>':'<b style="color:var(--green2)">holds up</b>';
+  // a low PBO only says the in-sample winner isn't systematically worse out of sample; with DSR < 50% there is no edge for it to protect
+  const verdict=(V.pbo>=0.5?'<b style="color:var(--red)">likely overfit</b>':V.pbo>=0.3?'<b style="color:var(--amber)">fragile</b>':'<b>is not obviously overfit</b>')+(V.dsr<0.5?' — but the Deflated Sharpe shows no configuration clears the no-skill bar, so there is no edge here for that to protect':'');
   el.innerHTML=`<div style="margin-top:9px;border-top:1px solid var(--bd);padding-top:8px">
    <div class="kv"><span>Trials swept (N: 3 stances × 5 τ)</span><b>${V.N}</b></div>
    <div class="kv"><span>Expected max Sharpe from N no-skill trials (ann.)</span><b>${(V.sr0*Math.sqrt(252)).toFixed(2)}</b></div>
