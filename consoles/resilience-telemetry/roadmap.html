@@ -42,6 +42,11 @@ nav.links{font-size:12px;margin-top:8px}nav.links a{color:var(--teal);margin-rig
 .note{font-size:11.5px;color:var(--dim);margin:-6px 0 12px}
 @media(max-width:520px){.row{flex-direction:column;gap:2px}.row .k{flex:none}header{padding:16px 14px 12px}.wrap{padding:0 12px}}
 .reset{background:none;border:1px solid var(--bd);color:var(--dim);border-radius:5px;font-size:11px;padding:3px 9px;cursor:pointer}
+.tk{text-decoration:underline dotted;text-decoration-color:currentColor;text-underline-offset:2px;text-decoration-thickness:1px;cursor:help}
+.tk.on{background:rgba(255,255,255,.08);border-radius:2px}
+#deftip{position:fixed;z-index:60;max-width:min(320px,calc(100vw - 16px));background:var(--surf2);border:1px solid var(--bd2);border-radius:8px;padding:7px 10px;font-size:12.5px;line-height:1.45;color:var(--tx);box-shadow:0 4px 14px rgba(0,0,0,.45)}
+#deftip div{margin-top:3px;color:var(--dim)}
+#abbrlist dl{margin:6px 0 0;line-height:1.55;font-size:12.5px} #abbrlist dt{margin-top:5px} #abbrlist dd{margin:0 0 0 16px;color:var(--dim)}
 </style></head>
 <body>
 <header><div class="wrap"><h1>Resilience Telemetry — Mastery Roadmap</h1>
@@ -122,6 +127,24 @@ nav.links{font-size:12px;margin-top:8px}nav.links a{color:var(--teal);margin-rig
   <p class="wall"><b>The hard wall, never crossed:</b> no market gauge on this console may ever justify a trade. The Risk tab describes the weather and brakes your hand — it never tells you to act on a forecast of <i>direction</i>, because there is none. The only input it lets touch your exposure is SPY's trailing 20‑day volatility — a naive persistence forecast that the Predictive tab's vol lab scores below zero when used raw as next month's volatility level (R²≈−0.09 on the snapshot: worse than predicting the average, because it ignores volatility's pull back toward normal — though the lab's fitted model gets much of its skill from this same input; a read on risk, never on direction) — and only through a sizing band <i>you</i> typed: down‑only, never a buy or sell. Other Risk‑tab cards also read volatility, but only to describe: the stress‑test re‑scales its synthetic paths to SPY's current EWMA volatility to draw a distribution of bad months, the sentiment thermometer reads the VIX percentile and SPY's 20‑day‑vol tercile, the diversification check uses two years of covariances, the crash badge reads turbulence and Hawkes clustering, and the crisis replay reports each mix's realised volatility. None of them sets or changes a size.</p>
 </div>
 
+<div class="read" id="abbrlist">
+  <h2>Abbreviations on this page</h2>
+  <dl>
+<dt data-k="R²"><strong>R²</strong> — R-squared</dt><dd>The share of the ups and downs a forecast explains (0 = none; below 0 = worse than simply predicting the average).</dd>
+<dt data-k="SPY"><strong>SPY</strong> — SPDR S&amp;P 500 ETF Trust</dt><dd>Fund tracking the S&amp;P 500 index: 500 large US companies.</dd>
+<dt data-k="VIX"><strong>VIX</strong> — Cboe Volatility Index</dt><dd>Not a fund: the stock market's expected volatility over the next 30 days, implied by S&amp;P 500 option prices (the &quot;fear gauge&quot;).</dd>
+<dt data-k="CAPE"><strong>CAPE</strong> — cyclically adjusted price-to-earnings ratio</dt><dd>Shiller's valuation measure: price divided by the average of the last 10 years of inflation-adjusted earnings.</dd>
+<dt data-k="IC"><strong>IC</strong> — information coefficient</dt><dd>The correlation between a signal's ranking of markets and their actual next-period returns.</dd>
+<dt data-k="EWMA"><strong>EWMA</strong> — exponentially weighted moving average</dt><dd>An average that gives recent observations more weight.</dd>
+<dt data-k="FHS"><strong>FHS</strong> — filtered historical simulation</dt><dd>Replaying past moves, rescaled from the volatility they happened in to today's volatility.</dd>
+<dt data-k="COVID"><strong>COVID</strong> — coronavirus disease 2019</dt><dd>The pandemic whose onset caused the February–March 2020 market crash.</dd>
+<dt data-k="ML"><strong>ML</strong> — machine learning</dt>
+<dt data-k="BDS"><strong>BDS</strong> — Brock–Dechert–Scheinkman test</dt><dd>A statistical test for hidden structure (nonlinear dependence) in a series that looks random.</dd>
+<dt data-k="OOS"><strong>OOS</strong> — out of sample</dt><dd>On data the model was not fitted on.</dd>
+<dt data-k="FOMO"><strong>FOMO</strong> — fear of missing out</dt>
+  </dl>
+</div>
+
 <div class="foot">Companion to the <a href="./" style="color:var(--teal)">Resilience Telemetry console</a> · market numbers quoted above (effective bets, the vol lab's R², the sizing‑dial drawdowns) come from the embedded snapshot (market data through 2026‑10‑21; the console's “markets as of” date, 2026‑10‑20, is the end of the crypto series, which none of these figures uses); the console recomputes them from the data it holds, so they can move after a live refresh (some only on reload). The factor‑demo figures (IC +0.021 → −0.003, 85 → 589 names) are the frozen result of a separate offline backtest, shown as fixed text on the console and never recomputed · descriptive, not predictive · educational, not investment advice.<br>Your milestone progress is saved locally in this browser only.</div>
 </div>
 <script>
@@ -135,5 +158,34 @@ function refresh(){const s=load();let n=0;document.querySelectorAll('.mile input
 document.querySelectorAll('.mile input').forEach(c=>c.addEventListener('change',()=>{const s=load();s[c.dataset.m]=c.checked;save(s);refresh();}));
 document.getElementById('reset').addEventListener('click',()=>{save({});refresh();});
 refresh();
+</script>
+<script>
+// every term listed in #abbrlist gets a dotted underline in the text: hover or tap it for the definition (which follows it while scrolling); Esc or a tap elsewhere closes it
+(function(){const D={};document.querySelectorAll('#abbrlist dt[data-k]').forEach(dt=>{const dd=dt.nextElementSibling;D[dt.dataset.k]=[dt.textContent.trim(),dd&&dd.tagName==='DD'?dd.textContent.trim():''];});
+  const keys=Object.keys(D).sort((a,b)=>b.length-a.length);if(!keys.length)return;
+  const re=new RegExp('(^|[^A-Za-z0-9&])('+keys.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')(?![A-Za-z0-9²])','g');
+  const skip='a,button,label,summary,input,script,style,#abbrlist,.tk,#deftip',todo=[];
+  // links and checkbox labels keep their own click, so they list their abbreviations in a hover title instead
+  const title=c=>{if(c.title)return;const r2=new RegExp(re.source,'g'),seen=new Set();let m;while((m=r2.exec(c.textContent)))seen.add(m[2]+' = '+D[m[2]][0].replace(/^.*? — /,''));if(seen.size)c.title=[...seen].join(' · ');};
+  const tw=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode(n){const p=n.parentElement;re.lastIndex=0;if(!p||!re.test(n.nodeValue))return 2;if(!p.closest(skip))return 1;
+    const c=p.closest('a,button,label,summary');if(c&&!c.closest('#abbrlist'))title(c);return 2;}});
+  while(tw.nextNode())todo.push(tw.currentNode);
+  for(const n of todo){const s=n.nodeValue,f=document.createDocumentFragment();let last=0,m;re.lastIndex=0;
+    while((m=re.exec(s))){const st=m.index+m[1].length;if(st>last)f.appendChild(document.createTextNode(s.slice(last,st)));
+      const sp=document.createElement('span');sp.className='tk';sp.dataset.def=m[2];sp.textContent=m[2];f.appendChild(sp);last=st+m[2].length;}
+    if(last<s.length)f.appendChild(document.createTextNode(s.slice(last)));n.parentNode.replaceChild(f,n);}
+  let anchor=null,raf=0;
+  const hide=()=>{const t=document.getElementById('deftip');if(t)t.remove();anchor=null;document.querySelectorAll('.tk.on').forEach(x=>x.classList.remove('on'));};
+  const place=()=>{const t=document.getElementById('deftip');if(!t||!anchor)return;const r=anchor.getBoundingClientRect(),vw=document.documentElement.clientWidth;
+    if(r.bottom<0||r.top>innerHeight){hide();return;} // its term scrolled away
+    let x=r.left+r.width/2-t.offsetWidth/2,y=r.top-t.offsetHeight-8;x=Math.max(8,Math.min(x,vw-t.offsetWidth-8));if(y<8)y=r.bottom+8;t.style.left=x+'px';t.style.top=y+'px';};
+  const show=(el,sticky)=>{const d=D[el.dataset.def];if(!d)return;hide();el.classList.add('on');anchor=el;const t=document.createElement('div');t.id='deftip';t.setAttribute('role','tooltip');t.dataset.sticky=sticky?'1':'';
+    const b=document.createElement('b');b.textContent=d[0];t.appendChild(b);if(d[1]){const x=document.createElement('div');x.textContent=d[1];t.appendChild(x);}document.body.appendChild(t);place();};
+  const at=e=>e.target.closest&&e.target.closest('.tk'),sticky=()=>{const t=document.getElementById('deftip');return !!(t&&t.dataset.sticky);};
+  document.addEventListener('mouseover',e=>{const el=at(e);if(el&&!sticky()&&!el.classList.contains('on'))show(el,false);});
+  document.addEventListener('mouseout',e=>{const el=at(e);if(el&&!(e.relatedTarget&&el.contains(e.relatedTarget))&&!sticky())hide();});
+  document.addEventListener('click',e=>{const el=at(e),t=document.getElementById('deftip');if(el)show(el,true);else if(t&&!t.contains(e.target))hide();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')hide();});
+  document.addEventListener('scroll',()=>{if(anchor&&!raf)raf=requestAnimationFrame(()=>{raf=0;place();});},{passive:true,capture:true});})();
 </script>
 </body></html>
