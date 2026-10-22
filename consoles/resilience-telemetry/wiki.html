@@ -29,6 +29,11 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 .chip.warn{background:rgba(226,75,74,.08);border-left:3px solid var(--red)}
 .chip b{color:var(--tx)}
 @media(max-width:900px){.wrap{flex-direction:column;padding:8px 14px 40px} nav.toc{position:static;width:100%;max-height:none} main{max-width:100%}}
+.tk{text-decoration:underline dotted;text-decoration-color:currentColor;text-underline-offset:2px;text-decoration-thickness:1px;cursor:help}
+.tk.on{background:rgba(255,255,255,.08);border-radius:2px}
+#deftip{position:fixed;z-index:60;max-width:min(320px,calc(100vw - 16px));background:var(--surf2);border:1px solid var(--bd2);border-radius:8px;padding:7px 10px;font-size:12.5px;line-height:1.45;color:var(--tx);box-shadow:0 4px 14px rgba(0,0,0,.45)}
+#deftip div{margin-top:3px;color:var(--dim)}
+#abbrlist dl{margin:0;line-height:1.6} #abbrlist dd{margin:0 0 7px 18px;color:var(--dim);font-size:14px}
 </style></head><body>
 <header class="top"><h1>Resilience Telemetry — Operator Wiki</h1>
 <div class="sub">A plain-language field guide to the cross-asset fragility &amp; directed-spillover console · companion to <a href="./">the console</a> (<code>index.html</code> in this folder)</div>
@@ -82,7 +87,8 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 <li><a href="#s16">Where the data comes from &amp; data health</a></li>
 <li><a href="#s17">Why it borrows the water dashboard's lenses but not its foresight</a></li>
 <li><a href="#s18">FAQ for investors &amp; operators</a></li>
-<li><a href="#s19">Glossary</a></li></ol></nav>
+<li><a href="#s19">Glossary</a></li>
+<li><a href="#sabbr">Tickers &amp; abbreviations</a></li></ol></nav>
 <main><section id="s1"><h2>What this is — and what it is NOT</h2><div class="chip read"><b>Read it:</b> Start here. The console is explicitly NOT predictive. It is a stress thermometer, not a crash detector.</div><div class="chip warn"><b>Does NOT mean:</b> Do NOT use this to time trades or forecast crashes. Do NOT assume high readings mean a collapse is imminent. Do NOT treat lead-lag associations as causal relationships.</div><div class="body"><p><strong>The Honesty Contract.</strong> This console describes financial stress in real time. It is <em>not</em> a crash predictor or a timing tool, and it makes no forecast of crashes or of price direction. The separate <a href="#stwo">Predictive tab</a> shows only the small set of things that are genuinely forecastable — short-horizon volatility, months-horizon recession and credit context from leading indicators such as the yield curve and credit spreads, and decade-scale valuation — each shown with its limits, and none of them is a trading signal. The framing borrows from physics (critical slowing down, phase transitions) as an analogy only — these signals are mostly <em>absent</em> before historical meltdowns.</p>
 
 <p><strong>Why Markets Aren't Like the Water System.</strong> The console's core panels — spectral radius, absorption ratio, turbulence, Hawkes clustering, lead-lag — were built as a <strong>thermometer of stress</strong>, not a thermometer of future crisis. By their own authors' admission, they rise <em>during</em> 2008/2020/2022, not before. Markets invert every advantage the water system has:</p>
@@ -121,6 +127,9 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 <li><strong>Live monitor</strong> (default): starts from the embedded snapshot and tries to refresh every series once at load and then every 10 minutes, asking each feed for data from that series' snapshot end onward (crypto from Binance.US, FX from Frankfurter, VIX and all 43 US-listed stocks and ETFs from Yahoo via a proxy). A live tail is never joined across a hole of more than 7 calendar days: that feed is reported as a gap and its series stay on the snapshot (see <a href="#s16">Where the data comes from</a>). If a refresh changes no prices, nothing is recomputed; if it does, most — not all — panels recompute (see <a href="#s12">Live vs Backtest mode</a>).</li>
 <li><strong>Backtest / research</strong>: adds the <em>Backtest replay &amp; base-rate honesty</em> card with a date cursor. The walk-forward panels then use only data up to the cursor date; a few panels do not follow the cursor, and the manifold has look-ahead (see <a href="#s12">Live vs Backtest mode</a>). A separate "base-rate honesty" table does not follow the cursor: over the selected asset's whole history, it compares how often a ≥10% drawdown followed within 60 trading days on high-fragility (≥70) days versus on any day. Because crashes are rare (handful per decade), any apparent "skill" is mostly luck.</li>
 </ul>
+
+<h3>Definitions on hover / tap</h3>
+<p>Every ticker and abbreviation on the console has a dotted underline: hover over it (or tap it on a phone) for its official name and a plain-English definition — for example <em>UUP</em> is a fund that tracks the US dollar against six major currencies, while <em>CHF</em> in the network is the USD/CHF exchange rate (Swiss francs per US dollar). Abbreviations inside a definition are spelled out underneath it. Buttons, links and checkbox labels keep their normal click and list their abbreviations in a hover title instead. The full list is in <a href="#sabbr">Tickers &amp; abbreviations</a>.</p>
 
 <h3>Tabs</h3>
 <p>Below the header, three tabs — <strong>Diagnostic</strong>, <strong>Predictive</strong> and <strong>Risk</strong> — split the cards (see <a href="#stwo">The three views</a>). On phones the tab bar scrolls sideways.</p>
@@ -194,7 +203,7 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 
 <h3>Display</h3>
 <ul>
-<li><strong>Network diagram</strong>: nodes ordered from the strongest transmitter (left) to the strongest receiver (right), sized by |NET|, filled red/blue by sign and ringed in their <a href="#sfactor">factor-basket</a> colour. Hover over a node (or tap it on a phone, or Tab to it and press Enter) to see its full name, basket and role; the tooltip's <em>Show its indicators</em> button selects it in Indicator detail. Esc or a tap elsewhere closes it. The asymmetry matrix's abbreviated labels show full names on hover. Edges = the 12 largest positive asymmetries; solid edges carry the lag (1–8 days) at which that pair's lagged correlation peaks. A "DRILL — SYNTHETIC" badge appears while a drill is active. On phones the diagram scrolls sideways inside its card.</li>
+<li><strong>Network diagram</strong>: nodes ordered from the strongest transmitter (left) to the strongest receiver (right), sized by |NET|, filled red/blue by sign and ringed in their <a href="#sfactor">factor-basket</a> colour. Hover over a node (or tap it on a phone, or Tab to it and press Enter) to see its official name, a plain-English description, its basket and its role; the tooltip's <em>Show its indicators</em> button selects it in Indicator detail. Esc or a tap elsewhere closes it. The asymmetry matrix's abbreviated labels show the same definitions on hover or tap. Edges = the 12 largest positive asymmetries; solid edges carry the lag (1–8 days) at which that pair's lagged correlation peaks. A "DRILL — SYNTHETIC" badge appears while a drill is active. On phones the diagram scrolls sideways inside its card.</li>
 <li><strong>Heat matrix</strong>: rows = source i, cols = target j. Red (i→j) = i leads; blue = j leads i. Intensity = strength of the z-transformed correlation asymmetry.</li>
 <li><strong>Net bars</strong>: sorted by NET, showing TO (total outflows) and FROM (total inflows) per asset.</li>
 <li><strong>Too little shared history</strong> (Backtest before about 2023-10-09): the diagram and the heat matrix are replaced by "not enough shared history at this date", the net table is left empty rather than filled with zeros (all-zero NET scores would look like "no leader"), and the footer reads "directedness: n/a".</li>
@@ -600,9 +609,9 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 <li><strong>Rates (4):</strong> TLT (20y+ US Treasuries), SHV (short US Treasuries, 0–1y T-bills), BWX (Intl Treasury ex-US), BNDX (Intl Bond, USD-hedged)</li>
 <li><strong>Credit (6):</strong> LQD (US IG), HYG (US High-yield), VCIT (US IG corp), EMB (EM sovereign, USD), EMLC (EM local-currency sovereign), IBND (Intl corp bond)</li>
 <li><strong>Commodities (4):</strong> DBC, USO (Crude), GLD (Gold), CORN (Agriculture)</li>
-<li><strong>Dollar (1):</strong> UUP (US Dollar)</li>
+<li><strong>Dollar (1):</strong> UUP (a fund that tracks the US dollar against six major currencies — not an exchange rate)</li>
 <li><strong>Crypto (3):</strong> BTC, ETH, SOL</li>
-<li><strong>FX pairs (4):</strong> USD/JPY, USD/CHF, USD/AUD, USD/EUR</li>
+<li><strong>FX pairs (4):</strong> USD/JPY (yen per US dollar), USD/CHF (Swiss francs per US dollar), USD/AUD (Australian dollars per US dollar), USD/EUR (euros per US dollar) — labelled JPY, CHF, AUD and EUR in the network and asymmetry matrix</li>
 <li><strong>Volatility (1):</strong> VIX</li>
 </ul>
 <p>The 2026 expansion added the missing S&amp;P sectors, short-duration rates, intermediate credit, an agricultural commodity, and a <strong>global equity layer</strong> (Europe, Germany, UK, Japan, China, India, Korea, Taiwan, Brazil, Canada, Mexico, World-ex-US) — chosen for distinct stress-transmission roles. <strong>Important — global markets and timezones:</strong> the international markets are added as <em>US-listed regional ETFs</em>, which all close at 4pm ET. This is deliberate: it keeps them <em>synchronized</em> with the rest of the basket and avoids the non-synchronous-trading bias (Lo-MacKinlay) that native local-hours indices (Nikkei, DAX…) would inject into the lead-lag network — where the later-closing market spuriously appears to "lead." The honest tradeoff is that these ETFs reprice overnight foreign news <em>during</em> the US session, so any "lead" the US shows over them in the directed network is partly a mechanical repricing artifact, not pure information flow (this caveat is shown on the network panel itself).</p>
@@ -804,5 +813,166 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 <dd>Strict backtesting methodology: at any in-sample date, all parameters are estimated using only data up to that date. Forward metrics are computed on future data. Prevents look-ahead bias. The console's Backtest mode does this recomputation only for the panels that follow the cursor — not for the manifold, anticipation, the factor baskets, the labs and meta layer, valuation, the factor companion, overnight, crisis replay, the premia allocator, the Risk cards (apart from the cursor-date turbulence, absorption and Hawkes readings that three of them reuse, mixed with latest-date inputs) or the order book (full list under Live vs Backtest mode).</dd>
 
 </dl></div></section>
+
+<section id="sabbr"><h2>Tickers &amp; abbreviations</h2><div class="chip read"><b>Read it:</b> Every ticker and abbreviation the console shows, spelled out. On the console, anything with a dotted underline — plus the network nodes and the asymmetry matrix's labels — shows its definition when you hover over it or tap it; buttons and labels list theirs in a hover title. Dotted-underlined terms in this wiki work the same way.</div><div class="chip warn"><b>Does NOT mean:</b> A fund appearing here is not a recommendation to hold it, and the one-line descriptions are simplified — check the issuer's own documents for holdings, fees and risks. UUP is a dollar <em>fund</em>; USD/CHF and the other pairs are plain exchange rates. They often move together, but they are different things.</div><div class="body" id="abbrlist">
+<h3>The 51 markets</h3>
+<dl>
+<dt id="def-SPY" data-k="SPY"><strong>SPY</strong> — SPDR S&amp;P 500 ETF Trust</dt><dd>Fund tracking the S&amp;P 500 index: 500 large US companies.</dd>
+<dt id="def-QQQ" data-k="QQQ"><strong>QQQ</strong> — Invesco QQQ Trust</dt><dd>Fund tracking the Nasdaq-100: the 100 largest non-financial companies on the Nasdaq exchange (tech-heavy).</dd>
+<dt id="def-IWM" data-k="IWM"><strong>IWM</strong> — iShares Russell 2000 ETF</dt><dd>Fund tracking the Russell 2000: about 2,000 small US companies.</dd>
+<dt id="def-XLF" data-k="XLF"><strong>XLF</strong> — Financial Select Sector SPDR Fund</dt><dd>Fund holding the financial companies in the S&amp;P 500 (banks, insurers, asset managers).</dd>
+<dt id="def-XLK" data-k="XLK"><strong>XLK</strong> — Technology Select Sector SPDR Fund</dt><dd>Fund holding the technology companies in the S&amp;P 500.</dd>
+<dt id="def-XLE" data-k="XLE"><strong>XLE</strong> — Energy Select Sector SPDR Fund</dt><dd>Fund holding the energy companies in the S&amp;P 500 (oil, gas, energy equipment).</dd>
+<dt id="def-AAPL" data-k="AAPL"><strong>AAPL</strong> — Apple Inc.</dt><dd>A single company's stock.</dd>
+<dt id="def-MSFT" data-k="MSFT"><strong>MSFT</strong> — Microsoft Corporation</dt><dd>A single company's stock.</dd>
+<dt id="def-NVDA" data-k="NVDA"><strong>NVDA</strong> — NVIDIA Corporation</dt><dd>A single company's stock.</dd>
+<dt id="def-TLT" data-k="TLT"><strong>TLT</strong> — iShares 20+ Year Treasury Bond ETF</dt><dd>Fund holding US government bonds that mature in more than 20 years; very sensitive to interest rates.</dd>
+<dt id="def-LQD" data-k="LQD"><strong>LQD</strong> — iShares iBoxx $ Investment Grade Corporate Bond ETF</dt><dd>Fund holding investment-grade (higher-rated) US corporate bonds.</dd>
+<dt id="def-HYG" data-k="HYG"><strong>HYG</strong> — iShares iBoxx $ High Yield Corporate Bond ETF</dt><dd>Fund holding high-yield (&quot;junk&quot;, lower-rated) US corporate bonds.</dd>
+<dt id="def-DBC" data-k="DBC"><strong>DBC</strong> — Invesco DB Commodity Index Tracking Fund</dt><dd>Fund holding futures on a basket of commodities: energy, metals and agriculture.</dd>
+<dt id="def-USO" data-k="USO"><strong>USO</strong> — United States Oil Fund</dt><dd>Fund holding US crude-oil futures (West Texas Intermediate grade).</dd>
+<dt id="def-GLD" data-k="GLD"><strong>GLD</strong> — SPDR Gold Shares</dt><dd>Fund holding physical gold.</dd>
+<dt id="def-VIX" data-k="VIX"><strong>VIX</strong> — Cboe Volatility Index</dt><dd>Not a fund: the stock market's expected volatility over the next 30 days, implied by S&amp;P 500 option prices (the &quot;fear gauge&quot;).</dd>
+<dt id="def-UUP" data-k="UUP"><strong>UUP</strong> — Invesco DB US Dollar Index Bullish Fund</dt><dd>Fund that rises when the US dollar strengthens against six major currencies (euro, yen, pound, Canadian dollar, Swedish krona, Swiss franc).</dd>
+<dt id="def-BTC" data-k="BTC"><strong>BTC</strong> — Bitcoin</dt><dd>Cryptocurrency, priced in US dollars (Binance.US).</dd>
+<dt id="def-ETH" data-k="ETH"><strong>ETH</strong> — Ether</dt><dd>Cryptocurrency of the Ethereum network, priced in US dollars (Binance.US).</dd>
+<dt id="def-SOL" data-k="SOL"><strong>SOL</strong> — Solana</dt><dd>Cryptocurrency of the Solana network, priced in US dollars (Binance.US).</dd>
+<dt id="def-USDJPY" data-k="USD/JPY"><strong>USD/JPY</strong> — US dollar / Japanese yen</dt><dd>Exchange rate: how many Japanese yen (JPY) one US dollar buys. Rises when the dollar strengthens against the yen.</dd>
+<dt id="def-USDCHF" data-k="USD/CHF"><strong>USD/CHF</strong> — US dollar / Swiss franc</dt><dd>Exchange rate: how many Swiss francs (CHF) one US dollar buys. Rises when the dollar strengthens against the franc.</dd>
+<dt id="def-USDAUD" data-k="USD/AUD"><strong>USD/AUD</strong> — US dollar / Australian dollar</dt><dd>Exchange rate: how many Australian dollars (AUD) one US dollar buys. Rises when the US dollar strengthens.</dd>
+<dt id="def-USDEUR" data-k="USD/EUR"><strong>USD/EUR</strong> — US dollar / euro</dt><dd>Exchange rate: how many euros (EUR) one US dollar buys. Rises when the dollar strengthens against the euro.</dd>
+<dt id="def-XLV" data-k="XLV"><strong>XLV</strong> — Health Care Select Sector SPDR Fund</dt><dd>Fund holding the health-care companies in the S&amp;P 500.</dd>
+<dt id="def-XLI" data-k="XLI"><strong>XLI</strong> — Industrial Select Sector SPDR Fund</dt><dd>Fund holding the industrial companies in the S&amp;P 500 (aerospace, machinery, transport).</dd>
+<dt id="def-XLU" data-k="XLU"><strong>XLU</strong> — Utilities Select Sector SPDR Fund</dt><dd>Fund holding the utility companies in the S&amp;P 500 (electricity, gas, water).</dd>
+<dt id="def-XLP" data-k="XLP"><strong>XLP</strong> — Consumer Staples Select Sector SPDR Fund</dt><dd>Fund holding the consumer-staples companies in the S&amp;P 500 (food, drink, household goods).</dd>
+<dt id="def-EEM" data-k="EEM"><strong>EEM</strong> — iShares MSCI Emerging Markets ETF</dt><dd>Fund holding stocks of emerging-market countries (e.g. China, India, Taiwan, Brazil).</dd>
+<dt id="def-EFA" data-k="EFA"><strong>EFA</strong> — iShares MSCI EAFE ETF</dt><dd>Fund holding stocks of developed markets outside the US and Canada (Europe, Australasia, Far East).</dd>
+<dt id="def-SHV" data-k="SHV"><strong>SHV</strong> — iShares Short Treasury Bond ETF</dt><dd>Fund holding US Treasury bills that mature within a year; close to cash.</dd>
+<dt id="def-VCIT" data-k="VCIT"><strong>VCIT</strong> — Vanguard Intermediate-Term Corporate Bond ETF</dt><dd>Fund holding investment-grade US corporate bonds maturing in about 5–10 years.</dd>
+<dt id="def-IGV" data-k="IGV"><strong>IGV</strong> — iShares Expanded Tech-Software Sector ETF</dt><dd>Fund holding US software companies.</dd>
+<dt id="def-CORN" data-k="CORN"><strong>CORN</strong> — Teucrium Corn Fund</dt><dd>Fund holding corn futures.</dd>
+<dt id="def-VGK" data-k="VGK"><strong>VGK</strong> — Vanguard FTSE Europe ETF</dt><dd>Fund holding stocks of developed European countries.</dd>
+<dt id="def-EWG" data-k="EWG"><strong>EWG</strong> — iShares MSCI Germany ETF</dt><dd>Fund holding German stocks.</dd>
+<dt id="def-EWU" data-k="EWU"><strong>EWU</strong> — iShares MSCI United Kingdom ETF</dt><dd>Fund holding UK stocks.</dd>
+<dt id="def-EWJ" data-k="EWJ"><strong>EWJ</strong> — iShares MSCI Japan ETF</dt><dd>Fund holding Japanese stocks.</dd>
+<dt id="def-MCHI" data-k="MCHI"><strong>MCHI</strong> — iShares MSCI China ETF</dt><dd>Fund holding Chinese stocks.</dd>
+<dt id="def-INDA" data-k="INDA"><strong>INDA</strong> — iShares MSCI India ETF</dt><dd>Fund holding Indian stocks.</dd>
+<dt id="def-EWY" data-k="EWY"><strong>EWY</strong> — iShares MSCI South Korea ETF</dt><dd>Fund holding South Korean stocks.</dd>
+<dt id="def-EWT" data-k="EWT"><strong>EWT</strong> — iShares MSCI Taiwan ETF</dt><dd>Fund holding Taiwanese stocks.</dd>
+<dt id="def-EWZ" data-k="EWZ"><strong>EWZ</strong> — iShares MSCI Brazil ETF</dt><dd>Fund holding Brazilian stocks.</dd>
+<dt id="def-EWC" data-k="EWC"><strong>EWC</strong> — iShares MSCI Canada ETF</dt><dd>Fund holding Canadian stocks.</dd>
+<dt id="def-EWW" data-k="EWW"><strong>EWW</strong> — iShares MSCI Mexico ETF</dt><dd>Fund holding Mexican stocks.</dd>
+<dt id="def-ACWX" data-k="ACWX"><strong>ACWX</strong> — iShares MSCI ACWI ex U.S. ETF</dt><dd>Fund holding stocks from developed and emerging markets worldwide, excluding the US.</dd>
+<dt id="def-BWX" data-k="BWX"><strong>BWX</strong> — SPDR Bloomberg International Treasury Bond ETF</dt><dd>Fund holding government bonds of developed countries outside the US, in their own currencies.</dd>
+<dt id="def-BNDX" data-k="BNDX"><strong>BNDX</strong> — Vanguard Total International Bond ETF</dt><dd>Fund holding investment-grade bonds issued outside the US, hedged back to US dollars.</dd>
+<dt id="def-EMB" data-k="EMB"><strong>EMB</strong> — iShares J.P. Morgan USD Emerging Markets Bond ETF</dt><dd>Fund holding emerging-market government bonds issued in US dollars.</dd>
+<dt id="def-EMLC" data-k="EMLC"><strong>EMLC</strong> — VanEck J.P. Morgan EM Local Currency Bond ETF</dt><dd>Fund holding emerging-market government bonds in their local currencies.</dd>
+<dt id="def-IBND" data-k="IBND"><strong>IBND</strong> — SPDR Bloomberg International Corporate Bond ETF</dt><dd>Fund holding investment-grade corporate bonds issued outside the US, in local currencies.</dd>
+</dl>
+<h3>Currency codes</h3>
+<dl>
+<dt data-k="JPY"><strong>JPY</strong> — Japanese yen</dt><dd>Currency code. The console labels the USD/JPY exchange rate &quot;JPY&quot; in the network and asymmetry matrix (USD/JPY = Japanese yen per US dollar).</dd>
+<dt data-k="CHF"><strong>CHF</strong> — Swiss franc</dt><dd>Currency code. The console labels the USD/CHF exchange rate &quot;CHF&quot; in the network and asymmetry matrix (USD/CHF = Swiss francs per US dollar).</dd>
+<dt data-k="AUD"><strong>AUD</strong> — Australian dollar</dt><dd>Currency code. The console labels the USD/AUD exchange rate &quot;AUD&quot; in the network and asymmetry matrix (USD/AUD = Australian dollars per US dollar).</dd>
+<dt data-k="EUR"><strong>EUR</strong> — euro</dt><dd>Currency code. The console labels the USD/EUR exchange rate &quot;EUR&quot; in the network and asymmetry matrix (USD/EUR = euros per US dollar).</dd>
+</dl>
+<h3>Abbreviations</h3>
+<dl>
+<dt data-k="AC1"><strong>AC1</strong> — lag-1 autocorrelation</dt><dd>How much today's value resembles yesterday's.</dd>
+<dt data-k="ACWI"><strong>ACWI</strong> — All Country World Index</dt><dd>MSCI's index of developed and emerging stock markets.</dd>
+<dt data-k="AQR"><strong>AQR</strong> — AQR Capital Management</dt><dd>An investment firm known for published factor research.</dd>
+<dt data-k="AR"><strong>AR</strong> — absorption ratio</dt><dd>The share of all variance captured by the few strongest common factors; high = markets moving as one. (In &quot;AR(1)&quot; it means an autoregressive model of order 1: today predicted from yesterday.)</dd>
+<dt data-k="BEA"><strong>BEA</strong> — Bureau of Economic Analysis</dt><dd>The US agency behind the national-income and output data.</dd>
+<dt data-k="BLS"><strong>BLS</strong> — Bureau of Labor Statistics</dt><dd>The US agency behind the jobs and consumer-price data.</dd>
+<dt data-k="CAPE"><strong>CAPE</strong> — cyclically adjusted price-to-earnings ratio</dt><dd>Shiller's valuation measure: price divided by the average of the last 10 years of inflation-adjusted earnings.</dd>
+<dt data-k="Cboe"><strong>Cboe</strong> — Chicago Board Options Exchange</dt>
+<dt data-k="CDF"><strong>CDF</strong> — cumulative distribution function</dt><dd>The probability that a value comes out at or below a given level; used here to turn a statistic into a percentile.</dd>
+<dt data-k="CI"><strong>CI</strong> — confidence interval</dt><dd>The range the true value plausibly lies in.</dd>
+<dt data-k="COVID"><strong>COVID</strong> — coronavirus disease 2019</dt><dd>The pandemic whose onset caused the February–March 2020 market crash.</dd>
+<dt data-k="CPI"><strong>CPI</strong> — consumer price index</dt><dd>The standard US measure of inflation.</dd>
+<dt data-k="CSCV"><strong>CSCV</strong> — combinatorially symmetric cross-validation</dt><dd>The resampling scheme used to estimate PBO.</dd>
+<dt data-k="CSD"><strong>CSD</strong> — critical slowing down</dt><dd>A system recovering more slowly from small shocks as it nears a tipping point.</dd>
+<dt data-k="CV"><strong>CV</strong> — cross-validation</dt><dd>Testing a model on data it was not fitted on, in rotating folds.</dd>
+<dt data-k="DALBAR"><strong>DALBAR</strong> — DALBAR Inc.</dt><dd>A research firm whose widely cited investor-behaviour study has been criticised for its method.</dd>
+<dt data-k="DAX"><strong>DAX</strong> — Deutscher Aktienindex</dt><dd>Germany's main stock index (40 large companies listed in Frankfurt).</dd>
+<dt data-k="DB"><strong>DB</strong> — Deutsche Bank</dt><dd>The original sponsor of the fund's index.</dd>
+<dt data-k="DFA"><strong>DFA</strong> — detrended fluctuation analysis</dt><dd>Measures how persistent a series is (a Hurst-style exponent).</dd>
+<dt data-k="DSR"><strong>DSR</strong> — deflated Sharpe ratio</dt><dd>The probability that a strategy's risk-adjusted return is really above zero, after allowing for how many variants were tried and for fat tails.</dd>
+<dt data-k="EAFE"><strong>EAFE</strong> — Europe, Australasia and Far East</dt>
+<dt data-k="ECB"><strong>ECB</strong> — European Central Bank</dt><dd>It publishes the daily reference exchange rates that Frankfurter serves.</dd>
+<dt data-k="EFE"><strong>EFE</strong> — expected free energy</dt><dd>The planning quantity in active inference.</dd>
+<dt data-k="EM"><strong>EM</strong> — emerging markets</dt><dd>Developing economies such as China, India, Brazil or Mexico.</dd>
+<dt data-k="ERP"><strong>ERP</strong> — equity risk premium</dt><dd>Here, the Shiller earnings yield minus the 10-year Treasury yield: how much more stocks &quot;earn&quot; than safe bonds yield.</dd>
+<dt data-k="ET"><strong>ET</strong> — US Eastern Time</dt><dd>New York time, when US markets close at 4pm.</dd>
+<dt data-k="ETF"><strong>ETF</strong> — exchange-traded fund</dt><dd>A fund that trades on a stock exchange like a single share.</dd>
+<dt data-k="EWMA"><strong>EWMA</strong> — exponentially weighted moving average</dt><dd>An average that gives recent observations more weight.</dd>
+<dt data-k="FAQ"><strong>FAQ</strong> — frequently asked questions</dt>
+<dt data-k="FHS"><strong>FHS</strong> — filtered historical simulation</dt><dd>Replaying past moves, rescaled from the volatility they happened in to today's volatility.</dd>
+<dt data-k="FOMC"><strong>FOMC</strong> — Federal Open Market Committee</dt><dd>The Federal Reserve body that sets US interest rates.</dd>
+<dt data-k="FRED"><strong>FRED</strong> — Federal Reserve Economic Data</dt><dd>The St. Louis Fed's free database of US economic series.</dd>
+<dt data-k="FTSE"><strong>FTSE</strong> — FTSE Russell</dt><dd>An index provider (originally Financial Times Stock Exchange).</dd>
+<dt data-k="FX"><strong>FX</strong> — foreign exchange</dt><dd>Currency exchange rates.</dd>
+<dt data-k="GAN"><strong>GAN</strong> — generative adversarial network</dt><dd>A machine-learning model that generates synthetic data.</dd>
+<dt data-k="GARCH"><strong>GARCH</strong> — generalized autoregressive conditional heteroskedasticity</dt><dd>The standard model in which volatility clusters: calm and turbulent spells each tend to persist.</dd>
+<dt data-k="GFC"><strong>GFC</strong> — global financial crisis</dt><dd>The 2007–09 banking and credit crisis.</dd>
+<dt data-k="HTML"><strong>HTML</strong> — HyperText Markup Language</dt><dd>The format web pages are written in.</dd>
+<dt data-k="HY"><strong>HY</strong> — high-yield</dt><dd>&quot;junk&quot; bonds, rated below investment grade.</dd>
+<dt data-k="IC"><strong>IC</strong> — information coefficient</dt><dd>The correlation between a signal's ranking of markets and their actual next-period returns.</dd>
+<dt data-k="IG"><strong>IG</strong> — investment-grade</dt><dd>Bonds rated BBB− / Baa3 or better by the credit-rating agencies.</dd>
+<dt data-k="LCCA"><strong>LCCA</strong> — lagged cross-correlation asymmetry</dt><dd>Whether one market's past moves line up with another's later moves more than the reverse.</dd>
+<dt data-k="LLM"><strong>LLM</strong> — large language model</dt><dd>An AI system that generates text.</dd>
+<dt data-k="MSCI"><strong>MSCI</strong> — MSCI Inc.</dt><dd>An index provider (originally Morgan Stanley Capital International).</dd>
+<dt data-k="NET"><strong>NET</strong> — net spillover score</dt><dd>How much more a market's past moves line up with others' later moves than the reverse. Positive = net transmitter, negative = net receiver. Association, not cause.</dd>
+<dt data-k="NLL"><strong>NLL</strong> — negative log-likelihood</dt><dd>How improbable a move was under a model; higher = more surprising.</dd>
+<dt data-k="NY"><strong>NY</strong> — New York</dt><dd>&quot;NY Fed&quot; = the Federal Reserve Bank of New York.</dd>
+<dt data-k="OAS"><strong>OAS</strong> — option-adjusted spread</dt><dd>The extra yield a bond pays over comparable US Treasuries.</dd>
+<dt data-k="OLS"><strong>OLS</strong> — ordinary least squares</dt><dd>The standard straight-line fit.</dd>
+<dt data-k="PBO"><strong>PBO</strong> — probability of backtest overfitting</dt><dd>How often the setting that looked best in the fitting data does worse than the median on data it was not fitted on.</dd>
+<dt data-k="PCA"><strong>PCA</strong> — principal component analysis</dt><dd>Finds the few combined directions along which many series move most.</dd>
+<dt data-k="PnL"><strong>PnL</strong> — profit and loss</dt>
+<dt data-k="Q1"><strong>Q1</strong> — first quarter</dt><dd>January–March.</dd>
+<dt data-k="Q2"><strong>Q2</strong> — second quarter</dt><dd>April–June.</dd>
+<dt data-k="Q3"><strong>Q3</strong> — third quarter</dt><dd>July–September.</dd>
+<dt data-k="Q4"><strong>Q4</strong> — fourth quarter</dt><dd>October–December.</dd>
+<dt data-k="R²"><strong>R²</strong> — R-squared</dt><dd>The share of the ups and downs a forecast explains (0 = none; below 0 = worse than simply predicting the average).</dd>
+<dt data-k="RECPROUSM156N"><strong>RECPROUSM156N</strong> — FRED series ID</dt><dd>The Chauvet–Piger smoothed US recession probabilities.</dd>
+<dt data-k="S&amp;P"><strong>S&amp;P</strong> — Standard &amp; Poor's</dt><dd>The company behind the S&amp;P 500 index of 500 large US companies.</dd>
+<dt data-k="SCADA"><strong>SCADA</strong> — supervisory control and data acquisition</dt><dd>The telemetry system that reads sensors across water and power networks.</dd>
+<dt data-k="SPDR"><strong>SPDR</strong> — Standard &amp; Poor's Depositary Receipts</dt><dd>State Street's fund brand.</dd>
+<dt data-k="USD"><strong>USD</strong> — US dollar</dt>
+<dt data-k="UTC"><strong>UTC</strong> — Coordinated Universal Time</dt>
+<dt data-k="VAR"><strong>VAR</strong> — vector autoregression</dt><dd>A model that predicts each series from the recent past of all the series.</dd>
+<dt data-k="VFE"><strong>VFE</strong> — variational free energy</dt><dd>A measure of surprise from the active-inference framework.</dd>
+</dl></div></section>
 </main>
-</div></body></html>
+</div>
+<script>
+// every term listed in #abbrlist gets a dotted underline in the text: hover or tap it for the definition (which follows it while scrolling); Esc or a tap elsewhere closes it
+(function(){const D={};document.querySelectorAll('#abbrlist dt[data-k]').forEach(dt=>{const dd=dt.nextElementSibling;D[dt.dataset.k]=[dt.textContent.trim(),dd&&dd.tagName==='DD'?dd.textContent.trim():''];});
+  const keys=Object.keys(D).sort((a,b)=>b.length-a.length);if(!keys.length)return;
+  const re=new RegExp('(^|[^A-Za-z0-9&])('+keys.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')(?![A-Za-z0-9²])','g');
+  const skip='a,button,label,summary,input,script,style,#abbrlist,.tk,#deftip',todo=[];
+  // links and checkbox labels keep their own click, so they list their abbreviations in a hover title instead
+  const title=c=>{if(c.title)return;const r2=new RegExp(re.source,'g'),seen=new Set();let m;while((m=r2.exec(c.textContent)))seen.add(m[2]+' = '+D[m[2]][0].replace(/^.*? — /,''));if(seen.size)c.title=[...seen].join(' · ');};
+  const tw=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode(n){const p=n.parentElement;re.lastIndex=0;if(!p||!re.test(n.nodeValue))return 2;if(!p.closest(skip))return 1;
+    const c=p.closest('a,button,label,summary');if(c&&!c.closest('#abbrlist'))title(c);return 2;}});
+  while(tw.nextNode())todo.push(tw.currentNode);
+  for(const n of todo){const s=n.nodeValue,f=document.createDocumentFragment();let last=0,m;re.lastIndex=0;
+    while((m=re.exec(s))){const st=m.index+m[1].length;if(st>last)f.appendChild(document.createTextNode(s.slice(last,st)));
+      const sp=document.createElement('span');sp.className='tk';sp.dataset.def=m[2];sp.textContent=m[2];f.appendChild(sp);last=st+m[2].length;}
+    if(last<s.length)f.appendChild(document.createTextNode(s.slice(last)));n.parentNode.replaceChild(f,n);}
+  let anchor=null,raf=0;
+  const hide=()=>{const t=document.getElementById('deftip');if(t)t.remove();anchor=null;document.querySelectorAll('.tk.on').forEach(x=>x.classList.remove('on'));};
+  const place=()=>{const t=document.getElementById('deftip');if(!t||!anchor)return;const r=anchor.getBoundingClientRect(),vw=document.documentElement.clientWidth;
+    if(r.bottom<0||r.top>innerHeight){hide();return;} // its term scrolled away
+    let x=r.left+r.width/2-t.offsetWidth/2,y=r.top-t.offsetHeight-8;x=Math.max(8,Math.min(x,vw-t.offsetWidth-8));if(y<8)y=r.bottom+8;t.style.left=x+'px';t.style.top=y+'px';};
+  const show=(el,sticky)=>{const d=D[el.dataset.def];if(!d)return;hide();el.classList.add('on');anchor=el;const t=document.createElement('div');t.id='deftip';t.setAttribute('role','tooltip');t.dataset.sticky=sticky?'1':'';
+    const b=document.createElement('b');b.textContent=d[0];t.appendChild(b);if(d[1]){const x=document.createElement('div');x.textContent=d[1];t.appendChild(x);}document.body.appendChild(t);place();};
+  const at=e=>e.target.closest&&e.target.closest('.tk'),sticky=()=>{const t=document.getElementById('deftip');return !!(t&&t.dataset.sticky);};
+  document.addEventListener('mouseover',e=>{const el=at(e);if(el&&!sticky()&&!el.classList.contains('on'))show(el,false);});
+  document.addEventListener('mouseout',e=>{const el=at(e);if(el&&!(e.relatedTarget&&el.contains(e.relatedTarget))&&!sticky())hide();});
+  document.addEventListener('click',e=>{const el=at(e),t=document.getElementById('deftip');if(el)show(el,true);else if(t&&!t.contains(e.target))hide();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')hide();});
+  document.addEventListener('scroll',()=>{if(anchor&&!raf)raf=requestAnimationFrame(()=>{raf=0;place();});},{passive:true,capture:true});})();
+</script>
+</body></html>
