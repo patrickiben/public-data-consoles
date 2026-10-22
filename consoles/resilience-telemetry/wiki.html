@@ -275,7 +275,7 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 </ul>
 
 <h3>Interpretation</h3>
-<p><strong>Proximity = geometric resemblance in the realized cross-asset state.</strong> Where today sits—and which past state it most resembles—is a <strong>coincident read on the regime</strong>, never a forecast. The manifold structure realizes the geometric side of your LSAxJEPA framework: it is a nonlinear generalization of PCA/spectral structure, showing how the system inhabits its state space.</p>
+<p><strong>Proximity = geometric resemblance in the realized cross-asset state.</strong> Where today sits—and which past state it most resembles—is a <strong>coincident read on the regime</strong>, never a forecast. The manifold structure is a nonlinear generalization of PCA/spectral structure, showing how the system inhabits its state space.</p>
 
 <h3>Honest Caveat</h3>
 <p><strong>⚠ COINCIDENT STATE GEOMETRY, NOT A FORECAST.</strong> A "closest analog" is a geometric resemblance—it does <strong>not</strong> imply the same outcome follows. Historical recurrence is rare in financial systems; initial conditions drift, and regimes change. The manifold is a <em>coincident</em> snapshot of structure, useful for regime classification, not for predicting the next move.</p>
@@ -367,7 +367,7 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 </ul>
 
 <h3>Interpretation</h3>
-<p><strong>CONTEMPORANEOUS: high n = shocks CURRENTLY clustering (aftershocks underway), NOT a coming exogenous mainshock.</strong> Rising branching ratio during stress (2022) means the cascade is self-sustaining. However, a high n does not forecast the next shock's magnitude or timing—only that if a shock occurs, more are likely to follow quickly. Implements your LSAxJEPA Hawkes λᵢ(t); the temporal twin of ρ(Φ) → 1 (cf. the induced-seismicity pilot).</p>
+<p><strong>CONTEMPORANEOUS: high n = shocks CURRENTLY clustering (aftershocks underway), NOT a coming exogenous mainshock.</strong> Rising branching ratio during stress (2022) means the cascade is self-sustaining. However, a high n does not forecast the next shock's magnitude or timing—only that if a shock occurs, more are likely to follow quickly. It is the temporal twin of ρ(Φ) → 1 (cf. the induced-seismicity pilot).</p>
 
 <h3>Caveats</h3>
 <ul>
@@ -560,7 +560,7 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 <div class="chip read"><b>Read it:</b> Set the weights YOU choose across seven sleeves (Equities, Treasuries, Credit, Commodities, Gold, Dollar, Crypto), pick a real past stress window, and the card replays that allocation — daily-rebalanced — through the embedded history, showing an equity curve and the realized total return, max drawdown, and volatility versus 100%-stocks and a 60/40 baseline. It is a collapsed card on the Risk tab: click its title to open it.</div>
 <div class="chip warn"><b>Does NOT mean:</b> NOT a forecast, NOT a recommendation, NOT an optimizer. It never suggests or optimizes weights — you set them. Past drawdown is not a prediction; the windows are a fixed, non-representative sample, and the embedded data starts in 2016 (there is no 2008 GFC in it).</div>
 <div class="body">
-<p>This is the one new artifact that came out of asking whether the "GemmaxVJEPA2" Expected-Free-Energy planner could be added to the console. The honest answer was no — that planner needs a controllable agent, a learnable forward world-model, and stable structure, none of which markets give a passive observer (forward direction here is out-of-sample R²≈0). So this card is deliberately that planner with <strong>the planner, the world-model, and both free-energy terms removed</strong>: what's left is a pure historical replay, which is honest precisely because it asserts nothing about the future.</p>
+<p>This is the one new artifact that came out of asking whether a full Expected-Free-Energy planner could be added to the console. The honest answer was no — that planner needs a controllable agent, a learnable forward world-model, and stable structure, none of which markets give a passive observer (forward direction here is out-of-sample R²≈0). So this card is deliberately that planner with <strong>the planner, the world-model, and both free-energy terms removed</strong>: what's left is a pure historical replay, which is honest precisely because it asserts nothing about the future.</p>
 <p><strong>What it computes:</strong> for the chosen window, the portfolio return each day is the weighted sum of the sleeves' realized simple daily returns (renormalized across whichever sleeves have history — crypto only exists from late 2023, so it is dropped and flagged in earlier windows), cumulated into an equity curve. Max drawdown is the deepest peak-to-trough on that curve; volatility is the annualized standard deviation of daily returns. The 100%-stocks and 60/40 lines are the same computation on fixed reference weights.</p>
 <p><strong>Windows and sleeves:</strong> COVID crash (2020-02-19 → 2020-04-30), 2022 rate-shock bear (2022-01-03 → 2022-10-14), 2018 Q4 selloff (2018-09-20 → 2018-12-31), 2023 bank stress (2023-02-01 → 2023-05-01), 2024 August carry-unwind (2024-07-15 → 2024-09-10), and the full history (2016–2026). The sleeves map to SPY, TLT, LQD, DBC, GLD, UUP and BTC; presets are 60/40, Equal and All stocks. A sleeve with prices on fewer than 95% of the window's days is flagged. The weights you set here are also what the <a href="#sdrift">Drift &amp; rebalance</a> card reads.</p>
 <p><strong>What it teaches:</strong> the console's whole thesis, made personal. In the COVID window, a 60/40 mix cut the drawdown from about −34% (all stocks) to about −18% and the total loss from about −14% to about −1% — because Treasuries (the 40% TLT sleeve; the 60/40 baseline holds no gold) were still diversifying stocks. The lesson is to watch how much that protection <em>shrinks</em> in windows where everything couples (the <a href="#s8">systemic-coupling</a> panel shows that coupling rising as it happens). It is a descriptive teaching tool for sizing and diversification intuition, not a trade.</p>
@@ -735,7 +735,7 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 <dd>Statistical measure of "two-humped" distribution shape. Rising bimodality suggests the asset is flickering between calm and stressed states. Often a false positive driven by GARCH vol clustering alone.</dd>
 
 <dt><strong>Branching ratio (Hawkes)</strong></dt>
-<dd>In a Hawkes self-exciting point process, the expected number of child shocks per parent shock. Ratio ~1 = critical (approaching instability); &lt;&lt;1 = shocks die away fast. Realizes your LSAxJEPA temporal Hawkes λ<sub>i</sub>(t).</dd>
+<dd>In a Hawkes self-exciting point process, the expected number of child shocks per parent shock. Ratio ~1 = critical (approaching instability); &lt;&lt;1 = shocks die away fast.</dd>
 
 <dt><strong>CAPE (cyclically adjusted P/E)</strong></dt>
 <dd>Shiller's price-to-earnings ratio using the 10-year average of inflation-adjusted earnings. Weakly informative about the next decade's real returns, useless at the console's 5–20-day horizon. Embedded through June 2026.</dd>
@@ -753,7 +753,7 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 <dd>The probability that a strategy's Sharpe ratio beats the best Sharpe you would expect from the same number of no-skill tries, adjusted for skew and fat tails (Bailey–López de Prado). It shrinks apparent edge; it never creates it.</dd>
 
 <dt><strong>Diffusion map</strong></dt>
-<dd>A nonlinear dimensionality-reduction technique (generalization of spectral decomposition / PCA) that embeds high-dimensional states (here, 10-day mean returns of the 48 non-crypto names) into a low-D space so that similar regimes cluster. Realizes the geometric manifold of your LSAxJEPA framework.</dd>
+<dd>A nonlinear dimensionality-reduction technique (generalization of spectral decomposition / PCA) that embeds high-dimensional states (here, 10-day mean returns of the 48 non-crypto names) into a low-D space so that similar regimes cluster.</dd>
 
 <dt><strong>DFA (Detrended fluctuation analysis) / Hurst exponent α</strong></dt>
 <dd>Measures scaling of cumulative returns; α ≈0.5 = random walk (no persistence), α &gt;0.5 = more persistence (slow mean-reversion), α &lt;0.5 = mean-reverting. Needs long windows; lags regime shifts; mostly descriptive.</dd>
@@ -774,7 +774,7 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 <dd>Statistical test of whether past values of X help forecast Y more than Y's own past alone. "Lead" means X's past is predictive for Y's future; "lag" means the reverse. The console's lead-lag is the simpler LCCA asymmetry, not a Granger test. In markets, either is association driven by mechanics, measurement lag, and overfitting, not true causation.</dd>
 
 <dt><strong>Hawkes process</strong></dt>
-<dd>A self-exciting point process where arrivals (shocks) increase the intensity of future arrivals (branching ratio n). Fitted to daily counts of ≥2.5σ (EWMA-standardized) shocks pooled across all 51 markets; branching ratio rises in stress. Realizes your LSAxJEPA temporal shock-clustering λ<sub>i</sub>(t) framework.</dd>
+<dd>A self-exciting point process where arrivals (shocks) increase the intensity of future arrivals (branching ratio n). Fitted to daily counts of ≥2.5σ (EWMA-standardized) shocks pooled across all 51 markets; branching ratio rises in stress.</dd>
 
 <dt><strong>Ill-conditioned covariance</strong></dt>
 <dd>When a covariance matrix is nearly singular (near-zero or negative eigenvalues), inverse estimates blow up. Shrinkage α or dimension reduction is applied. The console auto-raises α to at least 0.5 if the matrix becomes ill-conditioned.</dd>
@@ -804,7 +804,7 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 <dd>Daily closes for all 51 markets from 2016 (FX from 2015; ~3.1 years of crypto) to 20–21 October 2026, plus embedded FRED macro series, open/close data for five funds and Shiller CAPE through June 2026. Baked into the HTML; always available even if live feeds fail.</dd>
 
 <dt><strong>Spectral radius ρ̂</strong></dt>
-<dd>The dominant eigenvalue of the rolling cross-asset correlation matrix, normalized by N. Measures systemic coupling: ρ̂→1 = tight coupling (all move together); ρ̂ low = loose coupling (independent shocks). Coincident stress metric, not predictive. Your LSAxJEPA κ<sub>B</sub> analogue.</dd>
+<dd>The dominant eigenvalue of the rolling cross-asset correlation matrix, normalized by N. Measures systemic coupling: ρ̂→1 = tight coupling (all move together); ρ̂ low = loose coupling (independent shocks). Coincident stress metric, not predictive.</dd>
 
 <dt><strong>Surprise lens (active-inference analogue)</strong></dt>
 <dd>One-step negative log-likelihood of a simple AR(1)+EWMA-volatility model. Rising = today's moves are more surprising to a simple expectation model. An active-inference variational-free-energy analogue, not the full EFE engine. Per-asset, not systemic.</dd>
@@ -914,7 +914,6 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 <dt data-k="FX"><strong>FX</strong> — foreign exchange</dt><dd>Currency exchange rates.</dd>
 <dt data-k="GAN"><strong>GAN</strong> — generative adversarial network</dt><dd>A machine-learning model that generates synthetic data.</dd>
 <dt data-k="GARCH"><strong>GARCH</strong> — generalized autoregressive conditional heteroskedasticity</dt><dd>The standard model in which volatility clusters: calm and turbulent spells each tend to persist.</dd>
-<dt data-k="GemmaxVJEPA2"><strong>GemmaxVJEPA2</strong> — an Expected-Free-Energy planner from the author's own projects</dt><dd>Not part of this console. JEPA = joint-embedding predictive architecture, a self-supervised machine-learning design.</dd>
 <dt data-k="GFC"><strong>GFC</strong> — global financial crisis</dt><dd>The 2007–09 banking and credit crisis.</dd>
 <dt data-k="HTML"><strong>HTML</strong> — HyperText Markup Language</dt><dd>The format web pages are written in.</dd>
 <dt data-k="HY"><strong>HY</strong> — high-yield</dt><dd>&quot;junk&quot; bonds, rated below investment grade.</dd>
@@ -922,7 +921,6 @@ section h3{font-size:15.5px;margin:16px 0 6px;color:var(--teal)}
 <dt data-k="IG"><strong>IG</strong> — investment-grade</dt><dd>Bonds rated BBB− / Baa3 or better by the credit-rating agencies.</dd>
 <dt data-k="LCCA"><strong>LCCA</strong> — lagged cross-correlation asymmetry</dt><dd>Whether one market's past moves line up with another's later moves more than the reverse.</dd>
 <dt data-k="LLM"><strong>LLM</strong> — large language model</dt><dd>An AI system that generates text.</dd>
-<dt data-k="LSAxJEPA"><strong>LSAxJEPA</strong> — the console author's own modelling framework</dt><dd>The panels that mention it are public-data versions of its pieces. JEPA = joint-embedding predictive architecture, a self-supervised machine-learning design.</dd>
 <dt data-k="MSCI"><strong>MSCI</strong> — MSCI Inc.</dt><dd>An index provider (originally Morgan Stanley Capital International).</dd>
 <dt data-k="NET"><strong>NET</strong> — net spillover score</dt><dd>How much more a market's past moves line up with others' later moves than the reverse. Positive = net transmitter, negative = net receiver. Association, not cause.</dd>
 <dt data-k="NLL"><strong>NLL</strong> — negative log-likelihood</dt><dd>How improbable a move was under a model; higher = more surprising.</dd>
