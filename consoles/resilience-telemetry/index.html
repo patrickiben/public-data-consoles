@@ -67,9 +67,12 @@
   .nnode{cursor:pointer}
   .nnode:focus{outline:none}
   .nnode:focus-visible circle,.nnode.on circle{stroke:#fff;stroke-width:3.2}
-  #nettip{position:absolute;z-index:6;max-width:250px;background:var(--surf2);border:1px solid var(--bd2);border-radius:8px;padding:7px 9px;font-size:11.5px;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,.45)}
-  #nettip .small{margin-top:2px}
-  #nettip button{margin-top:6px}
+  #deftip{position:fixed;z-index:60;max-width:min(300px,calc(100vw - 16px));background:var(--surf2);border:1px solid var(--bd2);border-radius:8px;padding:7px 9px;font-size:11.5px;line-height:1.4;color:var(--tx);box-shadow:0 4px 14px rgba(0,0,0,.45)}
+  #deftip .small{margin-top:3px}
+  #deftip .dn{opacity:.8}
+  #deftip button{margin-top:6px}
+  .tk{text-decoration:underline dotted;text-decoration-color:currentColor;text-underline-offset:2px;text-decoration-thickness:1px;cursor:help}
+  .tk.on{background:rgba(255,255,255,.08);border-radius:2px}
   .drill{position:absolute;top:8px;right:8px;background:var(--amber);color:#1a1206;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:5px;letter-spacing:.5px}
   input[type=range]{width:100%}
   .small{font-size:10.5px;color:var(--dim)}
@@ -128,7 +131,7 @@
   <label class="small">Detail asset
     <select id="selasset"></select>
   </label>
-  <span class="clock" id="clock"></span>
+  <span class="clock" id="clock"><span id="clockt" data-nodef></span> UTC</span>
   <span class="pill" id="asofpill" title="Date of the oldest series end — cross-asset panels only use dates every market in the panel shares (the network: all 51 markets; coupling, turbulence and the manifold: the 48 non-crypto names). Amber = more than 4 days old (the embedded snapshot, or a series the live feeds did not update)."><span class="dot" style="background:var(--dim)"></span><span id="asoftx">data as of —</span></span>
   <span class="pill" id="threat"><span class="dot" style="background:var(--green)"></span><span id="threattx">—</span></span>
 </header>
@@ -220,7 +223,7 @@
       <h2>Cascade simulation — shock propagation <span class="tag" style="float:right;color:var(--dim)">descriptive drill</span></h2>
       <div class="cap">Inject a shock at one market and propagate it along the <b>directed</b> spillover network — the way a failure cascades through a water system. Directed reachability over lead-lag links at or above the strength you set (all estimated links, not only the permutation-gated arrows). <b>A what-if on the current estimated network, not a forecast.</b></div>
       <div class="rowflex" style="gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0">
-        <label style="font-size:11px;color:var(--dim)">shock <select id="casc-src" style="background:var(--surf2);color:var(--tx);border:1px solid var(--bd);border-radius:4px;font-size:11px;padding:3px 6px"></select></label>
+        <label style="font-size:11px;color:var(--dim)">shock <select id="casc-src" style="max-width:100%;background:var(--surf2);color:var(--tx);border:1px solid var(--bd);border-radius:4px;font-size:11px;padding:3px 6px"></select></label>
         <label style="font-size:11px;color:var(--dim)">link strength ≥ <input type="range" id="casc-th" min="15" max="65" value="40" style="width:96px"> <span id="casc-thv">40</span>%</label>
       </div>
       <div id="casc-body"></div>
@@ -527,7 +530,7 @@ function dataAsOf(){let lo=Infinity,hi=0;for(const id of ASSET_IDS){const v=STOR
 function asOfInfo(){const {lo,hi}=dataAsOf();const age=Math.floor((Date.now()-dayToMs(lo))/86400000);const live=ASSET_IDS.some(id=>STORE[id].src!=='Snapshot'); // some data in use came from a live feed (sticky: a later failed refresh does not change STORE)
   return {date:msToDateStr(dayToMs(lo)),newest:msToDateStr(dayToMs(hi)),age,stale:age>4,live,src:live?'oldest series end':'embedded snapshot'};}
 const MACRO_LAST=Object.values(MACRO).map(m=>m.d[m.d.length-1]);
-function initStore(){for(const id of ASSET_IDS){const a=SNAP[id];const close=a.c.slice();const dayk=a.d.slice();const ret=[0];for(let i=1;i<close.length;i++)ret.push(Math.log(close[i]/close[i-1]));STORE[id]={name:a.name,cls:a.cls,dayk,close,ret,vintage:dayk[dayk.length-1],src:'Snapshot'};}}
+function initStore(){for(const id of ASSET_IDS){const a=SNAP[id];const close=a.c.slice();const dayk=a.d.slice();const ret=[0];for(let i=1;i<close.length;i++)ret.push(Math.log(close[i]/close[i-1]));STORE[id]={name:a.cls==='fx'&&FX_PER[id]?a.name+' · '+FX_PER[id]:a.name,cls:a.cls,dayk,close,ret,vintage:dayk[dayk.length-1],src:'Snapshot'};}}
 
 /* fragility for one return series; returns aligned to dayk[start..] */
 function fragilityFromReturns(ret,dayk){const L=ret.length;const ind={ac1:[],recov:[],rvol:[],skew:[],kurt:[],bimod:[],dfa:[]};const idx=[];
@@ -605,25 +608,179 @@ const NET_THIN_MSG=()=>`<div class="caveat">Not enough shared history at this da
 // the transmitter's out-of-sample 5-day stress correlation (Anticipation card), used where captions size the directed signal
 function leadC(){return ANTIC&&ANTIC.ok&&ANTIC.oos?Math.abs(ANTIC.oos.corrT):0;}
 const escAttr=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-// network node tooltip: hover (mouse), tap/click, or keyboard focus shows the full name, basket and role; Esc / outside tap closes
-function hideNetTip(){const t=document.getElementById('nettip');if(t)t.remove();document.querySelectorAll('#net .nnode.on').forEach(g=>g.classList.remove('on'));}
-function showNetTip(g,sticky){const id=g.dataset.id,S=NETSTATE;if(!id||!STORE[id]||!S)return;hideNetTip();g.classList.add('on');
-  const net=S.NET[id],bk=ASSET_BASKET[id],card=$('#netcard'),t=document.createElement('div');t.id='nettip';t.dataset.sticky=sticky?'1':'';
-  t.innerHTML=`<b>${escAttr(STORE[id].name)}</b><div class="small">${bk?escAttr(bk)+' basket · ':''}${net>=0?'net transmitter':'net receiver'} (NET ${net>=0?'+':''}${net.toFixed(2)}): its moves have tended to come ${net>=0?'before':'after'} others' — association, not cause.</div>`+
-    (sticky?`<button class="mini" type="button">Show its indicators</button>`:'');
-  card.appendChild(t);const b=t.querySelector('button');if(b)b.onclick=e=>{e.stopPropagation();setSel(id);b.textContent='Selected — see Indicator detail';b.disabled=true;};
-  const cr=card.getBoundingClientRect(),nr=g.querySelector('circle').getBoundingClientRect(),tw=t.offsetWidth,th=t.offsetHeight;
-  let x=nr.left-cr.left+nr.width/2-tw/2,y=nr.top-cr.top-th-6;x=Math.max(6,Math.min(x,cr.width-tw-6));if(y<4)y=nr.bottom-cr.top+6;
-  t.style.left=x+'px';t.style.top=y+'px';}
-function wireNetTips(){const net=$('#net');if(!net||net.dataset.tips)return;net.dataset.tips='1';
-  const node=e=>e.target.closest&&e.target.closest('.nnode');
-  net.addEventListener('mouseover',e=>{const g=node(e);const t=document.getElementById('nettip');if(g&&!(t&&t.dataset.sticky))showNetTip(g,false);});
-  net.addEventListener('mouseout',e=>{const g=node(e);const t=document.getElementById('nettip');if(g&&!(e.relatedTarget&&g.contains(e.relatedTarget))&&t&&!t.dataset.sticky)hideNetTip();});
-  net.addEventListener('click',e=>{const g=node(e);if(g){e.stopPropagation();showNetTip(g,true);}});
-  net.addEventListener('keydown',e=>{const g=node(e);if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();showNetTip(g,true);}});
-  net.addEventListener('scroll',hideNetTip,{passive:true});
-  document.addEventListener('click',e=>{const t=document.getElementById('nettip');if(t&&!t.contains(e.target))hideNetTip();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')hideNetTip();});}
+/* ===================== plain-English definitions: every ticker and abbreviation on the page ===================== */
+// [official name, what it is]; shown on hover / tap / keyboard focus wherever the ticker appears
+const TICKER_DEF={
+  SPY:['SPDR S&P 500 ETF Trust','Fund tracking the S&P 500 index: 500 large US companies.'],
+  QQQ:['Invesco QQQ Trust','Fund tracking the Nasdaq-100: the 100 largest non-financial companies on the Nasdaq exchange (tech-heavy).'],
+  IWM:['iShares Russell 2000 ETF','Fund tracking the Russell 2000: about 2,000 small US companies.'],
+  XLF:['Financial Select Sector SPDR Fund','Fund holding the financial companies in the S&P 500 (banks, insurers, asset managers).'],
+  XLK:['Technology Select Sector SPDR Fund','Fund holding the technology companies in the S&P 500.'],
+  XLE:['Energy Select Sector SPDR Fund','Fund holding the energy companies in the S&P 500 (oil, gas, energy equipment).'],
+  AAPL:['Apple Inc.','A single company\'s stock.'],
+  MSFT:['Microsoft Corporation','A single company\'s stock.'],
+  NVDA:['NVIDIA Corporation','A single company\'s stock.'],
+  TLT:['iShares 20+ Year Treasury Bond ETF','Fund holding US government bonds that mature in more than 20 years; very sensitive to interest rates.'],
+  LQD:['iShares iBoxx $ Investment Grade Corporate Bond ETF','Fund holding investment-grade (higher-rated) US corporate bonds.'],
+  HYG:['iShares iBoxx $ High Yield Corporate Bond ETF','Fund holding high-yield ("junk", lower-rated) US corporate bonds.'],
+  DBC:['Invesco DB Commodity Index Tracking Fund','Fund holding futures on a basket of commodities: energy, metals and agriculture.'],
+  USO:['United States Oil Fund','Fund holding US crude-oil futures (West Texas Intermediate grade).'],
+  GLD:['SPDR Gold Shares','Fund holding physical gold.'],
+  VIX:['Cboe Volatility Index','Not a fund: the stock market\'s expected volatility over the next 30 days, implied by S&P 500 option prices (the "fear gauge").'],
+  UUP:['Invesco DB US Dollar Index Bullish Fund','Fund that rises when the US dollar strengthens against six major currencies (euro, yen, pound, Canadian dollar, Swedish krona, Swiss franc).'],
+  BTC:['Bitcoin','Cryptocurrency, priced in US dollars (Binance.US).'],
+  ETH:['Ether','Cryptocurrency of the Ethereum network, priced in US dollars (Binance.US).'],
+  SOL:['Solana','Cryptocurrency of the Solana network, priced in US dollars (Binance.US).'],
+  USDJPY:['US dollar / Japanese yen','Exchange rate: how many Japanese yen (JPY) one US dollar buys. Rises when the dollar strengthens against the yen.'],
+  USDCHF:['US dollar / Swiss franc','Exchange rate: how many Swiss francs (CHF) one US dollar buys. Rises when the dollar strengthens against the franc.'],
+  USDAUD:['US dollar / Australian dollar','Exchange rate: how many Australian dollars (AUD) one US dollar buys. Rises when the US dollar strengthens.'],
+  USDEUR:['US dollar / euro','Exchange rate: how many euros (EUR) one US dollar buys. Rises when the dollar strengthens against the euro.'],
+  XLV:['Health Care Select Sector SPDR Fund','Fund holding the health-care companies in the S&P 500.'],
+  XLI:['Industrial Select Sector SPDR Fund','Fund holding the industrial companies in the S&P 500 (aerospace, machinery, transport).'],
+  XLU:['Utilities Select Sector SPDR Fund','Fund holding the utility companies in the S&P 500 (electricity, gas, water).'],
+  XLP:['Consumer Staples Select Sector SPDR Fund','Fund holding the consumer-staples companies in the S&P 500 (food, drink, household goods).'],
+  EEM:['iShares MSCI Emerging Markets ETF','Fund holding stocks of emerging-market countries (e.g. China, India, Taiwan, Brazil).'],
+  EFA:['iShares MSCI EAFE ETF','Fund holding stocks of developed markets outside the US and Canada (Europe, Australasia, Far East).'],
+  SHV:['iShares Short Treasury Bond ETF','Fund holding US Treasury bills that mature within a year; close to cash.'],
+  VCIT:['Vanguard Intermediate-Term Corporate Bond ETF','Fund holding investment-grade US corporate bonds maturing in about 5–10 years.'],
+  IGV:['iShares Expanded Tech-Software Sector ETF','Fund holding US software companies.'],
+  CORN:['Teucrium Corn Fund','Fund holding corn futures.'],
+  VGK:['Vanguard FTSE Europe ETF','Fund holding stocks of developed European countries.'],
+  EWG:['iShares MSCI Germany ETF','Fund holding German stocks.'],
+  EWU:['iShares MSCI United Kingdom ETF','Fund holding UK stocks.'],
+  EWJ:['iShares MSCI Japan ETF','Fund holding Japanese stocks.'],
+  MCHI:['iShares MSCI China ETF','Fund holding Chinese stocks.'],
+  INDA:['iShares MSCI India ETF','Fund holding Indian stocks.'],
+  EWY:['iShares MSCI South Korea ETF','Fund holding South Korean stocks.'],
+  EWT:['iShares MSCI Taiwan ETF','Fund holding Taiwanese stocks.'],
+  EWZ:['iShares MSCI Brazil ETF','Fund holding Brazilian stocks.'],
+  EWC:['iShares MSCI Canada ETF','Fund holding Canadian stocks.'],
+  EWW:['iShares MSCI Mexico ETF','Fund holding Mexican stocks.'],
+  ACWX:['iShares MSCI ACWI ex U.S. ETF','Fund holding stocks from developed and emerging markets worldwide, excluding the US.'],
+  BWX:['SPDR Bloomberg International Treasury Bond ETF','Fund holding government bonds of developed countries outside the US, in their own currencies.'],
+  BNDX:['Vanguard Total International Bond ETF','Fund holding investment-grade bonds issued outside the US, hedged back to US dollars.'],
+  EMB:['iShares J.P. Morgan USD Emerging Markets Bond ETF','Fund holding emerging-market government bonds issued in US dollars.'],
+  EMLC:['VanEck J.P. Morgan EM Local Currency Bond ETF','Fund holding emerging-market government bonds in their local currencies.'],
+  IBND:['SPDR Bloomberg International Corporate Bond ETF','Fund holding investment-grade corporate bonds issued outside the US, in local currencies.'],
+};
+// currency codes used as short labels for the FX pairs
+const FX_CODE={JPY:['USDJPY','Japanese yen'],CHF:['USDCHF','Swiss franc'],AUD:['USDAUD','Australian dollar'],EUR:['USDEUR','euro']};
+// spelled out in the FX series' display names, so 'USD / CHF' can't be mistaken for a dollar fund like UUP
+const FX_PER={USDJPY:'yen per US$',USDCHF:'Swiss francs per US$',USDAUD:'Australian dollars per US$',USDEUR:'euros per US$'};
+// every other abbreviation the page shows: [what it stands for, what it means]
+const GLOSS={
+  'S&P':['Standard & Poor\'s','the company behind the S&P 500 index of 500 large US companies.'],
+  'R²':['R-squared','the share of the ups and downs a forecast explains (0 = none; below 0 = worse than simply predicting the average).'],
+  CAPE:['cyclically adjusted price-to-earnings ratio','Shiller\'s valuation measure: price divided by the average of the last 10 years of inflation-adjusted earnings.'],
+  ETF:['exchange-traded fund','a fund that trades on a stock exchange like a single share.'],
+  FX:['foreign exchange','currency exchange rates.'],
+  USD:['US dollar',''],
+  FRED:['Federal Reserve Economic Data','the St. Louis Fed\'s free database of US economic series.'],
+  ECB:['European Central Bank','it publishes the daily reference exchange rates that Frankfurter serves.'],
+  FOMC:['Federal Open Market Committee','the Federal Reserve body that sets US interest rates.'],
+  BLS:['Bureau of Labor Statistics','the US agency behind the jobs and consumer-price data.'],
+  BEA:['Bureau of Economic Analysis','the US agency behind the national-income and output data.'],
+  IG:['investment-grade','bonds rated BBB− / Baa3 or better by the credit-rating agencies.'],
+  HY:['high-yield','"junk" bonds, rated below investment grade.'],
+  EM:['emerging markets','developing economies such as China, India, Brazil or Mexico.'],
+  OAS:['option-adjusted spread','the extra yield a bond pays over comparable US Treasuries.'],
+  NET:['net spillover score','how much more a market\'s past moves line up with others\' later moves than the reverse. Positive = net transmitter, negative = net receiver. Association, not cause.'],
+  VAR:['vector autoregression','a model that predicts each series from the recent past of all the series.'],
+  PCA:['principal component analysis','finds the few combined directions along which many series move most.'],
+  GARCH:['generalized autoregressive conditional heteroskedasticity','the standard model in which volatility clusters: calm and turbulent spells each tend to persist.'],
+  EWMA:['exponentially weighted moving average','an average that gives recent observations more weight.'],
+  DFA:['detrended fluctuation analysis','measures how persistent a series is (a Hurst-style exponent).'],
+  AC1:['lag-1 autocorrelation','how much today\'s value resembles yesterday\'s.'],
+  CSD:['critical slowing down','a system recovering more slowly from small shocks as it nears a tipping point.'],
+  IC:['information coefficient','the correlation between a signal\'s ranking of markets and their actual next-period returns.'],
+  CV:['cross-validation','testing a model on data it was not fitted on, in rotating folds.'],
+  CI:['confidence interval','the range the true value plausibly lies in.'],
+  DSR:['deflated Sharpe ratio','the probability that a strategy\'s risk-adjusted return is really above zero, after allowing for how many variants were tried and for fat tails.'],
+  PBO:['probability of backtest overfitting','how often the setting that looked best in the fitting data does worse than the median on data it was not fitted on.'],
+  CSCV:['combinatorially symmetric cross-validation','the resampling scheme used to estimate PBO.'],
+  UTC:['Coordinated Universal Time',''],
+  SCADA:['supervisory control and data acquisition','the telemetry system that reads sensors across water and power networks.'],
+  CPI:['consumer price index','the standard US measure of inflation.'],
+  LCCA:['lagged cross-correlation asymmetry','whether one market\'s past moves line up with another\'s later moves more than the reverse.'],
+  AR:['absorption ratio','the share of all variance captured by the few strongest common factors; high = markets moving as one. (In "AR(1)" it means an autoregressive model of order 1: today predicted from yesterday.)'],
+  ERP:['equity risk premium','here, the Shiller earnings yield minus the 10-year Treasury yield: how much more stocks "earn" than safe bonds yield.'],
+  VFE:['variational free energy','a measure of surprise from the active-inference framework.'],
+  EFE:['expected free energy','the planning quantity in active inference.'],
+  FHS:['filtered historical simulation','replaying past moves, rescaled from the volatility they happened in to today\'s volatility.'],
+  GAN:['generative adversarial network','a machine-learning model that generates synthetic data.'],
+  AQR:['AQR Capital Management','an investment firm known for published factor research.'],
+  DALBAR:['DALBAR Inc.','a research firm whose widely cited investor-behaviour study has been criticised for its method.'],
+  PnL:['profit and loss',''],
+  NY:['New York','"NY Fed" = the Federal Reserve Bank of New York.'],
+  COVID:['coronavirus disease 2019','the pandemic whose onset caused the February–March 2020 market crash.'],
+  Q1:['first quarter','January–March.'],Q2:['second quarter','April–June.'],Q3:['third quarter','July–September.'],Q4:['fourth quarter','October–December.'],
+  LSAxJEPA:['the console author\'s own modelling framework','the panels that mention it are public-data versions of its pieces. JEPA = joint-embedding predictive architecture, a self-supervised machine-learning design.'],
+  // abbreviations inside the funds' official names
+  SPDR:['Standard & Poor\'s Depositary Receipts','State Street\'s fund brand.'],
+  MSCI:['MSCI Inc.','an index provider (originally Morgan Stanley Capital International).'],
+  FTSE:['FTSE Russell','an index provider (originally Financial Times Stock Exchange).'],
+  EAFE:['Europe, Australasia and Far East',''],
+  ACWI:['All Country World Index','MSCI\'s index of developed and emerging stock markets.'],
+  DB:['Deutsche Bank','the original sponsor of the fund\'s index.'],
+  Cboe:['Chicago Board Options Exchange',''],
+};
+const DEF_KEYS=[...Object.keys(TICKER_DEF),...Object.keys(FX_CODE),...Object.keys(GLOSS)].sort((a,b)=>b.length-a.length);
+const DEF_RE=new RegExp('(^|[^A-Za-z0-9&])('+DEF_KEYS.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')(?![A-Za-z0-9²])','g');
+// "X = …" lines for the abbreviations used inside a definition itself, so nothing in a tooltip is left undefined
+function defNotes(text,self){const seen=new Set([self]),out=[],re=new RegExp(DEF_RE.source,'g');let m;
+  while((m=re.exec(text))){const k=m[2];if(seen.has(k))continue;seen.add(k);
+    const g=GLOSS[k],t=TICKER_DEF[k]||(FX_CODE[k]&&[FX_CODE[k][1]]);if(g||t)out.push(`${escAttr(k)} = ${escAttr(g?g[0]:t[0])}`);}
+  return out.length?`<div class="small dn">${out.join(' · ')}</div>`:'';}
+function defHTML(key){
+  const tk=TICKER_DEF[key],fx=FX_CODE[key];
+  if(tk||fx){const id=tk?key:fx[0],d=TICKER_DEF[id],bk=ASSET_BASKET[id],code=id.length===6&&id.startsWith('USD')?'USD/'+id.slice(3):id;
+    return `<b>${escAttr(code)} — ${escAttr(d[0])}</b><div class="small">${escAttr(d[1])}</div>`+(bk?`<div class="small">Group on this console: ${escAttr(bk)}.</div>`:'')+
+      defNotes(d[0]+' '+d[1]+' '+(bk||'')+(fx?' '+key:''),id);}
+  const g=GLOSS[key];if(!g)return '';
+  return `<b>${escAttr(key)} — ${escAttr(g[0])}</b>`+(g[1]?`<div class="small">${escAttr(g[1])}</div>`:'')+defNotes(g[1],key);}
+// one floating tooltip for every definition: hover (mouse), tap/click or keyboard Enter; it follows its term while the page scrolls; Esc, an outside tap or scrolling the term off-screen closes it
+let DEF_ANCHOR=null; // the term the open tooltip belongs to
+function hideDefTip(){const t=document.getElementById('deftip');if(t)t.remove();DEF_ANCHOR=null;document.querySelectorAll('.nnode.on,.tk.on').forEach(g=>g.classList.remove('on'));}
+function hideNetTip(){hideDefTip();}
+function placeDefTip(){const t=document.getElementById('deftip'),a=DEF_ANCHOR;if(!t||!a)return;
+  const r=(a.querySelector('circle')||a).getBoundingClientRect(),vw=document.documentElement.clientWidth,tw=t.offsetWidth,th=t.offsetHeight;
+  if(!a.isConnected||r.bottom<0||r.top>innerHeight||r.right<0||r.left>vw){hideDefTip();return;} // its term scrolled away
+  let x=r.left+r.width/2-tw/2,y=r.top-th-8;x=Math.max(8,Math.min(x,vw-tw-8));if(y<8)y=r.bottom+8;t.style.left=x+'px';t.style.top=y+'px';}
+function showDefTip(anchor,html,sticky,extra){if(!html||!anchor.isConnected)return null;hideDefTip();anchor.classList.add('on');DEF_ANCHOR=anchor;
+  const t=document.createElement('div');t.id='deftip';t.setAttribute('role','tooltip');t.dataset.sticky=sticky?'1':'';t.innerHTML=html+(extra||'');document.body.appendChild(t);placeDefTip();return t;}
+function showNetTip(g,sticky){const id=g.dataset.id,S=NETSTATE;if(!id||!STORE[id]||!S)return;const net=S.NET[id];
+  const t=showDefTip(g,defHTML(id),sticky,`<div class="small">Spillover role: ${net>=0?'net transmitter':'net receiver'} (net spillover score ${net>=0?'+':''}${net.toFixed(2)}) — its moves have tended to come ${net>=0?'before':'after'} others'; association, not cause.</div>`+
+    (sticky?'<button class="mini" type="button">Show its indicators</button>':''));
+  const b=t&&t.querySelector('button');if(b)b.onclick=e=>{e.stopPropagation();setSel(id);b.textContent='Selected — see Indicator detail';b.disabled=true;};}
+function wireDefTips(){if(document.body.dataset.tips)return;document.body.dataset.tips='1';
+  const at=e=>e.target.closest&&e.target.closest('.nnode,.tk'),sticky=()=>{const t=document.getElementById('deftip');return !!(t&&t.dataset.sticky);};
+  const show=(el,st)=>el.classList.contains('nnode')?showNetTip(el,st):showDefTip(el,defHTML(el.dataset.def),st);
+  document.addEventListener('mouseover',e=>{const el=at(e);if(el&&!sticky()&&!el.classList.contains('on'))show(el,false);});
+  document.addEventListener('mouseout',e=>{const el=at(e);if(el&&!(e.relatedTarget&&el.contains(e.relatedTarget))&&!sticky())hideDefTip();});
+  document.addEventListener('click',e=>{const el=at(e),t=document.getElementById('deftip');if(el)show(el,true);else if(t&&!t.contains(e.target))hideDefTip();});
+  document.addEventListener('keydown',e=>{const el=at(e);if(el&&(e.key==='Enter'||e.key===' ')){e.preventDefault();show(el,true);}else if(e.key==='Escape')hideDefTip();});
+  let raf=0;document.addEventListener('scroll',()=>{if(DEF_ANCHOR&&!raf)raf=requestAnimationFrame(()=>{raf=0;placeDefTip();});},{passive:true,capture:true});} // capture: page and inner scrollers (e.g. the network on a phone)
+// mark every defined term in the page text (dotted underline); new text is marked as panels redraw
+// links, buttons, form controls and card toggles keep their own click; the clock rewrites itself every second
+const DEF_SKIP='svg,.tk,#deftip,a,button,select,option,textarea,input,summary,label,script,style,[data-nodef]';
+const DEF_CTRL='a,button,summary,label';
+function defTextOK(n){const p=n.parentElement;if(!p)return false;DEF_RE.lastIndex=0;if(!DEF_RE.test(n.nodeValue))return false;
+  if(!p.closest(DEF_SKIP))return true;const c=p.closest(DEF_CTRL);if(c&&!c.closest('svg,#deftip,[data-nodef]'))defTitle(c);return false;}
+// links, buttons, labels and card toggles can't take a tap-to-define, so they list their abbreviations in a hover title instead
+function defTitle(c){if(c.title&&!c.dataset.deftitle)return;const re=new RegExp(DEF_RE.source,'g'),seen=new Set(),out=[];let m;
+  while((m=re.exec(c.textContent))){const k=m[2];if(seen.has(k))continue;seen.add(k);const g=GLOSS[k],t=TICKER_DEF[k]||(FX_CODE[k]&&TICKER_DEF[FX_CODE[k][0]]);out.push(k+' = '+(g?g[0]:t[0]));}
+  if(out.length){c.title=out.join(' · ');c.dataset.deftitle='1';}}
+function markDefs(root){const todo=[];
+  if(root.nodeType===3){if(defTextOK(root))todo.push(root);}
+  else if(root.nodeType===1&&!root.closest(DEF_SKIP)){const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>defTextOK(n)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT});while(tw.nextNode())todo.push(tw.currentNode);}
+  for(const n of todo){const s=n.nodeValue,frag=document.createDocumentFragment();let last=0,m;DEF_RE.lastIndex=0;
+    while((m=DEF_RE.exec(s))){const st=m.index+m[1].length;if(st>last)frag.appendChild(document.createTextNode(s.slice(last,st)));
+      const sp=document.createElement('span');sp.className='tk';sp.dataset.def=m[2];sp.textContent=m[2];frag.appendChild(sp);last=st+m[2].length;}
+    if(last<s.length)frag.appendChild(document.createTextNode(s.slice(last)));n.parentNode.replaceChild(frag,n);}}
+function watchDefs(){const roots=['header','#banner','#whybox','main'].map(s=>$(s)).filter(Boolean),opts={childList:true,subtree:true,characterData:true},pend=new Set();let raf=0;
+  const obs=new MutationObserver(recs=>{for(const r of recs){if(r.type==='characterData')pend.add(r.target);else r.addedNodes.forEach(n=>pend.add(n));}if(!raf)raf=requestAnimationFrame(flush);});
+  const flush=()=>{raf=0;obs.disconnect();for(const n of pend)if(n.isConnected)markDefs(n);pend.clear();obs.takeRecords();roots.forEach(r=>obs.observe(r,opts));};
+  roots.forEach(markDefs);roots.forEach(r=>obs.observe(r,opts));wireDefTips();}
 function shortLbl(id){return STORE[id]&&STORE[id].cls==='fx'?id.slice(3):(id.length>4?id.slice(0,4):id);}
 function fmt(x,d){return x==null||isNaN(x)?'—':x.toFixed(d==null?2:d);}
 function ord(n){const v=Math.abs(Math.round(n))%100,s=(v>=11&&v<=13)?'th':({1:'st',2:'nd',3:'rd'}[v%10]||'th');return Math.round(n)+s;}
@@ -700,7 +857,7 @@ function drawNetwork(){const S=NETSTATE;const ids=ASSET_IDS;const W=760,Hh=380,p
       <text x="${p.x}" y="${(p.y-r-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="var(--dim)">${net>=0?'+':''}${net.toFixed(2)}</text></g>`;}
   const drill=(SCEN!=='none')?'<div class="drill">DRILL — SYNTHETIC</div>':'';
   $('#netcard').querySelector('.drill')&&$('#netcard').querySelector('.drill').remove();
-  hideNetTip();wireNetTips();
+  hideNetTip();
   $('#net').innerHTML=`<svg viewBox="0 0 ${W} ${Hh}"><defs><marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="rgba(255,255,255,.5)"/></marker></defs>
     <text x="${pad}" y="16" font-size="10" fill="var(--dim)">◀ net transmitters</text><text x="${W-pad}" y="16" text-anchor="end" font-size="10" fill="var(--dim)">net receivers ▶</text>
     ${arrows}${nodes}</svg>`;
@@ -711,8 +868,8 @@ function drawNetwork(){const S=NETSTATE;const ids=ASSET_IDS;const W=760,Hh=380,p
 function drawHeat(){if(netThin()){$('#heat').innerHTML=NET_THIN_MSG();return;}const S=NETSTATE;const ids=ASSET_IDS;const n=ids.length;const cell=Math.min(34,Math.floor(300/n));const fs=Math.min(9,cell*0.95).toFixed(1),top=Math.round(cell>=8?18:6*fs);const W=cell*n+60,Hh=cell*n+top+6;
   let mxA=1e-9;for(const i of ids)for(const j of ids)if(i!==j)mxA=Math.max(mxA,Math.abs(S.A[i][j]));
   let cells='';ids.forEach((ri,r)=>{ids.forEach((cj,c)=>{const x=54+c*cell,y=top+r*cell;let col='#0a1820';if(ri!==cj){const a=S.A[ri][cj]/mxA;const t=clamp(Math.abs(a),0,1);col=a>0?`rgba(226,75,74,${0.12+0.8*t})`:`rgba(55,138,221,${0.12+0.8*t})`;}cells+=`<rect x="${x}" y="${y}" width="${cell-1}" height="${cell-1}" fill="${col}"/>`;});
-    cells+=`<text x="50" y="${(top+r*cell+cell*0.8).toFixed(1)}" text-anchor="end" font-size="${fs}" fill="var(--dim)">${shortLbl(ri)}<title>${escAttr(STORE[ri].name)}</title></text>`;});
-  ids.forEach((cj,c)=>{const cx=(54+c*cell+cell*0.75).toFixed(1);cells+=`<text x="${cx}" y="${top-2}" transform="rotate(-90 ${cx} ${top-2})" font-size="${fs}" fill="var(--dim)">${shortLbl(cj)}<title>${escAttr(STORE[cj].name)}</title></text>`;});
+    cells+=`<text x="50" y="${(top+r*cell+cell*0.8).toFixed(1)}" text-anchor="end" font-size="${fs}" fill="var(--dim)" class="tk" data-def="${ri}">${shortLbl(ri)}</text>`;});
+  ids.forEach((cj,c)=>{const cx=(54+c*cell+cell*0.75).toFixed(1);cells+=`<text x="${cx}" y="${top-2}" transform="rotate(-90 ${cx} ${top-2})" font-size="${fs}" fill="var(--dim)" class="tk" data-def="${cj}">${shortLbl(cj)}</text>`;});
   $('#heat').innerHTML=`<svg viewBox="0 0 ${W} ${Hh}">${cells}</svg><div class="small" style="margin-top:4px">rows = source i, cols = target j · red i→j (i leads), blue j leads i</div>`;}
 
 function drawNetBars(){if(netThin()){$('#netbars').innerHTML='';return;}const S=NETSTATE; /* thin: the asymmetry card's message shows once, in #heat — no all-zero NET/TO/FROM table */const ids=ASSET_IDS.slice().sort((a,b)=>S.NET[b]-S.NET[a]);let mx=1e-9;for(const id of ids)mx=Math.max(mx,Math.abs(S.NET[id]));
@@ -1929,12 +2086,15 @@ async function liveRefresh(){for(const k of ['Binance','Frankfurter','YahooProxy
   computeAll();computeManifold();computeAnticipation();computeMeta();renderAll();if(PAGE==='pred')drawMeta();}
 
 /* ===================== controls ===================== */
+// picker labels: the console's short name plus (main picker) the fund's official name; single stocks, crypto and FX are already clear
+function optLabel(id,full=true){const n=STORE[id].name,b=n.startsWith(id)||STORE[id].cls==='fx'?n:id+' · '+n,d=TICKER_DEF[id];
+  return full&&d&&!['crypto','fx'].includes(STORE[id].cls)&&!/^A single company/.test(d[1])?b+' — '+d[0]:b;}
 function initControls(){
   const sel=$('#selasset');
-  sel.innerHTML=(BASKET_ORDER.length?BASKET_ORDER.map(bl=>`<optgroup label="${bl}">`+BASKET_MEMBERS[bl].map(id=>`<option value="${id}">${STORE[id].name.startsWith(id)?STORE[id].name:id+' · '+STORE[id].name}</option>`).join('')+`</optgroup>`).join(''):ASSET_IDS.map(id=>`<option value="${id}">${STORE[id].name.startsWith(id)?STORE[id].name:id+' · '+STORE[id].name}</option>`).join(''));
+  sel.innerHTML=(BASKET_ORDER.length?BASKET_ORDER.map(bl=>`<optgroup label="${bl}">`+BASKET_MEMBERS[bl].map(id=>`<option value="${id}">${escAttr(optLabel(id))}</option>`).join('')+`</optgroup>`).join(''):ASSET_IDS.map(id=>`<option value="${id}">${escAttr(optLabel(id))}</option>`).join(''));
   sel.value=SEL;sel.onchange=e=>setSel(e.target.value);
   document.querySelectorAll('#pagetabs button').forEach(b=>b.onclick=()=>setPage(b.dataset.pg));
-  {const cs=$('#casc-src');if(cs){cs.innerHTML=(BASKET_ORDER.length?BASKET_ORDER.map(bl=>`<optgroup label="${bl}">`+BASKET_MEMBERS[bl].map(id=>`<option value="${id}">${id}</option>`).join('')+`</optgroup>`).join(''):ASSET_IDS.map(id=>`<option value="${id}">${id}</option>`).join(''));cs.value=(ANTIC&&ANTIC.ok?ANTIC.transmitter:ASSET_IDS[0]);cs.onchange=cascRun;}if($('#casc-th'))$('#casc-th').oninput=cascRun;}
+  {const cs=$('#casc-src');if(cs){cs.innerHTML=(BASKET_ORDER.length?BASKET_ORDER.map(bl=>`<optgroup label="${bl}">`+BASKET_MEMBERS[bl].map(id=>`<option value="${id}">${escAttr(optLabel(id,false))}</option>`).join('')+`</optgroup>`).join(''):ASSET_IDS.map(id=>`<option value="${id}">${escAttr(optLabel(id,false))}</option>`).join(''));cs.value=(ANTIC&&ANTIC.ok?ANTIC.transmitter:ASSET_IDS[0]);cs.onchange=cascRun;}if($('#casc-th'))$('#casc-th').oninput=cascRun;}
   document.querySelectorAll('#modeseg button').forEach(b=>b.onclick=()=>{MODE=b.dataset.mode;document.querySelectorAll('#modeseg button').forEach(x=>x.classList.toggle('on',x===b));$('#btcard').style.display=MODE==='backtest'?'block':'none';
     if(MODE==='backtest'){setupScrub();}else{CURSOR=null;pollOBI();}renderAll();});
   $('#thsort').onclick=()=>{SORTKEY=SORTKEY==='frag'?'order':'frag';$('#thsort').textContent=SORTKEY==='frag'?'sort: fragility ▾':'sort: basket ▾';drawThermo();};
@@ -1961,7 +2121,7 @@ function initControls(){
 function setupScrub(){const idx=COMP[SEL].idx;CURSOR=idx[idx.length-1];$('#scrub').value=100;$('#cursorlab').textContent='as of '+msToDateStr(dayToMs(CURSOR));}
 
 /* ===================== boot ===================== */
-function clockTick(){$('#clock').textContent=new Date().toISOString().replace('T',' ').slice(0,19)+' UTC';}
+function clockTick(){$('#clockt').textContent=new Date().toISOString().replace('T',' ').slice(0,19);}
 // staged so the splash can paint progress between the heavy (synchronous) passes; same call order as a single pass
 // (rAF lets the splash text paint; the timeout keeps boot going in a background tab, where rAF never fires)
 const nextFrame=()=>new Promise(r=>{let done=false;const go=()=>{if(!done){done=true;setTimeout(r,0);}};requestAnimationFrame(go);setTimeout(go,100);});
@@ -1970,7 +2130,7 @@ async function boot(){const stage=async(msg,fn)=>{$('#splashmsg').textContent=ms
   await stage('2/4 · spillover VAR + stability bootstrap…',()=>computeAnticipation());
   await stage('3/4 · directed network permutation gate…',()=>{initControls();renderAll();});
   await stage('4/4 · labs, valuation & risk cards…',()=>{computeAlphaData();alRun();computeVolLab();drawVolLab();computeMeta();computeValuation();drawValuation();computeFactorPremia();drawFactorPremia();crRun();onRun();drawRiskCockpit();setPage('diag');prRun();
-    drawPerspectives();drawNetStruct();}); // these read the labs/valuation computed just above
+    drawPerspectives();drawNetStruct();watchDefs();}); // these read the labs/valuation computed just above; then mark every ticker/abbreviation
   pollOBI();setInterval(pollOBI,5000);$('#splash').style.display='none';clockTick();setInterval(clockTick,1000);
   liveRefresh();
   setInterval(()=>{if(MODE==='live')liveRefresh();},10*60*1000);}
