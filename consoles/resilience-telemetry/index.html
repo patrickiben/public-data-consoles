@@ -63,6 +63,13 @@
   .legend{display:flex;gap:14px;font-size:10.5px;color:var(--dim);margin-top:6px;flex-wrap:wrap}
   .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
   .gauge-lab{font-size:10.5px;color:var(--dim)}
+  /* network node tooltip: full name on hover / tap / keyboard focus */
+  .nnode{cursor:pointer}
+  .nnode:focus{outline:none}
+  .nnode:focus-visible circle,.nnode.on circle{stroke:#fff;stroke-width:3.2}
+  #nettip{position:absolute;z-index:6;max-width:250px;background:var(--surf2);border:1px solid var(--bd2);border-radius:8px;padding:7px 9px;font-size:11.5px;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+  #nettip .small{margin-top:2px}
+  #nettip button{margin-top:6px}
   .drill{position:absolute;top:8px;right:8px;background:var(--amber);color:#1a1206;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:5px;letter-spacing:.5px}
   input[type=range]{width:100%}
   .small{font-size:10.5px;color:var(--dim)}
@@ -597,6 +604,26 @@ function netThin(){return !NETSTATE||!(NETSTATE.n>=3*L_LAG);}
 const NET_THIN_MSG=()=>`<div class="caveat">Not enough shared history at this date: the directed network uses only days all ${ASSET_IDS.length} markets share (crypto starts 2023-09-21), so there are ${NETSTATE?NETSTATE.n:0} days to estimate from. Move the cursor to late 2023 or later, or use Live.</div>`;
 // the transmitter's out-of-sample 5-day stress correlation (Anticipation card), used where captions size the directed signal
 function leadC(){return ANTIC&&ANTIC.ok&&ANTIC.oos?Math.abs(ANTIC.oos.corrT):0;}
+const escAttr=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+// network node tooltip: hover (mouse), tap/click, or keyboard focus shows the full name, basket and role; Esc / outside tap closes
+function hideNetTip(){const t=document.getElementById('nettip');if(t)t.remove();document.querySelectorAll('#net .nnode.on').forEach(g=>g.classList.remove('on'));}
+function showNetTip(g,sticky){const id=g.dataset.id,S=NETSTATE;if(!id||!STORE[id]||!S)return;hideNetTip();g.classList.add('on');
+  const net=S.NET[id],bk=ASSET_BASKET[id],card=$('#netcard'),t=document.createElement('div');t.id='nettip';t.dataset.sticky=sticky?'1':'';
+  t.innerHTML=`<b>${escAttr(STORE[id].name)}</b><div class="small">${bk?escAttr(bk)+' basket · ':''}${net>=0?'net transmitter':'net receiver'} (NET ${net>=0?'+':''}${net.toFixed(2)}): its moves have tended to come ${net>=0?'before':'after'} others' — association, not cause.</div>`+
+    (sticky?`<button class="mini" type="button">Show its indicators</button>`:'');
+  card.appendChild(t);const b=t.querySelector('button');if(b)b.onclick=e=>{e.stopPropagation();setSel(id);b.textContent='Selected — see Indicator detail';b.disabled=true;};
+  const cr=card.getBoundingClientRect(),nr=g.querySelector('circle').getBoundingClientRect(),tw=t.offsetWidth,th=t.offsetHeight;
+  let x=nr.left-cr.left+nr.width/2-tw/2,y=nr.top-cr.top-th-6;x=Math.max(6,Math.min(x,cr.width-tw-6));if(y<4)y=nr.bottom-cr.top+6;
+  t.style.left=x+'px';t.style.top=y+'px';}
+function wireNetTips(){const net=$('#net');if(!net||net.dataset.tips)return;net.dataset.tips='1';
+  const node=e=>e.target.closest&&e.target.closest('.nnode');
+  net.addEventListener('mouseover',e=>{const g=node(e);const t=document.getElementById('nettip');if(g&&!(t&&t.dataset.sticky))showNetTip(g,false);});
+  net.addEventListener('mouseout',e=>{const g=node(e);const t=document.getElementById('nettip');if(g&&!(e.relatedTarget&&g.contains(e.relatedTarget))&&t&&!t.dataset.sticky)hideNetTip();});
+  net.addEventListener('click',e=>{const g=node(e);if(g){e.stopPropagation();showNetTip(g,true);}});
+  net.addEventListener('keydown',e=>{const g=node(e);if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();showNetTip(g,true);}});
+  net.addEventListener('scroll',hideNetTip,{passive:true});
+  document.addEventListener('click',e=>{const t=document.getElementById('nettip');if(t&&!t.contains(e.target))hideNetTip();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')hideNetTip();});}
 function shortLbl(id){return STORE[id]&&STORE[id].cls==='fx'?id.slice(3):(id.length>4?id.slice(0,4):id);}
 function fmt(x,d){return x==null||isNaN(x)?'—':x.toFixed(d==null?2:d);}
 function ord(n){const v=Math.abs(Math.round(n))%100,s=(v>=11&&v<=13)?'th':({1:'st',2:'nd',3:'rd'}[v%10]||'th');return Math.round(n)+s;}
@@ -656,7 +683,7 @@ function drawSurprise(){const ids=ASSET_IDS;let h='';
   $('#surprise').innerHTML=h;}
 
 function drawNetwork(){const S=NETSTATE;const ids=ASSET_IDS;const W=760,Hh=380,pad=56;
-  if(netThin()){const d0=$('#netcard').querySelector('.drill');if(d0)d0.remove();$('#net').innerHTML=NET_THIN_MSG();if(SCEN!=='none')$('#netcard').insertAdjacentHTML('beforeend','<div class="drill">DRILL — SYNTHETIC</div>');$('#dirratio').innerHTML=`directedness: n/a — too little shared history at this date (n=${S?S.n:0}d; needs at least ${3*L_LAG}d; the network uses only days all ${ASSET_IDS.length} markets share, and crypto starts 2023-09-21)`;return;}
+  if(netThin()){const d0=$('#netcard').querySelector('.drill');if(d0)d0.remove();hideNetTip();$('#net').innerHTML=NET_THIN_MSG();if(SCEN!=='none')$('#netcard').insertAdjacentHTML('beforeend','<div class="drill">DRILL — SYNTHETIC</div>');$('#dirratio').innerHTML=`directedness: n/a — too little shared history at this date (n=${S?S.n:0}d; needs at least ${3*L_LAG}d; the network uses only days all ${ASSET_IDS.length} markets share, and crypto starts 2023-09-21)`;return;}
   const ranked=ids.slice().sort((a,b)=>S.NET[b]-S.NET[a]);
   const lanes=6;const pos={};ranked.forEach((id,i)=>{const x=pad+(W-2*pad)*(i/(ranked.length-1||1));const lane=i%lanes;const y=44+lane*((Hh-88)/(lanes-1));pos[id]={x,y};});
   let mxNet=0,mxA=0;for(const id of ids)mxNet=Math.max(mxNet,Math.abs(S.NET[id]));for(const i of ids)for(const j of ids)if(i!==j)mxA=Math.max(mxA,Math.abs(S.A[i][j]));
@@ -668,11 +695,12 @@ function drawNetwork(){const S=NETSTATE;const ids=ASSET_IDS;const W=760,Hh=380,p
     if(sig&&S.KS&&S.KS[i]){const mx2=(p1.x+p2.x)/2,my2=(p1.y+p2.y)/2;arrows+=`<text x="${mx2.toFixed(0)}" y="${(my2-2).toFixed(0)}" font-size="8" fill="var(--teal)" text-anchor="middle">${S.KS[i][j]}d</text>`;}}
   S._nsig=nsig;
   let nodes='';for(const id of ids){const p=pos[id];const net=S.NET[id];const r=8+8*(Math.abs(net)/(mxNet||1));const col=net>=0?'var(--red)':'var(--blue)';const lbl=shortLbl(id);
-    nodes+=`<circle cx="${p.x}" cy="${p.y}" r="${r.toFixed(1)}" fill="${col}" fill-opacity="0.85" stroke="${(typeof CLUSTER_COL!=='undefined'&&CLUSTER_COL[id])||'#04222a'}" stroke-width="2.4"/>
+    nodes+=`<g class="nnode" data-id="${id}" tabindex="0" role="button" aria-label="${escAttr(STORE[id].name)}, ${net>=0?'net transmitter':'net receiver'}"><circle cx="${p.x}" cy="${p.y}" r="${r.toFixed(1)}" fill="${col}" fill-opacity="0.85" stroke="${(typeof CLUSTER_COL!=='undefined'&&CLUSTER_COL[id])||'#04222a'}" stroke-width="2.4"/>
       <text x="${p.x}" y="${(p.y+3).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="700" fill="#04222a">${lbl}</text>
-      <text x="${p.x}" y="${(p.y-r-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="var(--dim)">${net>=0?'+':''}${net.toFixed(2)}</text>`;}
+      <text x="${p.x}" y="${(p.y-r-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="var(--dim)">${net>=0?'+':''}${net.toFixed(2)}</text></g>`;}
   const drill=(SCEN!=='none')?'<div class="drill">DRILL — SYNTHETIC</div>':'';
   $('#netcard').querySelector('.drill')&&$('#netcard').querySelector('.drill').remove();
+  hideNetTip();wireNetTips();
   $('#net').innerHTML=`<svg viewBox="0 0 ${W} ${Hh}"><defs><marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="rgba(255,255,255,.5)"/></marker></defs>
     <text x="${pad}" y="16" font-size="10" fill="var(--dim)">◀ net transmitters</text><text x="${W-pad}" y="16" text-anchor="end" font-size="10" fill="var(--dim)">net receivers ▶</text>
     ${arrows}${nodes}</svg>`;
@@ -683,8 +711,8 @@ function drawNetwork(){const S=NETSTATE;const ids=ASSET_IDS;const W=760,Hh=380,p
 function drawHeat(){if(netThin()){$('#heat').innerHTML=NET_THIN_MSG();return;}const S=NETSTATE;const ids=ASSET_IDS;const n=ids.length;const cell=Math.min(34,Math.floor(300/n));const fs=Math.min(9,cell*0.95).toFixed(1),top=Math.round(cell>=8?18:6*fs);const W=cell*n+60,Hh=cell*n+top+6;
   let mxA=1e-9;for(const i of ids)for(const j of ids)if(i!==j)mxA=Math.max(mxA,Math.abs(S.A[i][j]));
   let cells='';ids.forEach((ri,r)=>{ids.forEach((cj,c)=>{const x=54+c*cell,y=top+r*cell;let col='#0a1820';if(ri!==cj){const a=S.A[ri][cj]/mxA;const t=clamp(Math.abs(a),0,1);col=a>0?`rgba(226,75,74,${0.12+0.8*t})`:`rgba(55,138,221,${0.12+0.8*t})`;}cells+=`<rect x="${x}" y="${y}" width="${cell-1}" height="${cell-1}" fill="${col}"/>`;});
-    cells+=`<text x="50" y="${(top+r*cell+cell*0.8).toFixed(1)}" text-anchor="end" font-size="${fs}" fill="var(--dim)">${shortLbl(ri)}</text>`;});
-  ids.forEach((cj,c)=>{const cx=(54+c*cell+cell*0.75).toFixed(1);cells+=`<text x="${cx}" y="${top-2}" transform="rotate(-90 ${cx} ${top-2})" font-size="${fs}" fill="var(--dim)">${shortLbl(cj)}</text>`;});
+    cells+=`<text x="50" y="${(top+r*cell+cell*0.8).toFixed(1)}" text-anchor="end" font-size="${fs}" fill="var(--dim)">${shortLbl(ri)}<title>${escAttr(STORE[ri].name)}</title></text>`;});
+  ids.forEach((cj,c)=>{const cx=(54+c*cell+cell*0.75).toFixed(1);cells+=`<text x="${cx}" y="${top-2}" transform="rotate(-90 ${cx} ${top-2})" font-size="${fs}" fill="var(--dim)">${shortLbl(cj)}<title>${escAttr(STORE[cj].name)}</title></text>`;});
   $('#heat').innerHTML=`<svg viewBox="0 0 ${W} ${Hh}">${cells}</svg><div class="small" style="margin-top:4px">rows = source i, cols = target j · red i→j (i leads), blue j leads i</div>`;}
 
 function drawNetBars(){if(netThin()){$('#netbars').innerHTML='';return;}const S=NETSTATE; /* thin: the asymmetry card's message shows once, in #heat — no all-zero NET/TO/FROM table */const ids=ASSET_IDS.slice().sort((a,b)=>S.NET[b]-S.NET[a]);let mx=1e-9;for(const id of ids)mx=Math.max(mx,Math.abs(S.NET[id]));
