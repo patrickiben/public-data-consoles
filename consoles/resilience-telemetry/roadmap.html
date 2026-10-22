@@ -1,4 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
 <title>Resilience Telemetry — Mastery Roadmap</title>
 <style>
 :root{--bg:#081319;--surf2:#0d1c24;--surf:#13262f;--tx:#e9eff3;--dim:#9fb2c0;--green:#1d9e75;--green2:#3cc28e;--amber:#c98a1a;--red:#e24b4a;--blue:#378add;--teal:#26c6da;--bd:rgba(255,255,255,.10);--bd2:rgba(255,255,255,.22);--r:10px}
@@ -37,11 +38,15 @@ h1{margin:0;font-size:23px;letter-spacing:.4px}
 .read li b{color:var(--tx)}
 .read li span{color:var(--dim)}
 .foot{color:var(--dim);font-size:11px;text-align:center;margin-top:26px;line-height:1.6}
+nav.links{font-size:12px;margin-top:8px}nav.links a{color:var(--teal);margin-right:14px}
+.note{font-size:11.5px;color:var(--dim);margin:-6px 0 12px}
+@media(max-width:520px){.row{flex-direction:column;gap:2px}.row .k{flex:none}header{padding:16px 14px 12px}.wrap{padding:0 12px}}
 .reset{background:none;border:1px solid var(--bd);color:var(--dim);border-radius:5px;font-size:11px;padding:3px 9px;cursor:pointer}
 </style></head>
 <body>
 <header><div class="wrap"><h1>Resilience Telemetry — Mastery Roadmap</h1>
-<div class="sub">How to truly master this dashboard, and through it, how to succeed. Mastery here is mostly <b style="color:var(--teal)">unlearning</b>, then <b style="color:var(--teal)">discipline</b>.</div></div></header>
+<div class="sub">How to truly master this dashboard, and through it, how to succeed. Mastery here is mostly <b style="color:var(--teal)">unlearning</b>, then <b style="color:var(--teal)">discipline</b>.</div>
+<nav class="links"><a href="./">← Open the console</a><a href="wiki.html">Operator wiki</a></nav></div></header>
 <div class="wrap">
 
 <div class="lede">The paradox to hold from the start: <b>mastery of this dashboard looks like using it less.</b> You'll check it less often, act rarely, and feel calmer. This is a risk‑and‑behavior instrument — fully mastered, it produces <i>serenity, not activity</i>. Work through the six stages below; check off each milestone when you genuinely own it (your progress is saved on this device). The reading list and the capstone are at the bottom.</div>
@@ -50,32 +55,32 @@ h1{margin:0;font-size:23px;letter-spacing:.4px}
 
 <div class="stage" style="--accent:#9fb2c0">
   <div class="h"><span class="badge">STAGE 0</span><h2>Unlearn prediction — the foundation</h2></div>
-  <div class="row"><div class="k">Internalize</div><div class="v">Direction is unforecastable from where you sit, and it's <b>structural</b>, not a tooling gap. We proved it six ways: direction R²≈0; the cross‑sectional edge collapsing to zero net; BDS showing "chaos" is just volatility; geopolitical/sentiment data at ~0; the breadth lever <i>backfiring</i> (+0.02 → −0.00 as the universe grew); and the canon agreeing. Reflexivity makes it deeper than physics — the market contains its own forecaster, so the law changes the moment it's known.</div></div>
-  <div class="row"><div class="k">On the dashboard</div><div class="v">Read every "<b>Does NOT mean</b>" caveat. Study the <b>Cross‑sectional factor demo</b> exhibit (Predictive tab) — your permanent proof that even doing exactly what quants do, honestly, returns nothing.</div></div>
+  <div class="row"><div class="k">Internalize</div><div class="v">Direction is unforecastable from where you sit, and it's <b>structural</b>, not a tooling gap. Six lines of evidence point the same way. Four are on the console: direction R²≈0 (vol lab & meta layer); the cross‑sectional edge collapsing to zero net and the breadth lever <i>backfiring</i> (IC +0.021 → −0.003 as the universe grew from 85 to 589 names), both in the factor demo; and the canon's out‑of‑sample record (valuation card). Two come from off‑console analyses not reproduced here: a BDS test showing the apparent "chaos" is volatility clustering, and geopolitical/sentiment data adding ~0. Reflexivity makes it deeper than physics — the market contains its own forecaster, so the law changes the moment it's known.</div></div>
+  <div class="row"><div class="k">On the dashboard</div><div class="v">Read every caveat box and honesty badge on the console, and every "<b>Does NOT mean</b>" box in the <a href="wiki.html" style="color:var(--teal)">operator wiki</a>. Study the <b>Cross‑sectional factor demo</b> exhibit (Predictive tab) — your permanent proof that even doing exactly what quants do, honestly, returns nothing.</div></div>
   <div class="row"><div class="k">Read</div><div class="v"><i class="lib">Malkiel — A Random Walk Down Wall Street.</i> Plus the console's "why it borrows the water dashboard's lenses but not its foresight" box.</div></div>
   <label class="mile"><input type="checkbox" data-m="0"><span class="t"><b>Mastery sign:</b> the itch to find a signal is gone — you can explain <i>why</i> to someone without hedging.</span></label>
 </div>
 
 <div class="stage" style="--accent:#26c6da">
   <div class="h"><span class="badge">STAGE 1</span><h2>Read the Diagnostic tab fluently — what <i>is</i></h2></div>
-  <div class="row"><div class="k">Internalize</div><div class="v">These are coincident thermometers — fragility, coupling, turbulence, the directed network, the cascade. They rise <b>during</b> 2008/2020/2022, not before. Your 51 names are really ~5 effective bets.</div></div>
-  <div class="row"><div class="k">On the dashboard</div><div class="v">Switch to <b>Backtest</b> and scrub through 2018 / COVID / 2022. Watch the panels <i>react</i>, not anticipate — confirm it with your own eyes. Study the factor baskets.</div></div>
+  <div class="row"><div class="k">Internalize</div><div class="v">These are coincident thermometers — fragility, coupling, turbulence, Hawkes clustering, the directed network, the cascade. In the published record, stress measures like these rise <b>during</b> dislocations (2008/2020/2022), not before. The console's embedded data starts in 2016, so you can see 2018, 2020 and 2022 on it, but not 2008. Your 51 names (48 excluding crypto, the set the factor panel uses) collapse to ~4.8 effective bets, averaged over about ten years of shared history.</div></div>
+  <div class="row"><div class="k">On the dashboard</div><div class="v">Switch to <b>Backtest</b> and scrub through 2018 / COVID / 2022. Watch fragility, coupling, turbulence and Hawkes clustering <i>react</i>, not anticipate — confirm it with your own eyes. The directed network, cascade and network structure use only days all 51 markets share, and crypto starts 2023‑09‑21, so before late 2023 (about 2023‑10‑09) they say "not enough shared history at this date" instead of showing numbers; watch those in Live, or with the cursor from late 2023 on (for example the August 2024 carry‑unwind). Study the factor baskets.</div></div>
   <div class="row"><div class="k">Read</div><div class="v"><i class="lib">Mandelbrot — The (Mis)behavior of Markets</i> (fat tails &amp; clustering). The operator‑wiki panel sections.</div></div>
   <label class="mile"><input type="checkbox" data-m="1"><span class="t"><b>Mastery sign:</b> you can narrate the current stress regime accurately <i>and</i> state plainly what it does not imply about next week.</span></label>
 </div>
 
 <div class="stage" style="--accent:#378add">
   <div class="h"><span class="badge">STAGE 2</span><h2>Know the Predictive tab's honest ceiling — what's <i>barely</i> knowable</h2></div>
-  <div class="row"><div class="k">Internalize</div><div class="v">The <b>horizon map</b>: sub‑second = microstructure (real, inaccessible); days = noise; months = harvested factor premia; years = valuation/discount rates (weak, OOS‑fragile). Volatility is learnable (R²≈0.4); direction isn't (~0).</div></div>
-  <div class="row"><div class="k">On the dashboard</div><div class="v">The vol lab + meta layer (vol forecastable, direction not, more so in stress); the valuation thermometer as a <i>decade</i> expected‑return gauge with huge error bars and the Goyal‑Welch failure badge — never a timing tool.</div></div>
+  <div class="row"><div class="k">Internalize</div><div class="v">The <b>horizon map</b>: sub‑second = microstructure (real, inaccessible); days = noise; months = harvested factor premia; years = valuation/discount rates (weak, OOS‑fragile). Volatility is learnable (5‑day R²≈0.41, 20‑day ≈0.22); direction isn't (R²≈0 at both).</div></div>
+  <div class="row"><div class="k">On the dashboard</div><div class="v">The vol lab + meta layer (vol forecastable, direction not, more so in high‑vol stretches); the valuation thermometer as a <i>decade</i> expected‑return gauge with huge error bars and the Goyal‑Welch failure badge — never a timing tool.</div></div>
   <div class="row"><div class="k">Read</div><div class="v"><i class="lib">Cochrane — Discount Rates;</i> <i class="lib">Shiller — Irrational Exuberance;</i> <i class="lib">Goyal &amp; Welch</i> (the indispensable out‑of‑sample‑failure counterweight); <i class="lib">Ilmanen — Expected Returns.</i></div></div>
   <label class="mile"><input type="checkbox" data-m="2"><span class="t"><b>Mastery sign:</b> you can state what's forecastable at each horizon and why — and never confuse "expected return over years" with "where it goes next."</span></label>
 </div>
 
 <div class="stage" style="--accent:#3cc28e">
   <div class="h"><span class="badge">STAGE 3</span><h2>Master the Risk tab — where the controllable money lives</h2></div>
-  <div class="row"><div class="k">Internalize</div><div class="v">This is where you actually <b>act</b> — by sizing and diversifying, not predicting. Down‑sizing in high vol genuinely shallowed drawdowns (−36% → −21% on SPY). Diversification is fair‑weather: it collapses exactly when you need it.</div></div>
-  <div class="row"><div class="k">On the dashboard</div><div class="v">The vol‑sizing dial (down‑only), diversification reality (effective bets), crash‑context, the scenario stress‑test (FHS — synthetic crises to size against), drift/rebalance as a <i>rule</i>, and the ballast read (bonds are currently moving <i>with</i> stocks — not ballast).</div></div>
+  <div class="row"><div class="k">Internalize</div><div class="v">This is where you actually <b>act</b> — by sizing and diversifying, not predicting. Down‑sizing in high vol genuinely shallowed drawdowns (−34% → −20% on SPY at the default 15% band, on the snapshot). Diversification is fair‑weather: it collapses exactly when you need it.</div></div>
+  <div class="row"><div class="k">On the dashboard</div><div class="v">The vol‑sizing dial (down‑only), diversification reality (effective bets), crash‑context, the scenario stress‑test (FHS — synthetic bad months to stress‑test a size you already chose, never to set one), drift/rebalance as a <i>rule</i>, the ballast read (whether bonds diversified stocks over the <i>last quarter</i> — present tense, never a promise), and the crisis replay and premia allocator (your own weights through real past stress windows).</div></div>
   <div class="row"><div class="k">Read</div><div class="v"><i class="lib">Pedersen — Efficiently Inefficient;</i> the vol‑targeting debate (Moreira‑Muir vs Cederburg, both sides).</div></div>
   <label class="mile"><input type="checkbox" data-m="3"><span class="t"><b>Mastery sign:</b> you've written a one‑page <b>risk policy</b> — target‑vol band, rebalance rule, diversification target — and can defend each with its honest evidence <i>and</i> its caveat.</span></label>
 </div>
@@ -114,10 +119,10 @@ h1{margin:0;font-size:23px;letter-spacing:.4px}
   <h2>The capstone — what mastery actually looks like</h2>
   <p>You'll know you've mastered this not by what you predict, but by how little you need to. <b>Fully mastered, this dashboard is used less, not more</b> — you check rarely, act rarely, and stay calm through stress that used to feel like a reason to do something. A risk‑and‑behavior instrument, mastered, produces serenity, not activity.</p>
   <p>The redefinition of success <i>is</i> the final lesson, and the hardest: you don't win by being right about the future. You win by being <b>invested, diversified, low‑cost, correctly sized, and behaviorally disciplined</b> — and by not blowing up while compounding does the work.</p>
-  <p class="wall"><b>The hard wall, never crossed:</b> no market gauge on this console may ever justify a trade. The Risk tab describes the weather and brakes your hand — it never tells you to act on a forecast, because there is no forecast.</p>
+  <p class="wall"><b>The hard wall, never crossed:</b> no market gauge on this console may ever justify a trade. The Risk tab describes the weather and brakes your hand — it never tells you to act on a forecast of <i>direction</i>, because there is none. The only input it lets touch your exposure is SPY's trailing 20‑day volatility — a naive persistence forecast that the Predictive tab's vol lab scores below zero when used raw as next month's volatility level (R²≈−0.09 on the snapshot: worse than predicting the average, because it ignores volatility's pull back toward normal — though the lab's fitted model gets much of its skill from this same input; a read on risk, never on direction) — and only through a sizing band <i>you</i> typed: down‑only, never a buy or sell. Other Risk‑tab cards also read volatility, but only to describe: the stress‑test re‑scales its synthetic paths to SPY's current EWMA volatility to draw a distribution of bad months, the sentiment thermometer reads the VIX percentile and SPY's 20‑day‑vol tercile, the diversification check uses two years of covariances, the crash badge reads turbulence and Hawkes clustering, and the crisis replay reports each mix's realised volatility. None of them sets or changes a size.</p>
 </div>
 
-<div class="foot">Companion to <b>Resilience_Telemetry_Console.html</b> · descriptive, not predictive · educational, not investment advice.<br>Your milestone progress is saved locally in this browser only.</div>
+<div class="foot">Companion to the <a href="./" style="color:var(--teal)">Resilience Telemetry console</a> · market numbers quoted above (effective bets, the vol lab's R², the sizing‑dial drawdowns) come from the embedded snapshot (market data through 2026‑10‑21; the console's “markets as of” date, 2026‑10‑20, is the end of the crypto series, which none of these figures uses); the console recomputes them from the data it holds, so they can move after a live refresh (some only on reload). The factor‑demo figures (IC +0.021 → −0.003, 85 → 589 names) are the frozen result of a separate offline backtest, shown as fixed text on the console and never recomputed · descriptive, not predictive · educational, not investment advice.<br>Your milestone progress is saved locally in this browser only.</div>
 </div>
 <script>
 const KEY='rt_mastery_v1';
