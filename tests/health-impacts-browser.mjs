@@ -54,7 +54,7 @@ try{for(const slug of slugs){
   }
   if(['us-respiratory-surveillance','us-overdose-surveillance'].includes(slug)){await page.clock.setSystemTime(new Date(now+400*86400000));await page.evaluate(()=>{document.querySelector('#srcchip').textContent+=' · fixture stale source dates';});await page.waitForFunction(()=>ConsoleResponse.exportPlan().plan.impacts.items.every(r=>r.status==='unknown'));}
   await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),slug+' mobile overflow');
-  await page.locator('#console-response-shortcut').click();await page.locator('[data-cr-section="impacts"] summary').click();assert.ok(await page.locator('[data-cr-section="impacts"]').isVisible());
+  await page.locator('#console-response-shortcut').click();await page.locator('[data-cr-section="impacts"] > summary').click();assert.ok(await page.locator('[data-cr-section="impacts"]').isVisible());
   if(process.env.HEALTH_IMPACT_QA&&['global-wash','nhs-scotland-strain'].includes(slug)){await mkdir(process.env.HEALTH_IMPACT_QA,{recursive:true});await page.screenshot({path:process.env.HEALTH_IMPACT_QA+'/'+slug+'-impacts-mobile.png',fullPage:true});}
   assert.deepEqual(errors,[],slug+' runtime errors');console.log('PASS health public impacts: '+slug);passed++;
  }finally{await context.close();}
