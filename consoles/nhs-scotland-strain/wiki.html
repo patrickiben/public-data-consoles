@@ -39,7 +39,7 @@ th,td{border:1px solid var(--bd);padding:6px 9px;text-align:left}th{color:var(--
 <li><a href="#s3">System strain index</a></li>
 <li><a href="#s4">A&amp;E 4-hour performance</a></li>
 <li><a href="#s5">ED strain ranking</a></li>
-<li><a href="#s6">The acute-harm signal — long waits</a></li>
+<li><a href="#s6">Long waits</a></li>
 <li><a href="#s7">Bed occupancy</a></li>
 <li><a href="#s8">Delayed discharges — the real cause</a></li>
 <li><a href="#s9">Scenario sandbox</a></li>
@@ -48,69 +48,28 @@ th,td{border:1px solid var(--bd);padding:6px 9px;text-align:left}th{color:var(--
 <li><a href="#s12">Honest limits &amp; appropriate use</a></li>
 </ol></nav>
 <main>
-<section id="s1"><h2>1 · What this is — and why NHS, not VA</h2>
-<div class="chip read"><b>Is:</b> a hospital-system strain console for NHS Scotland, running on <em>real, published</em> A&amp;E, bed-occupancy and delayed-discharge data — the same early-warning engine as the St. Petersburg water and VA consoles, but on live public data.</div>
-<div class="chip warn"><b>Is NOT:</b> a live bedside monitor, a hospital league table for blame, or a prediction of future performance.</div>
-<p>The companion <strong>VA strain console</strong> had to ship with demo data because U.S. VA real-time strain (bed census, ED boarding, staffing) is internal and not public. The question "is NHS data more available?" has a clear answer: <strong>yes</strong>. NHS England publishes operational strain by named trust; NHS Scotland goes further and offers a genuine open <strong>API</strong>. This console is built on that — so the figures are real, current, and traceable to source.</p></section>
+<section id="s1"><h2>1 · What this console shows</h2><p>Real, published Public Health Scotland A&amp;E, bed-occupancy and delayed-discharge reports populate the console automatically. Their reporting periods differ. The composite strain score is an interpretive planning tool, and scenario changes are illustrative.</p><div class="chip read"><b>Use it for:</b> questions about service pressure and the ten-parameter response checklist.</div><div class="chip warn"><b>Limits:</b> these aggregate reports cannot establish current bed availability, patient-level transfers or a forecast of harm. Current care decisions use official NHS guidance.</div></section>
 
-<section id="s2"><h2>2 · The data &amp; its cadence</h2>
-<p>All operational data comes from <a href="https://www.opendata.nhs.scot/" target="_blank">opendata.nhs.scot</a>, the Public Health Scotland CKAN open-data portal. Four datasets feed the console:</p>
-<table><tr><th>Panel</th><th>Dataset</th><th>Cadence</th><th>Snapshot</th></tr>
-<tr><td>A&amp;E performance</td><td>Weekly A&amp;E activity &amp; waiting times (Type 1 EDs)</td><td>Weekly</td><td>w/e 7 Jun 2026</td></tr>
-<tr><td>Bed occupancy</td><td>Beds by board &amp; specialty</td><td>Quarterly</td><td>2025 Q4</td></tr>
-<tr><td>Delayed discharge</td><td>Census delays by health board</td><td>Monthly</td><td>Apr 2026</td></tr>
-<tr><td>Hospital names</td><td>A&amp;E sites lookup</td><td>Reference</td><td>—</td></tr></table>
-<p><strong>Why a snapshot, not a live fetch?</strong> The CKAN API is keyless and returns JSON, but it sends <em>no CORS header</em>, so a browser opening a local file is blocked from calling it directly. The console therefore embeds a <strong>dated real snapshot</strong> (the same pattern the markets console uses for equities) and documents how to refresh it (Section 11). Given the data only updates weekly at best, a dated snapshot loses almost nothing and gains reliability and offline use.</p></section>
+<section id="s2"><h2>2 · Public sources and reporting cadence</h2><p>The collector discovers downloads through the <a href="https://www.opendata.nhs.scot/">official PHS portal</a>, checks each complete CSV against an independent CKAN row count, and publishes a dated package. Each panel displays its own report period.</p><table><tr><th>Panel</th><th>Definition</th><th>Publication cadence</th></tr><tr><td>A&amp;E</td><td>Type-1 EDs; All attendance category counted once; latest 30 reported weeks</td><td>Weekly</td></tr><tr><td>Occupancy</td><td>All Specialties, territorial-board aggregate occupied/staffed bed days</td><td>Quarterly</td></tr><tr><td>Delayed discharge</td><td>All Delay Reasons, ages 18+, territorial-board census counts</td><td>Monthly</td></tr><tr><td>Site names</td><td>Exact published treatment-location code lookup</td><td>Reference updates</td></tr></table><p>A source check cannot make an older report more recent. Report dates and package capture time remain separate. The latest available bed quarter can lag the weekly attendance data substantially.</p></section>
 
-<section id="s3"><h2>3 · System strain index <span class="bdg M">MEASURED</span></h2>
-<p>A single 0–100 read of unscheduled-care pressure, built <em>only</em> from the real figures on the page — no hidden model, no fitted weights to past crises:</p>
-<ul>
-<li><strong>A&amp;E gap (40%)</strong> — how far national Type-1 4-hour performance sits below the 95% standard.</li>
-<li><strong>Long-wait share (20%)</strong> — patients over 12 hours as a share of attendances.</li>
-<li><strong>Bed occupancy (15%)</strong> — mean board occupancy above the safe-flow threshold.</li>
-<li><strong>Delayed discharge (25%)</strong> — the census backlog of patients who can't leave.</li>
-</ul>
-<p>Bands: <strong>Normal</strong> (&lt;40), <strong>Elevated</strong> (40–57), <strong>High pressure</strong> (58–73), <strong>Severe</strong> (≥74). On the real baseline it reads <strong>High pressure (~60)</strong> — an honest reflection that Scottish unscheduled care has run well below standard for the whole period shown. The component chips show each driver, so you can see <em>why</em> the index is where it is.</p></section>
+<section id="s3"><h2>3 · System strain index <span class="bdg C">INTERPRETIVE</span></h2><p>The 0–100 composite uses declared planning weights: 40% A&amp;E reference gap, 20% over-12-hour share, 15% mean board occupancy and 25% delayed-discharge count. These weights and scaling bounds are illustrative, not fitted clinical risk estimates. Mean board occupancy gives equal weight to each board.</p><p>Labels are Normal (&lt;40), Elevated (40–57), High pressure (58–73), and Severe (74+). Read the underlying values and periods before interpreting the label; it does not activate an incident or assess patient safety.</p></section>
 
-<section id="s4"><h2>4 · A&amp;E 4-hour performance <span class="bdg M">MEASURED</span></h2>
-<p>The headline NHS pressure metric: the share of attendances at <strong>major (Type 1)</strong> emergency departments dealt with within four hours. The Scottish Government standard is <strong>95%</strong> (the blue line). The trend shows the last 30 weeks; the orange line sitting persistently around 60–65% — far below the blue line and barely moving — is the clearest single picture of <em>chronic</em> rather than acute strain.</p></section>
+<section id="s4"><h2>4 · A&amp;E 4-hour performance <span class="bdg M">MEASURED</span></h2><p>Within-four-hour attendances divided by total attendances across the reported Type-1 sites, for each of 30 weeks. The 95% blue line is a planning reference. <a href="https://www.opendata.nhs.scot/dataset/weekly-accident-and-emergency-activity-and-waiting-times">PHS explains</a> that weekly ED figures cover a subset of A&amp;E activity and should not be used to assess the full four-hour A&amp;E access standard.</p></section>
 
-<section id="s5"><h2>5 · ED strain ranking <span class="bdg M">MEASURED</span></h2>
-<p>The trust-ranking equivalent: every major (Type 1) ED, <strong>worst first</strong> by 4-hour performance for the latest week, with the 95% standard marked by a blue tick and the count of patients who waited <strong>over 12 hours</strong> alongside. This identifies <em>where</em> the pressure concentrates. Treat it as a focus tool, not a judgment: small/rural EDs and large urban majors face very different case-mix, and a single week is noisy — read it with the national trend.</p></section>
+<section id="s5"><h2>5 · Emergency-department comparison <span class="bdg M">MEASURED</span></h2><p>Sites are ordered by their published within-four-hour percentage for the latest report week. The count waiting over 12 hours appears alongside it. Case mix, location, service scope and attendance volume differ; this is a descriptive comparison rather than a quality league table.</p></section>
 
-<section id="s6"><h2>6 · The acute-harm signal — long waits <span class="bdg M">MEASURED</span></h2>
-<p>Averages hide harm. This panel surfaces the count of patients waiting <strong>over 8</strong> and <strong>over 12 hours</strong> in major EDs. Long ED waits are independently associated with increased 30-day mortality (the evidence base behind the move to report 12-hour waits at all), so this — not the 4-hour average — is the number to watch when judging patient safety.</p></section>
+<section id="s6"><h2>6 · Long waits <span class="bdg M">MEASURED</span></h2><p>Counts above eight and twelve hours come from the same selected Type-1 reports. The over-twelve-hour group is contained in the over-eight-hour group, so the counts must not be added. They support service-planning review; the console does not calculate excess deaths or individual risk.</p></section>
 
-<section id="s7"><h2>7 · Bed occupancy <span class="bdg M">MEASURED · 2025 Q4</span></h2>
-<p>Average occupancy of staffed acute beds, by health board. Rules of thumb: above <strong>~85%</strong> (amber) patient flow slows and waits grow; above <strong>~92%</strong> (red) infection control and safety degrade sharply. Scotland's system-wide mean sits lower than England's, so occupancy is a <em>moderate</em> contributor here — which is itself an honest finding, not a downplaying.</p></section>
+<section id="s7"><h2>7 · All-specialty bed occupancy <span class="bdg M">MEASURED</span></h2><p>For each of the 14 territorial boards: occupied bed days ÷ staffed bed days ×100. The collector selects each board's own aggregate and exact All Specialties category once, excluding site-level, All Acute and individual-specialty rows. The 85% and 92% color bands are illustrative planning references, not universal clinical safety thresholds. No live available-bed count is inferred.</p></section>
 
-<section id="s8"><h2>8 · Delayed discharges — the real cause <span class="bdg M">MEASURED</span></h2>
-<p>This is the upstream driver of everything above. At the monthly census, these are patients <strong>clinically ready to leave hospital but unable to</strong> — the "no criteria to reside" backlog, usually waiting on social care or a care-home place. They occupy beds that admitted ED patients need, which is why a full ward and a gridlocked A&amp;E are usually a <em>social-care</em> problem wearing a hospital costume. Shown by board, worst first, with the Scotland total.</p></section>
+<section id="s8"><h2>8 · Delayed-discharge context <span class="bdg M">MEASURED</span></h2><p>Monthly census counts use ages18+ and All Delay Reasons once per territorial board. Age or reason subgroups are not added again. These reports help identify questions about discharge pathways, but their separate reporting period and aggregate scope cannot establish that a backlog caused a particular A&amp;E wait.</p></section>
 
 <section id="s9"><h2>9 · Scenario sandbox</h2>
 <p>Pressure-test the response plan against the <em>real</em> baseline. Four what-ifs adjust the inputs and recompute the strain index: <strong>winter surge</strong> (4-hour −15pp, occupancy +5, delays +15%), <strong>norovirus bed closures</strong>, <strong>staffing shortfall</strong>, <strong>discharge gridlock</strong> (delays +40%). These are clearly labelled as what-ifs, never forecasts — they exist to rehearse decisions, e.g. "a winter surge tips us from High pressure to Severe; is the escalation plan ready for that?"</p></section>
 
-<section id="s10"><h2>10 · England comparator <span class="bdg C">CITED — context, not live</span></h2>
-<p>For context, England runs the <strong>same 4-hour standard (95%)</strong>, with an interim operational target of <strong>78%</strong>. The latest reported figures (<strong>May 2026</strong>): <strong>75.7%</strong> of all-types A&amp;E attendances within 4 hours, and roughly <strong>50,000</strong> patients waiting over 12 hours from decision-to-admit that month (<a href="https://www.kingsfund.org.uk/insight-and-analysis/data-and-charts/accident-emergency-waiting-times" target="_blank">King's Fund</a> / <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/ae-waiting-times-and-activity/" target="_blank">NHS England</a>). England has <em>no equivalent open-data API</em>, so these are <strong>cited, not shown live</strong>.</p>
-<div class="chip warn"><b>Do not read this as a league table.</b> England's 75.7% is <strong>all-types</strong>; the console's Scottish figure (~64%) is <strong>major (Type-1) EDs only</strong>, which run lower in every system. England's own Type-1 performance is well below its all-types number. The two are <em>not</em> directly comparable — the console shows England to give a sense of scale and shared standards, not to rank the nations.</div></section>
+<section id="s10"><h2>10 · England comparator <span class="bdg C">DATED REFERENCE</span></h2><p>The England panel retains explicitly dated May2026 context and links to <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/ae-waiting-times-and-activity/">NHS England's original releases</a>. It is not part of the automatic Scotland update. England's all-type figure and Scotland's Type-1 subset have different scopes and are not a like-for-like country ranking.</p></section>
 
-<section id="s11"><h2>11 · Refreshing the data (CKAN)</h2>
-<p>To update the embedded snapshot, re-query the Public Health Scotland CKAN API (keyless) and rebuild. The console's own "Data health → How to refresh" panel carries the exact query; the core call is:</p>
-<pre>BASE=https://www.opendata.nhs.scot/api/3/action
-
-# latest A&amp;E week, by major (Type 1) ED:
-GET $BASE/datastore_search_sql?sql=
-  SELECT "TreatmentLocation",
-         SUM("NumberOfAttendancesEpisode"),
-         SUM("NumberWithin4HoursEpisode"),
-         SUM("NumberOver12HoursEpisode")
-  FROM "a5f7ca94-c810-41b5-a7c9-25c18d43e5a4"
-  WHERE "WeekEndingDate" = (SELECT max("WeekEndingDate")
-                            FROM "a5f7ca94-c810-41b5-a7c9-25c18d43e5a4")
-    AND "DepartmentType" = 'Type 1'
-    AND "AttendanceCategory" = 'All'
-  GROUP BY "TreatmentLocation"</pre>
-<p>Resource IDs: A&amp;E <code>a5f7ca94…</code> · sites lookup <code>1a4e3f48…</code> · beds <code>f272bb7d…</code> · delayed discharges <code>49ca8a39…</code>. The same <code>datastore_search_sql</code> endpoint serves all four. (If you ever want a truly live in-browser feed, route the CKAN call through a small CORS proxy — e.g. a Cloudflare Worker, the same approach used for live equities elsewhere.)</p></section>
+<section id="s11"><h2>11 · Automatic refresh and failure behavior</h2><p>The <a href="https://github.com/patrickiben/public-data-consoles/actions/workflows/update-nhs.yml">scheduled workflow</a> checks PHS every Tuesday at13:43UTC. It validates source identities, complete downloads, mutually exclusive category selections, counts and reporting periods before publishing. GitHub schedules are best effort.</p><p>The hosted page checks its published package at startup, every six visible hours, on foreground return when due and through <b>Check published reports</b>. Invalid, partial, older or failed responses retain the last good package. Offline files use embedded reports. Scenario selection is preserved, and updated reports recompute the summaries and response checklist automatically.</p><p>No visitor key or provider credential is required. A maintainer can run <code>python3 scripts/refresh_nhs.py</code> and verify portable/embedded agreement with <code>python3 scripts/refresh_nhs.py --check</code>. Source URLs, hashes and coverage counts are in <a href="data/latest.json">the public report package</a>.</p></section>
 
 <section id="s12"><h2>12 · Honest limits &amp; appropriate use</h2>
 <ul>

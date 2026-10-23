@@ -444,9 +444,16 @@ let airFilePromise=null, airFetchedAt=0;
 const $=id=>document.getElementById(id);
 const C={ok:'#34c98a',info:'#5b9bd5',watch:'#f0b429',high:'#f97316',alert:'#ef5350',purple:'#b46ff0',dim:'#7e93ad'};
 const UA={'User-Agent':'hazards-near-you (public open-data lookup)','Accept':'application/geo+json'};
-let here=null, coops=null, mode='national';
+let here=null, coops=null, mode='national',localRun=0,refreshBusy=false;
+const lastGood={},feedFailures=new Set();
+async function sourceJSON(url,options={}){const c=new AbortController(),timer=setTimeout(()=>c.abort(),15000);try{const r=await fetch(url,{...options,signal:c.signal});if(!r.ok)throw new Error('Source HTTP '+r.status);const j=await r.json();if(!j||typeof j!=='object'||j.error||j.exceededTransferLimit)throw new Error('Invalid or incomplete public source');if((url.includes('/FeatureServer/')||url.includes('/NFHL/')||url.includes('earthquake.usgs.gov')||url.includes('spc.noaa.gov'))&&!Array.isArray(j.features))throw new Error('Missing feature collection');return j;}finally{clearTimeout(timer);}}
+function feedFailure(id,message){feedFailures.add(id);if(lastGood[id])$(id).innerHTML=lastGood[id]+'<p class="muted" role="status">Refresh unavailable. Previous report retained with its original source time; check the official source. Missing data is not an all-clear.</p>';else $(id).innerHTML='<p class="muted" role="status">'+airEscape(message)+' No value is substituted; check the official source.</p>';lvl(id,'unavailable',C.dim);}
+function sourceNote(label,stamp){return '<p class="small muted">'+airEscape(label)+' · source time '+airEscape(stamp||'unavailable')+' · checked '+new Date().toISOString()+'.</p>';}
+function spcStamp(value){const s=String(value??'').replace(/Z$/,'');return /^\d{12}$/.test(s)?new Date(s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8)+'T'+s.slice(8,10)+':'+s.slice(10,12)+':00Z').toISOString():null;}
+const recent=(stamp,hours)=>Number.isFinite(Date.parse(stamp))&&Date.now()-Date.parse(stamp)>=-3600000&&Date.now()-Date.parse(stamp)<=hours*3600000;
+const number=v=>(typeof v!=='number'&&typeof v!=='string')||typeof v==='string'&&!v.trim()||!Number.isFinite(+v)||+v===-9999?null:+v;
 const responseState=window.LocalHazardsResponse={context:'National overview — choose a location',loading:true,alerts:null,air:null,water:null};
-function sameLocation(lat,lon){return here&&here.lat===lat&&here.lon===lon;}
+function sameLocation(lat,lon,runId){return here&&here.lat===lat&&here.lon===lon&&(runId==null||here.runId===runId);}
 const fmtAgo=t=>{const d=(Date.now()-t)/3600000;return d<1?Math.round(d*60)+'m ago':d<48?Math.round(d)+'h ago':Math.round(d/24)+'d ago';};
 function pip(pt,geom){if(!geom)return false;const rings=geom.type==='MultiPolygon'?geom.coordinates.flat():geom.coordinates;let inside=false;
  for(const r of rings){for(let i=0,j=r.length-1;i<r.length;j=i++){const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];
@@ -467,7 +474,7 @@ const G={pt:L.layerGroup().addTo(map),flood:L.layerGroup().addTo(map),poly:L.lay
 /* ---------- card scaffold ---------- */
 const CARDS=[
  ['alerts','ti-alert-triangle','Active warnings','National Weather Service'],
- ['wx','ti-cloud','Weather now','NWS forecast'],
+ ['wx','ti-cloud','Local weather forecast','NWS forecast; not a current observation'],
  ['spc','ti-bolt','Severe weather outlook','NOAA SPC, today'],
  ['air','ti-lungs','Air quality','MEASURED · AirNow reporting-area observations'],
  ['water','ti-ripple','Flood &amp; water','FEMA · NOAA'],
@@ -483,32 +490,35 @@ function buildCards(){$('grid').innerHTML=CARDS.map(c=>`<div class="card" id="ca
 function lvl(id,txt,col){const e=$('lvl-'+id);if(!e)return;if(!txt){e.style.display='none';return;}e.style.display='';e.textContent=txt;e.style.background=col+'22';e.style.color=col;}
 
 /* ================= NATIONAL DEFAULT VIEW ================= */
+let lastNationalHTML=null;
 async function loadNational(){mode='national';G.nat.clearLayers();
  $('grid').innerHTML=`<div class="card wide" id="natcard"><div class="ch"><div class="ic" style="background:#3fa9f522;color:#3fa9f5"><i class="ti ti-flag"></i></div><div><h2>The U.S. right now</h2><div class="sub">significant hazards nationwide · search above for your local detail</div></div></div><div id="natbody"><div class="muted"><span class="spin"></span> loading national hazards…</div></div></div>`;
  const out={};
  const tasks=[
-  fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson').then(r=>r.json()).then(j=>{out.quakes=(j.features||[]);
+  sourceJSON('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson').then(j=>{if(mode!=='national')return;out.quakes=(j.features||[]);
     out.quakes.forEach(f=>{const c=f.geometry.coordinates;L.circleMarker([c[1],c[0]],{radius:3+f.properties.mag,fillColor:C.purple,color:'#fff',weight:.6,fillOpacity:.55}).bindPopup('<b>M '+f.properties.mag+'</b><br>'+f.properties.place).addTo(G.nat);});}).catch(()=>{}),
-  fetch('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/0/query?where=DailyAcres>1000&outFields=IncidentName,DailyAcres,PercentContained&returnGeometry=true&outSR=4326&f=geojson&resultRecordCount=200').then(r=>r.json()).then(j=>{out.fires=(j.features||[]);
-    out.fires.forEach(f=>{if(!f.geometry)return;const c=f.geometry.coordinates;L.circleMarker([c[1],c[0]],{radius:5,fillColor:C.high,color:'#fff',weight:.6,fillOpacity:.7}).bindPopup('<b>'+(f.properties.IncidentName||'Wildfire')+'</b><br>'+Math.round(f.properties.DailyAcres||0).toLocaleString()+' acres · '+(f.properties.PercentContained||0)+'% contained').addTo(G.nat);});}).catch(()=>{}),
-  fetch('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Active_Hurricanes_v1/FeatureServer/1/query?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=geojson').then(r=>r.json()).then(j=>{out.storms=(j.features||[]);out.stormN=new Set(out.storms.map(f=>f.properties.STORMNAME||f.properties.stormName).filter(Boolean)).size;
+  sourceJSON('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/0/query?where=DailyAcres>1000&outFields=IncidentName,DailyAcres,PercentContained&returnGeometry=true&outSR=4326&f=geojson&resultRecordCount=200').then(j=>{if(mode!=='national')return;out.fires=(j.features||[]);
+    out.fires.forEach(f=>{if(!f.geometry)return;const c=f.geometry.coordinates;L.circleMarker([c[1],c[0]],{radius:5,fillColor:C.high,color:'#fff',weight:.6,fillOpacity:.7}).bindPopup('<b>'+(f.properties.IncidentName||'Wildfire')+'</b><br>'+Math.round(f.properties.DailyAcres||0).toLocaleString()+' acres · '+(number(f.properties.PercentContained)!=null?number(f.properties.PercentContained)+'% contained':'containment unavailable')).addTo(G.nat);});}).catch(()=>{}),
+  sourceJSON('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Active_Hurricanes_v1/FeatureServer/1/query?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=geojson').then(j=>{if(mode!=='national')return;out.storms=j.features.filter(f=>Number.isFinite(+f.properties?.DTG)&&recent(new Date(+f.properties.DTG).toISOString(),72));out.stormN=new Set(out.storms.map(f=>f.properties.STORMNAME||f.properties.stormName).filter(Boolean)).size;
     out.storms.forEach(f=>{if(f.geometry&&f.geometry.type==='Point'){const c=f.geometry.coordinates;L.circleMarker([c[1],c[0]],{radius:7,fillColor:C.alert,color:'#fff',weight:1.2,fillOpacity:.85}).bindPopup('<b>'+(f.properties.STORMNAME||f.properties.stormName||'Tropical system')+'</b>').addTo(G.nat);}});}).catch(()=>{}),
-  fetch('https://www.spc.noaa.gov/products/outlook/day1otlk_cat.nolyr.geojson').then(r=>r.json()).then(j=>{out.spc=(j.features||[]).filter(f=>(f.properties.DN||0)>=3);
+  sourceJSON('https://www.spc.noaa.gov/products/outlook/day1otlk_cat.nolyr.geojson').then(j=>{if(mode!=='national')return;out.spc=(j.features||[]).filter(f=>['ENH','MDT','HIGH'].includes(f.properties.LABEL));
     (j.features||[]).forEach(f=>{const fill=f.properties.fill||'#888';L.geoJSON(f,{style:{color:fill,weight:.5,fillColor:fill,fillOpacity:.18}}).bindPopup('SPC outlook: '+(f.properties.LABEL2||f.properties.LABEL||'')).addTo(G.nat);});}).catch(()=>{}),
-  fetch('https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes').then(r=>r.json()).then(j=>{out.volc=Array.isArray(j)?j:(j.features||[]);}).catch(()=>{})
+  sourceJSON('https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes').then(j=>{if(mode!=='national')return;if(!Array.isArray(j))throw new Error('Invalid USGS notice list');out.volc=j;}).catch(()=>{})
  ];
  await Promise.all(tasks);
  const nb=$('natbody');if(!nb)return;
+ if(!Object.keys(out).length&&lastNationalHTML){nb.innerHTML=lastNationalHTML+'<p class="muted">Refresh unavailable. Last national report retained with its previous source times; consult official sources. Missing data is not an all-clear.</p>';return;}
  const bigq=(out.quakes||[]).slice(0,3).map(f=>`<div class="small"><b>M ${f.properties.mag}</b> ${f.properties.place} <span class="muted">${fmtAgo(f.properties.time)}</span></div>`).join('');
- const bigf=(out.fires||[]).sort((a,b)=>(b.properties.DailyAcres||0)-(a.properties.DailyAcres||0)).slice(0,3).map(f=>`<div class="small"><b>${f.properties.IncidentName||'Fire'}</b> ${Math.round(f.properties.DailyAcres||0).toLocaleString()} ac <span class="muted">${f.properties.PercentContained||0}% contained</span></div>`).join('');
+ const bigf=(out.fires||[]).sort((a,b)=>(b.properties.DailyAcres||0)-(a.properties.DailyAcres||0)).slice(0,3).map(f=>`<div class="small"><b>${f.properties.IncidentName||'Fire'}</b> ${Math.round(f.properties.DailyAcres||0).toLocaleString()} ac <span class="muted">${number(f.properties.PercentContained)!=null?number(f.properties.PercentContained)+'% contained':'containment unavailable'}</span></div>`).join('');
  nb.innerHTML=
-  `<div class="row"><span class="l">Active tropical systems (worldwide)</span><span class="v">${out.storms?out.stormN:'—'}</span></div>`+
-  `<div class="row"><span class="l">Significant earthquakes (M4.5+, 7 days)</span><span class="v">${out.quakes?out.quakes.length:'—'}</span></div>`+(bigq?`<div style="margin:4px 0 8px">${bigq}</div>`:'')+
-  `<div class="row"><span class="l">Large active wildfires (1,000+ ac)</span><span class="v">${out.fires?out.fires.length:'—'}</span></div>`+(bigf?`<div style="margin:4px 0 8px">${bigf}</div>`:'')+
+  `<div class="row"><span class="l">Source-reported tropical systems (advisory within 72h, worldwide)</span><span class="v">${out.storms?out.stormN:'—'}</span></div>`+
+  `<div class="row"><span class="l">Earthquakes (M4.5+, 7 days)</span><span class="v">${out.quakes?out.quakes.length:'—'}</span></div>`+(bigq?`<div style="margin:4px 0 8px">${bigq}</div>`:'')+
+  `<div class="row"><span class="l">Source-reported fire inventory (1,000+ ac; report age varies)</span><span class="v">${out.fires?out.fires.length:'—'}</span></div>`+(bigf?`<div style="margin:4px 0 8px">${bigf}</div>`:'')+
   `<div class="row"><span class="l">SPC areas at Enhanced+ severe risk today</span><span class="v">${out.spc?out.spc.length:'—'}</span></div>`+
   `<div class="row"><span class="l">U.S. volcanoes at elevated alert</span><span class="v">${out.volc?out.volc.length:'—'}</span></div>`+
   `<div class="muted" style="margin-top:10px"><i class="ti ti-arrow-up"></i> Enter your <b>ZIP or town</b> above for warnings, air quality, flood zone, fire, quake, drought &amp; more right where you are.</div>`+
-  `<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line)"><span class="muted">River-flood tools: </span><a href="../river-flood-network/"><i class="ti ti-git-fork"></i> which tributary is the driver</a> · <a href="../river-flood-propagation/"><i class="ti ti-arrow-down"></i> downstream lead times</a></div>`;
+  `<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line)"><span class="muted">River-flood tools: </span><a href="../river-flood-network/"><i class="ti ti-git-fork"></i> upstream branch reports</a> · <a href="../river-flood-propagation/"><i class="ti ti-arrow-down"></i> forecast peak timing</a></div>`+sourceNote('Public-source overview; missing components remain unavailable; counts are not an all-clear',null);
+ lastNationalHTML=nb.innerHTML;
 }
 
 /* ================= GEOCODING ================= */
@@ -519,10 +529,10 @@ async function geocode(qq){const q=qq.trim();if(!q)return null;
  return null;}
 
 /* ================= LOCAL FEEDS ================= */
-async function loadAlerts(lat,lon){const el=$('alerts'),checkedAt=new Date().toISOString();try{
+async function loadAlerts(lat,lon,runId){const el=$('alerts'),checkedAt=new Date().toISOString();try{
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);let j;
  try{const r=await fetch('https://api.weather.gov/alerts/active?point='+lat+','+lon,{headers:UA,signal:controller.signal});if(!r.ok)throw new Error('NWS HTTP '+r.status);j=await r.json();}finally{clearTimeout(timer);}
- if(!sameLocation(lat,lon))return;if(!Array.isArray(j.features))throw new Error('Missing alert collection');
+ if(!sameLocation(lat,lon,runId))return;if(!Array.isArray(j.features))throw new Error('Missing alert collection');
  const fs=j.features.filter(f=>f&&f.properties&&(!f.properties.expires||Date.parse(f.properties.expires)>Date.now()));
  responseState.alerts={features:fs,checkedAt,updated:j.updated||null};
  const sev={Extreme:'alert',Severe:'alert',Moderate:'watch',Minor:'watch'};
@@ -530,23 +540,25 @@ async function loadAlerts(lat,lon){const el=$('alerts'),checkedAt=new Date().toI
  if(fs.length){const worst=fs.some(f=>['Extreme','Severe'].includes(f.properties.severity));lvl('alerts',fs.length+' active',worst?C.alert:C.watch);}else lvl('alerts','clear',C.ok);
  here.redflag=fs.some(f=>/red flag|fire weather/i.test(f.properties.event));
  el.innerHTML=fs.length?fs.slice(0,8).map(f=>{const p=f.properties,t=sev[p.severity]||'watch';return '<div class="al'+(t==='alert'?' sev':'')+'"><div class="t">'+airEscape(p.event||'Alert')+'</div><div class="m">'+airEscape(p.headline||'')+'</div><div class="m">'+airEscape(p.severity||'Unknown severity')+' · '+airEscape(p.urgency||'Unknown urgency')+(p.expires?' · expires '+airEscape(p.expires):'')+'</div>'+(p.instruction?'<details><summary>Official NWS instructions</summary><div class="small">'+airEscape(p.instruction)+'</div></details>':'')+'</div>';}).join(''):'<div class="muted">No active National Weather Service watches or warnings returned at this point. This does not establish safety from every hazard.</div>';
- }catch(e){if(!sameLocation(lat,lon))return;responseState.alerts=null;lvl('alerts','unavailable',C.dim);el.innerHTML='<div class="muted">Alert feed unavailable — see weather.gov. Missing data does not mean no warnings.</div>';}}
+ }catch(e){if(!sameLocation(lat,lon,runId))return;responseState.alerts=null;lvl('alerts','unavailable',C.dim);feedFailure('alerts','Alert feed unavailable — see weather.gov.');}}
 
-async function loadWX(lat,lon){const el=$('wx');try{
- const pt=(await(await fetch('https://api.weather.gov/points/'+lat.toFixed(4)+','+lon.toFixed(4),{headers:UA})).json()).properties;
- here.office=pt.cwa;here.rel=(pt.relativeLocation&&pt.relativeLocation.properties)||{};
- let cur=null;try{cur=((await(await fetch(pt.forecast,{headers:UA})).json()).properties.periods||[])[0];}catch(e){}
- el.innerHTML=cur?`<div class="big">${cur.temperature}°${cur.temperatureUnit} · ${cur.shortForecast}</div><div class="row"><span class="l">Wind</span><span class="v">${cur.windSpeed||'—'} ${cur.windDirection||''}</span></div><div class="muted" style="margin-top:6px">${(cur.detailedForecast||'').slice(0,170)}</div>`:'<div class="muted">Forecast unavailable — see weather.gov.</div>';
- buildResources(lat,lon);
-}catch(e){el.innerHTML='<div class="muted">Forecast unavailable.</div>';}}
+async function loadWX(lat,lon,runId){const el=$('wx');try{
+ const j=await sourceJSON('https://api.weather.gov/points/'+lat.toFixed(4)+','+lon.toFixed(4),{headers:UA});if(!sameLocation(lat,lon,runId))return;
+ const pt=j.properties;if(!pt?.forecast)throw new Error('Missing forecast URL');here.office=pt.cwa;here.rel=pt.relativeLocation?.properties||{};
+ const f=await sourceJSON(pt.forecast,{headers:UA});if(!sameLocation(lat,lon,runId))return;
+ const cur=f.properties?.periods?.find(p=>Date.parse(p.endTime)>Date.now());if(!cur)throw new Error('No valid forecast period');
+ el.innerHTML='<div class="big">'+airEscape(cur.temperature)+'°'+airEscape(cur.temperatureUnit)+' · '+airEscape(cur.shortForecast)+'</div><div class="small">'+airEscape(cur.detailedForecast||'')+'</div>'+sourceNote('NWS forecast; period '+cur.startTime+' to '+cur.endTime,f.properties?.updateTime||f.properties?.generatedAt);buildResources(lat,lon);
+ }catch(e){if(sameLocation(lat,lon,runId))feedFailure('wx','Local weather forecast unavailable.');}}
 
-async function loadSPC(lat,lon){const el=$('spc');try{
- const j=await(await fetch('https://www.spc.noaa.gov/products/outlook/day1otlk_cat.nolyr.geojson')).json();
- let hit=null;(j.features||[]).forEach(f=>{if(pip([lon,lat],f.geometry)){if(!hit||(f.properties.DN||0)>(hit.DN||0))hit=f.properties;}});
- if(hit&&(hit.DN||0)>0){const col=hit.fill||C.watch;lvl('spc',(hit.LABEL2||hit.LABEL||'risk'),(hit.DN>=4?C.alert:hit.DN>=3?C.high:C.watch));
-  el.innerHTML=`<div class="big" style="color:${col}">${hit.LABEL2||hit.LABEL}</div><div class="muted" style="margin-top:4px">NOAA Storm Prediction Center categorical outlook for severe thunderstorms today at your location.</div>`;}
- else{lvl('spc','none',C.ok);el.innerHTML='<div class="muted">No severe-thunderstorm risk area over your location in today\'s SPC outlook.</div>';}
-}catch(e){el.innerHTML='<div class="muted">SPC outlook unavailable.</div>';}}
+async function loadSPC(lat,lon,runId){const el=$('spc');try{
+ const j=await sourceJSON('https://www.spc.noaa.gov/products/outlook/day1otlk_cat.nolyr.geojson');if(!sameLocation(lat,lon,runId))return;
+ const features=j.features.filter(f=>Number.isFinite(f.properties?.DN)),issuedAt=spcStamp(features[0]?.properties?.ISSUE),expiresAt=spcStamp(features[0]?.properties?.EXPIRE);
+ if(!features.length||!recent(issuedAt,30)||!expiresAt||Date.parse(expiresAt)<=Date.now())throw new Error('Missing or stale SPC product');
+ let hit=null;for(const f of features)if(pip([lon,lat],f.geometry)&&(!hit||f.properties.DN>hit.DN))hit=f.properties;
+ const label=hit?.LABEL||'Outside mapped categorical area',elevated=['SLGT','ENH','MDT','HIGH'].includes(hit?.LABEL);
+ responseState.spc={label,elevated,issuedAt,expiresAt,checkedAt:new Date().toISOString(),quality:'current'};
+ lvl('spc',hit?.LABEL||'outside area',elevated?C.high:C.dim);el.innerHTML='<div class="big">'+airEscape(hit?.LABEL2||label)+'</div><p class="muted">Official severe-thunderstorm outlook, not a current warning or an all-hazard clearance.</p>'+sourceNote('SPC Day1 outlook; expires '+expiresAt,issuedAt);
+ }catch(e){if(!sameLocation(lat,lon,runId))return;responseState.spc=null;feedFailure('spc','SPC outlook unavailable or stale.');}}
 
 function airEscape(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function airStamp(date,time,zone){
@@ -573,9 +585,9 @@ async function airFile(){
  }
  return airFilePromise;
 }
-async function loadAir(lat,lon){const el=$('air');
+async function loadAir(lat,lon,runId){const el=$('air');
  const links='<a href="https://www.airnow.gov/" target="_blank" rel="noopener">Check official AirNow</a> · <a href="https://files.airnowtech.org/airnow/today/reportingarea.dat" target="_blank" rel="noopener">public source file</a>';
- try{const file=await airFile();if(!here||here.lat!==lat||here.lon!==lon)return;
+ try{const file=await airFile();if(!sameLocation(lat,lon,runId))return;
   const states=new Set('AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC PR VI GU AS MP'.split(' '));
   const rows=[];
   for(const line of file.text.split(/\r?\n/)){const f=line.split('|');if(f.length<17||f[5]!=='O'||!states.has(f[8])||!f[12].trim()||!f[9].trim()||!f[10].trim())continue;
@@ -583,7 +595,7 @@ async function loadAir(lat,lon){const el=$('air');
    if(!Number.isFinite(aqi)||aqi<0||aqi>500||!Number.isFinite(x)||Math.abs(x)>90||!Number.isFinite(y)||Math.abs(y)>180||!Number.isFinite(stamp))continue;
    const distance=airMiles(lat,lon,x,y);if(distance<=60)rows.push({aqi,stamp,distance,name:f[7],state:f[8],pollutant:f[11],when:f[1]+' '+f[2]+' '+f[3],key:f[7]+'|'+f[8]+'|'+f[9]+'|'+f[10]});
   }
-  if(!rows.length){lvl('air','unavailable',C.dim);el.innerHTML='<div class="muted">No usable hourly AirNow reporting-area observation within 60 miles. No local AQI is inferred. '+links+'.</div>';return;}
+  if(!rows.length){responseState.air=null;lvl('air','unavailable',C.dim);el.innerHTML='<div class="muted">No usable hourly AirNow reporting-area observation within 60 miles. No local AQI is inferred. '+links+'.</div>';return;}
   rows.sort((a,b)=>a.distance-b.distance);const nearest=rows[0].key,near=rows.filter(r=>r.key===nearest),latest=Math.max(...near.map(r=>r.stamp));
   const latestRows=near.filter(r=>r.stamp===latest),w=latestRows.reduce((a,b)=>b.aqi>a.aqi?b:a),age=(Date.now()-latest)/3600000;
   if(age>6||age< -1){responseState.air={aqi:null,observedAt:new Date(latest).toISOString(),checkedAt:new Date(file.fetched).toISOString(),quality:'stale',name:w.name,distance:w.distance,pollutant:w.pollutant};lvl('air','stale / unavailable',C.dim);el.innerHTML='<div class="muted">Nearest reporting area: '+airEscape(w.name)+', '+airEscape(w.state)+'. Its latest hourly observation is '+airEscape(w.when)+'; no current AQI is shown. '+links+'.</div>';return;}
@@ -593,79 +605,83 @@ async function loadAir(lat,lon){const el=$('air');
   lvl('air',category,col);el.innerHTML='<div class="big" style="color:'+col+'">AQI '+Math.round(w.aqi)+' · '+category+'</div>'+
    '<div class="small" style="margin-top:6px"><b>MEASURED · preliminary AirNow observation</b><br>Reporting area: '+airEscape(w.name)+', '+airEscape(w.state)+' (about '+Math.round(w.distance)+' mi from its centroid). Highest AQI among pollutants reported for that area/hour: '+airEscape(w.pollutant)+'.</div>'+
    '<div class="muted" style="margin-top:6px">Observed '+airEscape(w.when)+' · fetched '+new Date(file.fetched).toISOString().slice(0,16).replace('T',' ')+' UTC. Reporting-area values may differ from conditions at your address. These preliminary data can be revised. Forecast and yesterday-maximum records are excluded. '+links+'.</div>';
- }catch(error){if(!sameLocation(lat,lon))return;responseState.air=null;lvl('air','unavailable',C.dim);el.innerHTML='<div class="muted">AirNow hourly observations are unavailable right now. No AQI value is substituted. '+links+'. Air-quality alerts may still appear in Active warnings.</div>';}
+ }catch(error){if(!sameLocation(lat,lon,runId))return;responseState.air=null;lvl('air','unavailable',C.dim);feedFailure('air','AirNow hourly observations are unavailable right now.');}
 }
 
-function fzText(z){return z?({A:'a high-risk 100-year flood zone (A)',AE:'a high-risk flood zone (AE) — insurance typically required',AO:'a high-risk shallow-flooding zone (AO)',V:'a high-risk COASTAL flood zone (V) — wave hazard',VE:'a high-risk coastal flood zone (VE) — wave hazard',X:'a minimal-risk zone (X)'})[z]||('flood zone '+z):null;}
-async function loadWater(lat,lon){const el=$('water');let flood=null,tide=null,gauges=0;
- try{const a=((await(await fetch('https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry='+lon+','+lat+'&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE,SFHA_TF&returnGeometry=false&f=json')).json()).features||[])[0];
-  if(a)flood={z:a.attributes.FLD_ZONE,sfha:a.attributes.SFHA_TF==='T'};
-  const dd=0.05;const g=await(await fetch('https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry='+(lon-dd)+','+(lat-dd)+','+(lon+dd)+','+(lat+dd)+'&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE&returnGeometry=true&outSR=4326&f=geojson&resultRecordCount=250')).json();
-  (g.features||[]).forEach(f=>{const z=f.properties.FLD_ZONE,c=/V/.test(z||'')?C.alert:/A/.test(z||'')?C.high:'#3a5a78';L.geoJSON(f,{style:{color:c,weight:.3,fillColor:c,fillOpacity:.2}}).bindPopup('FEMA flood zone '+(z||'?')).addTo(G.flood);});
- }catch(e){}
- try{if(!coops)coops=(await(await fetch('https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=waterlevels')).json()).stations||[];
-  let best=null,bd=1e9;coops.forEach(s=>{const d=Math.hypot((s.lat-lat)*69,(s.lng-lon)*55);if(d<bd){bd=d;best=s;}});
-  if(best&&bd<55){const o=await(await fetch('https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=latest&station='+best.id+'&product=water_level&datum=MLLW&units=english&time_zone=lst_ldt&format=json&application=hazards_near_you')).json();
-   const v=o.data&&o.data.length?parseFloat(o.data[0].v):null;tide={name:best.name,v:v,mi:Math.round(bd)};
-   L.circleMarker([best.lat,best.lng],{radius:6,fillColor:'#1f7fd6',color:'#fff',weight:1.3,fillOpacity:.9}).bindPopup('<b>NOAA tide gauge — '+best.name+'</b>'+(v!=null?'<br>'+v.toFixed(1)+' ft MLLW now':'')).addTo(G.pt);}
- }catch(e){}
- try{const d=0.4;const j=await(await fetch('https://api.water.noaa.gov/nwps/v1/gauges?srid=EPSG_4326&bbox.xmin='+(lon-d)+'&bbox.xmax='+(lon+d)+'&bbox.ymin='+(lat-d)+'&bbox.ymax='+(lat+d))).json();
-  gauges=(j.gauges||[]).length;(j.gauges||[]).slice(0,40).forEach(g=>{if(g.latitude)L.circleMarker([g.latitude,g.longitude],{radius:4,fillColor:'#26a69a',color:'#fff',weight:.6,fillOpacity:.85}).bindPopup('<b>River/flood gauge '+(g.lid||'')+'</b><br>'+(g.name||'')).addTo(G.pt);});
- }catch(e){}
- if(!sameLocation(lat,lon))return;responseState.water={zone:flood?.z||null,sfha:flood?.sfha||false,tide,checkedAt:new Date().toISOString()};
- lvl('water',flood?flood.z:(tide?'coastal':'—'),flood&&flood.sfha?C.alert:flood?C.ok:C.dim);
- el.innerHTML=`<div class="row"><span class="l">FEMA flood zone</span><span class="v">${flood?flood.z:'—'}</span></div>`+
-  (flood?`<div class="muted" style="margin:2px 0 8px">Your point is in ${fzText(flood.z)}.${flood.sfha?' This is a Special Flood Hazard Area.':''} Confirm on the official FEMA map (below).</div>`:'<div class="muted" style="margin-bottom:8px">No FEMA flood-zone result at this point.</div>')+
-  (tide?`<div class="row"><span class="l">Nearest tide gauge</span><span class="v">${tide.v!=null?tide.v.toFixed(1)+' ft':'—'}</span></div><div class="muted">${tide.name} · ~${tide.mi} mi (NOAA)</div>`:'<div class="muted">No coastal tide gauge nearby (inland).</div>')+
-  (gauges?`<div class="row" style="margin-top:6px"><span class="l">River/flood gauges nearby</span><span class="v">${gauges}</span></div>`:'')+
-  `<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line)"><div class="muted" style="margin-bottom:6px">Trace a river flood upstream:</div>`+
-  `<a href="../river-flood-network/" style="display:flex;gap:9px;align-items:flex-start;padding:8px 0"><i class="ti ti-git-fork" style="color:var(--sea);font-size:17px;transform:rotate(180deg)"></i><span style="font-weight:600;color:var(--ink)">River Flood Network <small style="display:block;color:var(--dim);font-weight:400">Which upstream tributary is driving this flood — main stem or a branch?</small></span></a>`+
-  `<a href="../river-flood-propagation/" style="display:flex;gap:9px;align-items:flex-start;padding:8px 0"><i class="ti ti-arrow-down" style="color:var(--sea);font-size:17px"></i><span style="font-weight:600;color:var(--ink)">River Flood Propagation <small style="display:block;color:var(--dim);font-weight:400">Walk the main stem downstream for each community's flood lead time.</small></span></a></div>`;
+function fzText(z){return z?({A:'a mapped Special Flood Hazard Area (A)',AE:'a mapped Special Flood Hazard Area (AE)',AO:'a mapped shallow-flooding zone (AO)',V:'a mapped coastal Special Flood Hazard Area (V)',VE:'a mapped coastal Special Flood Hazard Area (VE)',X:'a mapped X zone; subtype and map notes determine its classification'})[z]||('mapped flood zone '+z):null;}
+function waterConvert(value,from,to){const units={ft:['length',1],m:['length',3.280839895],cfs:['flow',1],kcfs:['flow',1000],cms:['flow',35.3146667],'m3/s':['flow',35.3146667]};const a=units[String(from).toLowerCase()],b=units[String(to).toLowerCase()];return number(value)!=null&&a&&b&&a[0]===b[0]?number(value)*a[1]/b[1]:null;}
+async function loadWater(lat,lon,runId){const el=$('water');let flood=null,tide=null,river=null,gauges=[],success=0;const failures=[];
+ try{const j=await sourceJSON('https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry='+lon+','+lat+'&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE,SFHA_TF,ZONE_SUBTY&returnGeometry=false&f=json');if(!sameLocation(lat,lon,runId))return;success++;const a=j.features[0]?.attributes;if(a?.FLD_ZONE)flood={z:a.FLD_ZONE,sfha:a.SFHA_TF==='T',subtype:a.ZONE_SUBTY||null};
+ }catch(e){failures.push('FEMA map query unavailable');}
+ try{if(!coops){const j=await sourceJSON('https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=waterlevels');if(!Array.isArray(j.stations))throw new Error('Missing stations');coops=j.stations;}if(!sameLocation(lat,lon,runId))return;
+  let best=null,bd=55;for(const station of coops){const distance=airMiles(lat,lon,station.lat,station.lng);if(distance<bd){best=station;bd=distance;}}
+  if(best){const j=await sourceJSON('https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=latest&station='+best.id+'&product=water_level&datum=MLLW&units=english&time_zone=gmt&format=json&application=hazards_near_you');if(!sameLocation(lat,lon,runId))return;
+   const row=j.data?.[0],stamp=row?.t?row.t.replace(' ','T')+'Z':null,value=number(row?.v);tide={name:best.name,value:recent(stamp,2)?value:null,observedAt:stamp,mi:Math.round(bd),datum:'MLLW',units:'ft'};
+  }success++;
+ }catch(e){failures.push('NOAA coastal water level unavailable');}
+ try{const d=0.4,j=await sourceJSON('https://api.water.noaa.gov/nwps/v1/gauges?srid=EPSG_4326&bbox.xmin='+(lon-d)+'&bbox.xmax='+(lon+d)+'&bbox.ymin='+(lat-d)+'&bbox.ymax='+(lat+d));if(!sameLocation(lat,lon,runId))return;if(!Array.isArray(j.gauges))throw new Error('Missing gauge list');gauges=j.gauges;success++;
+  const nearest=gauges.filter(g=>Number.isFinite(g.latitude)&&Number.isFinite(g.longitude)).sort((a,b)=>airMiles(lat,lon,a.latitude,a.longitude)-airMiles(lat,lon,b.latitude,b.longitude))[0];
+  if(nearest){const meta=await sourceJSON('https://api.water.noaa.gov/nwps/v1/gauges/'+encodeURIComponent(nearest.lid));if(!sameLocation(lat,lon,runId))return;
+   const ob=meta.status?.observed||{},unit=ob.primaryUnit||meta.flood?.stageUnits,flow=['cfs','kcfs','cms','m3/s'].includes(String(unit).toLowerCase()),raw=meta.flood?.categories?.action;
+   const threshold=raw&&typeof raw==='object'?waterConvert(raw[flow?'flow':'stage'],meta.flood?.[flow?'flowUnits':'stageUnits'],unit):number(raw),stage=number(ob.primary),known=recent(ob.validTime,6)&&stage!=null;
+   const impacts=(meta.flood?.impacts||[]).flatMap(p=>{const t=waterConvert(p.stage,meta.flood?.stageUnits,unit);return known&&t!=null&&stage>=t&&typeof p.statement==='string'?[{statement:p.statement,threshold:t}]:[];}).sort((a,b)=>b.threshold-a.threshold);
+   river={lid:meta.lid,name:meta.name,stage:known?stage:null,unit,category:known?ob.floodCategory:null,observedAt:ob.validTime||null,actionThreshold:threshold,impacts,checkedAt:new Date().toISOString(),quality:known?'current':'missing'};
+  }
+ }catch(e){failures.push('NOAA river metadata unavailable');}
+ if(!sameLocation(lat,lon,runId))return;if(!success){responseState.water=null;feedFailure('water','Water context sources unavailable.');return;}
+ responseState.water={zone:flood?.z||null,sfha:flood?.sfha??null,tide,river,checkedAt:new Date().toISOString(),failures};
+ const dd=0.05;sourceJSON('https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry='+(lon-dd)+','+(lat-dd)+','+(lon+dd)+','+(lat+dd)+'&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE&returnGeometry=true&outSR=4326&f=geojson&resultRecordCount=250').then(j=>{if(!sameLocation(lat,lon,runId))return;for(const f of j.features){const z=f.properties?.FLD_ZONE,c=/V/.test(z||'')?C.alert:/A/.test(z||'')?C.high:'#3a5a78';L.geoJSON(f,{style:{color:c,weight:.3,fillColor:c,fillOpacity:.2}}).bindPopup('FEMA mapped flood zone '+airEscape(z||'unknown')+'; planning context, not current flooding').addTo(G.flood);}}).catch(()=>{});
+ for(const g of gauges.slice(0,40))if(Number.isFinite(g.latitude)&&Number.isFinite(g.longitude))L.circleMarker([g.latitude,g.longitude],{radius:4,fillColor:'#26a69a',color:'#fff',weight:.6,fillOpacity:.85}).bindPopup('NOAA gauge location '+airEscape(g.name||g.lid)).addTo(G.pt);
+ if(tide&&coops){const station=coops.find(s=>s.name===tide.name);if(station)L.circleMarker([station.lat,station.lng],{radius:6,fillColor:'#1f7fd6',color:'#fff',weight:1.3,fillOpacity:.9}).bindPopup('NOAA '+airEscape(tide.name)+'; '+(tide.value!=null?tide.value+'ft MLLW':'level unavailable')+'; '+airEscape(tide.observedAt||'time unavailable')).addTo(G.pt);}
+ lvl('water',flood?.z||(river?.category?'river report':'context only'),flood?.sfha?C.high:C.dim);
+ el.innerHTML='<div class="row"><span class="l">FEMA mapped flood zone (planning)</span><span class="v">'+airEscape(flood?.z||'unavailable / no mapped intersection')+'</span></div>'+(flood?'<p class="muted">Your point intersects '+airEscape(fzText(flood.z))+'. '+airEscape(flood.subtype||'')+' A mapped zone is not current flooding; confirm the official map.</p>':'')+
+ (tide?'<div class="small">NOAA '+airEscape(tide.name)+' (~'+tide.mi+'mi): '+(tide.value!=null?tide.value+'ft MLLW':'no current usable level')+'; observed '+airEscape(tide.observedAt||'unavailable')+'. MLLW gauge level is not land inundation depth.</div>':'<p class="muted">No usable nearby coastal level returned; inland location and source failure are not equated.</p>')+
+ (river?'<div class="small"><b>Nearest NOAA river gauge: '+airEscape(river.name)+'</b><br>'+(river.stage!=null?river.stage+' '+airEscape(river.unit)+' · '+airEscape(river.category||'category unavailable'):'Current observation unavailable')+'; observed '+airEscape(river.observedAt||'unavailable')+'. Action threshold '+(river.actionThreshold!=null?river.actionThreshold+' '+airEscape(river.unit):'unavailable')+'.'+river.impacts.slice(0,3).map(p=>'<p data-nwps-impacts>'+airEscape(p.statement)+' (published threshold '+p.threshold+' '+airEscape(river.unit)+'). Conditional context, not confirmed damage.</p>').join('')+' <a href="https://water.noaa.gov/gauges/'+encodeURIComponent(river.lid.toLowerCase())+'" target="_blank" rel="noopener">Official river report</a></div>':'<p class="muted">No current nearest-river report available.</p>')+
+ sourceNote('FEMA susceptibility and NOAA observations retain separate meanings; '+gauges.length+' nearby gauge locations',river?.observedAt||tide?.observedAt)+'<p class="muted">'+airEscape(failures.join('; '))+'</p><p><a href="../river-flood-network/">Upstream branch reports</a> · <a href="../river-flood-propagation/">Main-stem forecast timing</a></p>';
 }
 
-async function loadFire(lat,lon){const el=$('fire');try{const d=1.2;
- const j=await(await fetch('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/0/query?geometry='+(lon-d)+','+(lat-d)+','+(lon+d)+','+(lat+d)+'&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=IncidentName,DailyAcres,PercentContained&returnGeometry=true&outSR=4326&f=geojson')).json();
- const fs=(j.features||[]).sort((a,b)=>(b.properties.DailyAcres||0)-(a.properties.DailyAcres||0));
- fs.forEach(f=>{if(!f.geometry)return;const c=f.geometry.coordinates;L.circleMarker([c[1],c[0]],{radius:5,fillColor:C.high,color:'#fff',weight:.6,fillOpacity:.75}).bindPopup('<b>'+(f.properties.IncidentName||'Wildfire')+'</b><br>'+Math.round(f.properties.DailyAcres||0).toLocaleString()+' acres · '+(f.properties.PercentContained||0)+'% contained').addTo(G.pt);});
- lvl('fire',fs.length?fs.length+' nearby':(here.redflag?'red flag':'none'),fs.length?C.high:(here.redflag?C.watch:C.ok));
- el.innerHTML=(here.redflag?'<div class="al"><div class="t">Fire Weather / Red Flag Warning in effect</div><div class="m">elevated fire danger — see Active warnings</div></div>':'')+
-  (fs.length?'<div class="row"><span class="l">Active wildfires within ~80 mi</span><span class="v">'+fs.length+'</span></div>'+fs.slice(0,3).map(f=>`<div class="small"><b>${f.properties.IncidentName||'Fire'}</b> ${Math.round(f.properties.DailyAcres||0).toLocaleString()} ac · ${f.properties.PercentContained||0}% contained</div>`).join(''):'<div class="muted">No active wildfires reported near you (NIFC).</div>');
-}catch(e){el.innerHTML='<div class="muted">Wildfire feed unavailable.</div>';}}
+async function loadFire(lat,lon,runId){const el=$('fire');try{const d=1.2;
+ const j=await sourceJSON('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/0/query?geometry='+(lon-d)+','+(lat-d)+','+(lon+d)+','+(lat+d)+'&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=IncidentName,DailyAcres,PercentContained,ICS209ReportDateTime,ModifiedOnDateTime&returnGeometry=true&outSR=4326&f=geojson');if(!sameLocation(lat,lon,runId))return;
+ const fs=j.features.filter(f=>f.geometry?.type==='Point'&&airMiles(lat,lon,f.geometry.coordinates[1],f.geometry.coordinates[0])<=80).sort((a,b)=>(number(b.properties.DailyAcres)||0)-(number(a.properties.DailyAcres)||0));
+ for(const f of fs){const c=f.geometry.coordinates,p=f.properties;L.circleMarker([c[1],c[0]],{radius:5,fillColor:C.high,color:'#fff',weight:.6,fillOpacity:.75}).bindPopup('Source-reported fire '+airEscape(p.IncidentName||'unnamed')+'; containment '+(number(p.PercentContained)!=null?number(p.PercentContained)+'%':'unavailable')).addTo(G.pt);}
+ const times=fs.map(f=>f.properties.ICS209ReportDateTime||f.properties.ModifiedOnDateTime).filter(v=>typeof v==='number'&&Number.isFinite(v)),stamp=times.length?new Date(Math.max(...times)).toISOString():null;
+ const current=fs.filter(f=>{const t=f.properties.ICS209ReportDateTime||f.properties.ModifiedOnDateTime;return typeof t==='number'&&Number.isFinite(t)&&recent(new Date(t).toISOString(),72);});
+ responseState.fire={count:current.length,inventoryCount:fs.length,excludedOldOrUndatedCount:fs.length-current.length,checkedAt:new Date().toISOString(),observedAt:stamp,quality:fs.length&&!current.length?'stale':'current',names:current.slice(0,3).map(f=>f.properties.IncidentName)};
+ lvl('fire',fs.length?fs.length+' reported points':'no points returned',fs.length?C.watch:C.dim);
+ el.innerHTML='<p>'+fs.length+' source-reported fire incident locations within 80 miles; '+current.length+' have a report/update within 72 hours. '+(fs.length-current.length)+' old/undated locations are excluded from current response counts. Point proximity is not a fire perimeter, threatened property or evacuation instruction.</p>'+fs.slice(0,3).map(f=>{const p=f.properties,acres=number(p.DailyAcres),contained=number(p.PercentContained),time=p.ICS209ReportDateTime||p.ModifiedOnDateTime,when=typeof time==='number'&&Number.isFinite(time)?new Date(time).toISOString():null;return '<p><b>'+airEscape(p.IncidentName||'Unnamed incident')+'</b> · '+(acres!=null?acres.toLocaleString()+'ac':'area unavailable')+' · '+(contained!=null?contained+'% contained':'containment unavailable')+' · reported/updated '+airEscape(when||'unavailable')+(!recent(when,72)?' (old/undated; not a current response count)':'')+'</p>';}).join('')+sourceNote('NIFC/Esri source report; verify current incident instructions',stamp);
+ }catch(e){if(!sameLocation(lat,lon,runId))return;responseState.fire=null;feedFailure('fire','Wildfire source unavailable.');}}
 
-async function loadQuake(lat,lon){const el=$('quake');try{const t=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
- const j=await(await fetch('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude='+lat+'&longitude='+lon+'&maxradiuskm=300&minmagnitude=2.5&starttime='+t+'&orderby=time&limit=8')).json();
- const fs=j.features||[];fs.forEach(f=>{const c=f.geometry.coordinates;L.circleMarker([c[1],c[0]],{radius:3+f.properties.mag,fillColor:C.purple,color:'#fff',weight:.6,fillOpacity:.65}).bindPopup('<b>M '+f.properties.mag+'</b><br>'+f.properties.place).addTo(G.pt);});
- const big=fs.filter(f=>f.properties.mag>=4).length;lvl('quake',fs.length?fs.length:'none',big?C.high:fs.length?C.watch:C.ok);
- el.innerHTML=`<div class="row"><span class="l">M2.5+ within ~190 mi, 30 days</span><span class="v">${fs.length}</span></div>`+
-  (fs.length?fs.slice(0,4).map(f=>`<div class="small"><b>M ${f.properties.mag}</b> ${f.properties.place} <span class="muted">${fmtAgo(f.properties.time)}</span></div>`).join(''):'<div class="muted">No recent earthquakes near you — USGS.</div>');
-}catch(e){el.innerHTML='<div class="muted">Earthquake feed unavailable.</div>';}}
+async function loadQuake(lat,lon,runId){const el=$('quake');try{const t=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+ const j=await sourceJSON('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude='+lat+'&longitude='+lon+'&maxradiuskm=300&minmagnitude=2.5&starttime='+t+'&orderby=time&limit=8');if(!sameLocation(lat,lon,runId))return;
+ const fs=j.features;for(const f of fs){const c=f.geometry?.coordinates;if(c&&c.slice(0,2).every(Number.isFinite))L.circleMarker([c[1],c[0]],{radius:3+Math.max(0,number(f.properties?.mag)||0),fillColor:C.purple,color:'#fff',weight:.6,fillOpacity:.65}).bindPopup('M'+airEscape(f.properties?.mag)+' '+airEscape(f.properties?.place)).addTo(G.pt);}lvl('quake',fs.length?fs.length+' returned':'none returned',fs.some(f=>f.properties.mag>=4)?C.watch:C.dim);
+ el.innerHTML='<p>'+fs.length+' events returned (maximum8) at M2.5+ within300km over30days. This recent-event query is not a future earthquake forecast.</p>'+fs.slice(0,4).map(f=>'<p><b>M'+airEscape(f.properties.mag)+'</b> '+airEscape(f.properties.place)+' · '+new Date(f.properties.time).toISOString()+'</p>').join('')+sourceNote('USGS event query',j.metadata?.generated?new Date(j.metadata.generated).toISOString():null);
+ }catch(e){if(sameLocation(lat,lon,runId))feedFailure('quake','Earthquake source unavailable.');}}
 
-async function loadDrought(lat,lon){const el=$('drought');try{
- const fips=(await(await fetch('https://geo.fcc.gov/api/census/area?lat='+lat+'&lon='+lon+'&format=json')).json()).results[0].county_fips;
- const mdy=d=>{d=new Date(d);return (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear();};
- const j=await(await fetch('https://usdmdataservices.unl.edu/api/CountyStatistics/GetDroughtSeverityStatisticsByAreaPercent?aoi='+fips+'&startdate='+mdy(Date.now()-9*864e5)+'&enddate='+mdy(Date.now())+'&statisticsType=1',{headers:{'Accept':'application/json'}})).json();
- const r=(j&&j.length)?j[j.length-1]:null;
- if(r){const cats=[['d4','D4 Exceptional',C.alert],['d3','D3 Extreme',C.alert],['d2','D2 Severe',C.high],['d1','D1 Moderate',C.watch],['d0','D0 Abnormally Dry',C.watch]];
-  let worst=null;for(const[k,lab,col]of cats){if(parseFloat(r[k])>0){worst=[lab,col,parseFloat(r[k])];break;}}
-  lvl('drought',worst?worst[0].split(' ')[0]:'none',worst?worst[1]:C.ok);
-  el.innerHTML=worst?`<div class="big" style="color:${worst[1]}">${worst[0]}</div><div class="muted" style="margin-top:4px">Affecting ~${Math.round(worst[2])}% of ${r.county}, ${r.state}, as of ${String(r.mapDate).slice(0,10)} (U.S. Drought Monitor).</div>`:`<div class="big" style="color:${C.ok}">No drought</div><div class="muted" style="margin-top:4px">${r.county}, ${r.state} — none designated (U.S. Drought Monitor).</div>`;}
- else el.innerHTML='<div class="muted">No drought data for this county.</div>';
-}catch(e){el.innerHTML='<div class="muted">Drought feed unavailable.</div>';}}
+async function loadDrought(lat,lon,runId){const el=$('drought');try{
+ const c=await sourceJSON('https://geo.fcc.gov/api/census/area?lat='+lat+'&lon='+lon+'&format=json');if(!sameLocation(lat,lon,runId))return;const fips=c.results?.[0]?.county_fips;if(!/^\d{5}$/.test(fips||''))throw new Error('No county match');
+ const mdy=value=>{const d=new Date(value);return(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear();};
+ const j=await sourceJSON('https://usdmdataservices.unl.edu/api/CountyStatistics/GetDroughtSeverityStatisticsByAreaPercent?aoi='+fips+'&startdate='+mdy(Date.now()-14*864e5)+'&enddate='+mdy(Date.now())+'&statisticsType=1',{headers:{Accept:'application/json'}});if(!sameLocation(lat,lon,runId))return;if(!Array.isArray(j))throw new Error('Missing drought rows');
+ const r=j.slice().sort((a,b)=>Date.parse(b.mapDate)-Date.parse(a.mapDate))[0],stamp=r?.mapDate;
+ if(!r||!recent(stamp,15*24)||['d0','d1','d2','d3','d4'].some(k=>number(r[k])==null||number(r[k])<0||number(r[k])>100))throw new Error('Invalid/stale drought percentages');
+ let worst=null;for(const k of ['d4','d3','d2','d1','d0'])if(number(r[k])>0){worst={key:k,percent:number(r[k])};break;}
+ responseState.drought={label:worst?worst.key.toUpperCase():'None designated',severity:worst?+worst.key.slice(1):-1,percent:worst?.percent??0,observedAt:new Date(stamp).toISOString(),checkedAt:new Date().toISOString(),quality:'historical',county:r.county,state:r.state};
+ lvl('drought',worst?worst.key.toUpperCase():'none designated',worst?C.watch:C.dim);el.innerHTML='<p><b>'+airEscape(responseState.drought.label)+'</b> '+(worst?'over '+worst.percent+'% of the county at that category or worse.':'in this county source report.')+' '+airEscape(r.county)+', '+airEscape(r.state)+'. Weekly regional planning context, not current water-service loss.</p>'+sourceNote('U.S. Drought Monitor county geography',responseState.drought.observedAt);
+ }catch(e){if(!sameLocation(lat,lon,runId))return;responseState.drought=null;feedFailure('drought','Drought source unavailable or stale.');}}
 
-async function loadVolcano(lat,lon){const el=$('volcano');try{
- const j=await(await fetch('https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes')).json();
- const arr=Array.isArray(j)?j:[];const near=arr.map(v=>({v,d:Math.hypot(((v.latitude||v.lat)-lat)*69,((v.longitude||v.lon)-lon)*55)})).filter(x=>isFinite(x.d)).sort((a,b)=>a.d-b.d);
- const close=near.filter(x=>x.d<300);
- lvl('volcano',arr.length?(close.length?close.length+' near':arr.length+' US'):'none',close.length?C.high:C.dim);
- el.innerHTML=close.length?close.slice(0,3).map(x=>`<div class="small"><b>${x.v.volcanoName||x.v.name}</b> — ${x.v.alertLevel||x.v.colorCode||'elevated'} <span class="muted">~${Math.round(x.d)} mi</span></div>`).join(''):
-  (arr.length?`<div class="muted">${arr.length} U.S. volcano(es) at elevated alert (mostly Alaska/Hawaii/Cascades) — none within ~300 mi of you. <a href="https://volcanoes.usgs.gov" target="_blank" rel="noopener">USGS</a>.</div>`:'<div class="muted">No U.S. volcanoes at elevated alert right now (USGS).</div>');
-}catch(e){el.innerHTML='<div class="muted">Volcano feed unavailable.</div>';}}
+async function loadVolcano(lat,lon,runId){const el=$('volcano');try{
+ const j=await sourceJSON('https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes');if(!sameLocation(lat,lon,runId))return;if(!Array.isArray(j)||j.some(v=>typeof v.volcano_name!=='string'||!v.notice_url?.startsWith('https://volcanoes.usgs.gov/')))throw new Error('Unexpected notice schema');
+ responseState.volcano={count:j.length,checkedAt:new Date().toISOString(),quality:'current'};lvl('volcano',j.length+' US notices',C.dim);
+ el.innerHTML='<p>National elevated-notice list: '+j.length+' returned. This endpoint supplies no coordinates; proximity to your location is not assessed.</p>'+j.slice(0,6).map(v=>'<p><a href="'+airEscape(v.notice_url)+'" target="_blank" rel="noopener">'+airEscape(v.volcano_name)+'</a> · '+airEscape(v.alert_level||'alert unavailable')+' / '+airEscape(v.color_code||'color unavailable')+' · issued '+airEscape(v.sent_utc||'unavailable')+' UTC</p>').join('')+sourceNote('USGS current elevated-notice list',null);
+ }catch(e){if(!sameLocation(lat,lon,runId))return;responseState.volcano=null;feedFailure('volcano','USGS elevated-notice list unavailable.');}}
 
-async function loadTropics(lat,lon){const el=$('tropics');try{
- const j=await(await fetch('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Active_Hurricanes_v1/FeatureServer/1/query?where=1%3D1&outFields=*&returnGeometry=false&f=json')).json();
- const n=new Set((j.features||[]).map(f=>f.properties.STORMNAME||f.properties.stormName).filter(Boolean)).size;lvl('tropics',n?n+' active':'none',n?C.watch:C.ok);
- el.innerHTML=n?`<div class="row"><span class="l">Active systems (worldwide)</span><span class="v">${n}</span></div><div class="muted" style="margin-top:4px">See the <a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">National Hurricane Center</a> for tracks, cones &amp; coastal watches/warnings.</div>`:'<div class="muted">No active tropical systems right now (NOAA NHC).</div>';
-}catch(e){el.innerHTML='<div class="muted">NHC feed unavailable.</div>';}}
+async function loadTropics(lat,lon,runId){const el=$('tropics');try{
+ const j=await sourceJSON('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Active_Hurricanes_v1/FeatureServer/1/query?where=1%3D1&outFields=STORMID,STORMNAME,DTG,BASIN,TAU&returnGeometry=false&f=json');if(!sameLocation(lat,lon,runId))return;
+ const records=j.features.map(f=>f.attributes);if(records.some(a=>!a||typeof a.STORMNAME!=='string'))throw new Error('Unexpected advisory schema');
+ const usable=records.filter(a=>typeof a.DTG==='number'&&Number.isFinite(a.DTG)&&recent(new Date(a.DTG).toISOString(),72)),ids=new Set(usable.map(a=>a.STORMID||a.STORMNAME)),latest=usable.length?new Date(Math.max(...usable.map(a=>a.DTG))).toISOString():null;
+ responseState.tropics={count:ids.size,checkedAt:new Date().toISOString(),observedAt:latest,quality:records.length&&!usable.length?'stale':'current',excludedOldRecords:records.length-usable.length};
+ lvl('tropics',records.length&&!usable.length?'stale source':ids.size+' recent systems',C.dim);
+ el.innerHTML='<p>'+ids.size+' distinct source-reported tropical systems with advisory times within 72 hours, worldwide. '+(records.length-usable.length)+' old/undated records excluded. This does not establish a local coastal threat or an all-clear.</p>'+sourceNote('NOAA/JTWC tracks via Esri public layer',latest)+'<p><a href="https://www.nhc.noaa.gov/" target="_blank" rel="noopener">Official NHC basin advisories, watches and warnings</a>; follow current NWS/local instructions for your location.</p>';
+ }catch(e){if(!sameLocation(lat,lon,runId))return;responseState.tropics=null;feedFailure('tropics','Tropical-advisory source unavailable.');}}
 
 function lk(href,icon,t,s){return `<a href="${href}" target="_blank" rel="noopener"><i class="ti ${icon}"></i><span>${t}<small>${s}</small></span></a>`;}
 function buildResources(lat,lon){const off=(here.office||'').toLowerCase(),rel=here.rel||{};
@@ -676,8 +692,8 @@ function buildResources(lat,lon){const off=(here.office||'').toLowerCase(),rel=h
   lk('https://www.airnow.gov/?city='+encodeURIComponent(rel.city||'')+'&state='+encodeURIComponent(rel.state||''),'ti-lungs','AirNow air quality','EPA — current &amp; forecast')+
   lk('https://www.ready.gov/','ti-shield-check','Ready.gov','Make a plan, build a kit')+
   lk('https://www.google.com/search?q='+encodeURIComponent((rel.city?rel.city+' ':'')+(rel.state||'')+' emergency management'),'ti-urgent','Your local emergency management','County / city office')+
-  lk('../river-flood-network/','ti-git-fork','River Flood Network','Which upstream tributary drives a flood')+
-  lk('../river-flood-propagation/','ti-arrow-down','River Flood Propagation','Downstream flood lead times along a river');
+  lk('../river-flood-network/','ti-git-fork','River Flood Network','Inspect upstream branch reports')+
+  lk('../river-flood-propagation/','ti-arrow-down','River Flood Propagation','Compare downstream forecast peak times');
 }
 
 /* ================= ORCHESTRATION ================= */
@@ -685,21 +701,25 @@ function chips(){const items=[
   ['alerts','Warnings'],['air','Air'],['water','Flood'],['fire','Fire'],['spc','Storms'],['quake','Quakes'],['drought','Drought'],['tropics','Tropics']];
  $('chips').innerHTML=items.map(([id,lab])=>{const e=$('lvl-'+id);const t=e&&e.style.display!=='none'?e.textContent:'…';const col=e?e.style.color:C.dim;
   return `<span class="chip"><span class="dot" style="background:${col||C.dim}"></span>${lab} <small>${t}</small></span>`;}).join('');}
-async function loadLocation(loc){mode='local';here={name:loc.name,lat:loc.lat,lon:loc.lon};Object.assign(responseState,{context:loc.name,loading:true,alerts:null,air:null,water:null});
+async function loadLocation(loc){const same=mode==='local'&&here?.lat===loc.lat&&here?.lon===loc.lon;mode='local';here={name:loc.name,lat:loc.lat,lon:loc.lon,runId:++localRun};const runId=here.runId;feedFailures.clear();if(!same){Object.keys(lastGood).forEach(k=>delete lastGood[k]);Object.assign(responseState,{alerts:null,air:null,water:null,spc:null,fire:null,drought:null,volcano:null,tropics:null});}Object.assign(responseState,{context:loc.name,loading:true});
  G.nat.clearLayers();G.pt.clearLayers();G.flood.clearLayers();G.poly.clearLayers();
  $('place').innerHTML='<i class="ti ti-map-pin"></i> Showing hazards near <b>'+loc.name+'</b>';
- buildCards();
+ if(!same)buildCards();
  map.setView([loc.lat,loc.lon],10);
  L.circleMarker([loc.lat,loc.lon],{radius:8,fillColor:C.sea,color:'#fff',weight:2,fillOpacity:.95}).addTo(G.pt).bindPopup('<b>'+loc.name+'</b>');
- const jobs=[loadAlerts,loadWX,loadSPC,loadAir,loadWater,loadFire,loadQuake,loadDrought,loadVolcano,loadTropics].map(fn=>fn(loc.lat,loc.lon).then(chips).catch(()=>{}));
- await Promise.all(jobs);if(!sameLocation(loc.lat,loc.lon))return;responseState.loading=false;chips();
+ const loaders=[['alerts',loadAlerts],['wx',loadWX],['spc',loadSPC],['air',loadAir],['water',loadWater],['fire',loadFire],['quake',loadQuake],['drought',loadDrought],['volcano',loadVolcano],['tropics',loadTropics]];
+ const jobs=loaders.map(async([id,fn])=>{try{await fn(loc.lat,loc.lon,runId);if(!sameLocation(loc.lat,loc.lon,runId))return;if(!feedFailures.has(id))lastGood[id]=$(id).innerHTML;chips();}catch(e){if(sameLocation(loc.lat,loc.lon,runId))feedFailure(id,'Public source unavailable.');}});
+ await Promise.all(jobs);if(!sameLocation(loc.lat,loc.lon,runId))return;responseState.loading=false;responseState.checkedAt=new Date().toISOString();$('place').textContent='Showing hazards near '+loc.name+' · checked '+responseState.checkedAt+' · refresh every 5 minutes while visible. Unavailable components are marked.';chips();
 }
-async function go(){const q=$('q').value;if(!q.trim())return;$('place').innerHTML='<span class="muted"><span class="spin"></span> finding '+q+'…</span>';
- const loc=await geocode(q);if(!loc){$('place').innerHTML='<span style="color:'+C.alert+'">Couldn\'t find that. Try a 5-digit ZIP, or "Town, ST".</span>';return;}
+async function refreshSelected(){if(document.hidden||refreshBusy)return;refreshBusy=true;try{if(mode==='local'&&here)await loadLocation({...here});else await loadNational();}finally{refreshBusy=false;}}
+setInterval(refreshSelected,5*60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshSelected();});
+let searchRun=0;
+async function go(){const searchId=++searchRun,q=$('q').value;if(!q.trim())return;$('place').innerHTML='<span class="muted"><span class="spin"></span> finding '+airEscape(q)+'…</span>';
+ const loc=await geocode(q);if(searchId!==searchRun)return;if(!loc){$('place').innerHTML='<span style="color:'+C.alert+'">Couldn\'t find that. Try a 5-digit ZIP, or "Town, ST".</span>';return;}
  loadLocation(loc);}
 $('go').onclick=go;$('q').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
-$('loc').onclick=function(){if(!navigator.geolocation)return;$('place').innerHTML='<span class="muted"><span class="spin"></span> locating…</span>';
- navigator.geolocation.getCurrentPosition(p=>loadLocation({lat:p.coords.latitude,lon:p.coords.longitude,name:'your location'}),()=>{$('place').innerHTML='<span style="color:'+C.alert+'">Location denied — type a ZIP or town.</span>';});};
+$('loc').onclick=function(){const searchId=++searchRun;if(!navigator.geolocation)return;$('place').innerHTML='<span class="muted"><span class="spin"></span> locating…</span>';
+ navigator.geolocation.getCurrentPosition(p=>{if(searchId===searchRun)loadLocation({lat:p.coords.latitude,lon:p.coords.longitude,name:'your location'});},()=>{if(searchId===searchRun)$('place').innerHTML='<span style="color:'+C.alert+'">Location denied — type a ZIP or town.</span>';});};
 $('src').innerHTML='Sources (all public, no account): NWS api.weather.gov (warnings, forecast), NOAA SPC severe-weather outlook, EPA AirNow keyless reporting-area observations (preliminary), FEMA National Flood Hazard Layer, NOAA Tides &amp; Currents, NOAA National Water Prediction Service, NIFC/Esri wildfire incidents, USGS earthquakes &amp; volcano alerts, U.S. Drought Monitor, NOAA National Hurricane Center. Geocoding: Zippopotam.us &amp; OpenStreetMap Nominatim. Lookups run in your browser; nothing is stored.';
 loadNational();
 })();
@@ -709,9 +729,10 @@ loadNational();
 (function(){
  'use strict';
  function read(){
-  const s=window.LocalHazardsResponse||{},a=s.alerts,air=s.air,w=s.water,evidence=[],diagnostics=[],actions=[];
-  const recent=stamp=>Number.isFinite(Date.parse(stamp))&&Date.now()-Date.parse(stamp)<30*60000;
-  const alertsKnown=!!a&&recent(a.checkedAt),airKnown=air&&air.quality==='current'&&Number.isFinite(air.aqi)&&Date.now()-Date.parse(air.observedAt)<=6*3600000;
+  const s=window.LocalHazardsResponse||{},rawAlerts=s.alerts,a=rawAlerts?{...rawAlerts,features:(rawAlerts.features||[]).filter(f=>!f.properties?.expires||Date.parse(f.properties.expires)>Date.now())}:null,air=s.air,w=s.water,evidence=[],diagnostics=[],actions=[];
+  const fresh=(stamp,hours)=>Number.isFinite(Date.parse(stamp))&&Date.now()-Date.parse(stamp)>=-3600000&&Date.now()-Date.parse(stamp)<=hours*3600000;
+  const recent=stamp=>fresh(stamp,0.5);
+  const alertsKnown=!!a&&recent(a.checkedAt),airKnown=air&&air.quality==='current'&&Number.isFinite(air.aqi)&&fresh(air.observedAt,6);
   evidence.push({id:'alerts',label:'Active official NWS alerts at selected point',value:a?a.features.length:'Unavailable',unit:'alerts',measuredAt:a?.updated||null,checkedAt:a?.checkedAt,basis:'measured',quality:alertsKnown?'current':a?'stale':'missing',source:'https://api.weather.gov/alerts/active',note:'Query result for this point; checked time is not an alert issue time. Official alert instructions take precedence.'});
   evidence.push({id:'air',label:air?.name?'AirNow reporting area: '+air.name:'AirNow reporting-area observation',value:air?.aqi??'Unavailable',unit:'AQI',measuredAt:air?.observedAt,checkedAt:air?.checkedAt,basis:'measured',quality:airKnown?'current':air?.quality||'missing',source:'https://files.airnowtech.org/airnow/today/reportingarea.dat',note:air?'Preliminary '+air.pollutant+' observation; reporting-area centroid approximately '+Math.round(air.distance)+' miles away. This is not an address-level monitor.':'No current AQI substituted.'});
   evidence.push({id:'fema',label:'FEMA flood-zone planning context',value:w?.zone||'Unavailable',checkedAt:w?.checkedAt,basis:'measured',quality:w?.zone?'historical':'missing',source:'https://msc.fema.gov/portal/home',note:'Mapped susceptibility, not a current flood or evacuation trigger.'});
@@ -727,6 +748,15 @@ loadNational();
    actions.push({id:'fema-'+track,track,phase:'prepare',when:'triggered',diagnosticIds:['fema'],title:'Review the mapped flood context before an event',nextStep:'Confirm the property or facility on FEMA\'s official map and review the local flood plan. This mapped zone does not establish current flooding.',escalateWhen:'An official current warning or local instruction is issued; do not use the FEMA zone as incident timing.',authorityUrl:'https://msc.fema.gov/portal/home'});
    actions.push({id:'unknown-'+track,track,phase:'verify',when:'unknown',diagnosticIds:['warnings','air-quality','coincident'],title:'Resolve missing local evidence',nextStep:track==='public'?'Choose a location and check NWS/AirNow directly when a feed is unavailable or stale. An unavailable feed is not an all-clear.':'Confirm the selected location and current official reports through approved channels before using this plan. Record feed gaps in your briefing.',escalateWhen:'A missing report is needed for an active decision or local conditions differ.',authorityUrl:'https://www.weather.gov/'});
   }
+  const river=w?.river,riverKnown=river?.quality==='current'&&fresh(river.observedAt,6)&&Number.isFinite(river.stage),category={no_flooding:0,action:1,minor:2,moderate:3,major:4};
+  const additions=[
+   {id:'spc',data:s.spc,label:'Official SPC severe-thunderstorm outlook',value:s.spc?.label,source:'https://www.spc.noaa.gov/products/outlook/',known:s.spc?.quality==='current'&&recent(s.spc.checkedAt)&&Date.parse(s.spc.expiresAt)>Date.now(),trigger:!!s.spc?.elevated,time:s.spc?.issuedAt,rule:'Official SLGT/ENH/MDT/HIGH outlook category at the selected point; preparedness, not a current warning.',step:'Review the official outlook, its issue/expiry and your severe-weather plan. Follow actual NWS warnings and local instructions; an outlook does not confirm an incident.'},
+   {id:'fire',data:s.fire,label:'Nearby source-reported fire incident points',value:s.fire?.count,source:'https://www.nifc.gov/fire-information/maps',known:s.fire?.quality==='current'&&recent(s.fire.checkedAt),trigger:(s.fire?.count||0)>0,time:s.fire?.observedAt,rule:'Source-reported incident points within 80 miles with a report/update within72hours prompt verification; old/undated records are excluded from this count. No threatened area is inferred.',step:'Check the responsible incident and local emergency-management reports. A point location, acreage or containment fraction does not define your evacuation area or fire spread.'},
+   {id:'drought',data:s.drought,label:'County drought planning context',value:s.drought?.label,source:'https://droughtmonitor.unl.edu/',known:!!s.drought&&fresh(s.drought.observedAt,15*24),trigger:(s.drought?.severity??-1)>=2,time:s.drought?.observedAt,scope:'planning',rule:'Published D2 or worse exists in the county; weekly planning context only.',step:'Review the source map date, county coverage and local water authority drought/conservation guidance. County designation is not measured household supply failure.'},
+   {id:'river',data:river,label:'Nearest NOAA river observation',value:river?.stage,source:river?.lid?'https://water.noaa.gov/gauges/'+river.lid.toLowerCase():'https://water.noaa.gov/',known:riverKnown&&(category[river.category]!=null||Number.isFinite(river.actionThreshold)),trigger:category[river?.category]!=null?category[river.category]>=1:riverKnown&&Number.isFinite(river.actionThreshold)&&river.stage>=river.actionThreshold,time:river?.observedAt,unit:river?.unit,rule:'A current gauge category is action-or-higher, or a compatible observed primary value reaches its published action threshold.',step:'Confirm the NOAA gauge report and local warnings. '+(river?.impacts||[]).slice(0,3).map(p=>p.statement+' (conditional published threshold '+p.threshold+' '+river.unit+').').join(' ')+' These are stage-specific descriptions, not confirmation of damage, address-level inundation or a safe wait time.'}
+  ];
+  for(const item of additions){evidence.push({id:item.id,label:item.label,value:item.value??'Unavailable',unit:item.unit,measuredAt:item.time,checkedAt:item.data?.checkedAt,basis:item.id==='spc'?'modeled':'measured',quality:item.known?(item.scope?'historical':'current'):item.data?'stale':'missing',source:item.source,note:item.rule});diagnostics.push({id:item.id,pillar:'spillover',label:item.label+' needs review',scope:item.scope,status:item.known?(item.trigger?'triggered':'clear'):'unknown',evidenceIds:[item.id],rule:item.rule,explanation:'Source-native context; it is not added to a pooled hazard score or a causal dependency graph.'});for(const track of ['public','operator'])actions.push({id:item.id+'-'+track,track,phase:item.scope?'prepare':'verify',when:'triggered',diagnosticIds:[item.id],title:'Review '+item.label.toLowerCase(),nextStep:item.step+(track==='operator'?' Apply your approved local SOP and decision authority before operational changes.':''),escalateWhen:'Current official instructions, verified local conditions or the responsible authority\'s actual activation rule apply.',authorityUrl:item.source});}
+  for(const [id,title,url]of [['volcano','USGS elevated volcano notices (national context)','https://volcanoes.usgs.gov/'],['tropics','Official tropical-system advisories','https://www.nhc.noaa.gov/']]){const data=s[id];evidence.push({id,label:title,value:data?.count??'Unavailable',checkedAt:data?.checkedAt,measuredAt:data?.observedAt,basis:'measured',quality:data?.quality||'missing',source:url,note:id==='volcano'?'National current notice list; coordinates/proximity are not supplied by this endpoint.':'Worldwide recent advisory count; no local threat or all-clear is inferred.'});if(data)for(const track of ['public','operator'])actions.push({id:id+'-'+track,track,phase:'verify',when:'always',title:'Check '+title,nextStep:'Open the source for its actual advisory area, issue time and current instructions. This national/worldwide count does not establish applicability to your selected location.',escalateWhen:'An official instruction applies to your location or your approved local plan.',authorityUrl:url});}
 
   const specs=[
    [1,'comparison','Warnings do not supply population balance','unknown',[],'Point alerts and reporting-area AQI lack affected population/facility weights.','Identify affected groups and service populations with local records before comparing burden or allocating resources.','Affected-area population, vulnerable-group and facility/service denominators'],

@@ -38,6 +38,7 @@ const gauges = [
   { lid: 'TESTA', name: 'Test Upstream Gauge', latitude: 38.63, longitude: -90.18, upstreamLid: null, downstreamLid: 'TESTB', status: { observed: { primary: 12.5, floodCategory: 'action' }, forecast: { floodCategory: 'minor', validTime: '2026-10-23T18:00:00Z' } }, flood: { stageUnits: 'ft', categories: { action: 10, minor: 15 }, crests: [{ value: 16, validTime: '2026-10-23T18:00:00Z' }] } },
   { lid: 'TESTB', name: 'Test Downstream Gauge', latitude: 38.55, longitude: -90.10, upstreamLid: 'TESTA', downstreamLid: null, status: { observed: { primary: 15.5, floodCategory: 'minor' }, forecast: { floodCategory: 'moderate', validTime: '2026-10-24T00:00:00Z' } }, flood: { stageUnits: 'ft', categories: { action: 10, minor: 15 }, crests: [{ value: 19, validTime: '2026-10-24T00:00:00Z' }] } },
 ];
+gauges.forEach((g,i)=>{g.usgsId=String(i+1);g.status.observed.validTime='2026-10-23T16:00:00Z';g.status.observed.primaryUnit='ft';});
 const gaugeFeatures = gauges.map((g, index) => ({ type: 'Feature', properties: { identifier: `USGS-${index + 1}`, name: g.name }, geometry: { type: 'Point', coordinates: [g.longitude, g.latitude] } }));
 const quake = { type: 'Feature', id: 'us6000t7zp', geometry: { type: 'Point', coordinates: [-90.18, 38.63, 9] }, properties: { mag: 5.6, place: 'Offline fixture earthquake', time: fixedTime - 3600000, alert: 'orange', sig: 500, felt: 12, tsunami: 0, products: {}, url: 'https://earthquake.usgs.gov/earthquakes/eventpage/us6000t7zp' } };
 const empty = { type: 'FeatureCollection', features: [], elements: [], stations: [], gauges: [], data: [], results: [{ county_fips: '12103' }], properties: { periods: [] } };
@@ -65,7 +66,7 @@ async function fixture(route, options, requests) {
   if (url.hostname === 'nominatim.openstreetmap.org') return json([{ lat: '27.77', lon: '-82.64', display_name: 'St Petersburg, FL' }]);
   if (url.hostname === 'api.water.noaa.gov') {
     const lid = url.pathname.match(/\/gauges\/(TEST[AB])/i)?.[1].toUpperCase();
-    if (url.pathname.includes('/stageflow/forecast')) return json({ data: [{ primary: lid === 'TESTA' ? 16 : 19, validTime: lid === 'TESTA' ? '2026-10-23T18:00:00Z' : '2026-10-24T00:00:00Z' }] });
+    if (url.pathname.includes('/stageflow/forecast')) return json({ issuedTime:'2026-10-23T16:00:00Z',primaryUnits:'ft',data: [{ primary: lid === 'TESTA' ? 16 : 19, validTime: lid === 'TESTA' ? '2026-10-23T18:00:00Z' : '2026-10-24T00:00:00Z' }] });
     return json(lid ? gauges.find(g => g.lid === lid) : { gauges });
   }
   if (url.hostname === 'api.water.usgs.gov') {

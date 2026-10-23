@@ -44,8 +44,11 @@ jobs:
         timeout-minutes: 15
       # The built-in token's data commit does not start push CI or Pages itself.
       - run: python scripts/refresh_coastal_impact.py --check
+      - run: python scripts/refresh_nhs.py --check
       - run: python scripts/check_catalog.py
       - run: python scripts/embed_response_plans.py --check
+      - run: python scripts/embed_worldbank_runtime.py --check
+      - run: python scripts/embed_health_runtime.py --check
       - run: python -m unittest discover -s tests -v
       - run: python scripts/refresh_fred.py --check
       - run: npm test

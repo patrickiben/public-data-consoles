@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- HEALTH_PUBLIC_RUNTIME_START -->
+<script>
+/* Public health/reference request primitives; no personal inputs are inspected here. */
+(function(root){'use strict';
+ async function json(url){const c=new AbortController(),timer=setTimeout(()=>c.abort(),15000);try{const r=await fetch(url,{signal:c.signal});if(!r.ok)throw Error('Public source HTTP '+r.status);return await r.json();}catch(e){throw Error(e.name==='AbortError'?'Public source timed out':e.message);}finally{clearTimeout(timer);}}
+ function numeric(value){if(typeof value==='number')return Number.isFinite(value)&&value>=0?value:null;if(typeof value!=='string'||! /^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(value.trim()))return null;const n=Number(value.replace(/,/g,''));return Number.isFinite(n)&&n>=0?n:null;}
+ function date(value){const s=String(value??'').slice(0,10),t=Date.parse(s+'T00:00:00Z');if(!/^\d{4}-\d{2}-\d{2}$/.test(s)||!Number.isFinite(t)||new Date(t).toISOString().slice(0,10)!==s||t>Date.now()+7*864e5)throw Error('Invalid public observation date');return s;}
+ async function socrata(dataset,params){const all=[];for(let page=0;page<20;page++){const u=new URL('https://data.cdc.gov/resource/'+dataset+'.json');for(const [k,v]of params)u.searchParams.set(k,v);u.searchParams.set('$limit','1000');u.searchParams.set('$offset',String(page*1000));const rows=await json(u);if(!Array.isArray(rows)||rows.some(r=>!r||typeof r!=='object'))throw Error('Invalid CDC response');all.push(...rows);if(rows.length<1000)return all;}throw Error('CDC response exceeds bounded pagination');}
+ function series(rows,dateField,valueField,minDate,max=Infinity){const byDate=new Map();for(const row of rows){if(row[valueField]==null)continue;const day=date(row[dateField]),value=numeric(row[valueField]);if(value==null||value>max)throw Error('Invalid public series value');if(day<minDate)continue;if(byDate.has(day)&&byDate.get(day)!==value)throw Error('Conflicting weekly public observations');byDate.set(day,value);}const points=[...byDate].sort((a,b)=>a[0].localeCompare(b[0]));if(!points.length)throw Error('No usable public observations');return points;}
+ function retainFresh(next,prior){for(const key of Object.keys(next)){const old=prior?.[key]?.at(-1)?.[0],now=next[key]?.at(-1)?.[0];if(old&&now&&now<old)throw Error('Public observation window regressed');}return next;}
+ function installRefresh(run,ms=6*3600e3){let inflight=null,checked=0;function refresh(){if(inflight)return inflight;checked=Date.now();inflight=Promise.resolve().then(run).finally(()=>{inflight=null;});return inflight;}setInterval(()=>{if(!document.hidden)refresh();},ms);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-checked>=ms)refresh();});return refresh;}
+ function escape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ root.HealthPublicData={json,numeric,date,socrata,series,retainFresh,installRefresh,escape};
+})(globalThis);
+
+</script>
+<!-- HEALTH_PUBLIC_RUNTIME_END -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>U.S. Respiratory Virus Surveillance — flu, COVID-19 &amp; RSV, what's circulating now</title>
@@ -425,7 +442,7 @@ footer b{color:var(--ink2)}
 <!-- CONSOLE_RESPONSE_MOUNT_END -->
 
 <div id="splash">loading respiratory-virus surveillance…</div>
-<div id="disc"><b>Unofficial · descriptive surveillance, not a forecast.</b> CDC surveillance <b>indicators</b> (% of visits, hospitalization rates, wastewater levels) — <b>not</b> case counts. The most recent 1–2 weeks are preliminary and revise. Not for individual, clinical, or policy decisions. If you are sick and worried about your health, contact a clinician or call <b>811</b>/your local health line; for an emergency call <b>911</b>.</div>
+<div id="disc"><b>Unofficial · descriptive surveillance, not a forecast.</b> CDC surveillance <b>indicators</b> (% of visits, hospitalization rates, wastewater levels) — <b>not</b> case counts. The most recent 1–2 weeks are preliminary and revise. Not for individual, clinical, or policy decisions. If you are sick and worried about your health, contact a clinician or your local health service; for an emergency call <b>911</b>.</div>
 <div class="wrap">
   <header>
     <h1>U.S. Respiratory Virus Surveillance<span class="sub">What's circulating now — influenza, COVID-19 and RSV across outpatient visits, hospitalizations, and wastewater</span></h1>
@@ -478,12 +495,12 @@ footer b{color:var(--ink2)}
 
   <!-- (c) WASTEWATER -->
   <details class="card" open id="c-ww">
-    <summary><span class="ico">≈</span> Wastewater viral activity <span class="badge b-meas">measured</span></summary>
+    <summary><span class="ico">≈</span> Wastewater viral activity <span class="badge b-int">derived</span></summary>
     <div class="body">
-      <div class="small muted" style="margin-bottom:6px">A leading "what's in the community" signal: CDC's National Wastewater Surveillance System (NWSS) wastewater viral-activity level (WVAL). Here we summarize each week as the <b>mean site activity category</b> across all reporting sites, on a 1 (Very Low) → 5 (Very High) scale.</div>
+      <div class="small muted" style="margin-bottom:6px">A leading "what's in the community" signal: CDC's National Wastewater Surveillance System (NWSS) wastewater viral-activity level (WVAL). Here we summarize each week as the <b>unweighted derived mean of ordinal site categories</b> across all reporting sites, on a 1 (Very Low) → 5 (Very High) scale. This interpretive score is not an official national WVAL or a population-weighted concentration.</div>
       <div class="grid3" id="wwstats"></div>
       <div class="chartwrap">
-        <div class="small muted" style="margin-bottom:4px">National mean wastewater activity level, weekly (Sep 2024→now). 1 = Very Low … 5 = Very High.</div>
+        <div class="small muted" style="margin-bottom:4px">Unweighted mean of site activity categories, weekly (Sep 2024→now). 1 = Very Low … 5 = Very High.</div>
         <div id="wwchart"></div>
         <div class="legrow" id="wwleg"></div>
       </div>
@@ -493,7 +510,7 @@ footer b{color:var(--ink2)}
 
   <!-- (d) STATE VIEW -->
   <details class="card" open id="c-state">
-    <summary><span class="ico">▤</span> State wastewater activity — latest week <span class="badge b-meas">measured</span>
+    <summary><span class="ico">▤</span> State wastewater activity — latest week <span class="badge b-int">derived</span>
       <span class="tools"><span class="seg" id="stsel"><button data-k="covid" class="on">COVID-19</button><button data-k="flu">Influenza A</button><button data-k="rsv">RSV</button></span></span>
     </summary>
     <div class="body">
@@ -619,7 +636,7 @@ function render(){
  const S=SNAP;
  $('vintchip').innerHTML='<b>latest week '+vintLabel(S.vintage_nssp)+'</b>';
  $('vintfoot').textContent='ED visits '+vintLabel(S.vintage_nssp)+' · hospitalizations '+vintLabel(S.vintage_resp)+' · wastewater '+vintLabel(S.vintage_wval)+(S.embedded?' (embedded '+S.embedded+')':'');
- $('srcchip').innerHTML=LIVE?'<span class="badge b-meas">live</span> CDC Socrata':'<span class="badge b-mod">snapshot</span> embedded';
+ $('srcchip').textContent=healthSourceText();
  // staleness check (epoch-days convention)
  const todayD=EPOCH_DAYS();
  const a=(S.vintage_nssp||'').split('-').map(Number);
@@ -669,7 +686,7 @@ function renderHosp(){
  // which is highest right now
  const cur={};order.forEach(k=>{const r=S.resp[k].filter(p=>p[1]!=null);cur[k]=r.length?r[r.length-1][1]:0;});
  const top=order.sort((x,y)=>cur[y]-cur[x])[0];
- $('hospnarr').innerHTML='Weekly new-hospitalization rates from CDC’s RESP-NET surveillance. The latest 2 weeks (shaded in each sparkline) are preliminary. Direction over the last ~4 weeks is the signal; <span class="up">▲</span> rising is more activity, <span class="dn">▼</span> falling is less. The three viruses sit on the <b>same per-100k scale</b> here, so within this panel they are comparable — but a winter flu peak (~13/100k in 2024–25) dwarfs a typical summer week. <span class="badge b-meas">measured</span> RESP-NET, observed rates, overall ages.';
+ $('hospnarr').innerHTML='Weekly new-hospitalization rates from CDC’s RESP-NET surveillance. The latest 2 weeks (shaded in each sparkline) are preliminary. Direction over the last ~4 weeks is the signal; <span class="up">▲</span> rising is more activity, <span class="dn">▼</span> falling is less. The three networks use a <b>per-100k unit</b>, but their catchments, case detection and testing differ; this is not a single matched national population — but a winter flu peak (~13/100k in 2024–25) dwarfs a typical summer week. <span class="badge b-meas">measured</span> RESP-NET, observed rates, overall ages.';
 }
 
 function renderWW(){
@@ -692,11 +709,13 @@ function renderWW(){
  $('wwleg').innerHTML=order.map(k=>'<span class="chip"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+VHEX[k]+'"></span>'+lab[k]+'</span>').join('')+
    ' <span class="chip muted">1 Very Low · 3 Moderate · 5 Very High</span>';
  const covCur=S.wval_nat.covid.filter(p=>p[1]!=null).slice(-1)[0];
- $('wwnarr').innerHTML='Wastewater reflects virus shed by everyone in a sewershed — symptomatic or not — so it can <b>lead</b> clinical indicators by days to a week or two. Here each week is summarized as the <b>mean site activity category</b> (1 Very Low → 5 Very High) across all reporting NWSS sites. Latest national COVID level: <b>'+fmt1(covCur?covCur[1]:null)+'/5</b>. The newest 1–2 weeks are preliminary. <span class="badge b-meas">measured</span> CDC NWSS. This is an activity <b>level</b>, not a concentration or case count.';
+ $('wwnarr').innerHTML='Wastewater reflects virus shed by everyone in a sewershed — symptomatic or not — so it can <b>lead</b> clinical indicators by days to a week or two. Here each week is an <b>unweighted, derived mean of ordinal site categories</b> (1 Very Low → 5 Very High) across all reporting NWSS sites. Latest national COVID level: <b>'+fmt1(covCur?covCur[1]:null)+'/5</b>. The newest 1–2 weeks are preliminary. <span class="badge b-int">interpretive</span> derived from CDC NWSS site categories, not an official CDC national aggregate or a population-weighted concentration. Changing site coverage matters. This is an ordinal visualization <b>score</b>, not a concentration or case count.';
 }
 
 function renderStates(){
  const S=SNAP,k=STSEL;const rows=[];
+ const dated=S.wval_state_weeks&&S.wval_state_weeks[k];
+ let weekLabel=document.getElementById('stweek');if(!weekLabel){weekLabel=document.createElement('div');weekLabel.id='stweek';weekLabel.className='small muted';document.getElementById('stlead').before(weekLabel);}weekLabel.textContent='Site-category observation week: '+(dated||S.vintage_wval)+' · unweighted derived mean; reporting sites vary.';
  Object.keys(S.wval_states).forEach(st=>{const v=S.wval_states[st][k];if(v==null)return;rows.push({st,v});});
  rows.sort((a,b)=>b.v-a.v);
  $('stlead').innerHTML=rows.map((r,i)=>{
@@ -715,49 +734,19 @@ function hex2rgba(h,a){if(h.startsWith('var'))return h;const n=parseInt(h.slice(
 [...document.querySelectorAll('#stsel button')].forEach(b=>b.onclick=()=>{STSEL=b.dataset.k;[...document.querySelectorAll('#stsel button')].forEach(x=>x.classList.toggle('on',x===b));renderStates();});
 
 // ---------- live fetch (graceful) ----------
-function soc(ds,params){const u=new URL(BASE+ds+'.json');for(const[kk,vv]of params)u.searchParams.append(kk,vv);return fetch(u).then(r=>{if(!r.ok)throw r.status;return r.json();});}
+// ---------- public source refresh: independent feed transactions ----------
 const CATVAL={'Very Low':1,'Low':2,'Moderate':3,'High':4,'Very High':5};
-async function fetchCDC(){
- $('srcchip').innerHTML='<span class="badge b-mod">…</span> contacting CDC';
- try{
-  // (a) NSSP ED visits, United States
-  const nssp={covid:[],flu:[],rsv:[]};const pmapN={'COVID-19':'covid','Influenza':'flu','RSV':'rsv'};
-  for(const pat of ['COVID-19','Influenza','RSV']){
-   const d=await soc(DS.nssp,[['$where',"geography='United States' AND pathogen='"+pat+"'"],['$select','week_end,percent_visits'],['$order','week_end'],['$limit','600']]);
-   nssp[pmapN[pat]]=d.filter(r=>r.percent_visits!=null&&r.week_end>='2023-10-01').map(r=>[r.week_end.slice(0,10),+(+r.percent_visits).toFixed(1)]);
-  }
-  // (b) RESP-NET hospitalization
-  const resp={flu:[],covid:[],rsv:[]};const nets={'FluSurv-NET':'flu','COVID-NET':'covid','RSV-NET':'rsv'};
-  for(const net of Object.keys(nets)){
-   const d=await soc(DS.resp,[['$where',"surveillance_network='"+net+"' AND age_group='Overall' AND sex='Overall' AND race_ethnicity='Overall' AND site='Overall' AND rate_type='Observed' AND week_ending_date>='2023-08-01'"],['$select','week_ending_date,weekly_rate'],['$order','week_ending_date'],['$limit','3000']]);
-   resp[nets[net]]=d.filter(r=>r.weekly_rate!=null).map(r=>[r.week_ending_date.slice(0,10),+(+r.weekly_rate).toFixed(1)]);
-  }
-  // (c) WVAL national mean category, weekly, via GROUP BY
-  const wval_nat={covid:[],flu:[],rsv:[]};const pmapW={'SARS-CoV-2':'covid','Influenza A virus':'flu','RSV':'rsv'};
-  let latestWk='';
-  for(const pat of Object.keys(pmapW)){
-   const d=await soc(DS.wval,[['$select','week_end,site_wval_category,count(1) as n'],['$where',"pathogen_target='"+pat+"' AND week_end>='2024-09-01'"],['$group','week_end,site_wval_category'],['$limit','6000']]);
-   const wk={};d.forEach(r=>{const c=r.site_wval_category;if(!(c in CATVAL))return;const w=r.week_end.slice(0,10);(wk[w]=wk[w]||{})[c]=+r.n;});
-   const weeks=Object.keys(wk).sort();
-   wval_nat[pmapW[pat]]=weeks.map(w=>{let tot=0,s=0;for(const c in wk[w]){tot+=wk[w][c];s+=CATVAL[c]*wk[w][c];}return [w,tot?+(s/tot).toFixed(2):null];});
-   if(weeks.length&&weeks[weeks.length-1]>latestWk)latestWk=weeks[weeks.length-1];
-  }
-  // (d) per-state latest week
-  const wval_states={};
-  for(const pat of Object.keys(pmapW)){
-   const d=await soc(DS.wval,[['$select','state_territory,site_wval_category,count(1) as n'],['$where',"pathogen_target='"+pat+"' AND week_end='"+latestWk+"'"],['$group','state_territory,site_wval_category'],['$limit','6000']]);
-   const st={};d.forEach(r=>{const c=r.site_wval_category;if(!(c in CATVAL))return;(st[r.state_territory]=st[r.state_territory]||{})[c]=+r.n;});
-   for(const s in st){let tot=0,sum=0;for(const c in st[s]){tot+=st[s][c];sum+=CATVAL[c]*st[s][c];}if(tot){(wval_states[s]=wval_states[s]||{})[pmapW[pat]]=+(sum/tot).toFixed(2);}}
-  }
-  const vN=nssp.flu.filter(p=>p[1]!=null).slice(-1)[0];
-  const vR=resp.flu.concat(resp.covid).filter(p=>p[1]!=null).map(p=>p[0]).sort().slice(-1)[0];
-  SNAP=Object.assign({},SNAP,{nssp,resp,wval_nat,wval_states,
-    vintage_nssp:vN?vN[0]:SNAP.vintage_nssp,
-    vintage_resp:vR||SNAP.vintage_resp,
-    vintage_wval:latestWk||SNAP.vintage_wval,embedded:SNAP.embedded});
-  LIVE=true;SNAP.responseCheckedAt=new Date().toISOString();render();
- }catch(e){LIVE=false;render();$('srcchip').innerHTML='<span class="badge b-mod">snapshot</span> embedded (live refresh unavailable)';}
-}
+const feedStates={ed:{state:'embedded'},hospital:{state:'embedded'},wastewater:{state:'embedded'}};
+function healthSourceText(){return Object.entries(feedStates).map(([key,f])=>key+': '+(f.state==='downloaded'?'downloaded '+f.downloadedAt:f.state==='checking'?'checking; retaining last good':f.state==='unavailable'?'unavailable; retaining '+(f.downloadedAt?'last download':'embedded snapshot'):'embedded snapshot')).join(' · ');}
+async function feedTransaction(key,run){const status=feedStates[key];status.state='checking';status.checkedAt=new Date().toISOString();try{const apply=await run();apply();status.state='downloaded';status.downloadedAt=new Date().toISOString();status.error=null;}catch(e){status.state='unavailable';status.error=e.message;}SNAP.responseCheckedAt=new Date().toISOString();LIVE=Object.values(feedStates).some(f=>!!f.downloadedAt);render();}
+const fetchCDC=HealthPublicData.installRefresh(async function(){
+ const h=HealthPublicData;
+ await Promise.all([
+  feedTransaction('ed',async()=>{const next={};await Promise.all([['COVID-19','covid'],['Influenza','flu'],['RSV','rsv']].map(async([name,key])=>{const rows=await h.socrata(DS.nssp,[['$where',"geography='United States' AND pathogen='"+name+"' AND week_end>='2023-10-01'"],['$select','week_end,percent_visits'],['$order','week_end']]);next[key]=h.series(rows,'week_end','percent_visits','2023-10-01',100);}));h.retainFresh(next,SNAP.nssp);const vintage=next.flu.at(-1)[0];return ()=>{SNAP={...SNAP,nssp:next,vintage_nssp:vintage};};}),
+  feedTransaction('hospital',async()=>{const next={};await Promise.all([['FluSurv-NET','flu'],['COVID-NET','covid'],['RSV-NET','rsv']].map(async([name,key])=>{const where="surveillance_network='"+name+"' AND age_category='Overall' AND sex='All' AND race='All' AND state='Overall' AND rate_type='Observed' AND data_type='Weekly Rate' AND estimate_type='Rate per 100,000' AND date_type='Week Ending Date' AND date>='2023-08-01'";const rows=await h.socrata(DS.resp,[['$where',where],['$select','date,estimate'],['$order','date']]);next[key]=h.series(rows,'date','estimate','2023-08-01');}));h.retainFresh(next,SNAP.resp);const vintage=Object.values(next).map(s=>s.at(-1)[0]).sort().at(-1);return ()=>{SNAP={...SNAP,resp:next,vintage_resp:vintage};};}),
+  feedTransaction('wastewater',async()=>{const next={},states={},counts={},stateWeeks={};await Promise.all([['SARS-CoV-2','covid'],['Influenza A virus','flu'],['RSV','rsv']].map(async([name,key])=>{const rows=await h.socrata(DS.wval,[['$select','week_end,site_wval_category,count(1) as n'],['$where',"pathogen_target='"+name+"' AND week_end>='2024-09-01'"],['$group','week_end,site_wval_category'],['$order','week_end,site_wval_category']]);const weeks={};for(const r of rows){if(!(r.site_wval_category in CATVAL))continue;const day=h.date(r.week_end),n=h.numeric(r.n);if(!Number.isSafeInteger(n)||n<=0)throw Error('Invalid site-category count');const w=weeks[day]??={n:0,total:0};w.n+=n;w.total+=n*CATVAL[r.site_wval_category];}next[key]=Object.entries(weeks).sort(([a],[b])=>a.localeCompare(b)).map(([day,r])=>[day,r.total/r.n]);if(!next[key].length)throw Error('No dated wastewater categories');counts[key]=Object.fromEntries(Object.entries(weeks).map(([day,r])=>[day,r.n]));const latest=next[key].at(-1)[0];stateWeeks[key]=latest;const sr=await h.socrata(DS.wval,[['$select','state_territory,site_wval_category,count(1) as n'],['$where',"pathogen_target='"+name+"' AND week_end='"+latest+"'"],['$group','state_territory,site_wval_category'],['$order','state_territory,site_wval_category']]);const per={};for(const r of sr){if(!(r.site_wval_category in CATVAL))continue;const n=h.numeric(r.n);if(!Number.isSafeInteger(n)||n<=0||!r.state_territory)throw Error('Invalid state-category count');const v=per[r.state_territory]??={n:0,total:0};v.n+=n;v.total+=n*CATVAL[r.site_wval_category];}if(!Object.keys(per).length)throw Error('No dated state wastewater categories');for(const [state,r]of Object.entries(per))(states[state]??={})[key]=r.total/r.n;}));h.retainFresh(next,SNAP.wval_nat);const vintage=Object.values(stateWeeks).sort().at(-1);return ()=>{SNAP={...SNAP,wval_nat:next,wval_states:states,wval_site_counts:counts,wval_state_weeks:stateWeeks,vintage_wval:vintage};};})
+ ]);
+});
 
 // ---------- boot ----------
 function boot(){$('splash').style.display='none';render();fetchCDC();}
@@ -905,7 +894,7 @@ if(document.readyState!=='loading')boot();else document.addEventListener('DOMCon
     var q=last?freshness(last[0]+'T00:00:00Z',35):'missing';
     var evidence=[fact('ed','Emergency-department visits associated with '+label,last?last[1]:null,'%',last && last[0],cfg.source,q,'measured','Syndromic surveillance share; not an individual infection probability. Last weeks may be preliminary. A >35-day display-age guard marks evidence stale, not a CDC clinical threshold.',checked),
       fact('hospital','Hospitalization rate · '+label,h?h[1]:null,'per 100,000',h && h[0],'https://data.cdc.gov/resource/kvib-3txy.json',h?freshness(h[0]+'T00:00:00Z',35):'missing','measured','Different surveillance population and reporting period from ED visits; not added to ED shares.',checked),
-      fact('wastewater','National wastewater activity category · '+label,w?w[1]:null,'ordinal activity category 1–5',w && w[0],'https://data.cdc.gov/resource/atcp-73re.json',w?freshness(w[0]+'T00:00:00Z',35):'missing','interpretive','Ordinal categories are not case counts and are not averaged with ED or hospitalization values.',checked)];
+      fact('wastewater','Unweighted derived site-category mean · '+label,w?w[1]:null,'ordinal activity category 1–5',w && w[0],'https://data.cdc.gov/resource/atcp-73re.json',w?freshness(w[0]+'T00:00:00Z',35):'missing','interpretive','Unweighted mean of ordinal reporting-site categories, not an official CDC national WVAL or a population-weighted concentration. Site coverage varies; this is not averaged with ED or hospitalization values.',checked)];
     var target=last?new Date(Date.parse(last[0]+'T00:00:00Z')-28*86400000).toISOString().slice(0,10):'', prev=ed.find(function(p){return p[0]===target;}), delta=last && prev?last[1]-prev[1]:null;
     evidence.push(fact('four-week-change','ED share change versus exactly four weeks earlier',round(delta),'percentage points',last && last[0],cfg.source,q,'interpretive','A descriptive direction check with no validated operational cutoff; revisions, composition and co-circulation matter.',checked));
     var ov={5:assess(5,'Four-week ED direction (temporal persistence proxy)',delta==null?'unknown':delta>0?'triggered':'clear',['ed','four-week-change'],'A positive four-week change prompts verification and preparedness review; flat/decreasing does not establish safety.','National weekly direction is not local persistence, individual risk or an automatic clinical operation.')};

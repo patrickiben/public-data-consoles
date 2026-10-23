@@ -2,8 +2,10 @@
 
 A collection of **32 self-contained, browser-only dashboards** built on **public data feeds and dated snapshots**.
 Every console is a single HTML file: open it (or visit the GitHub Pages URL) and it runs — no install,
-no account, no build step or server setup for visitors. The grid console also checks a published data
-file for automatic updates; its embedded measurements remain available offline.
+no account, no build step or server setup for visitors. Grid, Coastal, NHS Scotland and Resilience Telemetry also check published data files for
+automatic updates; embedded measurements remain available offline. See the
+[dashboard update guide](https://patrickiben.github.io/public-data-consoles/data-updates.html)
+for what each console can populate automatically and which inputs remain personal or modeled.
 
 These are **descriptive decision-support** tools, not predictions. Each console labels its data as
 *measured* (public observations, with timestamps), *modeled* (published estimates, cited), or *demo* (clearly-labeled
@@ -72,49 +74,49 @@ See the [field guide](https://patrickiben.github.io/public-data-consoles/respons
 
 | Console | Data | Sources |
 |---|---|---|
-| [NHS Scotland — Hospital Strain](consoles/nhs-scotland-strain/) | Dated baseline + what-if, Scotland | Packaged Public Health Scotland reports, with reporting periods shown |
-| [USAID Withdrawal — Consequence](consoles/usaid-consequence/) | Live + modeled | USAspending API + cited published estimates |
+| [NHS Scotland — Hospital Strain](consoles/nhs-scotland-strain/) | Automatically updated reports + what-if, Scotland | Public Health Scotland reports, with separate reporting periods |
+| [USAID Withdrawal — Consequence](consoles/usaid-consequence/) | Agency reports + dated scenarios | USAspending API + cited published estimates |
 | [VA Medical Center — Strain](consoles/va-strain/) | Demo template | Labeled demo data + hooks for internal feeds |
 
 **U.S. Public Health**
 
 | Console | Data | Sources |
 |---|---|---|
-| [U.S. Overdose Surveillance](consoles/us-overdose-surveillance/) | Live, U.S. | CDC VSRR provisional overdose counts |
-| [U.S. Respiratory Virus Surveillance](consoles/us-respiratory-surveillance/) | Live, U.S. | CDC NSSP / RESP-NET / NWSS wastewater |
+| [U.S. Overdose Surveillance](consoles/us-overdose-surveillance/) | Provisional reports + snapshot, U.S. | CDC VSRR provisional overdose counts |
+| [U.S. Respiratory Virus Surveillance](consoles/us-respiratory-surveillance/) | Weekly surveillance + snapshot, U.S. | CDC NSSP / RESP-NET / NWSS wastewater |
 
 **Global Health Atlas**
 
 | Console | Data | Sources |
 |---|---|---|
-| [Global Health Atlas](consoles/global-health-atlas/) | Live, global | World Bank Indicators API |
+| [Global Health Atlas](consoles/global-health-atlas/) | Annual public data + snapshot | World Bank Indicators API |
 | [Global Cancer Burden](consoles/global-cancer/) | Modeled | IARC GLOBOCAN 2022 |
-| [HIV, TB & Malaria](consoles/global-hiv-tb-malaria/) | Live + snapshot | World Bank Open Data |
-| [Global NCD Burden & Risk Factors](consoles/global-ncd-burden/) | Live + snapshot | World Bank Indicators API |
-| [Global Mental Health & Suicide](consoles/global-mental-health/) | Live, global | World Bank Indicators API |
-| [Global Nutrition & Food Security](consoles/global-nutrition/) | Live + snapshot | World Bank Open Data |
-| [Global Immunization & Vaccine Coverage](consoles/global-immunization/) | Live + snapshot | World Bank (WHO/UNICEF WUENIC) |
-| [Maternal, Newborn & Child Health](consoles/global-maternal-child-health/) | Live, global | World Bank Indicators API |
+| [HIV, TB & Malaria](consoles/global-hiv-tb-malaria/) | Annual public data + snapshot | World Bank Open Data |
+| [Global NCD Burden & Risk Factors](consoles/global-ncd-burden/) | Annual public data + snapshot | World Bank Indicators API |
+| [Global Mental Health & Suicide](consoles/global-mental-health/) | Annual public data + snapshot | World Bank Indicators API |
+| [Global Nutrition & Food Security](consoles/global-nutrition/) | Annual public data + snapshot | World Bank Open Data |
+| [Global Immunization & Vaccine Coverage](consoles/global-immunization/) | Annual public data + snapshot | World Bank (WHO/UNICEF WUENIC) |
+| [Maternal, Newborn & Child Health](consoles/global-maternal-child-health/) | Annual public data + snapshot | World Bank Indicators API |
 | [Neglected Tropical Diseases](consoles/global-ntds/) | Modeled | WHO NTD programme |
-| [Global Demographic Transition & Aging](consoles/global-demographic-transition/) | Live, global | World Bank Indicators API |
-| [Global Health Systems & Financing](consoles/global-health-systems/) | Live + snapshot | World Bank Indicators API |
-| [Global Road Safety & Injury](consoles/global-road-safety/) | Live + snapshot | World Bank / WHO comparable estimates |
-| [Air Pollution & Environmental Health](consoles/global-air-pollution/) | Live, global | World Bank Indicators API |
-| [Global WASH](consoles/global-wash/) | Live + snapshot | World Bank / WHO-UNICEF JMP |
+| [Global Demographic Transition & Aging](consoles/global-demographic-transition/) | Annual public data + snapshot | World Bank Indicators API |
+| [Global Health Systems & Financing](consoles/global-health-systems/) | Annual public data + snapshot | World Bank Indicators API |
+| [Global Road Safety & Injury](consoles/global-road-safety/) | Annual public data + snapshot | World Bank / WHO comparable estimates |
+| [Air Pollution & Environmental Health](consoles/global-air-pollution/) | Annual public data + snapshot | World Bank Indicators API |
+| [Global WASH](consoles/global-wash/) | Annual public data + snapshot | World Bank / WHO-UNICEF JMP |
 | [Antimicrobial Resistance](consoles/antimicrobial-resistance/) | Modeled | GRAM/IHME + CDC AR Threats |
 
 **Markets**
 
 | Console | Data | Sources |
 |---|---|---|
-| [Resilience Telemetry](consoles/resilience-telemetry/) | Live + snapshot | Binance.US, Frankfurter FX, embedded equity snapshot |
+| [Resilience Telemetry](consoles/resilience-telemetry/) | Live + automatically updated macro reports + snapshot | Binance.US, Frankfurter FX, official FRED downloads and equity fallback |
 
 **Affording Care**
 
 | Console | Data | Sources |
 |---|---|---|
-| [Prescription Savings Finder](consoles/prescription-savings/) | Live + reference | CMS NADAC drug prices and referenced assistance options |
-| [Medical Cost Abroad](consoles/medical-cost-abroad/) | Modeled estimates | Published procedure-price ranges, illustrative flights and lodging |
+| [Prescription Savings Finder](consoles/prescription-savings/) | Current-release references | CMS NADAC acquisition-cost records and referenced assistance options |
+| [Medical Cost Abroad](consoles/medical-cost-abroad/) | Illustrative planning ranges | Procedure, flight and lodging ranges; verify actual provider/travel quotes |
 | [Medical Debt Assistant](consoles/medical-debt-assistant/) | Reference | FDCPA / FCRA rights and nonprofit-hospital charity-care guidance |
 
 **Get Help**
@@ -136,9 +138,9 @@ reports**, with measurement dates shown, rather than a real-time operational fee
 
 ## How they work
 
-Most consoles fetch public APIs **client-side**, directly from your browser. The grid's EIA CSVs are
-processed by a scheduled GitHub Actions job and published with the site, avoiding browser CORS and
-provider-key requirements. Running on a real
+Most consoles fetch public APIs **client-side**, directly from your browser. Grid EIA files, Coastal
+context, NHS Scotland reports and Resilience FRED series are also processed by scheduled GitHub
+Actions jobs and published with the site, avoiding browser CORS and provider-key requirements. Running on a real
 `https://` origin (GitHub Pages) is usually *more* reliable than opening the file locally, because some
 public APIs reject `file://` requests. A few feeds are rate-limited or CORS-restricted and degrade
 gracefully (the console falls back to an embedded snapshot or shows a clear message).
@@ -173,6 +175,12 @@ When Google Chrome is already installed, use `CHROME_CHANNEL=chrome npm test` in
 the bundled Chromium. Run `python3 scripts/embed_response_plans.py --check` to verify that the
 single-file consoles contain the current shared checklist and domain adapters. After editing those
 maintainer sources, regenerate with `python3 scripts/embed_response_plans.py` before testing/publishing.
+
+The World Bank and CDC public-data helpers are also embedded into the single-file pages. Run
+`python3 scripts/embed_worldbank_runtime.py --check` and
+`python3 scripts/embed_health_runtime.py --check` to check their maintained sources; omit `--check`
+after editing a helper to regenerate its pages. Browser checks include dated/partial source data,
+automatic refresh, source failures and location-selection races.
 
 ## Automatic EIA grid updates
 
@@ -244,9 +252,63 @@ Maintainers can run `python3 scripts/refresh_coastal_impact.py` to reacquire the
 payload is [impact-context.json](consoles/coastal-water-resilience/data/impact-context.json). Collectors
 use Python's standard library; no spreadsheet or GIS package is required on the runner.
 
-## Refresh the embedded FRED snapshot
+## Automatic NHS Scotland reports
 
-The Resilience Telemetry macro data has a portable
+[NHS Scotland](https://patrickiben.github.io/public-data-consoles/consoles/nhs-scotland-strain/)
+populates A&E, all-specialty board occupancy and delayed-discharge reports automatically. Its
+[workflow](https://github.com/patrickiben/public-data-consoles/actions/workflows/update-nhs.yml)
+checks the official PHS downloads every **Tuesday at 13:43 UTC**. Complete CSV record counts are
+checked against CKAN; exact category selections avoid overlapping attendance, specialty and age/reason
+aggregates. Thirty ED weeks, territorial-board coverage, source identities and counts must validate
+before the embedded page and portable JSON are published.
+
+The page checks updates on opening, every six visible hours, on return when due and by button. It
+retains last-good reports on incomplete, regressed or unavailable updates and preserves scenario
+selection. Weekly A&E, quarterly beds and monthly delays keep separate periods. The 95% line is a
+planning reference for the Type-1 subset, not an assessment of the full A&E access standard. The
+composite score and what-if adjustments remain interpretive; no mortality or live-bed estimate is inferred.
+
+Run `python3 scripts/refresh_nhs.py` to collect and `python3 scripts/refresh_nhs.py --check` to verify
+portable/embedded agreement. [Source definitions and operator guide](consoles/nhs-scotland-strain/wiki.html).
+
+## Automatic public indicators across the other consoles
+
+The 12 World Bank dashboards now request through the current calendar year and select the latest
+nonmissing observation for each country/indicator. Complete pagination, source identity, finite values
+and individual reporting years are checked before updates; a new download does not make an annual
+estimate a current incident. Open pages check again every six visible hours. USAID's economic-dependency
+panel uses the same public-data checks while preserving its separate dated funding and health scenarios.
+Older source editions are rejected, and missing/older country observations retain labeled last-good values.
+
+Respiratory surveillance refreshes ED, RESP-NET and wastewater sources independently, so one unavailable
+feed cannot freeze the others. Wastewater summaries are unweighted derived means of site categories,
+not an official national WVAL. Overdose downloads use bounded pagination and retain individual
+jurisdiction/category periods; missing or regressed records keep labeled last-good values. Both consoles
+check on opening, by button and every six visible hours.
+
+Prescription searches select the latest weekly NADAC release before matching records, and show NDC,
+unit and individual effective dates. Acquisition costs are not retail quotes. Broad FDA name-query
+results do not establish product-level equivalence or substitution; an exact professional product
+check remains necessary. Annual dataset discovery refreshes automatically, while a drug search is
+still required because medication selection is a personal input.
+
+River plans now use NOAA's local stage thresholds and published impact statements where supplied,
+with observation/forecast basis and times. Earthquake plans include official USGS PAGER modeled
+population exposure. Those products do not establish actual outages, losses or casualties. The
+[update guide](https://patrickiben.github.io/public-data-consoles/data-updates.html) covers all 32 consoles,
+including public-reference and synthetic modules that cannot obtain real operational or personal inputs.
+
+## Automatic macro updates and manual FRED replay
+
+Resilience Telemetry checks all 19 official FRED CSVs daily at **23:43 UTC** through
+[its scheduled workflow](https://github.com/patrickiben/public-data-consoles/actions/workflows/update-fred.yml).
+The browser checks the public macro package at startup, hourly while visible, on foreground return and
+through its update button. Complete validated updates recompute existing macro-dependent panels; failures
+preserve last-good data. Measurement periods remain separate from retrieval time. Equity/crypto/FX feeds
+and the dated CAPE/model reference are separate. Run `python3 scripts/refresh_fred.py --automated`
+for a bounded keyless source refresh.
+
+The macro data has a portable
 [snapshot and source manifest](consoles/resilience-telemetry/data/fred_snapshot.json),
 including official URLs, actual retrieval date and SHA-256 of each input CSV. Market prices and
 CAPE are separate snapshots. To update FRED, download all 19 official CSVs named by
@@ -260,7 +322,7 @@ python3 scripts/check_catalog.py
 python3 -m unittest discover -s tests -v
 ```
 
-Use the date the CSVs were actually retrieved. The refresh is offline, validates every file before
+Use the date the CSVs were actually retrieved. Manual replay is offline and validates every file before
 writing, preserves pinned starts and the four daily series' every-fifth-observation stride, retains
 older ICE spread history when the source window is truncated, and keeps claims in thousands.
 Missing files, invalid numbers, shifted sampling, stale tails and interior deletions stop the refresh

@@ -73,6 +73,12 @@ class PublishTests(unittest.TestCase):
         self.assertEqual(url, "https://example.github.io/public-data-consoles/consoles/coastal-water-resilience/data/impact-context.json")
         self.assertEqual(self.public_urls, [url])
 
+    def test_fred_snapshot_basename_is_verified_without_relaxing_relative_path_rules(self):
+        api = FakeGitHub([build("built")])
+        url = self.run_publish(api, data_path="consoles/resilience-telemetry/data/fred_snapshot.json")
+        self.assertEqual(url, "https://example.github.io/public-data-consoles/consoles/resilience-telemetry/data/fred_snapshot.json")
+        self.assertEqual(self.public_urls, [url])
+
     def test_invalid_data_paths_are_rejected_before_any_api_call(self):
         for path in ("../secret.json", "https://other.example/data.json", "/consoles/a/data/b.json",
                      "consoles/a/data/../b.json", "consoles/a/data/b.json?token=x", "consoles/a/data/b.json#part"):

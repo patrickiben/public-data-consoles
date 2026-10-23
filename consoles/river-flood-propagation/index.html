@@ -426,6 +426,12 @@ const CATLAB={0:'normal',1:'action',2:'minor flood',3:'moderate flood',4:'major 
 const CATCOL={0:'#34c98a',1:'#f0b429',2:'#f97316',3:'#ef5350',4:'#b46ff0'};
 CATLAB.unknown='status unavailable';CATCOL.unknown='#7e93ad';
 const sevOf=c=>CAT[c]!=null?CAT[c]:null;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const recent=(stamp,hours)=>Number.isFinite(Date.parse(stamp))&&Date.now()-Date.parse(stamp)>=-3600000&&Date.now()-Date.parse(stamp)<=hours*3600000;
+const number=v=>(typeof v!=='number'&&typeof v!=='string')||typeof v==='string'&&!v.trim()||!Number.isFinite(+v)||+v===-9999?null:+v;
+function convertUnit(value,from,to){const units={ft:['length',1],m:['length',3.280839895],cfs:['flow',1],kcfs:['flow',1000],cms:['flow',35.3146667],'m3/s':['flow',35.3146667]};const a=units[String(from).toLowerCase()],b=units[String(to).toLowerCase()];return number(value)!=null&&a&&b&&a[0]===b[0]?number(value)*a[1]/b[1]:null;}
+function thresholdOf(d,unit){const value=d.flood?.categories?.action;if(value!=null&&typeof value!=='object')return number(value);const flow=['cfs','kcfs','cms','m3/s'].includes(String(unit).toLowerCase());return convertUnit(value?.[flow?'flow':'stage'],d.flood?.[flow?'flowUnits':'stageUnits'],unit);}
+function matchedImpacts(n){const observed=recent(n.observedAt,6)?number(n.stage):null,forecast=recent(n.forecastAt,24)&&Date.parse(n.crestTime)>=Date.now()?number(n.crest):null;return (n.impacts||[]).flatMap(row=>{const stage=convertUnit(row.stage,n.impactUnit,n.unit);if(stage==null||typeof row.statement!=='string'||!row.statement.trim())return [];const basis=observed!=null&&observed>=stage?'observed':forecast!=null&&forecast>=stage?'forecast':null;return basis?[{statement:row.statement,threshold:stage,unit:n.unit,basis,validTime:basis==='observed'?n.observedAt:n.crestTime,issuedAt:basis==='forecast'?n.forecastAt:null}]:[];}).sort((a,b)=>b.threshold-a.threshold);}
 const responseState=window.RiverPropagationResponse={context:'St. Louis, MO',nodes:[],checkedAt:null,loading:true};
 let responseRun=0;
 function resetResponse(context){responseState.context=context;responseState.nodes=[];responseState.loading=true;responseState.checkedAt=new Date().toISOString();}
@@ -451,25 +457,28 @@ async function geocode(qq){const q=qq.trim();if(!q)return null;
  return null;}
 
 async function nearestGauge(lat,lon){const d=0.6;
- const j=await(await fetch('https://api.water.noaa.gov/nwps/v1/gauges?srid=EPSG_4326&bbox.xmin='+(lon-d)+'&bbox.xmax='+(lon+d)+'&bbox.ymin='+(lat-d)+'&bbox.ymax='+(lat+d))).json();
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);let j;try{const r=await fetch('https://api.water.noaa.gov/nwps/v1/gauges?srid=EPSG_4326&bbox.xmin='+(lon-d)+'&bbox.xmax='+(lon+d)+'&bbox.ymin='+(lat-d)+'&bbox.ymax='+(lat+d),{signal:controller.signal});if(!r.ok)throw new Error('NOAA lookup HTTP '+r.status);j=await r.json();if(j.error||!Array.isArray(j.gauges))throw new Error('NOAA lookup schema unavailable');}finally{clearTimeout(timer);}
  let best=null,bd=1e9;(j.gauges||[]).forEach(g=>{if(!g.latitude)return;const dd=Math.hypot((g.latitude-lat)*69,(g.longitude-lon)*55);if(dd<bd){bd=dd;best=g;}});
  return best?best.lid:null;}
 
-const cache={};
-async function gj(lid){if(cache[lid]!==undefined)return cache[lid];try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);const r=await fetch(NWPS+lid,{signal:c.signal});clearTimeout(to);cache[lid]=r.ok?await r.json():null;}catch(e){cache[lid]=null;}return cache[lid];}
+const cache={},cacheTime={};
+async function gj(lid){if(cache[lid]&&Date.now()-(cacheTime[lid]||0)<5*60000)return cache[lid];try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);let d;try{const r=await fetch(NWPS+lid,{signal:c.signal});if(!r.ok)throw new Error('NOAA metadata HTTP '+r.status);d=await r.json();}finally{clearTimeout(to);}if(!d||d.error||!d.lid||!Number.isFinite(d.latitude)||!Number.isFinite(d.longitude))throw new Error('Invalid NOAA gauge metadata');cache[lid]=d;cacheTime[lid]=Date.now();return d;}catch(e){return null;}}
 function node(d){if(!d||!d.latitude)return null;const cats=(d.flood&&d.flood.categories)||{};
  const ob=(d.status&&d.status.observed)||{},fo=(d.status&&d.status.forecast)||{};
  const cr=(d.flood&&d.flood.crests);const crArr=Array.isArray(cr)?cr:(cr&&typeof cr==='object'?Object.values(cr):[]);const crest=crArr.find(c=>c&&typeof c==='object'&&c.value!=null)||{};
+ const unit=ob.primaryUnit||d.flood?.stageUnits||null;
  return {lid:d.lid,name:d.name||d.lid,lat:d.latitude,lon:d.longitude,up:d.upstreamLid,dn:d.downstreamLid,
-  stage:ob.primary,unit:(d.flood&&d.flood.stageUnits)||'ft',obs:ob.floodCategory||null,observedAt:ob.validTime||null,fcst:fo.floodCategory||null,
-  thr:cats,crest:null,crestTime:null,forecastAt:null,fcstTime:fo.validTime||null};}
+  stage:number(ob.primary),unit,obs:recent(ob.validTime,6)?ob.floodCategory||null:null,observedAt:ob.validTime||null,fcst:fo.floodCategory||null,
+  thr:cats,actionThreshold:thresholdOf(d,unit),impacts:Array.isArray(d.flood?.impacts)?d.flood.impacts:[],impactUnit:d.flood?.stageUnits,
+  crest:null,crestTime:null,forecastAt:null,fcstTime:fo.validTime||null};}
 async function attachForecast(n){
- try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);let r;try{r=await fetch(NWPS+n.lid+'/stageflow/forecast',{signal:c.signal});if(!r.ok)return;const j=await r.json();n.forecastAt=j.issuedTime||null;const rows=(j.data||[]).filter(p=>p.primary!==null&&p.primary!==''&&Number.isFinite(+p.primary)&&Number.isFinite(Date.parse(p.validTime)));if(rows.length){const peak=rows.reduce((a,b)=>+b.primary>+a.primary?b:a);n.crest=+peak.primary;n.crestTime=peak.validTime;n.forecastRows=rows.map(p=>({time:p.validTime,stage:+p.primary}));}}finally{clearTimeout(to);}}catch(e){}
+ const reportedCategory=n.fcst;n.fcst=null;
+ try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);let r;try{r=await fetch(NWPS+n.lid+'/stageflow/forecast',{signal:c.signal});if(!r.ok)return;const j=await r.json();n.forecastAt=j.issuedTime||null;if(j.error||!Array.isArray(j.data)||!recent(n.forecastAt,24)){n.fcst=null;return;}const rows=j.data.map(p=>({stage:convertUnit(p.primary,j.primaryUnits||n.unit,n.unit),time:p.validTime})).filter(p=>p.stage!=null&&Number.isFinite(Date.parse(p.time))&&Date.parse(p.time)>=Date.now());if(rows.length){const peak=rows.reduce((a,b)=>b.stage>a.stage?b:a);n.crest=peak.stage;n.crestTime=peak.time;n.forecastRows=rows;n.fcst=reportedCategory;}else n.fcst=null;}finally{clearTimeout(to);}}catch(e){n.fcst=null;}
 }
 
 async function buildChain(startLid){if(!await gj(startLid))return [];
  const walk=async(dir,max)=>{const out=[];let lid=startLid,seen=new Set([startLid]);
-  for(let i=0;i<max;i++){const d=await gj(lid);if(!d||!d[dir]||seen.has(d[dir]))break;seen.add(d[dir]);out.push(d[dir]);lid=d[dir];}return out;};
+  for(let i=0;i<max;i++){const d=await gj(lid);if(!d)throw new Error('NOAA chain metadata unavailable for '+lid);if(!d[dir])break;if(seen.has(d[dir]))throw new Error('NOAA chain contains a repeated link');const next=await gj(d[dir]);if(!next)throw new Error('NOAA linked gauge unavailable: '+d[dir]);seen.add(d[dir]);out.push(d[dir]);lid=d[dir];}return out;};
  const [up,down]=await Promise.all([walk('upstreamLid',6),walk('downstreamLid',9)]);
  const order=[...up.reverse(),startLid,...down];const nodes=[];for(const l of order){const n=node(cache[l]);if(n)nodes.push(n);}
  return nodes;}
@@ -477,10 +486,11 @@ async function buildChain(startLid){if(!await gj(startLid))return [];
 function fmtLead(t){if(!t)return null;const h=(new Date(t)-Date.now())/3600000;if(h<0)return 'crest passed';if(h<1)return 'crest <1 h';if(h<48)return 'crest in ~'+Math.round(h)+' h';return 'crest in ~'+Math.round(h/24)+' d';}
 
 function render(nodes,startLid,placeName){G.clearLayers();
+ nodes.forEach(n=>{n.matchedImpacts=matchedImpacts(n);});
  responseState.nodes=nodes;responseState.context=placeName;responseState.loading=false;responseState.checkedAt=new Date().toISOString();
  nodes.forEach(n=>{n.sev=sevOf(n.obs);n.fsev=n.fcst&&CAT[n.fcst]!=null?CAT[n.fcst]:null;n.displaySeverity=n.sev==null&&n.fsev==null?'unknown':Math.max(n.sev??-1,n.fsev??-1);});
  // directed edges (upstream -> downstream)
- for(let i=0;i<nodes.length-1;i++){L.polyline([[nodes[i].lat,nodes[i].lon],[nodes[i+1].lat,nodes[i+1].lon]],{color:'#3a5f87',weight:3,opacity:.7}).addTo(G);
+ for(let i=0;i<nodes.length-1;i++){if(nodes[i].dn!==nodes[i+1].lid)continue;L.polyline([[nodes[i].lat,nodes[i].lon],[nodes[i+1].lat,nodes[i+1].lon]],{color:'#3a5f87',weight:3,opacity:.7}).addTo(G);
   const mx=(nodes[i].lat+nodes[i+1].lat)/2,my=(nodes[i].lon+nodes[i+1].lon)/2;const ang=Math.atan2(nodes[i+1].lat-nodes[i].lat,nodes[i+1].lon-nodes[i].lon)*180/Math.PI;
   L.marker([mx,my],{icon:L.divIcon({className:'',html:'<div style="color:#7fb6e8;font-size:15px;transform:rotate('+(-ang)+'deg)">▶</div>',iconSize:[16,16]})}).addTo(G);}
  nodes.forEach((n,i)=>{const col=CATCOL[n.displaySeverity];
@@ -499,7 +509,8 @@ function render(nodes,startLid,placeName){G.clearLayers();
   const separation=downstreamOfT&&n.crestTime&&transmitter.crestTime?(Date.parse(n.crestTime)-Date.parse(transmitter.crestTime))/3600000:null;
   return '<div class="node"><div class="n" style="background:'+col+'">'+(i+1)+'</div><div class="body">'+
    '<div class="name">'+n.name+(isT?'<span class="tag" style="background:#f0b42933;color:#f0b429">↑ upstream elevated</span>':'')+(isL?'<span class="tag" style="background:#ef535033;color:#ef5350">loudest now</span>':'')+'</div>'+
-   '<div class="meta">stage '+(n.stage!=null?n.stage+' '+n.unit:'—')+' · <span style="color:'+CATCOL[n.sev==null?'unknown':n.sev]+'">'+CATLAB[n.sev==null?'unknown':n.sev]+'</span>'+(n.fcst&&n.fsev!==n.sev?' → <span style="color:'+CATCOL[n.fsev]+'">'+CATLAB[n.fsev]+'</span>':'')+'</div>'+
+   '<div class="meta">stage '+(n.stage!=null?n.stage+' '+esc(n.unit||'unknown unit'):'—')+' · <span style="color:'+CATCOL[n.sev==null?'unknown':n.sev]+'">'+CATLAB[n.sev==null?'unknown':n.sev]+'</span>'+(n.fcst&&n.fsev!==n.sev?' → <span style="color:'+CATCOL[n.fsev]+'">'+CATLAB[n.fsev]+'</span>':'')+'</div><div class="meta">Observed '+esc(n.observedAt||'unavailable')+' · forecast issued '+esc(n.forecastAt||'unavailable')+' · action threshold '+(n.actionThreshold!=null?n.actionThreshold+' '+esc(n.unit):'unavailable')+'.</div>'+
+   (n.matchedImpacts.length?'<div class="small" data-nwps-impacts><b>NOAA published stage-impact context</b>'+n.matchedImpacts.slice(0,3).map(p=>'<p>'+esc(p.statement)+' <span class="muted">('+esc(p.basis)+' threshold '+p.threshold+' '+esc(p.unit)+'; valid '+esc(p.validTime)+')</span></p>').join('')+'<a href="https://water.noaa.gov/gauges/'+encodeURIComponent(n.lid.toLowerCase())+'" target="_blank" rel="noopener">Official gauge and instructions</a>. Conditional stage descriptions, not confirmed local damage.</div>':'<div class="meta">No published stage-impact threshold is matched by current usable reports; this is not an all-clear.</div>')+
    (lead?'<div class="lead" style="color:'+col+'"><i class="ti ti-clock"></i> '+lead+' — time from now to this forecast peak</div>':'')+
    (separation!=null?'<div class="meta">Forecast peak separation from '+transmitter.name+': '+Math.round(separation)+' h; not measured travel time or a safe-response deadline.</div>':'')+
    '</div></div>';}).join('');
@@ -510,19 +521,25 @@ function render(nodes,startLid,placeName){G.clearLayers();
   :'<div class="muted">No upstream gauge is in or approaching flood in this corridor, so there is no confirmed elevated gauge to rank. The chain above shows the inspected upstream/downstream order.</div>';
  // status line
  const nFlood=atRisk.length;
- $('status').innerHTML='<i class="ti ti-map-pin"></i> Main‑stem corridor through <b>'+placeName+'</b> — '+nodes.length+' gauges'+(nFlood?', <b style="color:#f0b429">'+nFlood+'</b> in or approaching flood'+(transmitter&&loudest&&transmitter.lid!==loudest.lid?'. Upstream <b>source</b>: '+transmitter.name+'; <b>loudest now</b>: '+loudest.name+'.':'.'):' — no confirmed elevated category in the available reports.');
+ $('status').innerHTML='<i class="ti ti-map-pin"></i> Main‑stem corridor through <b>'+placeName+'</b> — '+nodes.length+' gauges'+(nFlood?', <b style="color:#f0b429">'+nFlood+'</b> in or approaching flood'+(transmitter&&loudest&&transmitter.lid!==loudest.lid?'. Upstream elevated <b>watchpoint</b>: '+transmitter.name+'; <b>loudest now</b>: '+loudest.name+'.':'.'):' — no confirmed elevated category in the available reports.');
 }
 
-async function run(loc){const runId=++responseRun;resetResponse(loc.name);$('status').innerHTML='<span class="muted"><span class="spin"></span> finding the nearest river gauge…</span>';
+let activeLocation=null,refreshBusy=false;
+async function run(loc){activeLocation={...loc};const previous={...responseState},priorHTML={chain:$('chain').innerHTML,leverage:$('leverage').innerHTML};const runId=++responseRun;resetResponse(loc.name);$('status').innerHTML='<span class="muted"><span class="spin"></span> finding the nearest river gauge…</span>';
+ try{
  let lid;try{lid=await nearestGauge(loc.lat,loc.lon);}catch(e){}if(runId!==responseRun)return;
- if(!lid){responseState.loading=false;$('status').innerHTML='<span style="color:#ef5350">No NOAA river gauge found near '+loc.name+'. Try a town on or near a forecasted river.</span>';$('chain').innerHTML='';$('leverage').innerHTML='';return;}
+ if(!lid)throw new Error('No current NOAA gauge lookup available near '+loc.name);
  $('status').innerHTML='<span class="muted"><span class="spin"></span> walking the upstream→downstream chain…</span>';
  const nodes=await buildChain(lid);await Promise.all(nodes.map(attachForecast));if(runId!==responseRun)return;
- if(!nodes.length){responseState.loading=false;$('status').innerHTML='<span style="color:#ef5350">Couldn\'t trace a gauge chain here.</span>';return;}
- render(nodes,lid,loc.name);}
+ if(!nodes.length)throw new Error('Could not trace the NOAA gauge chain');
+ render(nodes,lid,loc.name);
+ }catch(error){if(runId!==responseRun)return;const same=previous.context===loc.name&&previous.nodes?.length;if(same){Object.assign(responseState,previous,{loading:false,lastRefreshError:String(error)});$('chain').innerHTML=priorHTML.chain;$('leverage').innerHTML=priorHTML.leverage;}else{responseState.loading=false;responseState.nodes=[];$('chain').innerHTML='';$('leverage').innerHTML='';} $('status').textContent='Refresh unavailable. '+(same?'Last successful '+loc.name+' report retained; its observation and issue times still apply. ':'No current corridor report is available. ')+'Check NOAA directly; missing data is not an all-clear.';}}
+async function refreshSelected(){if(document.hidden||refreshBusy||!activeLocation)return;refreshBusy=true;try{await run({...activeLocation});}finally{refreshBusy=false;}}
+setInterval(refreshSelected,5*60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshSelected();});
 
-async function go(){const q=$('q').value;if(!q.trim())return;$('status').innerHTML='<span class="muted"><span class="spin"></span> finding '+q+'…</span>';
- const loc=await geocode(q);if(!loc){$('status').innerHTML='<span style="color:#ef5350">Couldn\'t find that. Try a 5-digit ZIP or "Town, ST".</span>';return;}run(loc);}
+let searchRun=0;
+async function go(){const searchId=++searchRun,q=$('q').value;if(!q.trim())return;$('status').innerHTML='<span class="muted"><span class="spin"></span> finding '+esc(q)+'…</span>';
+ const loc=await geocode(q);if(searchId!==searchRun)return;if(!loc){$('status').innerHTML='<span style="color:#ef5350">Couldn\'t find that. Try a 5-digit ZIP or "Town, ST".</span>';return;}run(loc);}
 $('go').onclick=go;$('q').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
 // seed with a live corridor (Mississippi at St. Louis — currently has action-stage gauges)
 run({lat:38.63,lon:-90.18,name:'St. Louis, MO (Mississippi River)'});
@@ -540,11 +557,15 @@ run({lat:38.63,lon:-90.18,name:'St. Louis, MO (Mississippi River)'});
    const id='gauge-'+n.lid,known=n.sev!=null&&fresh(n.observedAt,6),forecastKnown=n.crest!=null&&fresh(n.forecastAt,24);
    evidence.push({id,label:n.name+' observed category',value:n.obs||'Unavailable',measuredAt:n.observedAt,checkedAt:state.checkedAt,basis:'measured',quality:known?'current':n.observedAt?'stale':'missing',source:'https://api.water.noaa.gov/nwps/v1/gauges/'+n.lid,note:'Observed categories are not flood-depth comparisons between gauges. Six-hour observation freshness screen.'});
    evidence.push({id:id+'-peak',label:n.name+' forecast peak',value:n.crest??'Unavailable',unit:n.unit,measuredAt:n.forecastAt,checkedAt:state.checkedAt,basis:'modeled',quality:forecastKnown?'current':n.forecastAt?'stale':'missing',source:'https://api.water.noaa.gov/nwps/v1/gauges/'+n.lid+'/stageflow/forecast',note:n.crestTime?'Forecast peak valid '+n.crestTime+'. Issue must be within24 hours.':'No usable forecast hydrograph.'});
-   const threshold=n.thr&&n.thr.action;
+   const threshold=n.actionThreshold;
    diagnostics.push({id,pillar:'comparison',label:n.name+' needs elevated-stage review',status:known?(n.sev>=1?'triggered':'clear'):'unknown',evidenceIds:[id],rule:'NOAA observed category at action stage or above; never substitute a missing category with normal.',explanation:'Compare the report with its own gauge thresholds, not raw stage at another gauge.'});
    diagnostics.push({id:id+'-forecast',pillar:'spillover',label:n.name+' forecast reaches local action threshold',status:forecastKnown&&Number.isFinite(threshold)?(n.crest>=threshold?'triggered':'clear'):'unknown',evidenceIds:[id+'-peak'],rule:'Latest usable NOAA forecast maximum >= this gauge\'s action threshold.',explanation:'An independent forecast for a downstream gauge is not a routed causal propagation estimate.'});
    actions.push({id:id+'-public',track:'public',phase:'respond',when:'triggered',diagnosticIds:[id,id+'-forecast'],title:'Check official instructions for '+n.name,nextStep:'Read the current NOAA gauge page and local NWS warnings. Confirm your local flood plan and follow current official instructions; this gauge is a monitoring point, not an address-level flood forecast.',escalateWhen:'An official warning or local instruction changes; do not wait for a forecast crest before following it.',authorityUrl:'https://water.noaa.gov/gauges/'+n.lid.toLowerCase()});
    actions.push({id:id+'-operator',track:'operator',phase:'verify',when:'triggered',diagnosticIds:[id,id+'-forecast'],title:'Verify the '+n.name+' corridor watchpoint',nextStep:'Confirm gauge telemetry and forecast issue, compare the local action threshold'+(Number.isFinite(threshold)?' ('+threshold+' '+n.unit+')':'')+', then review the downstream contact/asset roster under your organization\'s flood SOP. '+(n.crestTime?'Forecast peak valid '+n.crestTime+'. ':'No forecast timing is available. ')+'The console does not assign dispatch or evacuation deadlines.',escalateWhen:'Your authority\'s stage/impact trigger or current warning is met, or local telemetry contradicts the public report.',authorityUrl:'https://water.noaa.gov/gauges/'+n.lid.toLowerCase()});
+   const impacts=(n.matchedImpacts||[]).filter(p=>p.basis==='observed'?fresh(p.validTime,6):fresh(p.issuedAt,24)&&Date.parse(p.validTime)>=Date.now());
+   evidence.push({id:id+'-impacts',label:n.name+' NOAA stage-impact descriptions',value:impacts.length,unit:'matched descriptions',measuredAt:impacts.some(p=>p.basis==='observed')?n.observedAt:n.forecastAt,checkedAt:state.checkedAt,basis:'interpretive',quality:known||forecastKnown?'current':'missing',source:'https://api.water.noaa.gov/nwps/v1/gauges/'+n.lid,note:'Published conditional stage descriptions matched against usable observed/forecast values; not confirmed inundation, damage or affected population.'});
+   diagnostics.push({id:id+'-impacts',pillar:'spillover',label:n.name+' has applicable published stage-impact context',status:known||forecastKnown?(impacts.length?'triggered':'clear'):'unknown',evidenceIds:[id+'-impacts'],rule:'A published impact stage in compatible units is reached by a current observation or a future peak from a current forecast.',explanation:'A matched conditional description calls for verification with local officials; it does not establish that its effects are occurring.'});
+   for(const track of ['public','operator'])actions.push({id:id+'-impacts-'+track,track,phase:track==='public'?'prepare':'verify',when:'triggered',diagnosticIds:[id+'-impacts'],title:'Review NOAA impact context for '+n.name,nextStep:impacts.slice(0,3).map(p=>p.statement+' ('+p.basis+' threshold '+p.threshold+' '+p.unit+'; valid '+p.validTime+(p.issuedAt?'; issued '+p.issuedAt:'')+').').join(' ')+' Confirm actual conditions and current local instructions; this conditional stage description is not a confirmed damage report.',escalateWhen:'An official current warning, verified local impact or approved agency activation rule applies; do not wait for a forecast peak.',authorityUrl:'https://water.noaa.gov/gauges/'+n.lid.toLowerCase()});
   }
   evidence.push({id:'coverage',label:'Inspected corridor',value:nodes.length+' NOAA gauges',checkedAt:state.checkedAt,basis:'measured',quality:nodes.length&&!state.loading?'current':'missing',source:authority,note:'At most6 upstream and9 downstream links; unmonitored communities and tributaries are outside this chain.'});
   diagnostics.push({id:'coverage',pillar:'structure',label:'Corridor evidence availability',status:nodes.length&&!state.loading?'clear':'unknown',evidenceIds:['coverage'],rule:'A nonempty inspected NOAA main-stem gauge chain is required.',explanation:'This adapts the CRT principle of defining comparison groups and inspecting coverage before comparing conditions.'});

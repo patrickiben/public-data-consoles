@@ -395,7 +395,7 @@ header .s{color:var(--ink2);font-size:13.5px;margin-top:6px;max-width:640px}
   <header>
     <div>
       <h1>Earthquake Consequence Console</h1>
-      <div class="s">For any significant earthquake on Earth: where it shook, who's exposed, what's likely damaged, and where help has the most leverage — fast, from public data, so response can be aimed before the full picture arrives.</div>
+      <div class="s">Public shaking maps, official modeled population/loss estimates and clearly labeled infrastructure scenarios for significant earthquakes worldwide. Follow current official reports and local instructions.</div>
     </div>
     <div><div class="muted small" style="margin-bottom:5px">Event <span style="opacity:.6">· auto-loads the latest red-alert quake</span></div><div style="display:flex;gap:8px"><select id="evsel"><option>loading recent significant earthquakes…</option></select><button id="share" title="Copy a link to this event">⤴ Share</button></div></div>
   </header>
@@ -421,9 +421,10 @@ function noMapLayer(){const layer={};['setView','addTo','bindPopup','bindTooltip
 const L=hasMap?window.L:{map:noMapLayer,tileLayer:noMapLayer,layerGroup:noMapLayer,circleMarker:noMapLayer,geoJSON:noMapLayer,polyline:noMapLayer,marker:noMapLayer,divIcon:noMapLayer,latLngBounds:noMapLayer,control:noMapLayer,DomUtil:{create:(tag,cls)=>{const el=document.createElement(tag);el.className=cls;return el;}}};
 if(!hasMap){const el=document.getElementById('map');el.style.minHeight='100px';el.style.height='auto';el.innerHTML='<p role="status" style="padding:20px">Map unavailable. Data panels and official-source links remain available below.</p>';}
 const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const DEFAULT_EVENT='us6000t7zp'; // M7.5 Venezuela, 2026-06-24 — load this first
 const PAGER_COL={green:'#34c98a',yellow:'#f0b429',orange:'#f97316',red:'#ef5350'};
-const PAGER_MEAN={green:'no/▒minimal expected',yellow:'local impact likely',orange:'significant impact likely',red:'high impact — extensive damage &amp; casualties likely'};
+const PAGER_MEAN={green:'USGS low modeled-impact alert; review the separate loss distributions',yellow:'USGS yellow modeled-impact alert; review the separate loss distributions',orange:'USGS orange modeled-impact alert; review the separate loss distributions',red:'USGS high modeled-impact alert; review separate fatality and economic-loss distributions'};
 const fmtT=t=>{const d=(Date.now()-t)/3600000;return d<1?Math.round(d*60)+' min ago':d<48?Math.round(d)+' h ago':Math.round(d/24)+' d ago';};
 let map=L.map('map',{zoomControl:true,worldCopyJump:true}).setView([20,0],2);
 // Standard public OSM tiles need no account or API key. Browser caching and Referer stay intact.
@@ -439,7 +440,7 @@ let LY={shake:L.layerGroup().addTo(map),after:L.layerGroup().addTo(map),epi:L.la
 const lg=L.control({position:'bottomright'});lg.onAdd=function(){const d=L.DomUtil.create('div','legend');d.innerHTML='<i style="background:#ef5350"></i>epicenter<br><i style="background:#f0b429"></i>aftershocks<br><i style="background:#b46ff0"></i>hospitals / lifelines';return d;};lg.addTo(map);
 $('src').innerHTML='Sources (public): USGS Earthquake Hazards Program (ComCat events, PAGER, ShakeMap, ground-failure), GDACS, ReliefWeb/OCHA, OpenStreetMap (lifelines), ESA/NASA Sentinel-1 via ASF (radar). Geocoding/links to official agencies. Runs in your browser; nothing stored.';
 
-async function jget(u,opt){const c=new AbortController(),to=setTimeout(()=>c.abort(),12000);try{const r=await fetch(u,Object.assign({signal:c.signal},opt||{}));clearTimeout(to);return r.ok?await r.json():null;}catch(e){clearTimeout(to);return null;}}
+async function jget(u,opt){const c=new AbortController(),to=setTimeout(()=>c.abort(),12000);try{const r=await fetch(u,Object.assign({signal:c.signal},opt||{}));if(!r.ok)return null;const j=await r.json();return j?.error?null:j;}catch(e){return null;}finally{clearTimeout(to);}}
 
 /* ---------- event picker: recent significant quakes worldwide ---------- */
 async function loadList(){
@@ -449,7 +450,7 @@ async function loadList(){
  const want=new URLSearchParams(location.search).get('event');
  const byTime=a=>a.sort((x,y)=>y.properties.time-x.properties.time);
  const reds=byTime(feats.filter(f=>f.properties.alert==='red')),oranges=byTime(feats.filter(f=>f.properties.alert==='orange'));
- let pick=want||(reds[0]||oranges[0]||{}).id||DEFAULT_EVENT;
+ let pick=want||(reds[0]||oranges[0]||byTime(feats.slice())[0]||{}).id||DEFAULT_EVENT;
  // make sure the picked event (and the reference event) appear in the dropdown even if outside the 30-day feed
  for(const id of [pick,DEFAULT_EVENT]){if(id&&!feats.some(f=>f.id===id)){const d=await jget('https://earthquake.usgs.gov/fdsnws/event/1/query?eventid='+id+'&format=geojson');if(d&&d.id)feats.unshift(d);}}
  const rank={red:3,orange:2,yellow:1};
@@ -461,22 +462,24 @@ async function loadList(){
 }
 
 /* ---------- select an event ---------- */
-let CUR=null, RESPONSE_LIFELINES=null, EVENT_REQUEST=0;
+let CUR=null, RESPONSE_LIFELINES=null, RESPONSE_EXPOSURE=null, RESPONSE_PAGER=null, EVENT_REQUEST=0,refreshBusy=false;
+const LAST_PANELS={};
+function panelFail(id,message){$(id).innerHTML=(LAST_PANELS[id]||'')+'<p class="muted" role="status">'+esc(message)+(LAST_PANELS[id]?' Last successful report retained with its original source time.':' No value is substituted.')+'</p>';}
+function panelDone(id,product){if(product){const updated=typeof product.updateTime==='number'&&Number.isFinite(product.updateTime)?new Date(product.updateTime).toISOString():'unavailable';$(id).innerHTML+='<p class="small muted">USGS product updated '+esc(updated)+' · checked '+new Date().toISOString()+'. Model estimates can be revised.</p>';}LAST_PANELS[id]=$(id).innerHTML;}
 // Public, read-only bridge from this closure to the response-plan adapter.
 // A new event clears both inputs before any asynchronous requests begin.
 window.QuakeResponse=Object.freeze({read(){
- const event=CUR?{id:CUR.id,properties:{time:CUR.properties.time,place:CUR.properties.place,url:CUR.properties.url}}:null;
+ const event=CUR?{id:CUR.id,properties:{time:CUR.properties.time,updated:CUR.properties.updated,place:CUR.properties.place,url:CUR.properties.url}}:null;
  const graph=event&&RESPONSE_LIFELINES?.eventId===event.id?RESPONSE_LIFELINES:null;
- return {event,graph:graph?{...graph,nodes:graph.nodes.map(n=>({...n})),edges:graph.edges.map(e=>e.slice())}:null};
+ return {event,graph:graph?{...graph,nodes:graph.nodes.map(n=>({...n})),edges:graph.edges.map(e=>e.slice())}:null,exposure:RESPONSE_EXPOSURE?.eventId===event?.id?RESPONSE_EXPOSURE:null,pager:RESPONSE_PAGER?.eventId===event?.id?RESPONSE_PAGER:null};
 }});
 async function selectEvent(id){
- const requestId=++EVENT_REQUEST;CUR=null;RESPONSE_LIFELINES=null;
- Object.values(LY).forEach(l=>l.clearLayers());
- ['event','pager','exposure','lifelines','humanitarian','insar'].forEach(p=>{if(p!=='event')$(p).innerHTML='<div class="muted"><span class="spin"></span> loading…</div>';});
- $('event').innerHTML='<div class="muted"><span class="spin"></span> loading…</div>';
+ const requestId=++EVENT_REQUEST,same=CUR?.id===id;
+ if(!same){CUR=null;RESPONSE_LIFELINES=null;RESPONSE_EXPOSURE=null;RESPONSE_PAGER=null;Object.keys(LAST_PANELS).forEach(k=>delete LAST_PANELS[k]);['event','pager','exposure','lifelines','humanitarian','insar'].forEach(p=>$(p).innerHTML='<div class="muted"><span class="spin"></span> loading…</div>');}
  const d=await jget('https://earthquake.usgs.gov/fdsnws/event/1/query?eventid='+id+'&format=geojson');
  if(requestId!==EVENT_REQUEST)return;
- if(!d){$('event').innerHTML='<div class="muted">Event details unavailable.</div>';return;}
+ if(!d||d.error||d.id!==id||!d.properties||!Array.isArray(d.geometry?.coordinates)||!Number.isFinite(d.properties.time)||d.properties.time>Date.now()+3600000||!d.geometry.coordinates.slice(0,2).every(Number.isFinite)||same&&Number.isFinite(CUR.properties.updated)&&(!Number.isFinite(d.properties.updated)||d.properties.updated<CUR.properties.updated)){panelFail('event','Event refresh unavailable, mismatched or older than the last accepted event. Check the official USGS event page.');if(!same)['pager','exposure','lifelines','humanitarian','insar'].forEach(p=>panelFail(p,'No event details are available.'));return;}
+ Object.values(LY).forEach(l=>l.clearLayers());
  CUR=d;const p=d.properties,g=d.geometry.coordinates,lat=g[1],lon=g[0],depth=g[2];
  const prods=p.products||{};
  // map: epicenter
@@ -494,16 +497,15 @@ async function selectEvent(id){
   '<div class="row"><span class="l">Felt reports (DYFI)</span><span class="v">'+(p.felt!=null?p.felt.toLocaleString():'—')+'</span></div>'+
   '<div class="row"><span class="l">Tsunami flag</span><span class="v">'+(p.tsunami?'yes — check warnings':'no')+'</span></div>'+
   (alert?'<div class="small" style="margin-top:7px;color:'+PAGER_COL[alert]+'">'+PAGER_MEAN[alert]+'</div>':'')+
-  '<div class="small" style="margin-top:6px"><a href="'+(p.url||'#')+'" target="_blank" rel="noopener">Full USGS event page →</a></div>';
+  '<div class="small" style="margin-top:6px"><a href="'+(p.url||'#')+'" target="_blank" rel="noopener">Full USGS event page →</a><br>Event updated '+(Number.isFinite(p.updated)?new Date(p.updated).toISOString():'unavailable')+' · checked '+new Date().toISOString()+'. Refreshes every 10 minutes while visible. Historical events remain historical.</div>';
+ panelDone('event');
  loadAftershocks(lat,lon,p.time);
  // ===== consequence panels (verified specs) =====
  const shakeP=loadShakeMap(prods);
- loadPAGER(prods);
- loadExposure(prods);
- loadLifelines(lat,lon,shakeP,d.id);
- loadHumanitarian(prods,p,lat,lon);
- loadInSAR(lat,lon,p.time);
+ await Promise.allSettled([loadPAGER(prods),loadExposure(prods),loadLifelines(lat,lon,shakeP,d.id),loadHumanitarian(prods,p,lat,lon),loadInSAR(lat,lon,p.time)]);
 }
+async function refreshSelected(){if(document.hidden||refreshBusy||!CUR)return;refreshBusy=true;try{await selectEvent(CUR.id);}finally{refreshBusy=false;}}
+setInterval(refreshSelected,10*60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshSelected();});
 
 async function loadAftershocks(lat,lon,t){
  const requestId=EVENT_REQUEST;
@@ -528,29 +530,39 @@ async function loadShakeMap(prods){const sm=prods.shakemap&&prods.shakemap[0];if
 
 async function loadPAGER(prods){const el=$('pager');const lp=prods.losspager&&prods.losspager[0];
  const requestId=EVENT_REQUEST;
- if(!lp){el.innerHTML='<div class="muted">No PAGER impact model for this event.</div>';return;}
+ if(!lp){RESPONSE_PAGER=null;panelFail('pager','No PAGER impact model is published for this event.');return;}
  const [alerts,comments]=await Promise.all([jget(purl(lp,'json/alerts.json')),jget(purl(lp,'json/comments.json'))]);
  if(requestId!==EVENT_REQUEST)return;
- if(!alerts||!alerts.fatality){el.innerHTML='<div class="muted">PAGER detail unavailable.</div>';return;}
- const fb=alerts.fatality.bins||[],eb=alerts.economic.bins||[];
+ if(!Array.isArray(alerts?.fatality?.bins)||!alerts.fatality.bins.length||!Array.isArray(alerts?.economic?.bins)||!alerts.economic.bins.length){panelFail('pager','PAGER detail refresh unavailable.');return;}
+ const fb=alerts.fatality.bins,eb=alerts.economic.bins;
+ const bound=v=>(typeof v==='number'||typeof v==='string'&&v.trim()!==''&&/^\d+(?:\.\d+)?(?:e[+-]?\d+)?$/i.test(v))&&Number.isFinite(+v)&&+v>=0;
+ const validBins=bins=>bins.every((b,i)=>b&&typeof b==='object'&&!Array.isArray(b)&&typeof b.probability==='number'&&Number.isFinite(b.probability)&&b.probability>=0&&b.probability<=1&&bound(b.min)&&bound(b.max)&&+b.max>+b.min&&(!i||+b.min===+bins[i-1].max))&&Math.abs(bins.reduce((a,b)=>a+b.probability,0)-1)<=1e-4;
+ if(!validBins(fb)||!validBins(eb)||!Number.isFinite(lp.updateTime)||lp.updateTime>Date.now()+3600000||lp.updateTime<CUR.properties.time-3600000||RESPONSE_PAGER?.eventId===CUR.id&&Date.parse(RESPONSE_PAGER.updatedAt)>lp.updateTime){panelFail('pager','PAGER probability data are invalid, incomplete or older than the last accepted model.');return;}
+ RESPONSE_PAGER={eventId:CUR.id,updatedAt:Number.isFinite(lp.updateTime)?new Date(lp.updateTime).toISOString():null,checkedAt:new Date().toISOString(),source:purl(lp,'json/alerts.json'),fatalityBins:fb.map(b=>({min:b.min,max:b.max,probability:+b.probability})),economicBins:eb.map(b=>({min:b.min,max:b.max,probability:+b.probability}))};
  const modal=a=>a.reduce((x,y)=>+y.probability>+(x.probability||0)?y:x,a[0]||{});const fm=modal(fb);
  const hist=(bins,lab)=>bins.filter(b=>+b.probability>0.005).map(b=>{const p=Math.round(+b.probability*100);return '<div class="lvrow"><span style="flex:none;width:112px;font-size:12px">'+lab(b)+'</span><span class="bar" style="flex:1"><i style="width:'+Math.max(3,p)+'%;background:'+b.color+'"></i></span><span class="muted" style="flex:none;width:30px;text-align:right">'+p+'%</span></div>';}).join('');
  el.innerHTML=(comments&&comments.impact1?'<div class="small" style="margin-bottom:10px">'+comments.impact1+'</div>':'')+
   '<div class="muted small" style="margin-bottom:3px">Likely fatalities — probability by range</div>'+hist(fb,b=>fmtN(b.min)+'–'+fmtN(b.max))+
   '<div class="muted small" style="margin:10px 0 3px">Likely economic loss</div>'+hist(eb,b=>'$'+fmtN(+b.min*1e6)+'–$'+fmtN(+b.max*1e6))+
-  '<div class="small" style="margin-top:11px;color:#f4c558;background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.28);border-radius:9px;padding:9px 11px"><b>PAGER loss‑model estimates — not a confirmed toll.</b> They size the likely order of magnitude (~'+Math.round(+fm.probability*100)+'% chance fatalities fall in the '+fmtN(fm.min)+'–'+fmtN(fm.max)+' range) so responders can scale up before counts arrive. The real toll comes from the ground — follow ReliefWeb/OCHA.</div>';}
+  '<div class="small" style="margin-top:11px;color:#f4c558;background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.28);border-radius:9px;padding:9px 11px"><b>PAGER loss‑model estimates — not a confirmed toll.</b> They size the likely order of magnitude (~'+Math.round(+fm.probability*100)+'% chance fatalities fall in the '+fmtN(fm.min)+'–'+fmtN(fm.max)+' range) so responders can scale up before counts arrive. The real toll comes from the ground — follow ReliefWeb/OCHA.</div>';panelDone('pager',lp);}
 
 async function loadExposure(prods){const el=$('exposure');const lp=prods.losspager&&prods.losspager[0];
  const requestId=EVENT_REQUEST;
- if(!lp){el.innerHTML='<div class="muted">No exposure model.</div>';return;}
+ if(!lp){RESPONSE_EXPOSURE=null;panelFail('exposure','No exposure model is published for this event.');return;}
  const expo=await jget(purl(lp,'json/exposures.json'));
  if(requestId!==EVENT_REQUEST)return;
- if(!expo||!expo.population_exposure){el.innerHTML='<div class="muted">Exposure data unavailable.</div>';return;}
- const pe=expo.population_exposure;const rows=pe.mmi.map((m,i)=>({m,pop:+pe.aggregated_exposure[i]})).filter(x=>x.pop>0&&x.m>=4);
+ const pe=expo?.population_exposure;
+ if(!Number.isFinite(lp.updateTime)||lp.updateTime>Date.now()+3600000||lp.updateTime<CUR.properties.time-3600000||RESPONSE_EXPOSURE?.eventId===CUR.id&&Date.parse(RESPONSE_EXPOSURE.updatedAt)>lp.updateTime){panelFail('exposure','PAGER exposure product time is invalid or older than the last accepted model.');return;}
+ if(!Array.isArray(pe?.mmi)||!pe.mmi.length||!Array.isArray(pe.aggregated_exposure)||pe.mmi.length!==pe.aggregated_exposure.length||new Set(pe.mmi).size!==pe.mmi.length||pe.mmi.some((m,i)=>typeof m!=='number'||!Number.isInteger(m)||m<1||m>12||typeof pe.aggregated_exposure[i]!=='number'||!Number.isFinite(pe.aggregated_exposure[i])||pe.aggregated_exposure[i]<0)){panelFail('exposure','PAGER population exposure refresh unavailable or invalid.');return;}
+ const bands=pe.mmi.map((m,i)=>({mmi:m,population:pe.aggregated_exposure[i]}));
+ const strongPopulation=bands.filter(b=>b.mmi>=7).reduce((a,b)=>a+b.population,0),totalPopulation=bands.reduce((a,b)=>a+b.population,0);
+ if(!Number.isFinite(strongPopulation)||!Number.isFinite(totalPopulation)){panelFail('exposure','PAGER population totals are invalid.');return;}
+ RESPONSE_EXPOSURE={eventId:CUR.id,bands,strongPopulation,totalPopulation,updatedAt:Number.isFinite(lp.updateTime)?new Date(lp.updateTime).toISOString():null,checkedAt:new Date().toISOString(),source:purl(lp,'json/exposures.json')};
+ const rows=bands.map(b=>({m:b.mmi,pop:b.population})).filter(x=>x.pop>0&&x.m>=4);
  const max=Math.max(1,...rows.map(x=>x.pop));const strong=rows.filter(x=>x.m>=7).reduce((a,x)=>a+x.pop,0);
  el.innerHTML='<div class="big" style="color:#f97316">'+fmtN(strong)+'</div><div class="range">people in strong shaking (MMI 7+), where serious damage is likely</div>'+
   '<div style="margin-top:9px">'+rows.slice().reverse().map(x=>'<div class="lvrow"><span style="flex:none;width:52px">MMI '+x.m+'</span><span class="bar" style="flex:1"><i style="width:'+Math.round(100*x.pop/max)+'%;background:'+mmiCol(x.m)+'"></i></span><span class="muted" style="flex:none;width:48px;text-align:right">'+fmtN(x.pop)+'</span></div>').join('')+'</div>'+
-  '<div class="small muted" style="margin-top:7px">Modeled population in each shaking band (PAGER + LandScan). The closest‑to‑measurement impact number — lead with exposure, not a casualty count.</div>';}
+  '<div class="small muted" style="margin-top:7px">Official modeled population by shaking band (PAGER + LandScan), not measured affected residents, confirmed damage or casualties. This population footprint does not establish customers of the hypothetical lifeline graph.</div>';panelDone('exposure',lp);}
 
 /* ===== directed lifeline-cascade restoration engine =====
    Patrick's directedness-not-connectedness applied to disaster RESPONSE: damage propagates
@@ -602,7 +614,7 @@ async function loadLifelines(lat,lon,shakeP,eventId){const el=$('lifelines');
   const EPS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
   let j=null;for(const ep of EPS){j=await jget(ep,{method:'POST',body:'data='+encodeURIComponent(ql)});if(j&&j.elements)break;}
   if(requestId!==EVENT_REQUEST||CUR?.id!==eventId)return;
-  if(!j||!j.elements){el.innerHTML='<div class="muted">Lifeline network unavailable — OpenStreetMap Overpass is busy; it loads when a mirror frees up. (A utility’s own network can be wired in directly via <code>UTILITY_TOPOLOGY</code>.)</div>';return;}
+  if(!j||!Array.isArray(j.elements)){panelFail('lifelines','Lifeline inventory refresh unavailable. OSM and actual utility topology require verification.');return;}
   if(requestId!==EVENT_REQUEST||CUR?.id!==eventId)return;
   osm=j.elements;}
  const cont=shakeP?await shakeP:null;
@@ -620,7 +632,7 @@ async function loadLifelines(lat,lon,shakeP,eventId){const el=$('lifelines');
  const modeled=restorationRanking(graph,damaged,mmiOf);
  RESPONSE_LIFELINES={eventId,supplied:graph.supplied,hasShakeMap:!!(cont&&cont.features?.length),nodes:graph.nodes.map(n=>({id:n.id,type:n.type,mmi:mmiOf(n),screened:damaged.has(n.id)})),edges:graph.edges.map(e=>e.slice()),screened:damaged.size,hospitals:graph.sinks.length,modeledUnavailable:modeled.down,topRestores:modeled.ranking[0]?.restores||0};
  const inv='<div class="row"><span class="l"><span style="color:#b46ff0">⬤</span> Hospitals &amp; clinics</span><span class="v">'+counts.hospital+'</span></div><div class="row"><span class="l"><span style="color:#f0b429">⬤</span> Power plants / substations</span><span class="v">'+counts.power+'</span></div><div class="row"><span class="l"><span style="color:#3fa9f5">⬤</span> Water works / towers</span><span class="v">'+counts.water+'</span></div>';
- if(!graph.sinks.length||!damaged.size){el.innerHTML=inv+'<div class="small muted" style="margin-top:8px">'+(graph.supplied?'Utility-supplied network.':'Illustrative proximity network.')+' No assets fall in the strong-shaking zone for this event, so no restoration ranking is needed.</div>';return;}
+ if(!graph.sinks.length||!damaged.size){el.innerHTML=inv+'<div class="small muted" style="margin-top:8px">'+(graph.supplied?'Locally supplied dependency scenario.':'Illustrative proximity scenario.')+' No mapped assets cross the declared shaking screen. This is not a verified service-status report.</div>';panelDone('lifelines');return;}
  const {ranking,down}=restorationRanking(graph,damaged,mmiOf);
  const top=ranking.filter(r=>r.restores>0).slice(0,5);
  const loudest=graph.nodes.filter(n=>damaged.has(n.id)).sort((a,b)=>mmiOf(b)-mmiOf(a))[0];
@@ -631,7 +643,7 @@ async function loadLifelines(lat,lon,shakeP,eventId){const el=$('lifelines');
    top.map((r,i)=>'<div class="lvrow"><span style="flex:none;width:16px;color:#34c98a;font-weight:800">'+(i+1)+'</span><span style="flex:1;min-width:0"><b style="color:'+LIFE_COL[r.node.type]+'">'+r.node.name.slice(0,26)+'</b> <span class="muted">'+r.node.type+' · MMI '+r.mmi.toFixed(1)+'</span></span><span class="v" style="flex:none">+'+r.restores+' hosp'+(r.restores>1?'s':'')+(r.beds?' · '+r.beds+' beds':'')+'</span></div>').join('')
    :'<div class="small muted" style="margin-top:8px">No upstream node restores additional hospitals — the offline hospitals are themselves the damaged points (each is its own repair).</div>')+
   (top[0]&&loudest&&loudest.id!==top[0].node.id?'<div class="small" style="margin-top:10px;background:rgba(52,201,138,.08);border:1px solid rgba(52,201,138,.28);border-radius:9px;padding:9px 11px"><b>Dependency-aware scenario.</b> The most strongly shaken mapped asset is <b>'+loudest.name.slice(0,24)+'</b> (MMI '+mmiOf(loudest).toFixed(1)+'). In this model, changing the status of <b style="color:#34c98a">'+top[0].node.name.slice(0,24)+'</b> changes availability for <b>'+top[0].restores+' downstream hospital'+(top[0].restores>1?'s':'')+'</b>. Verify topology, backup supplies and actual damage with the responsible operators before using this review order.</div>':'')+
-  '<div class="small muted" style="margin-top:8px">'+(graph.supplied?'<b>Using the utility-supplied dependency network.</b> ':'<b>Illustrative dependency model:</b> each hospital and water works is linked to its nearest power substation (the dominant electricity dependency) because the real topology isn’t public. Paste a utility’s actual network — including water, fuel and comms dependencies — into <code>UTILITY_TOPOLOGY</code> and this becomes a true restoration-priority tool. ')+'Impairment = strong shaking (MMI 6+ power/water, 7+ hospitals), a proxy for damage — not confirmed status; redundancy and backup generators aren’t modeled.</div>';}
+  '<div class="small muted" style="margin-top:8px">'+(graph.supplied?'<b>Locally supplied dependency scenario; topology/status still need verification.</b> ':'<b>Illustrative dependency model:</b> hospitals and water works are linked to their nearest mapped power asset; these are unverified proximity assumptions. Hospital/clinic bed defaults of 30/6 are scenario weights when OSM has no bed tag, not measured available capacity. ')+'Impairment = declared MMI 6+ power/water,7+ hospital screen, not confirmed damage. Contour membership and an approximate epicentral fallback supply shaking proxies; a full official-grid sampler is not implemented. Redundancy and backup generators are not modeled. This ranking cannot authorize restoration or dispatch.</div>';panelDone('lifelines');}
 
 async function loadHumanitarian(prods,p,lat,lon){const el=$('humanitarian');let h='';
  const requestId=EVENT_REQUEST;
@@ -643,16 +655,17 @@ async function loadHumanitarian(prods,p,lat,lon){const el=$('humanitarian');let 
  if(requestId!==EVENT_REQUEST)return;
  if(places&&places.geonames)h+='<div class="small" style="margin-top:7px"><b>Nearest towns:</b> '+places.geonames.features.slice(0,4).map(f=>f.properties.name+' ('+(+f.properties.population||0).toLocaleString()+')').join(', ')+'</div>';
  h+='<div class="small" style="margin-top:9px"><a href="https://reliefweb.int/updates" target="_blank" rel="noopener">ReliefWeb situation reports →</a> · <a href="https://www.gdacs.org" target="_blank" rel="noopener">GDACS global alerts →</a></div>';
- el.innerHTML=h||'<div class="muted">No additional ground data.</div>';}
+ el.innerHTML=h||'<div class="muted">No additional ground data.</div>';panelDone('humanitarian');}
 
 async function loadInSAR(lat,lon,t){const el=$('insar');
  const requestId=EVENT_REQUEST;
- const j=await jget('https://api.daac.asf.alaska.edu/services/search/param?intersectsWith='+encodeURIComponent('POINT('+lon+' '+lat+')')+'&platform=Sentinel-1&processingLevel=SLC&start='+new Date(t).toISOString()+'&end=2026-12-31T00:00:00Z&output=geojson&maxResults=25');
+ const j=await jget('https://api.daac.asf.alaska.edu/services/search/param?intersectsWith='+encodeURIComponent('POINT('+lon+' '+lat+')')+'&platform=Sentinel-1&processingLevel=SLC&start='+new Date(t).toISOString()+'&end='+new Date().toISOString()+'&output=geojson&maxResults=25');
  if(requestId!==EVENT_REQUEST)return;
- const fs=(j&&j.features)||[];const dates=fs.map(f=>f.properties.startTime).filter(Boolean).sort();
+ if(!Array.isArray(j?.features)){panelFail('insar','ASF scene-search refresh unavailable; no scene count is inferred.');return;}
+ const fs=j.features;const dates=fs.map(f=>f.properties.startTime).filter(Boolean).sort();
  el.innerHTML='<div class="row"><span class="l">Post‑event Sentinel‑1 radar passes</span><span class="v">'+fs.length+'</span></div>'+
   (fs.length?'<div class="small" style="margin-top:3px">Earliest pass: '+String(dates[0]).slice(0,10)+'. Radar measures how the ground itself moved — the rupture and which side dropped.</div>':'<div class="small muted" style="margin-top:3px">No post‑event Sentinel‑1 acquisition yet (6–12 day repeat). The first pass enables a deformation map.</div>')+
-  '<div class="small muted" style="margin-top:8px"><b>How it connects:</b> a coseismic InSAR pair pinpoints the worst‑shaken corridor and the fault that moved. Producing it needs a free NASA Earthdata login + offline processing (ASF HyP3 / ARIA) — the same pipeline as the subsidence producer.</div>';}
+  '<div class="small muted" style="margin-top:8px">Scene availability is not a processed displacement measurement or a shaking/damage map. Producing and validating an InSAR displacement product needs suitable image pairs and separate processing.</div>';panelDone('insar');}
 
 $('share').onclick=async()=>{const b=$('share'),url=location.origin+location.pathname+'?event='+$('evsel').value;try{await navigator.clipboard.writeText(url);b.textContent='✓ Link copied';}catch(e){window.prompt('Copy this link:',url);b.textContent='⤴ Share';}setTimeout(()=>b.textContent='⤴ Share',1800);};
 loadList();
@@ -699,15 +712,18 @@ loadList();
     }
     const ev=(id,label,value,unit)=>({id,label,value:value==null?null:+value.toFixed(2),unit,measuredAt,basis:'modeled',quality:value==null?'missing':quality,source:p?.url||'https://earthquake.usgs.gov/',note:'Derived from modeled shaking and a dependency assumption; not confirmed damage or service status.'});
     const evidence=[ev('shape','Hospital/utility MMI distribution W1',distance,'MMI'),ev('components','Screened graph components',components,'components'),ev('margin','Assets within 0.5 MMI of screen',margin,'mapped assets'),ev('scale','Assets changing under +1 MMI screen',sensitivity,'mapped assets'),ev('auc','MMI 5–8 exposure-screen AUC',auc,'% normalized over declared ladder'),ev('frontier','One-to-three-hop frontier proxy',frontier,'% of initially unscreened nodes'),ev('leakage','Cross-screen dependency fraction',leakage,'% of modeled edges')];
+    const exposure=state.exposure,officialPopulation=exposure&&Number.isFinite(exposure.strongPopulation)&&Number.isFinite(exposure.totalPopulation);
+    evidence.push({id:'pager-population',label:'Official PAGER modeled population at MMI 7+',value:officialPopulation?exposure.strongPopulation:null,unit:'modeled residents in shaking bands',measuredAt:exposure?.updatedAt,checkedAt:exposure?.checkedAt,basis:'modeled',quality:officialPopulation?quality:'missing',source:exposure?.source||p?.url||'https://earthquake.usgs.gov/',note:'USGS PAGER/LandScan exposure product; not actual affected customers, confirmed damage, casualties or available beds. Each band is a separate official modeled exposure cohort.'});
+    const officialActions=officialPopulation?['public','operator'].map(track=>({id:'pager-population-'+track,track,phase:'verify',when:'always',title:'Review the official PAGER exposure distribution',nextStep:'USGS models '+exposure.strongPopulation.toLocaleString()+' residents at MMI 7+ within '+exposure.totalPopulation.toLocaleString()+' residents across the published shaking bands. Product updated '+(exposure.updatedAt||'unavailable')+'; checked '+exposure.checkedAt+'. Read the USGS exposure/loss distributions and current local situation reports. These are model estimates, not a confirmed toll or the service population of the hypothetical network.',escalateWhen:'Follow current official local instructions and verified incident reports; do not use modeled exposure as a dispatch or casualty estimate.',authorityUrl:p?.url||authority})):[];
     const mark=(id,value,rule,explanation)=>({status:value==null?'unknown':value>0?'triggered':'clear',value:evidence.find(e=>e.id===id)?.value,unit:evidence.find(e=>e.id===id)?.unit,evidenceIds:[id],rule,explanation});
     return H.build({slug:'quake-consequence',title:'Ten-parameter impact-review plan',context:event?'USGS '+event.id+' · '+p.place:'Select an event; current event evidence is unavailable',rows,evidence,authorityUrl:authority,
       overrides:{2:mark('shape',distance,'Review a nonzero modeled MMI-distribution gap.','Exact empirical Wasserstein distance; hazard, fragility and inventory completeness remain distinct.'),4:mark('components',components==null?null:components-1,'Review more than one screened graph component.','Component-count adaptation on an assumed dependency graph, not verified disconnected response zones.'),5:mark('margin',margin,'Review mapped assets within the declared 0.5 MMI sensitivity band.','Scenario margin count; not a safety or damage classification.'),6:mark('scale',sensitivity,'Review classifications changing under a +1 MMI screen.','Threshold sensitivity only; no spatial-mixing estimator is fitted.'),8:mark('auc',auc,'Review positive integrated screening exposure over MMI 5–8.','Trapezoidal exposure-screen AUC adaptation, not expected damage or a casualty estimate.'),9:mark('frontier',frontier,'Review initially unscreened model nodes reachable within 1–3 hops.','A declared graph-depth exposure proxy; no wave arrival or outage timing is estimated.'),10:mark('leakage',leakage,'Verify dependencies crossing the scenario partition.','Modeled cross-screen link fraction; no observed mobility or causal effect is measured.')},
       network:{label:'Dependency assumptions supporting the ten-parameter review',basis:'modeled',semantics:graph?.supplied?'Locally supplied dependency edges; their validity/status is not established by this public tool.':'Nearest-asset proximity assumptions, not observed utility connections.',period:measuredAt,coverage:nodes.length+' mapped nodes; '+edges.length+' assumed links',roles:[],limitations:['A source/sink label or restoration ranking cannot authorize field dispatch.']},
       escalateWhen:'Follow current local emergency instructions; operators escalate verified damage/service loss under their own incident command and safety procedures.',
-      limitations:['No original CRT estimator, variational-free-energy model or causal contagion estimator is fitted.','Unknown dimensions require the listed inputs; they are not an all-clear.','If authoritative ShakeMap contours or the inventory are absent, the numerical screening dimensions remain unassessed.'],
-      baseline:[{id:'quake-authority',track:'public',phase:'verify',when:'always',title:'Check official event and safety information',nextStep:'Read the USGS event page and current local emergency instructions. Do not enter damaged buildings or infer safe access from this model.',escalateWhen:'Use local emergency channels when there is an immediate safety concern; follow official instructions.',authorityUrl:authority}]
+      limitations:['No original CRT estimator, variational-free-energy model or causal contagion estimator is fitted.','Unknown dimensions require the listed inputs; they are not an all-clear.','The lifeline scenario uses contour-membership/approximate intensity and assumed dependencies/capacity where actual records are missing; it is distinct from official PAGER exposure and loss products.','If authoritative ShakeMap contours or the inventory are absent, the numerical screening dimensions remain unassessed.'],
+      baseline:[...officialActions,{id:'quake-authority',track:'public',phase:'verify',when:'always',title:'Check official event and safety information',nextStep:'Read the USGS event page and current local emergency instructions. Do not enter damaged buildings or infer safe access from this model.',escalateWhen:'Use local emergency channels when there is an immediate safety concern; follow official instructions.',authorityUrl:authority}]
     });
-  },['#event','#lifelines','#pager']);
+  },['#event','#lifelines','#pager','#exposure']);
 })();
 </script>
 <!-- CONSOLE_RESPONSE_ADAPTER_END -->

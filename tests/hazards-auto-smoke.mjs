@@ -1,0 +1,116 @@
+// Source-shaped, offline regressions for automatic hazard inputs and refreshes.
+// Every external request is intercepted; no real provider or map tiles are fetched.
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {chromium} from 'playwright';
+const root=new URL('../',import.meta.url),NOW=Date.parse('2026-10-23T16:00:00Z');
+const iso=ms=>new Date(ms).toISOString();
+const core=await readFile(new URL('response-plans/core.js',root),'utf8');
+const domain=await readFile(new URL('response-plans/domain-helpers.js',root),'utf8');
+const browser=await chromium.launch({headless:true,channel:process.env.CHROME_CHANNEL||undefined});
+let passed=0;
+function gauges(options={}){
+ return Array.from({length:7},(_,i)=>({lid:'TST'+i,usgsId:String(i+1),name:'Official Gauge '+i,latitude:38.75-i*.02,longitude:-90.18,
+  upstreamLid:i?'TST'+(i-1):null,downstreamLid:i<6?'TST'+(i+1):null,
+  status:{observed:{primary:options.zero&&i===0?0:12+i,primaryUnit:'ft',floodCategory:'action',validTime:iso(options.stale?NOW-8*3600000:NOW)},forecast:{primary:18,floodCategory:'minor',validTime:iso(NOW+4*3600000)}},
+  flood:{stageUnits:'ft',flowUnits:'cfs',categories:{action:{stage:options.zero&&i===0?0:10,flow:-9999},minor:{stage:15,flow:-9999}},impacts:[{stage:options.zero&&i===0?0:11,statement:'Official conditional road-impact description '+i},{stage:100,statement:'Unreached impact must not be claimed'}]}}));
+}
+const features=rows=>rows.filter(g=>g.usgsId!=='999').map(g=>({type:'Feature',properties:{identifier:'USGS-'+g.usgsId,name:g.name},geometry:{type:'Point',coordinates:[g.longitude,g.latitude]}}));
+async function scenario(slug,options,verify){
+ const context=await browser.newContext({serviceWorkers:'block'}),state={fail:false,requests:[],release:null,holdStarted:false};
+ let html=await readFile(new URL('consoles/'+slug+'/index.html',root),'utf8');
+ html=html.replace(/<!-- CONSOLE_RESPONSE_(HEAD|MOUNT|ADAPTER)_START -->[\s\S]*?<!-- CONSOLE_RESPONSE_\1_END -->\n?/g,'');
+ const adapter=await readFile(new URL('response-plans/adapters/'+slug+'.js',root),'utf8');
+ html=html.replace('<head>','<head><script>'+core+'</script><script>'+domain+'</script>').replace('</body>','<section id="console-response"></section><script>'+adapter+'</script></body>');
+ const origin='https://hazard-fixture.invalid/'+slug+'/',rows=gauges(options);
+ if(options.flow){rows[1].status.observed.primaryUnit='kcfs';rows[1].status.observed.primary=20;rows[1].flood.categories.action={stage:3,flow:options.sentinel?-9999:20000};}
+ if(options.blankNumber){rows[0].status.observed.primary=' \t';rows[0].flood.categories.action.stage=' \t';}
+ if(options.wrongNearby){rows.unshift({...structuredClone(rows[0]),lid:'WRONG',usgsId:'999',name:'Nearby wrong river'});}
+ if(options.noExactId)rows.find(g=>g.lid==='TST0').usgsId='9999';
+ const siteFeatures=features(gauges(options));
+ const event=id=>({type:'Feature',id,geometry:{type:'Point',coordinates:[-90.18,38.63,10]},properties:{mag:6.2,place:id==='CURRENT'?'Current official fixture':'Historical reference fixture',time:id==='CURRENT'?NOW-3600000:Date.parse('2026-06-24T22:05:04Z'),updated:NOW-600000,alert:'yellow',url:'https://earthquake.usgs.gov/earthquakes/eventpage/'+id,
+  products:{losspager:[{updateTime:NOW-600000,contents:{'json/exposures.json':{url:'https://earthquake.usgs.gov/fixture/'+id+'/exposures.json'},'json/alerts.json':{url:'https://earthquake.usgs.gov/fixture/'+id+'/alerts.json'},'json/comments.json':{url:'https://earthquake.usgs.gov/fixture/'+id+'/comments.json'}}}]}}});
+ try{
+  await context.route('**/*',async route=>{
+   const u=new URL(route.request().url());state.requests.push(u.href);
+   const json=value=>route.fulfill({contentType:'application/json',body:JSON.stringify(value)});
+   if(u.href===origin)return route.fulfill({contentType:'text/html',body:html});
+   if(u.pathname.endsWith('.js')||u.pathname.endsWith('.css'))return route.fulfill({status:503,body:'optional CDN unavailable'});
+   if(u.hostname==='api.water.noaa.gov'){
+    const lid=u.pathname.match(/\/gauges\/([^/]+)/)?.[1],g=rows.find(g=>g.lid.toLowerCase()===lid?.toLowerCase());
+    if(state.fail&&slug!=='us-local-hazards')return route.fulfill({status:503,body:'refresh failed'});
+    if(u.pathname.endsWith('/stageflow/forecast'))return options.forecastFailure?route.fulfill({status:503,body:'forecast unavailable'}):json({issuedTime:iso(NOW),primaryUnits:g?.status.observed.primaryUnit||'ft',data:[{primary:99,validTime:iso(NOW-3600000)},{primary:options.zero&&g?.lid==='TST0'?0:25,validTime:iso(NOW+4*3600000)}]});
+    return json(g||{gauges:rows});
+   }
+   if(u.hostname==='api.water.usgs.gov'){
+    if(state.fail)return route.fulfill({status:503,body:'topology unavailable'});
+    if(u.pathname.endsWith('/position'))return json({features:[{properties:{comid:'123'}}]});
+    if(u.pathname.includes('/flowlines'))return json({type:'FeatureCollection',features:[]});
+    if(u.pathname.includes('/navigation/DM/')){const i=+(decodeURIComponent(u.pathname).match(/USGS-(\d+)/)?.[1]||0);return json({features:siteFeatures.filter(f=>+f.properties.identifier.slice(5)>i)});}
+    return json({features:u.pathname.includes('/navigation/UM/')?siteFeatures:siteFeatures});
+   }
+   if(u.hostname==='api.zippopotam.us'){const la=u.pathname.endsWith('90001');if(options.searchRace&&u.pathname.endsWith('11111')){state.holdStarted=true;await new Promise(resolve=>state.release=resolve);}return json({places:[{latitude:la?'34.0':'27.77',longitude:la?'-118.2':'-82.64','place name':u.pathname.endsWith('22222')?'Latest town':u.pathname.endsWith('11111')?'Earlier town':la?'Los Angeles':'St Petersburg','state abbreviation':la?'CA':'FL'}]});}
+   if(u.hostname==='api.weather.gov'){
+    if(u.pathname.includes('/alerts/active'))return state.fail?route.fulfill({status:503,body:'alert failure'}):json({features:[{properties:{event:'Flood Warning',instruction:'Follow current official fixture instructions',severity:'Severe',onset:iso(NOW-3600000),expires:iso(NOW+120000)}}]});
+    if(u.pathname.startsWith('/points/')){const la=u.pathname.includes('34.0000');if(options.race&&!la&&!state.holdStarted){state.holdStarted=true;await new Promise(resolve=>state.release=resolve);}return json({properties:{cwa:la?'LOX':'TBW',forecast:'https://api.weather.gov/forecast/'+(la?'LA':'FL'),relativeLocation:{properties:{city:la?'Los Angeles':'St Petersburg',state:la?'CA':'FL'}}}});}
+    return json({properties:{updateTime:iso(NOW),periods:[{startTime:iso(NOW-3600000),endTime:iso(NOW+86400000),temperature:70,temperatureUnit:'F',shortForecast:'Official forecast',detailedForecast:'Source forecast fixture'}]}});
+   }
+   if(u.hostname==='files.airnowtech.org')return state.fail?route.fulfill({status:503,body:'air failure'}):route.fulfill({contentType:'text/plain',body:'10/23/26|10/23/26|12:00|EDT|0|O|Y|Test Area|FL|27.77|-82.64|PM2.5|55|Moderate|No||EPA'});
+   if(u.hostname==='www.spc.noaa.gov')return json({type:'FeatureCollection',features:[{properties:{DN:4,LABEL:'SLGT',LABEL2:'Slight Risk',ISSUE:'202610231500',EXPIRE:'202610241200'},geometry:{type:'Polygon',coordinates:[[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]]]}}]});
+   if(u.hostname==='services9.arcgis.com'){
+    if(state.fail)return json({error:{code:503,message:'ArcGIS soft error'}});
+    if(u.pathname.includes('USA_Wildfires')){const features=[{properties:{IncidentName:'Official fire fixture',DailyAcres:100,PercentContained:null,ModifiedOnDateTime:NOW},geometry:{type:'Point',coordinates:[-82.64,27.77]}}];if(options.mixedFire)features.push({properties:{IncidentName:'Old incident fixture',DailyAcres:50,PercentContained:null,ModifiedOnDateTime:NOW-10*86400000},geometry:{type:'Point',coordinates:[-82.64,27.77]}});return json({features});}
+    const attrs=[{STORMID:'AL1',STORMNAME:'Current advisory fixture',DTG:NOW-3600000,TAU:0},{STORMID:'AL2',STORMNAME:'Old advisory fixture',DTG:NOW-10*86400000,TAU:0}];
+    return json({features:attrs.map(a=>u.searchParams.get('f')==='geojson'?{properties:a,geometry:{type:'Point',coordinates:[-82,27]}}:{attributes:a})});
+   }
+   if(u.hostname==='volcanoes.usgs.gov')return json([{volcano_name:'Great Sitkin',vnum:'311120',alert_level:'WATCH',color_code:'ORANGE',sent_utc:'2026-10-23 15:00:00',notice_url:'https://volcanoes.usgs.gov/hans-public/notice/fixture'}]);
+   if(u.hostname==='hazards.fema.gov')return json({features:u.searchParams.get('returnGeometry')==='true'?[]:[{attributes:{FLD_ZONE:'AE',SFHA_TF:'T',ZONE_SUBTY:'Source subtype'}}]});
+   if(u.hostname==='api.tidesandcurrents.noaa.gov')return json({stations:[]});
+   if(u.hostname==='geo.fcc.gov')return json({results:[{county_fips:'12103'}]});
+   if(u.hostname==='usdmdataservices.unl.edu')return json([{county:'Pinellas',state:'FL',mapDate:'2026-10-20',d0:20,d1:10,d2:5,d3:0,d4:0}]);
+   if(u.hostname==='earthquake.usgs.gov'){
+    if(u.pathname.endsWith('exposures.json'))return json({population_exposure:{mmi:[4,6,7,8],aggregated_exposure:options.badPopulation?[100,20,null,5]:options.zeroPopulation?[100,20,0,0]:state.fail?[100,20,null,5]:[100,20,0,5]}});
+    if(u.pathname.endsWith('alerts.json')){const bins=[{min:'0',max:'1',probability:.8,color:'green'},{min:'1',max:'10',probability:.2,color:'yellow'}];if(options.badProbability==='null')bins[0].probability=null;if(options.badProbability==='zero')bins.forEach(b=>b.probability=0);if(options.badProbability==='sum')bins.forEach(b=>b.probability=.8);if(options.badProbability==='overlap')bins[1].min='0';return json({fatality:{bins},economic:{bins:[{min:'0',max:'1',probability:1,color:'green'}]}});}
+    if(u.pathname.endsWith('comments.json'))return json({impact1:'Official modeled loss context'});
+    if(u.searchParams.has('eventid')){const e=event(u.searchParams.get('eventid'));if(state.fail&&options.badEvent==='id')e.id='OTHER';if(state.fail&&options.badEvent==='revision')e.properties.updated=NOW-86400000;if(state.fail&&options.badEvent==='future')e.properties.time=NOW+2*86400000;return json(e);}
+    if(u.pathname.includes('significant_month'))return json({features:[event('CURRENT')]});
+    return json({features:[],metadata:{generated:NOW}});
+   }
+   return json({features:[],elements:[],data:[],results:[]});
+  });
+  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(10000);await page.clock.install({time:new Date(NOW)});await page.goto(origin,{waitUntil:'load'});
+  if(slug==='river-flood-propagation')await page.waitForFunction(()=>RiverPropagationResponse.loading===false&&RiverPropagationResponse.nodes.length>0);
+  if(slug==='river-flood-network')await page.waitForFunction(()=>RiverNetworkResponse.loading===false&&RiverNetworkResponse.nodes.length>0);
+  if(slug==='us-local-hazards'){await page.locator('#q').fill('33701');await page.locator('#go').click();if(!options.race)await page.waitForFunction(()=>LocalHazardsResponse.loading===false);}
+  if(slug==='quake-consequence')await page.waitForFunction(()=>QuakeResponse.read().event?.id==='CURRENT'&&!document.querySelector('#exposure .spin'));
+  await page.waitForFunction(slug=>{const p=ConsoleResponse.exportPlan().plan;return slug==='river-flood-propagation'?p.evidence.some(e=>e.id==='gauge-TST0'):slug==='river-flood-network'?p.evidence.some(e=>e.id==='branch-TST0'||e.id==='branch-WRONG'):slug==='us-local-hazards'?p.context.includes('St Petersburg'):p.context.includes('CURRENT');},slug);
+  await verify(page,state);assert.deepEqual(errors,[]);passed++;console.log('PASS automatic hazard: '+slug+' '+JSON.stringify(options));
+ }finally{state.release?.();await context.close();}
+}
+const plan=page=>page.evaluate(()=>ConsoleResponse.exportPlan().plan);
+try{
+ await scenario('river-flood-propagation',{},async page=>{const s=await page.evaluate(()=>RiverPropagationResponse);assert.equal(s.nodes.length,7,'fetches outermost included link');assert.equal(s.nodes[0].crest,25,'past maximum excluded');assert.equal(s.nodes[0].actionThreshold,10);assert.match(await page.locator('#chain').textContent(),/Official conditional road-impact description/);assert.doesNotMatch(await page.locator('#chain').textContent(),/Unreached impact must not be claimed/);const p=await plan(page);assert.equal(p.diagnostics.find(d=>d.id==='gauge-TST0-forecast').status,'triggered');assert.ok(p.actions.some(a=>a.id==='gauge-TST0-impacts-operator'&&a.selected));});
+ await scenario('river-flood-propagation',{flow:true},async page=>{const n=await page.evaluate(()=>RiverPropagationResponse.nodes.find(n=>n.lid==='TST1'));assert.equal(n.unit,'kcfs');assert.equal(n.actionThreshold,20,'converts cfs threshold to kcfs');assert.equal(n.matchedImpacts.length,0,'stage impact cannot be compared to flow');});
+ await scenario('river-flood-propagation',{flow:true,sentinel:true},async page=>{assert.equal(await page.evaluate(()=>RiverPropagationResponse.nodes.find(n=>n.lid==='TST1').actionThreshold),null);assert.equal((await plan(page)).diagnostics.find(d=>d.id==='gauge-TST1-forecast').status,'unknown');});
+ await scenario('river-flood-propagation',{zero:true},async page=>{const n=await page.evaluate(()=>RiverPropagationResponse.nodes[0]);assert.equal(n.stage,0);assert.equal(n.actionThreshold,0);assert.equal(n.crest,0);assert.equal(n.matchedImpacts[0].threshold,0);});
+ await scenario('river-flood-propagation',{forecastFailure:true},async page=>{const nodes=await page.evaluate(()=>RiverPropagationResponse.nodes);assert.ok(nodes.every(n=>n.fcst===null&&n.crest===null&&n.fsev===null),'failed hydrograph cannot leave a forecast category active');});
+ await scenario('river-flood-propagation',{blankNumber:true},async page=>{const n=await page.evaluate(()=>RiverPropagationResponse.nodes[0]);assert.equal(n.stage,null);assert.equal(n.actionThreshold,null);});
+ await scenario('river-flood-propagation',{},async(page,state)=>{const before=await page.evaluate(()=>RiverPropagationResponse.checkedAt);state.fail=true;await page.clock.fastForward(5*60000+1);await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Last successful'));assert.equal(await page.locator('#chain .node').count(),7);assert.equal(await page.evaluate(()=>RiverPropagationResponse.checkedAt),before);});
+ await scenario('river-flood-network',{wrongNearby:true},async page=>{const s=await page.evaluate(()=>RiverNetworkResponse);assert.equal(s.nodes.find(n=>n.id==='USGS-1').lid,'TST0');assert.equal(s.topologyComplete,true);assert.match(await page.locator('#sources').textContent(),/Official conditional road-impact description/);});
+ await scenario('river-flood-network',{noExactId:true},async page=>{const s=await page.evaluate(()=>RiverNetworkResponse);assert.equal(s.topologyComplete,false);assert.ok(s.unmatchedSiteIds.includes('USGS-1'));assert.equal(s.nodes.filter(n=>n.headwater).length,0);});
+ await scenario('river-flood-network',{stale:true},async page=>{const s=await page.evaluate(()=>RiverNetworkResponse);assert.equal(s.topologyComplete,false);assert.equal(s.nodes.filter(n=>n.headwater).length,0);assert.match(await page.locator('#sources').textContent(),/statuses unavailable/);assert.doesNotMatch(await page.locator('#sources').textContent(),/none in flood right now/);});
+ await scenario('river-flood-network',{flow:true},async page=>{assert.match(await page.locator('#sources').textContent(),/forecast peak 25 kcfs/);});
+ await scenario('river-flood-network',{},async(page,state)=>{const before=await page.locator('#verdict').textContent();state.fail=true;await page.clock.fastForward(10*60000+1);await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Last successful'));assert.equal(await page.locator('#verdict').textContent(),before);});
+ await scenario('us-local-hazards',{},async page=>{assert.match(await page.locator('#tropics').textContent(),/1 distinct.*1 old\/undated/);assert.match(await page.locator('#volcano').textContent(),/Great Sitkin.*WATCH.*ORANGE/);assert.match(await page.locator('#volcano').textContent(),/proximity.*not assessed/);assert.match(await page.locator('#fire').textContent(),/containment unavailable/);assert.doesNotMatch(await page.locator('#fire').textContent(),/0%contained/);const p=await plan(page);assert.ok(p.evidence.some(e=>e.id==='spc'&&e.quality==='current'));assert.ok(p.actions.some(a=>a.id==='drought-operator'&&a.selected));});
+ await scenario('us-local-hazards',{mixedFire:true},async page=>{const f=await page.evaluate(()=>LocalHazardsResponse.fire);assert.equal(f.count,1);assert.equal(f.inventoryCount,2);assert.equal(f.excludedOldOrUndatedCount,1);assert.match(await page.locator('#fire').textContent(),/1 old\/undated locations are excluded/);assert.match(await page.locator('#fire').textContent(),/Old incident fixture.*old\/undated; not a current response count/);});
+ await scenario('us-local-hazards',{},async(page,state)=>{state.fail=true;await page.clock.fastForward(5*60000+1);await page.waitForFunction(()=>LocalHazardsResponse.loading===false&&document.querySelector('#air').textContent.includes('Previous report retained'));assert.match(await page.locator('#air').textContent(),/AQI55|AQI 55/);assert.match(await page.locator('#fire').textContent(),/Previous report retained/);await page.waitForFunction(()=>ConsoleResponse.exportPlan().plan.diagnostics.find(d=>d.id==='fire')?.status==='unknown');assert.equal((await plan(page)).diagnostics.find(d=>d.id==='fire').status,'unknown');assert.equal((await plan(page)).diagnostics.find(d=>d.id==='warnings').status,'unknown');});
+ await scenario('us-local-hazards',{race:true},async(page,state)=>{await page.waitForFunction(()=>document.querySelector('#place').textContent.includes('St Petersburg'));await page.locator('#q').fill('90001');await page.locator('#go').click();await page.waitForFunction(()=>LocalHazardsResponse.loading===false&&LocalHazardsResponse.context.includes('Los Angeles'));state.release();await page.waitForTimeout(30);assert.match(await page.locator('#res').innerHTML(),/weather\.gov\/lox\//);assert.doesNotMatch(await page.locator('#res').innerHTML(),/weather\.gov\/tbw\//);});
+ await scenario('quake-consequence',{},async page=>{const s=await page.evaluate(()=>QuakeResponse.read());assert.equal(s.event.id,'CURRENT');assert.equal(s.exposure.strongPopulation,5);assert.equal(s.exposure.totalPopulation,125);const p=await plan(page);assert.equal(p.evidence.find(e=>e.id==='pager-population').value,5);assert.ok(p.actions.some(a=>a.id==='pager-population-operator'));assert.match(await page.locator('#exposure').textContent(),/USGS product updated.*checked/);});
+ await scenario('quake-consequence',{zeroPopulation:true},async page=>{assert.equal(await page.evaluate(()=>QuakeResponse.read().exposure.strongPopulation),0);assert.equal((await plan(page)).evidence.find(e=>e.id==='pager-population').value,0);});
+ await scenario('quake-consequence',{badPopulation:true},async page=>{assert.equal(await page.evaluate(()=>QuakeResponse.read().exposure),null);assert.match(await page.locator('#exposure').textContent(),/unavailable or invalid/);assert.equal((await plan(page)).evidence.find(e=>e.id==='pager-population').quality,'missing');});
+ for(const badProbability of ['null','zero','sum','overlap'])await scenario('quake-consequence',{badProbability},async page=>{assert.equal(await page.evaluate(()=>QuakeResponse.read().pager),null);assert.match(await page.locator('#pager').textContent(),/invalid, incomplete/);assert.doesNotMatch(await page.locator('#pager').textContent(),/0% chance fatalities|NaN/);});
+ await scenario('quake-consequence',{},async(page,state)=>{const stamp=await page.evaluate(()=>QuakeResponse.read().exposure.checkedAt);state.fail=true;await page.clock.fastForward(10*60000+1);await page.waitForFunction(()=>document.querySelector('#exposure').textContent.includes('Last successful'));assert.equal(await page.evaluate(()=>QuakeResponse.read().exposure.checkedAt),stamp);assert.equal(await page.evaluate(()=>QuakeResponse.read().event.id),'CURRENT');});
+ for(const badEvent of ['id','revision','future'])await scenario('quake-consequence',{badEvent},async(page,state)=>{const before=await page.evaluate(()=>QuakeResponse.read().event);state.fail=true;await page.clock.fastForward(10*60000+1);await page.waitForFunction(()=>document.querySelector('#event').textContent.includes('Last successful'));assert.deepEqual(await page.evaluate(()=>QuakeResponse.read().event),before);});
+ for(const slug of ['river-flood-network','river-flood-propagation','us-local-hazards'])await scenario(slug,{searchRace:true},async(page,state)=>{await page.locator('#q').fill('11111');await page.locator('#go').click();while(!state.holdStarted)await page.waitForTimeout(5);await page.locator('#q').fill('22222');await page.locator('#go').click();await page.waitForFunction(slug=>{const s=slug==='river-flood-network'?RiverNetworkResponse:slug==='river-flood-propagation'?RiverPropagationResponse:LocalHazardsResponse;return !s.loading&&s.context.includes('Latest town');},slug);state.release();await page.waitForTimeout(30);assert.match(await page.evaluate(slug=>(slug==='river-flood-network'?RiverNetworkResponse:slug==='river-flood-propagation'?RiverPropagationResponse:LocalHazardsResponse).context,slug),/Latest town/);});
+ console.log('PASS '+passed+' automatic-input hazard browser scenarios');
+}finally{await browser.close();}

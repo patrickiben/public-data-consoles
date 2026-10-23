@@ -10,6 +10,7 @@ const gauges=[
  {lid:'TESTA',name:'Upstream Test Gauge',latitude:38.63,longitude:-90.18,upstreamLid:null,downstreamLid:'TESTB',status:{observed:{primary:12.5,floodCategory:'action',validTime:'2026-10-23T16:00:00Z'},forecast:{primary:16,floodCategory:'minor',validTime:'2026-10-23T18:00:00Z'}},flood:{stageUnits:'ft',categories:{action:10,minor:15,moderate:18,major:22},crests:{historic:[{stage:49,occurredTime:'1993-08-01T00:00:00Z'}]}}},
  {lid:'TESTB',name:'Downstream Test Gauge',latitude:38.55,longitude:-90.1,upstreamLid:'TESTA',downstreamLid:null,status:{observed:{primary:15.5,floodCategory:'minor',validTime:'2026-10-23T16:00:00Z'},forecast:{primary:19,floodCategory:'moderate',validTime:'2026-10-23T21:00:00Z'}},flood:{stageUnits:'ft',categories:{action:10,minor:15,moderate:18,major:22},crests:{historic:[]}}}
 ];
+gauges.forEach((g,i)=>{g.usgsId=String(i+1);g.status.observed.primaryUnit='ft';g.flood.categories=Object.fromEntries(Object.entries(g.flood.categories).map(([k,v])=>[k,{stage:v,flow:-9999}]));});
 const features=gauges.map((g,i)=>({type:'Feature',properties:{identifier:'USGS-'+(i+1),name:g.name},geometry:{type:'Point',coordinates:[g.longitude,g.latitude]}}));
 let passed=0;
 async function scenario(slug,options,verify){
@@ -38,7 +39,7 @@ async function scenario(slug,options,verify){
    if(u.hostname==='disease.sh')return route.fulfill({status:503,body:'fixture historical source unavailable'});
    if(u.hostname==='api.water.noaa.gov'){
     const g=gauges.find(g=>u.pathname.toUpperCase().includes(g.lid));
-    if(u.pathname.endsWith('/stageflow/forecast'))return options.noForecast?json({issuedTime:'2026-10-23T16:00:00Z',data:[]}):json({issuedTime:'2026-10-23T16:00:00Z',data:[{primary:g?.lid==='TESTA'?11:15,validTime:'2026-10-23T17:00:00Z'},{primary:g?.lid==='TESTA'?16:19,validTime:g?.lid==='TESTA'?'2026-10-23T18:00:00Z':'2026-10-23T21:00:00Z'}]});
+    if(u.pathname.endsWith('/stageflow/forecast'))return options.noForecast?json({issuedTime:'2026-10-23T16:00:00Z',primaryUnits:'ft',data:[]}):json({issuedTime:'2026-10-23T16:00:00Z',primaryUnits:'ft',data:[{primary:g?.lid==='TESTA'?11:15,validTime:'2026-10-23T17:00:00Z'},{primary:g?.lid==='TESTA'?16:19,validTime:g?.lid==='TESTA'?'2026-10-23T18:00:00Z':'2026-10-23T21:00:00Z'}]});
     const records=structuredClone(gauges);if(options.unknown)for(const row of records)delete row.status.observed;
     return json(g?records.find(row=>row.lid===g.lid):{gauges:records});
    }

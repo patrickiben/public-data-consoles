@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- HEALTH_PUBLIC_RUNTIME_START -->
+<script>
+/* Public health/reference request primitives; no personal inputs are inspected here. */
+(function(root){'use strict';
+ async function json(url){const c=new AbortController(),timer=setTimeout(()=>c.abort(),15000);try{const r=await fetch(url,{signal:c.signal});if(!r.ok)throw Error('Public source HTTP '+r.status);return await r.json();}catch(e){throw Error(e.name==='AbortError'?'Public source timed out':e.message);}finally{clearTimeout(timer);}}
+ function numeric(value){if(typeof value==='number')return Number.isFinite(value)&&value>=0?value:null;if(typeof value!=='string'||! /^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(value.trim()))return null;const n=Number(value.replace(/,/g,''));return Number.isFinite(n)&&n>=0?n:null;}
+ function date(value){const s=String(value??'').slice(0,10),t=Date.parse(s+'T00:00:00Z');if(!/^\d{4}-\d{2}-\d{2}$/.test(s)||!Number.isFinite(t)||new Date(t).toISOString().slice(0,10)!==s||t>Date.now()+7*864e5)throw Error('Invalid public observation date');return s;}
+ async function socrata(dataset,params){const all=[];for(let page=0;page<20;page++){const u=new URL('https://data.cdc.gov/resource/'+dataset+'.json');for(const [k,v]of params)u.searchParams.set(k,v);u.searchParams.set('$limit','1000');u.searchParams.set('$offset',String(page*1000));const rows=await json(u);if(!Array.isArray(rows)||rows.some(r=>!r||typeof r!=='object'))throw Error('Invalid CDC response');all.push(...rows);if(rows.length<1000)return all;}throw Error('CDC response exceeds bounded pagination');}
+ function series(rows,dateField,valueField,minDate,max=Infinity){const byDate=new Map();for(const row of rows){if(row[valueField]==null)continue;const day=date(row[dateField]),value=numeric(row[valueField]);if(value==null||value>max)throw Error('Invalid public series value');if(day<minDate)continue;if(byDate.has(day)&&byDate.get(day)!==value)throw Error('Conflicting weekly public observations');byDate.set(day,value);}const points=[...byDate].sort((a,b)=>a[0].localeCompare(b[0]));if(!points.length)throw Error('No usable public observations');return points;}
+ function retainFresh(next,prior){for(const key of Object.keys(next)){const old=prior?.[key]?.at(-1)?.[0],now=next[key]?.at(-1)?.[0];if(old&&now&&now<old)throw Error('Public observation window regressed');}return next;}
+ function installRefresh(run,ms=6*3600e3){let inflight=null,checked=0;function refresh(){if(inflight)return inflight;checked=Date.now();inflight=Promise.resolve().then(run).finally(()=>{inflight=null;});return inflight;}setInterval(()=>{if(!document.hidden)refresh();},ms);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-checked>=ms)refresh();});return refresh;}
+ function escape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ root.HealthPublicData={json,numeric,date,socrata,series,retainFresh,installRefresh,escape};
+})(globalThis);
+
+</script>
+<!-- HEALTH_PUBLIC_RUNTIME_END -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>U.S. Overdose Surveillance — fentanyl &amp; emerging synthetic opioids</title>
@@ -473,7 +490,7 @@ footer b{color:var(--ink2)}
   <!-- STATE LEADERBOARD -->
   <details class="card" open id="c-state">
     <summary><span class="ico">▤</span> By state <span class="badge b-meas">measured</span>
-      <span class="tools"><span class="seg" id="stsort"><button data-k="rate" class="on">per 100k</button><button data-k="syn">count</button><button data-k="tot">all drugs</button></span></span>
+      <span class="tools"><span class="seg" id="stsort"><button data-k="rate">approx per 100k</button><button data-k="syn" class="on">count</button><button data-k="tot">all drugs</button></span></span>
     </summary>
     <div class="body">
       <div class="small muted" style="margin-bottom:4px">Synthetic-opioid deaths per 100,000 residents (12-mo rolling). Small states with high per-capita burden rank above large states with bigger raw counts.</div>
@@ -503,7 +520,7 @@ footer b{color:var(--ink2)}
   </details>
 
   <footer>
-    <div><b>Data &amp; method.</b> Primary source: <a href="https://data.cdc.gov/NCHS/VSRR-Provisional-Drug-Overdose-Death-Counts/xkb8-kh2a" target="_blank" rel="noopener">CDC NCHS VSRR — Provisional Drug Overdose Death Counts</a> (dataset xkb8-kh2a), pulled live from the public Socrata API when reachable, otherwise from an embedded snapshot whose vintage is shown above. Values are 12-month-ending provisional counts; <b>predicted</b> = CDC's lag-adjusted model estimate (modeled), <b>reported</b> = counts received to date (measured, provisional and incomplete for recent months). Per-state rates use 2024 Census population estimates.</div>
+    <div><b>Data &amp; method.</b> Primary source: <a href="https://data.cdc.gov/NCHS/VSRR-Provisional-Drug-Overdose-Death-Counts/xkb8-kh2a" target="_blank" rel="noopener">CDC NCHS VSRR — Provisional Drug Overdose Death Counts</a> (dataset xkb8-kh2a), pulled live from the public Socrata API when reachable, otherwise from an embedded snapshot whose vintage is shown above. Values are 12-month-ending provisional counts; <b>predicted</b> = CDC's lag-adjusted model estimate (modeled), <b>reported</b> = counts received to date (measured, provisional and incomplete for recent months). Approximate jurisdiction counts per100,000 use dated2024Census resident-population estimates, while CDC counts are by jurisdiction of occurrence. New York excludes New York City; comparable NY/NYC denominators are not supplied, so their rates remain unavailable and their counts remain visible.</div>
     <div style="margin-top:8px"><b>Honesty.</b> Provisional figures revise upward as data completes — recent months are under-counts. This tool is <b>descriptive, not predictive</b>; it does not forecast, advise, or rank causes. No personal or protected health information is used. Emerging-substance and international panels are interpretive context curated from public reports, not live feeds.</div>
     <div style="margin-top:8px" class="muted">Embedded snapshot vintage: <span id="vintfoot">—</span>. If a live refresh succeeds, the source chip above switches to “live CDC”.</div>
   </footer>
@@ -576,7 +593,7 @@ function render(){
  $('vlab1').textContent=vintLabel(S.vintage);
  $('vintchip').innerHTML='<b>12-mo ending '+vintLabel(S.vintage)+'</b>';
  $('vintfoot').textContent=vintLabel(S.vintage)+(S.embedded?' (embedded '+S.embedded+')':'');
- $('srcchip').innerHTML=LIVE?'<span class="badge b-meas">live</span> CDC VSRR':'<span class="badge b-mod">snapshot</span> embedded';
+ $('srcchip').textContent=(SNAP.responseDownloadedAt?'CDC records downloaded '+SNAP.responseDownloadedAt:'Embedded snapshot '+SNAP.embedded)+(SNAP.responseError?' · refresh unavailable; last good retained':'')+(SNAP.responseRetainedStateSeries?.length?' · partial jurisdiction refresh; '+SNAP.responseRetainedStateSeries.length+' earlier category records retained (source missing/older)':'');
  // national stats
  const totPv=N.total[N.total.length-1], totRep=S.rep&&S.rep.total;
  const synPv=N.syn[N.syn.length-1], synRep=S.rep&&S.rep.syn;
@@ -594,7 +611,7 @@ function render(){
   return '<div class="wave"><div class="nm"><div class="t">'+w.t+'</div><div class="c">'+w.c+'</div></div>'+
    '<div class="sp">'+spark(s,90,26,w.col,false)+'</div>'+
    '<div class="val">'+fmt(cur)+'</div><div class="ch">'+chgHtml(pctChange(s))+'</div></div>';}).join('');
- $('wavenarr').innerHTML='The pattern epidemiologists call the <b>"fourth wave"</b>: synthetic opioids rose then turned down from their peak, <b>heroin all but vanished</b> (displaced by fentanyl in the supply), and <b>stimulants</b> — methamphetamine and cocaine — are still rising and increasingly co-involved with fentanyl. "Change" is vs. 12 months earlier; <span class="up">▲ up</span> is worsening, <span class="dn">▼ down</span> is improving.';
+ $('wavenarr').innerHTML='The pattern epidemiologists call the <b>"fourth wave"</b>: synthetic opioids rose then turned down from their peak, <b>heroin all but vanished</b> (displaced by fentanyl in the supply), and <b>stimulants</b> — methamphetamine and cocaine — can co-occur with fentanyl. Use the dated series for current direction; this contextual narrative is not a live drug-supply measurement. "Change" is vs. 12 months earlier; <span class="up">▲ up</span> is worsening, <span class="dn">▼ down</span> is improving.';
  renderStates();
  // emerging
  $('emerg').innerHTML=EMERGING.map(e=>'<div class="em"><div class="dot" style="background:'+e.col+'"></div><div><div class="nm">'+e.n+' <span class="st" style="background:'+(STCOLbg(e.st))+';color:'+STCOL[e.st]+'">'+e.st+'</span></div><div class="cls">'+e.cls+'</div><div class="note">'+e.note+'</div><div class="src">surveillance: '+e.src+'</div></div></div>').join('');
@@ -604,45 +621,30 @@ function render(){
 function hex2rgba(h,a){const n=parseInt(h.slice(1),16);return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
 function STCOLbg(st){return hex2rgba(STCOL[st]||'#6b8290',.16);}
 
-let STSORT='rate';
+let STSORT='syn';
 function renderStates(){
- const S=SNAP, rows=[];
- Object.keys(S.states).forEach(st=>{const d=S.states[st],pop=S.pop&&S.pop[st];if(!pop||d.syn==null)return;
-  rows.push({st,syn:d.syn,tot:d.tot,pop,rate:d.syn/pop*1e5});});
- const key=STSORT;rows.sort((a,b)=>(b[key]||0)-(a[key]||0));
- const max=Math.max(...rows.map(r=>r[key]||0),1);
- $('stlead').innerHTML=rows.map((r,i)=>{const v=r[key]||0;const col=r.rate>=30?'#ef5466':r.rate>=18?'#f3833b':r.rate>=10?'#f5b945':'#3ddc97';
-  const disp=key==='rate'?r.rate.toFixed(1)+' <small style="color:var(--dim)">/100k</small>':fmt(v);
-  const sec=key==='rate'?fmt(r.syn)+' deaths':r.rate.toFixed(1)+'/100k';
-  return '<div class="row2"><div class="rk">'+(i+1)+'</div><div class="nm">'+r.st+'</div>'+
-   '<div class="meter"><div class="tk"><div class="fl" style="width:'+(100*v/max).toFixed(1)+'%;background:'+col+'"></div></div></div>'+
-   '<div class="rate">'+disp+'</div><div class="cnt">'+sec+'</div></div>';}).join('')||'<div class="muted">No state data.</div>';
+ const S=SNAP,rows=[];Object.entries(S.states).forEach(([st,d])=>{if(!Number.isFinite(d.syn))return;const pop=S.pop&&S.pop[st],rate=st!=='NY'&&st!=='YC'&&Number.isFinite(pop)&&pop>0?d.syn/pop*1e5:null;rows.push({st,label:st==='NY'?'NY (excl. NYC)':st==='YC'?'New York City':st,syn:d.syn,tot:d.tot,rate,synPeriod:d.synPeriod||S.vintage,totalPeriod:d.totalPeriod||S.vintage});});
+ const key=STSORT,shown=key==='rate'?rows.filter(r=>r.rate!=null):rows;shown.sort((a,b)=>(b[key]??-Infinity)-(a[key]??-Infinity));const max=Math.max(...shown.map(r=>r[key]??0),1);
+ $('stlead').innerHTML=shown.map((r,i)=>{const v=r[key],col=r.rate==null?'#9fb4bd':r.rate>=30?'#ef5466':r.rate>=18?'#f3833b':r.rate>=10?'#f5b945':'#3ddc97',disp=key==='rate'?r.rate.toFixed(1)+' <small>/100k</small>':fmt(v),sec=key==='rate'?fmt(r.syn)+' predicted deaths':r.rate==null?'Rate not comparable':r.rate.toFixed(1)+'/100k · 2024 population';return '<div class="row2"><div class="rk">'+(i+1)+'</div><div class="nm">'+HealthPublicData.escape(r.label)+'</div><div class="meter"><div class="tk"><div class="fl" style="width:'+(100*v/max).toFixed(1)+'%;background:'+col+'"></div></div></div><div class="rate">'+disp+'</div><div class="cnt">'+sec+' · '+(key==='tot'?r.totalPeriod:r.synPeriod)+(SNAP.responseRetainedStateSeries?.includes(r.st+'|'+(key==='tot'?'total':'syn'))?' · retained last good':'')+'</div></div>';}).join('')||'<div class="muted">No comparable jurisdiction records.</div>';
 }
 [...document.querySelectorAll('#stsort button')].forEach(b=>b.onclick=()=>{STSORT=b.dataset.k;[...document.querySelectorAll('#stsort button')].forEach(x=>x.classList.toggle('on',x===b));renderStates();});
 
 // ---- live fetch (graceful: keep embed on failure)
-function so(params){const u=new URL(SOCRATA);for(const[k,v]of params)u.searchParams.append(k,v);return fetch(u).then(r=>{if(!r.ok)throw r.status;return r.json();});}
+// ---- current public CDC counts, bounded and validated; last-good on failure ----
 const RKEY={'Number of Drug Overdose Deaths':'total','Synthetic opioids, excl. methadone (T40.4)':'syn','Psychostimulants with abuse potential (T43.6)':'psy','Cocaine (T40.5)':'coc','Heroin (T40.1)':'her','Natural & semi-synthetic opioids (T40.2)':'rx','Opioids (T40.0-T40.4,T40.6)':'opi'};
-async function fetchCDC(){
- $('srcchip').innerHTML='<span class="badge b-mod">…</span> contacting CDC';
- try{
-  const nat=await so([['state','US'],['$where',"year>='2019'"],['$select','year,month,indicator,data_value,predicted_value'],['$order','year,month'],['$limit','6000']]);
-  // build periods + series
-  const seen=[],pset=new Set(),series={};Object.values(RKEY).forEach(k=>series[k]={});
-  nat.forEach(r=>{const k=RKEY[r.indicator];if(!k)return;const p=r.year+'-'+String(MO[r.month]).padStart(2,'0');pset.add(p);if(r.predicted_value!=null)series[k][p]=Math.round(+r.predicted_value);});
-  const periods=[...pset].sort();
-  const N={};Object.keys(series).forEach(k=>N[k]=periods.map(p=>series[k][p]!=null?series[k][p]:null));
-  // latest reported per indicator
-  const rep={};const repP={};nat.forEach(r=>{const k=RKEY[r.indicator];if(!k||r.data_value==null)return;const p=r.year+'-'+String(MO[r.month]).padStart(2,'0');if(!repP[k]||p>repP[k]){repP[k]=p;rep[k]=Math.round(+r.data_value);}});
-  // states (syn + total), latest per state
-  const stRows=await so([['$where',"state!='US' AND year>='2025'"],['$select','year,month,state,indicator,predicted_value'],['$limit','12000']]);
-  const states={};const bestP={};
-  stRows.forEach(r=>{const k=RKEY[r.indicator];if((k!=='syn'&&k!=='total')||r.predicted_value==null)return;const p=r.year+'-'+String(MO[r.month]).padStart(2,'0');const id=r.state+'|'+k;if(!bestP[id]||p>bestP[id]){bestP[id]=p;(states[r.state]=states[r.state]||{})[k]=Math.round(+r.predicted_value);}});
-  const stClean={};Object.keys(states).forEach(s=>stClean[s]={syn:states[s].syn,tot:states[s].total});
-  SNAP=Object.assign({},SNAP,{periods,nat:N,rep,states:stClean,vintage:periods[periods.length-1]});
-  LIVE=true;SNAP.responseCheckedAt=new Date().toISOString();render();
- }catch(e){LIVE=false;render();$('srcchip').innerHTML='<span class="badge b-mod">snapshot</span> embedded (live refresh unavailable)';}
-}
+const fetchCDC=HealthPublicData.installRefresh(async function(){
+ $('srcchip').textContent='Checking public CDC counts; retaining last good data';
+ try{const h=HealthPublicData,quoted=Object.keys(RKEY).map(s=>"'"+s.replace(/'/g,"''")+"'").join(','),nat=await h.socrata('xkb8-kh2a',[['$where',"state='US' AND year>='2019' AND indicator in ("+quoted+")"],['$select','year,month,indicator,data_value,predicted_value'],['$order','year,month,indicator']]);
+  const series={},reported={},seen=new Set(),periodSet=new Set();Object.values(RKEY).forEach(k=>series[k]={});
+  function period(row){if(!/^\d{4}$/.test(String(row.year))||!MO[row.month])throw Error('Invalid CDC period');const p=row.year+'-'+String(MO[row.month]).padStart(2,'0');h.date(p+'-01');return p;}
+  for(const row of nat){const k=RKEY[row.indicator];if(!k)throw Error('Unexpected CDC indicator');const p=period(row),id=k+'|'+p;if(seen.has(id))throw Error('Duplicate CDC national period');seen.add(id);periodSet.add(p);if(row.predicted_value!=null){const value=h.numeric(row.predicted_value);if(value==null)throw Error('Invalid CDC predicted count');series[k][p]=value;}if(row.data_value!=null){const value=h.numeric(row.data_value);if(value==null)throw Error('Invalid CDC reported count');if(!reported[k]||p>reported[k].p)reported[k]={p,v:value};}}
+  const periods=[...periodSet].sort(),national={};for(const k of Object.values(RKEY)){national[k]=periods.map(p=>series[k][p]??null);if(!national[k].some(Number.isFinite))throw Error('Missing CDC drug category');const oldIndex=SNAP.nat[k]?.findLastIndex(Number.isFinite)??-1,newIndex=national[k].findLastIndex(Number.isFinite);if(oldIndex>=0&&periods[newIndex]<SNAP.periods[oldIndex])throw Error('CDC national observation period regressed');}
+  const latestIndex=national.total.findLastIndex(Number.isFinite),vintage=periods[latestIndex],fromYear=String(+vintage.slice(0,4)-2),stRows=await h.socrata('xkb8-kh2a',[['$where',"state!='US' AND year>='"+fromYear+"' AND indicator in ('Number of Drug Overdose Deaths','Synthetic opioids, excl. methadone (T40.4)')"],['$select','year,month,state,state_name,indicator,predicted_value'],['$order','state,year,month,indicator']]);
+  const states={},stateSeen=new Set();for(const row of stRows){const k=RKEY[row.indicator];if(!['syn','total'].includes(k)||!row.state)throw Error('Unexpected state count');if(row.predicted_value==null)continue;const p=period(row);if(p>vintage)continue;const n=h.numeric(row.predicted_value),id=row.state+'|'+k+'|'+p;if(n==null||stateSeen.has(id))throw Error('Invalid/duplicate state count');stateSeen.add(id);const st=states[row.state]??={name:row.state_name||row.state};if(!st[k+'Period']||p>st[k+'Period']){st[k==='total'?'tot':k]=n;st[k+'Period']=p;}}
+  if(Object.keys(states).length<40)throw Error('Incomplete CDC jurisdiction coverage');const retained=[];for(const [code,prior]of Object.entries(SNAP.states||{}))for(const [key,field]of [['syn','syn'],['total','tot']]){const oldPeriod=prior[key+'Period']||SNAP.vintage,next=states[code],nextPeriod=next?.[key+'Period'];if(Number.isFinite(prior[field])&&oldPeriod>=fromYear+'-01'&&(!Number.isFinite(next?.[field])||!nextPeriod||nextPeriod<oldPeriod)){const target=states[code]??={name:prior.name||code};target[field]=prior[field];target[key+'Period']=oldPeriod;retained.push(code+'|'+key);}}const rep=Object.fromEntries(Object.entries(reported).map(([k,r])=>[k,r.v]));
+  SNAP={...SNAP,periods,nat:national,rep,reportedPeriods:Object.fromEntries(Object.entries(reported).map(([k,r])=>[k,r.p])),states,vintage,responseRetainedStateSeries:retained,responseDownloadedAt:new Date().toISOString(),responseCheckedAt:new Date().toISOString(),responseError:null};LIVE=true;render();
+ }catch(error){SNAP.responseCheckedAt=new Date().toISOString();SNAP.responseError=error.message;render();}
+});
 
 // boot
 function boot(){$('splash').style.display='none';render();fetchCDC();}

@@ -65,7 +65,7 @@ def fingerprint(build: dict | None) -> tuple:
 
 
 def validate_data_path(path: str) -> str:
-    if not isinstance(path, str) or not re.fullmatch(r"consoles/[a-z0-9-]+/data/[a-z0-9-]+\.json", path):
+    if not isinstance(path, str) or not re.fullmatch(r"consoles/[a-z0-9-]+/data/[a-z0-9_-]+\.json", path):
         raise PublishError("Expected a relative console data JSON path; no URL, traversal or query is allowed")
     return path
 

@@ -1,8 +1,11 @@
 {
+  "schemaVersion": 1,
   "schema_version": 1,
+  "refreshEveryHours": 24,
   "retrieved_on": "2026-10-23",
   "epoch": "2000-01-01",
-  "scope": "Embedded FRED macro data only; market prices, CAPE and algorithms unchanged.",
+  "capturedAt": "2026-10-23T00:00:00Z",
+  "scope": "Published FRED macro data only; market prices, CAPE and algorithms unchanged.",
   "sources": [
     {
       "series": "WFRBST01134",

@@ -1,10 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- HEALTH_PUBLIC_RUNTIME_START -->
+<script>
+/* Public health/reference request primitives; no personal inputs are inspected here. */
+(function(root){'use strict';
+ async function json(url){const c=new AbortController(),timer=setTimeout(()=>c.abort(),15000);try{const r=await fetch(url,{signal:c.signal});if(!r.ok)throw Error('Public source HTTP '+r.status);return await r.json();}catch(e){throw Error(e.name==='AbortError'?'Public source timed out':e.message);}finally{clearTimeout(timer);}}
+ function numeric(value){if(typeof value==='number')return Number.isFinite(value)&&value>=0?value:null;if(typeof value!=='string'||! /^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(value.trim()))return null;const n=Number(value.replace(/,/g,''));return Number.isFinite(n)&&n>=0?n:null;}
+ function date(value){const s=String(value??'').slice(0,10),t=Date.parse(s+'T00:00:00Z');if(!/^\d{4}-\d{2}-\d{2}$/.test(s)||!Number.isFinite(t)||new Date(t).toISOString().slice(0,10)!==s||t>Date.now()+7*864e5)throw Error('Invalid public observation date');return s;}
+ async function socrata(dataset,params){const all=[];for(let page=0;page<20;page++){const u=new URL('https://data.cdc.gov/resource/'+dataset+'.json');for(const [k,v]of params)u.searchParams.set(k,v);u.searchParams.set('$limit','1000');u.searchParams.set('$offset',String(page*1000));const rows=await json(u);if(!Array.isArray(rows)||rows.some(r=>!r||typeof r!=='object'))throw Error('Invalid CDC response');all.push(...rows);if(rows.length<1000)return all;}throw Error('CDC response exceeds bounded pagination');}
+ function series(rows,dateField,valueField,minDate,max=Infinity){const byDate=new Map();for(const row of rows){if(row[valueField]==null)continue;const day=date(row[dateField]),value=numeric(row[valueField]);if(value==null||value>max)throw Error('Invalid public series value');if(day<minDate)continue;if(byDate.has(day)&&byDate.get(day)!==value)throw Error('Conflicting weekly public observations');byDate.set(day,value);}const points=[...byDate].sort((a,b)=>a[0].localeCompare(b[0]));if(!points.length)throw Error('No usable public observations');return points;}
+ function retainFresh(next,prior){for(const key of Object.keys(next)){const old=prior?.[key]?.at(-1)?.[0],now=next[key]?.at(-1)?.[0];if(old&&now&&now<old)throw Error('Public observation window regressed');}return next;}
+ function installRefresh(run,ms=6*3600e3){let inflight=null,checked=0;function refresh(){if(inflight)return inflight;checked=Date.now();inflight=Promise.resolve().then(run).finally(()=>{inflight=null;});return inflight;}setInterval(()=>{if(!document.hidden)refresh();},ms);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-checked>=ms)refresh();});return refresh;}
+ function escape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ root.HealthPublicData={json,numeric,date,socrata,series,retainFresh,installRefresh,escape};
+})(globalThis);
+
+</script>
+<!-- HEALTH_PUBLIC_RUNTIME_END -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Prescription Savings Finder</title>
-<meta name="description" content="Find more affordable prescription medication: search a drug to see whether a lower-cost generic exists and the price gap (live CDC/CMS NADAC data), plus the full menu of ways to pay less — generics, pharmacy price-shopping, discount cards, manufacturer copay cards and patient-assistance programs. Educational, not medical or pricing advice.">
+<meta name="description" content="Explore prescription acquisition-cost references: search dated CMS NADAC product records, plus options to discuss with a pharmacist/prescriber for paying less — generics, pharmacy price-shopping, discount cards, manufacturer copay cards and patient-assistance programs. Educational, not medical or pricing advice.">
 <style>
 :root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
  --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
@@ -403,7 +420,7 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
 <div class="wrap">
   <header>
     <h1>Prescription Savings Finder<span class="sub">Is there a cheaper version of your medication — and every legitimate way to pay less for it?</span></h1>
-    <div class="banner"><b>How this helps.</b> The single biggest lever on drug cost is the <b>generic</b>. Search your drug below: if an FDA‑approved generic exists, you'll see the gap between the brand and generic <b>acquisition cost</b> (live CMS data) — often <b>10× to 500×</b>. Then below, the full menu of ways to pay less, whether you're insured, uninsured, or on Medicare.</div>
+    <div class="banner"><b>How this helps.</b> Search your drug below for dated CMS <b>acquisition-cost references</b>, including generic-classified records where available. Verify the exact strength, form, route and any substitution with a pharmacist/prescriber. These are not retail quotes. The strategies below cover additional options for insured, uninsured and Medicare users.</div>
     <div class="searchbar">
       <input id="q" placeholder="Type a medication name, e.g. Lipitor, Crestor, Januvia, metformin" autocomplete="off">
       <button class="btn" id="go">Find savings</button>
@@ -412,7 +429,7 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
   </header>
 
   <div class="card" id="result" style="display:none">
-    <div class="hd"><span class="ico">℞</span> <span id="rtitle">—</span> <span class="badge b-meas" id="rbadge" style="margin-left:auto">live CMS NADAC</span></div>
+    <div class="hd"><span class="ico">℞</span> <span id="rtitle">—</span> <span class="badge b-meas" id="rbadge" style="margin-left:auto">CMS NADAC reference</span></div>
     <div class="body" id="rbody"></div>
   </div>
 
@@ -445,7 +462,7 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
   </div>
 
   <footer>
-    <div><b>Sources.</b> Live drug pricing: <a href="https://data.medicaid.gov/dataset/dfa2ab14-06c2-457a-9e36-5cb6d80f8d93" target="_blank" rel="noopener">CMS National Average Drug Acquisition Cost (NADAC)</a>, updated weekly. Drug name &amp; generic matching: <a href="https://lhncbc.nlm.nih.gov/RxNav/" target="_blank" rel="noopener">NLM RxNorm/RxNav</a>. Bioequivalence — FDA Orange Book therapeutic-equivalence codes: <a href="https://open.fda.gov/" target="_blank" rel="noopener">openFDA</a>. All are public, free APIs.</div>
+    <div><b>Sources.</b> Live drug pricing: <a href="https://data.medicaid.gov/dataset/fbb83258-11c7-47f5-8b18-5f8e79f7e704" target="_blank" rel="noopener">CMS National Average Drug Acquisition Cost (NADAC)</a>, updated weekly. Drug name &amp; generic matching: <a href="https://lhncbc.nlm.nih.gov/RxNav/" target="_blank" rel="noopener">NLM RxNorm/RxNav</a>. Bioequivalence — FDA Orange Book therapeutic-equivalence codes: <a href="https://open.fda.gov/" target="_blank" rel="noopener">openFDA</a>. All are public, free APIs.</div>
     <div style="margin-top:8px"><b>Honesty.</b> NADAC is the average price pharmacies <b>pay</b> to acquire a drug — a benchmark, <span class="badge b-meas">measured</span> and dated, but <b>not</b> the price you pay (that depends on your insurance, pharmacy and any discount card). It illustrates the size of the generic gap; your real savings will differ. The strategies list is <span class="badge b-int">curated</span> general information. This is not medical advice and not an endorsement of any program; verify eligibility yourself. No personal or health information is collected — searches go directly from your browser to the public CMS/NLM APIs.</div>
   </footer>
 </div>
@@ -456,23 +473,21 @@ let NADAC_DS='fbb83258-11c7-47f5-8b18-5f8e79f7e704'; // current NADAC dataset (a
 const MQ='https://data.medicaid.gov/api/1/metastore/schemas/dataset/items?limit=400';
 const DQ=ds=>'https://data.medicaid.gov/api/1/datastore/query/'+ds+'/0';
 const RX='https://rxnav.nlm.nih.gov/REST/drugs.json?name=';
-const money=v=>v==null||isNaN(v)?'—':'$'+(+v<1?(+v).toFixed(4):(+v).toFixed(2));
+const money=v=>v==null||!Number.isFinite(+v)?'—':'$'+(+v<1?(+v).toFixed(4):(+v).toFixed(2));
 
-// keep the NADAC dataset id current (CMS rotates weekly); fall back to the hardcoded id
-async function refreshDataset(){
- try{const r=await fetch(MQ);const items=await r.json();
-  const nad=items.filter(it=>(it.title||'').trim().toUpperCase().startsWith('NADAC')&&!(it.title||'').toUpperCase().includes('COMPARISON'))
-    .sort((a,b)=>(b.modified||'').localeCompare(a.modified||''));
-  if(nad[0]&&nad[0].identifier)NADAC_DS=nad[0].identifier;
- }catch(e){/* keep fallback */}
+// Discover the current annual dataset; individual weekly as-of releases are selected below.
+let NADAC_RELEASE=null;const nadacReleasePromises=new Map();
+async function refreshDataset(){try{const items=await HealthPublicData.json(MQ);if(!Array.isArray(items))throw Error('Invalid CMS catalog');const candidates=items.filter(it=>/^NADAC\b/i.test(it.title||'')&&!/comparison/i.test(it.title||'')&&/^[a-f0-9-]{36}$/i.test(it.identifier||'')).map(it=>({...it,year:+((it.title||'').match(/\b(20\d{2})\b/)||[])[1]})).filter(it=>it.year<=new Date().getUTCFullYear()).sort((a,b)=>b.year-a.year||String(b.modified).localeCompare(String(a.modified)));if(!candidates.length)throw Error('No dated NADAC dataset');if(NADAC_DS!==candidates[0].identifier)NADAC_RELEASE=null;NADAC_DS=candidates[0].identifier;}catch(e){/* Retain known dataset; every result still shows actual release/effective dates. */}}
+async function cmsQuery(dataset,params){const u=new URL(DQ(dataset));for(const [key,value]of Object.entries(params))u.searchParams.set(key,String(value));const j=await HealthPublicData.json(u);if(!j||!Array.isArray(j.results)||!Number.isSafeInteger(+j.count)||+j.count<0)throw Error('Invalid CMS price response');return j;}
+async function nadacRelease(dataset){if(NADAC_RELEASE?.dataset===dataset&&Date.now()-NADAC_RELEASE.checked<6*3600e3)return NADAC_RELEASE;if(nadacReleasePromises.has(dataset))return nadacReleasePromises.get(dataset);const pending=(async()=>{const j=await cmsQuery(dataset,{limit:1,'sorts[0][property]':'as_of_date','sorts[0][order]':'desc'}),day=j.results[0]&&HealthPublicData.date(j.results[0].as_of_date);if(!day)throw Error('No dated CMS release');return NADAC_RELEASE={dataset,day,checked:Date.now()};})().finally(()=>nadacReleasePromises.delete(dataset));nadacReleasePromises.set(dataset,pending);return pending;}
+async function nadac(name){await datasetReady;const dataset=NADAC_DS,release=await nadacRelease(dataset),rows=[];let count=null;
+ for(let page=0;page<5;page++){const j=await cmsQuery(dataset,{limit:500,offset:page*500,'conditions[0][property]':'ndc_description','conditions[0][value]':name.toUpperCase()+'%','conditions[0][operator]':'like','conditions[1][property]':'as_of_date','conditions[1][value]':release.day,'conditions[1][operator]':'=','sorts[0][property]':'ndc_description','sorts[0][order]':'asc','sorts[1][property]':'ndc','sorts[1][order]':'asc'});if(count!=null&&count!==+j.count)throw Error('CMS match set changed');count=+j.count;if(count>2500)throw Error('More than2500current matches; narrow the product name');rows.push(...j.results);if(rows.length>=count)break;if(!j.results.length)throw Error('CMS response truncated');}
+ if(rows.length!==count)throw Error('CMS response truncated');const seen=new Set();for(const row of rows){if(typeof row.ndc_description!=='string'||!/^\d{11}$/.test(row.ndc||'')||seen.has(row.ndc)||HealthPublicData.date(row.as_of_date)!==release.day||HealthPublicData.numeric(row.nadac_per_unit)==null||!['EA','GM','ML'].includes(row.pricing_unit)||!['G','B'].includes(row.classification_for_rate_setting))throw Error('Invalid/duplicate current CMS price record');HealthPublicData.date(row.effective_date);row.nadac_per_unit=HealthPublicData.numeric(row.nadac_per_unit);row.corresponding_generic_drug_nadac_per_unit=HealthPublicData.numeric(row.corresponding_generic_drug_nadac_per_unit);seen.add(row.ndc);}
+ Object.defineProperty(rows,'release',{value:release});return rows;
 }
 
-async function nadac(name){
- const u=DQ(NADAC_DS)+'?limit=40&conditions[0][property]=ndc_description&conditions[0][value]='+encodeURIComponent(name.toUpperCase()+'%')+'&conditions[0][operator]=like';
- const r=await fetch(u);if(!r.ok)throw r.status;const j=await r.json();return j.results||j.data||[];
-}
 async function rxGeneric(name){
- try{const r=await fetch(RX+encodeURIComponent(name));const j=await r.json();
+ try{const j=await HealthPublicData.json(RX+encodeURIComponent(name));
   const groups=(j.drugGroup&&j.drugGroup.conceptGroup)||[];
   // SCD/SBD concept names contain the ingredient; grab the first ingredient-ish token set
   let ings=new Set();
@@ -484,50 +499,47 @@ async function rxGeneric(name){
 // FDA Orange Book therapeutic-equivalence (bioequivalence) codes via openFDA
 async function bioeq(name){
  try{
-  const q=u=>fetch('https://api.fda.gov/drug/drugsfda.json?'+u).then(r=>r.ok?r.json():{results:[]});
+  const q=(field,term,limit)=>{const u=new URL('https://api.fda.gov/drug/drugsfda.json');u.searchParams.set('search',field+':'+JSON.stringify(term));u.searchParams.set('limit',String(limit));return HealthPublicData.json(u);};
   const codes={};let gen=null;
   const collect=res=>(res||[]).forEach(r=>{const gn=r.openfda&&r.openfda.generic_name&&r.openfda.generic_name[0];if(gn&&!gen)gen=gn;(r.products||[]).forEach(p=>{if(p.te_code)codes[p.te_code]=(codes[p.te_code]||0)+1;});});
-  const j=await q('search=products.brand_name:"'+name.toUpperCase()+'"&limit=50');collect(j.results);
-  if(!Object.keys(codes).some(c=>c[0]==='A')){const gname=(gen||name).toUpperCase();const j2=await q('search=openfda.generic_name:"'+gname+'"&limit=80');collect(j2.results);}
+  const j=await q('products.brand_name',name.toUpperCase(),50);collect(j.results);
+  if(!Object.keys(codes).some(c=>c[0]==='A')){const gname=(gen||name).toUpperCase();const j2=await q('openfda.generic_name',gname,80);collect(j2.results);}
   return {codes,gen};
  }catch(e){return null;}
 }
 function bioBlock(be){
- if(!be)return '';
- const codes=Object.keys(be.codes||{});const a=codes.filter(c=>c[0]==='A').sort();const bc=codes.filter(c=>c[0]==='B').sort();
- const gen=be.gen?' ('+be.gen.toLowerCase()+')':'';let inner;
- if(a.length)inner='<div class="bt" style="color:#7fe9bd">✓ FDA‑rated '+a[0]+' — bioequivalent &amp; substitutable</div><div class="bd2">The generic'+gen+' is in the FDA Orange Book as <b>therapeutically equivalent</b> (an "A" rating): it is tested to deliver the same active drug to your bloodstream as the brand, so a pharmacist can substitute it automatically. Switching is well‑supported.</div>';
- else if(bc.length)inner='<div class="bt" style="color:#f5cd85">⚠ Rated '+bc[0]+' — not an automatic substitute</div><div class="bd2">The FDA has <b>not</b> established therapeutic equivalence for the products found (a "B" rating — bioequivalence not demonstrated, or product‑specific concerns). A lower‑cost version may still suit you, but it is not an automatic swap — ask your prescriber, who can specify the exact product.</div>';
- else inner='<div class="bt" style="color:#9fb4bd">No FDA therapeutic‑equivalence rating found</div><div class="bd2">If this is a <b>biologic</b> (an injected or infused medicine such as Humira, insulin, or many cancer &amp; autoimmune drugs), its lower‑cost copies are <b>biosimilars</b> — and an <b>interchangeable</b> biosimilar can be substituted much like a generic. Ask your prescriber or pharmacist about a biosimilar; otherwise confirm equivalence with your pharmacist.</div>';
- return '<div class="bioeq"><div class="bh">Is the cheaper version a true substitute? (bioequivalence)</div>'+inner+'<div class="bsrc">FDA Orange Book therapeutic-equivalence codes · via openFDA</div></div>';
+ const codes=Object.keys(be?.codes||{}).sort(),text=!be?'The FDA name lookup is unavailable; product-reference context is unknown.':codes.length?'The broad FDA name lookup returned TE code(s) '+codes.map(HealthPublicData.escape).join(', ')+'.':'No TE code was returned by this broad FDA name lookup.';
+ return '<div class="bioeq"><div class="bh">FDA product-reference context</div><div class="bd2">'+text+' <b>Product-level equivalence or substitution has not been established.</b> Name matches can include different strengths, combinations, forms and routes. A matching active ingredient or any A-prefixed code is insufficient to identify an equivalent product. Ask a pharmacist/prescriber to verify the exact product, strength, dosage form, route and reference/TE relationship before any change.</div><div class="bsrc"><a href="https://www.fda.gov/drugs/development-approval-process-drugs/orange-book-preface" target="_blank" rel="noopener">FDA Orange Book definitions</a> · FDA name-query results via openFDA, not a personal substitution decision.</div></div>';
 }
-async function search(name){
- $('result').style.display='block';$('rtitle').textContent=name;
- $('rbody').innerHTML='<span class="muted"><span class="spin"></span> checking live CMS pricing &amp; FDA equivalence…</span>';
+
+let searchGeneration=0;
+async function search(name){const generation=++searchGeneration;
+ $('result').style.display='block';$('rtitle').textContent=name;$('rbadge').textContent='checking CMS references';
+ $('rbody').innerHTML='<span class="muted"><span class="spin"></span> checking current CMS references &amp; FDA product context…</span>';
  try{
-  const [rows,be]=await Promise.all([nadac(name),bioeq(name)]);
-  if(!rows.length){$('rbody').innerHTML='<div class="muted">No exact match in the CMS NADAC file for “'+name+'”. Try the active-ingredient (generic) name, a brand spelling, or a shorter term. NADAC covers most outpatient drugs but not every product.</div>'+bioBlock(be)+altNote();return;}
+  const [rows,be]=await Promise.all([nadac(name),bioeq(name)]);if(generation!==searchGeneration)return;$('rbadge').textContent='CMS release '+rows.release.day;
+  if(!rows.length){$('rbody').innerHTML='<div class="muted">No exact match in the CMS NADAC file for “'+HealthPublicData.escape(name)+'”. Try the active-ingredient (generic) name, a brand spelling, or a shorter term. NADAC covers most outpatient drugs but not every product.</div>'+bioBlock(be)+altNote();return;}
   // dedupe by description, prefer rows with a value
-  const seen={};rows.forEach(r=>{const k=r.ndc_description;if(!seen[k]||(+r.nadac_per_unit&&!+seen[k].nadac_per_unit))seen[k]=r;});
-  const list=Object.values(seen).filter(r=>+r.nadac_per_unit).sort((a,b)=>+b.nadac_per_unit-+a.nadac_per_unit);
-  const brand=list.find(r=>r.classification_for_rate_setting==='B'&&+r.corresponding_generic_drug_nadac_per_unit>0);
+  const seen={};rows.forEach(r=>{const k=r.ndc_description+'|'+r.pricing_unit+'|'+r.classification_for_rate_setting;if(!seen[k]||(+r.nadac_per_unit&&!+seen[k].nadac_per_unit))seen[k]=r;});
+  const list=Object.values(seen).filter(r=>HealthPublicData.numeric(r.nadac_per_unit)!=null).sort((a,b)=>+b.nadac_per_unit-+a.nadac_per_unit);
+  const brand=list.find(r=>{const gp=HealthPublicData.numeric(r.corresponding_generic_drug_nadac_per_unit);return r.classification_for_rate_setting==='B'&&gp>0&&Number.isFinite(+r.nadac_per_unit/gp);});
   const eff=list[0]&&list[0].effective_date;
   let html='';
-  if(brand){const bp=+brand.nadac_per_unit, gp=+brand.corresponding_generic_drug_nadac_per_unit, x=(bp/gp);
-   html+='<div class="reveal"><div class="pricebox brand"><div class="t">Brand</div><div class="nm">'+brand.ndc_description+'</div><div class="pr">'+money(bp)+'</div><div class="u">per unit (acquisition)</div></div>'+
-    '<div class="pricebox generic"><div class="t">Generic equivalent</div><div class="nm">same active ingredient</div><div class="pr">'+money(gp)+'</div><div class="u">per unit (acquisition)</div></div></div>'+
-    '<div class="savecallout">A generic of this drug costs about <b>'+(x>=10?Math.round(x)+'×':x.toFixed(1)+'×')+' less</b> to acquire ('+money(bp)+' → '+money(gp)+' per unit). Ask your prescriber or pharmacist whether the <b>generic</b> is right for you — by law, an FDA‑approved generic must match the brand on active ingredient, strength and quality.</div>';
+  if(brand){const bp=HealthPublicData.numeric(brand.nadac_per_unit), gp=HealthPublicData.numeric(brand.corresponding_generic_drug_nadac_per_unit), x=(bp/gp);
+   html+='<div class="reveal"><div class="pricebox brand"><div class="t">Brand</div><div class="nm">'+HealthPublicData.escape(brand.ndc_description)+'</div><div class="pr">'+money(bp)+'</div><div class="u">per '+HealthPublicData.escape(brand.pricing_unit)+' (acquisition benchmark)</div></div>'+
+    '<div class="pricebox generic"><div class="t">Source paired generic benchmark</div><div class="nm">NADAC corresponding reference</div><div class="pr">'+money(gp)+'</div><div class="u">per '+HealthPublicData.escape(brand.pricing_unit)+' (acquisition benchmark)</div></div></div>'+
+    '<div class="savecallout">This source record’s brand benchmark is about <b>'+(x>=10?Math.round(x)+'×':x.toFixed(1)+'×')+' the corresponding generic acquisition benchmark</b> ('+money(bp)+' → '+money(gp)+' per unit). This source pairing is not an individual substitution decision. Ask your prescriber or pharmacist to verify the exact product, strength, dosage form, route and therapeutic-equivalence relationship.</div>';
   }else{
    const anyG=list.find(r=>r.classification_for_rate_setting==='G');
-   if(anyG)html+='<div class="savecallout">A <b>generic</b> version appears to be available (shown below at '+money(+anyG.nadac_per_unit)+'/unit). Generics are the biggest single way to cut drug cost — ask your prescriber or pharmacist.</div>';
-   else html+='<div class="savecallout" style="background:rgba(245,185,69,.08);border-color:rgba(245,185,69,.3)"><b style="color:var(--amber)">No generic equivalent found in NADAC.</b> Many newer brand drugs have no generic yet. The strategies below — manufacturer copay cards, patient-assistance programs, and asking about a cheaper drug in the same class — matter most here.</div>';
+   if(anyG)html+='<div class="savecallout">A <b>generic-classified name match</b> appears in the current release (shown below at '+money(+anyG.nadac_per_unit)+'/unit). This does not establish that it matches your exact product. Verify strength, form, route and eligibility with your pharmacist/prescriber.</div>';
+   else html+='<div class="savecallout" style="background:rgba(245,185,69,.08);border-color:rgba(245,185,69,.3)"><b style="color:var(--amber)">No generic-classified record matched this name in the current NADAC release.</b> This does not establish whether an equivalent generic exists. Ask a pharmacist to check your exact product; assistance-program eligibility and actual prices require separate verification.</div>';
   }
-  html+='<div style="margin-top:14px;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Matches in NADAC '+(eff?'· prices effective '+eff:'')+'</div>';
-  html+=list.slice(0,8).map(r=>'<div class="hit"><div class="cl"><span class="tg '+(r.classification_for_rate_setting==='B'?'b">brand':'g">generic')+'</span></div><div class="nm">'+r.ndc_description+'</div><div class="pr">'+money(+r.nadac_per_unit)+'</div></div>').join('');
-  html+=bioBlock(be);
+  html+='<div style="margin-top:14px;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Current NADAC references · as of '+HealthPublicData.escape(rows.release.day)+' · individual effective dates shown below'+'</div>';
+  html+=list.slice(0,8).map(r=>'<div class="hit"><div class="cl"><span class="tg '+(r.classification_for_rate_setting==='B'?'b">brand':'g">generic')+'</span></div><div class="nm">'+HealthPublicData.escape(r.ndc_description)+'<div class="muted small">NDC '+HealthPublicData.escape(r.ndc)+' · effective '+HealthPublicData.escape(r.effective_date)+'</div></div><div class="pr">'+money(+r.nadac_per_unit)+'/'+HealthPublicData.escape(r.pricing_unit)+'</div></div>').join('');
+  html+='<div class="muted small">Showing '+Math.min(8,list.length)+' of '+list.length+' distinct description/unit/class references in the current release. Acquisition benchmarks are not patient quotes.</div>';html+=bioBlock(be);
   html+=altNote();
   $('rbody').innerHTML=html;
- }catch(e){$('rbody').innerHTML='<div class="muted">Couldn\'t reach the live CMS pricing service right now. The savings strategies below still apply; you can also look the drug up directly at <a href="https://data.medicaid.gov/" target="_blank" rel="noopener">data.medicaid.gov</a> or a discount-card site.</div>';}
+ }catch(e){if(generation!==searchGeneration)return;$('rbadge').textContent='CMS lookup unavailable';$('rbody').innerHTML='<div class="muted">The current CMS reference lookup is unavailable or incomplete. Narrow a broad search and retry; no stale prices are substituted. The savings strategies below still apply; you can also look the drug up directly at <a href="https://data.medicaid.gov/" target="_blank" rel="noopener">data.medicaid.gov</a> or a discount-card site.</div>';}
 }
 function altNote(){return '<div class="caveat">Acquisition cost is a benchmark, not your price. Your actual cost depends on insurance, pharmacy and discount cards — and a discount-card cash price sometimes beats an insurance copay, so compare both.</div>';}
 
@@ -546,7 +558,7 @@ const STRATS=[
 $('strats').innerHTML=STRATS.map((s,i)=>'<div class="strat"><div class="n">'+(i+1)+'</div><div><div class="t">'+s[0]+'</div><div class="d">'+s[1]+'</div></div></div>').join('');
 
 const COMPOUND=[
- ['A needed drug with no affordable version','When a brand has no generic and is very expensive, a compounding pharmacy can sometimes prepare the active ingredient far more cheaply — ask your prescriber whether that is appropriate and safe for your drug.'],
+ ['A patient-specific need not met by an approved product','Compounded drugs are not FDA-approved. A lower price alone does not establish suitability or a compounding exception. Discuss any patient-specific clinical need with a licensed prescriber/pharmacist; do not infer an alternative from this price lookup.'],
  ['Manufacturer shortages','During an official drug shortage, compounders may legally fill the gap with a custom-made version.'],
  ['A dose or form you can\'t buy off the shelf','A custom strength (so you don\'t buy two products), a liquid or topical for someone who can\'t swallow pills, or two medicines combined into one.'],
  ['Allergen- or dye-free versions','For patients who react to a filler, preservative or dye in the commercial product.']
@@ -556,7 +568,7 @@ $('compound').innerHTML=COMPOUND.map((s,i)=>'<div class="strat"><div class="n">�
 $('go').onclick=()=>{const v=$('q').value.trim();if(v)search(v);};
 $('q').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click();});
 [...document.querySelectorAll('.ex a')].forEach(a=>a.onclick=()=>{$('q').value=a.dataset.q;search(a.dataset.q);});
-refreshDataset();
+const refreshCatalog=HealthPublicData.installRefresh(refreshDataset);const datasetReady=refreshCatalog();
 </script>
 <!-- CONSOLE_RESPONSE_ADAPTER_START -->
 <script>

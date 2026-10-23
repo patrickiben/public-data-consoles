@@ -1,6 +1,60 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- WORLD_BANK_PUBLIC_RUNTIME_START -->
+<script>
+/* Canonical keyless WDI reader. Embedded verbatim by scripts/embed_worldbank_runtime.py. */
+(function(root){
+ 'use strict';
+ const BASE='https://api.worldbank.org/v2',MAX_PAGES=20,TIMEOUT=15000;
+ function finite(value){return typeof value==='number'&&Number.isFinite(value);}
+ function yearRange(start,end){return Array.from({length:end-start+1},(_,i)=>String(start+i));}
+ async function json(url){const c=new AbortController(),timer=setTimeout(()=>c.abort(),TIMEOUT);try{const r=await fetch(url,{signal:c.signal});if(!r.ok)throw Error('World Bank HTTP '+r.status);return await r.json();}catch(e){throw Error(e.name==='AbortError'?'World Bank request timed out':e.message);}finally{clearTimeout(timer);}}
+ async function fetchRows(options){
+  const codes=options.codes,indicator=options.indicator,start=options.startYear??2000,end=options.endYear??new Date().getUTCFullYear();
+  if(!Array.isArray(codes)||!codes.length||!Number.isInteger(start)||!Number.isInteger(end)||start>end||end>new Date().getUTCFullYear())throw Error('Invalid public annual-data request');
+  const expected=new Set(codes),rows=[],seen=new Set();let total=null,pages=null,updated=null;
+  for(let page=1;page<=(pages??1);page++){
+   const u=new URL(BASE+'/country/'+codes.join(';')+'/indicator/'+indicator);u.searchParams.set('format','json');u.searchParams.set('date',start+':'+end);u.searchParams.set('per_page','20000');u.searchParams.set('page',String(page));
+   const d=await json(u),m=Array.isArray(d)&&d[0],items=Array.isArray(d)&&d[1];
+   if(!m||!Array.isArray(items)||!Number.isInteger(+m.pages)||+m.pages<1||+m.pages>MAX_PAGES||+m.page!==page||!Number.isInteger(+m.total)||+m.total<1)throw Error('Incomplete World Bank response');
+   if(total!=null&&(total!==+m.total||pages!==+m.pages||updated!==m.lastupdated))throw Error('World Bank pagination changed during retrieval');total=+m.total;pages=+m.pages;updated=m.lastupdated;if(typeof updated!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(updated)||!Number.isFinite(Date.parse(updated+'T00:00:00Z'))||new Date(updated+'T00:00:00Z').toISOString().slice(0,10)!==updated||Date.parse(updated+'T00:00:00Z')>Date.now()+864e5)throw Error('Invalid World Bank source-update date');
+   for(const row of items){const code=row.countryiso3code||row.country?.id,y=String(row.date),key=code+'|'+y;
+    if(!expected.has(code)||row.indicator?.id!==indicator||!/^\d{4}$/.test(y)||+y<start||+y>end||seen.has(key)||(row.value!==null&&!finite(row.value)))throw Error('Invalid World Bank country/indicator/year/value');seen.add(key);rows.push(row);
+   }
+  }
+  if(rows.length!==total||!rows.some(r=>finite(r.value)))throw Error('World Bank series is empty or truncated');
+  for(const code of codes)if(!rows.some(r=>(r.countryiso3code||r.country?.id)===code))throw Error('World Bank country coverage missing');
+  return {rows,sourceUpdatedAt:updated,checkedAt:new Date().toISOString()};
+ }
+ async function pool(tasks,limit){let next=0,failed=false;const out=[],results=await Promise.allSettled(Array.from({length:Math.min(limit,tasks.length)},async()=>{while(!failed&&next<tasks.length){const i=next++;try{out[i]=await tasks[i]();}catch(error){failed=true;throw error;}}}));const bad=results.find(r=>r.status==='rejected');if(bad)throw bad.reason;return out;}
+ async function refreshSnapshot(options){
+  const current=options.snapshot,start=Math.min(...current.years.map(Number)),end=new Date().getUTCFullYear(),years=yearRange(start,end),index=Object.fromEntries(years.map((y,i)=>[y,i])),map=options.indicatorMap,keys=Object.keys(map),tasks=[];
+  for(const indicator of keys){tasks.push(()=>fetchRows({codes:options.aggregateCodes,indicator,startYear:start,endYear:end}));tasks.push(()=>fetchRows({codes:options.countryCodes,indicator,startYear:start,endYear:end}));}
+  const replies=await pool(tasks,4),agg={},cty={},sourceUpdates={};
+  for(const code of options.aggregateCodes){const id=options.aggregateRemap?.[code]||code;agg[id]={...current.agg[id],s:{}};}
+  for(const code of options.countryCodes){cty[code]={...current.cty[code],latest:{}};for(const field of Object.values(options.seriesFields))cty[code][field]=years.map(()=>null);}
+  let latest=null;
+  keys.forEach((indicator,i)=>{const k=map[indicator],ar=replies[i*2],cr=replies[i*2+1];if(ar.sourceUpdatedAt!==cr.sourceUpdatedAt)throw Error('World Bank source edition changed during retrieval');if(current.responseSourceUpdatedAt?.[indicator]&&ar.sourceUpdatedAt<current.responseSourceUpdatedAt[indicator])throw Error('World Bank source edition regressed; last good data retained');sourceUpdates[indicator]=ar.sourceUpdatedAt;
+   for(const row of ar.rows){const code=options.aggregateRemap?.[row.countryiso3code||row.country.id]||row.countryiso3code||row.country.id;if(!agg[code])throw Error('Unknown aggregate');if(!agg[code].s[k])agg[code].s[k]=years.map(()=>null);if(row.value!==null){agg[code].s[k][index[row.date]]=row.value;if(latest===null||row.date>latest)latest=row.date;}}
+   for(const row of cr.rows){const code=row.countryiso3code||row.country.id;if(row.value===null)continue;const record=cty[code],prior=record.latest[k];if(!prior||row.date>prior.y)record.latest[k]={v:row.value,y:row.date};const field=options.seriesFields[k];if(field)record[field][index[row.date]]=row.value;if(latest===null||row.date>latest)latest=row.date;}
+  });
+  if(!latest)throw Error('No finite annual observations');
+  const retained=[];function last(series,axis){for(let i=(series||[]).length-1;i>=0;i--)if(finite(series[i]))return {year:axis[i],value:series[i]};return null;}function align(series){const out=years.map(()=>null);current.years.forEach((y,i)=>{if(index[y]!=null&&finite(series?.[i]))out[index[y]]=series[i];});return out;}
+  for(const code of options.countryCodes)for(const k of Object.values(map)){const prior=current.cty[code]?.latest?.[k],next=cty[code].latest[k];if(prior&&finite(prior.v)&&/^\d{4}$/.test(prior.y)&&(!next||next.y<prior.y)){cty[code].latest[k]={...prior};const field=options.seriesFields[k];if(field)cty[code][field]=align(current.cty[code][field]);retained.push({scope:'country',code,indicator:k,keptYear:prior.y,returnedYear:next?.y||null});if(prior.y>latest)latest=prior.y;}}
+  for(const code of Object.keys(agg))for(const k of Object.values(map)){const prior=last(current.agg[code]?.s?.[k],current.years),next=last(agg[code].s[k],years);if(prior&&(!next||next.year<prior.year)){agg[code].s[k]=align(current.agg[code].s[k]);retained.push({scope:'aggregate',code,indicator:k,keptYear:prior.year,returnedYear:next?.year||null});if(prior.year>latest)latest=prior.year;}}
+
+  return {...current,years,agg,cty,vintage:latest,responseDownloadedAt:new Date().toISOString(),responseCheckedAt:new Date().toISOString(),responseSourceUpdatedAt:sourceUpdates,responseRetainedSeries:retained,responseError:null};
+ }
+ function escape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ function sourceChip(snapshot){const downloaded=snapshot.responseDownloadedAt,date=downloaded||snapshot.embedded,age=(Date.now()-Date.parse(date))/864e5;return '<span class="badge '+(downloaded?'b-meas':'b-mod')+'">'+(downloaded?'downloaded':'snapshot')+'</span> World Bank annual data'+(date?' · '+escape(downloaded?'retrieved '+date:'embedded '+date):'')+(snapshot.responseError?' · refresh unavailable; last good retained':'')+(snapshot.responseRetainedSeries?.length?' · partial refresh; '+snapshot.responseRetainedSeries.length+' prior series retained (latest source observation missing/older)':'')+(age>=30?' · snapshot '+Math.floor(age)+' days old':'');}
+ function vintageText(snapshot){return 'Latest reported year '+snapshot.vintage+(snapshot.responseDownloadedAt?' · downloaded '+snapshot.responseDownloadedAt:' · embedded '+snapshot.embedded)+'. Individual observation years differ.';}
+ function installRefresh(run,options={}){const cadence=options.cadenceMs??6*3600e3;let inflight=null,checked=0;function refresh(){if(inflight)return inflight;checked=Date.now();inflight=Promise.resolve().then(run).finally(()=>{inflight=null;});return inflight;}setInterval(()=>{if(!document.hidden)refresh();},cadence);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-checked>=cadence)refresh();});return refresh;}
+ root.WorldBankPublicData={fetchRows,refreshSnapshot,sourceChip,vintageText,installRefresh};
+})(globalThis);
+
+</script>
+<!-- WORLD_BANK_PUBLIC_RUNTIME_END -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>USAID Withdrawal — Consequence Console (Funding · Health · Geopolitical)</title>
@@ -625,15 +679,15 @@ function drawFeeds(){const map={USAspending:'USAspending.gov (funding)',Snapshot
 function renderAll(){drawFund();drawCountries();drawFlow();drawDeaths();drawSignals();drawFrag();drawGeo();drawReadout();drawFeeds();escalate();}
 
 /* ---------- live USAspending refresh (CORS-open, fail-silent) ---------- */
-function fetchT(u,ms){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms||9000);return fetch(u,{signal:c.signal}).finally(()=>clearTimeout(t));}
-async function refresh(){feedStatus.USAspending='loading';budgetCheckedAt=new Date().toISOString();drawFeeds();try{
-    const r=await fetchT('https://api.usaspending.gov/api/v2/agency/072/budgetary_resources/');if(!r.ok)throw new Error('Budget HTTP '+r.status);const j=await r.json();
+async function fetchT(u,ms){const c=new AbortController(),timer=setTimeout(()=>c.abort(),ms||12000);try{const r=await fetch(u,{signal:c.signal});if(!r.ok)throw Error('Agency HTTP '+r.status);return await r.json();}finally{clearTimeout(timer);}}
+async function refreshAgencyOnce(){feedStatus.USAspending='loading';budgetCheckedAt=new Date().toISOString();drawFeeds();try{
+    const j=await fetchT('https://api.usaspending.gov/api/v2/agency/072/budgetary_resources/');
     if(!Array.isArray(j.agency_data_by_year))throw new Error('Missing fiscal-year records');
     const numeric=v=>v!==null&&v!==''&&Number.isFinite(+v);
     const rows=j.agency_data_by_year.filter(x=>x.fiscal_year>=2019);
     if(!rows.length||rows.some(x=>!Number.isInteger(+x.fiscal_year)||!numeric(x.agency_total_obligated)))throw new Error('Invalid fiscal-year records');
     const nextOblig=rows.map(x=>({fy:+x.fiscal_year,v:+(x.agency_total_obligated/1e9).toFixed(2)})).sort((a,b)=>a.fy-b.fy);
-    const tr=await fetchT('https://api.usaspending.gov/api/v2/references/toptier_agencies/');if(!tr.ok)throw new Error('Agency status HTTP '+tr.status);const t=await tr.json();
+    const t=await fetchT('https://api.usaspending.gov/api/v2/references/toptier_agencies/');
     const u=Array.isArray(t.results)&&t.results.find(a=>a.abbreviation==='USAID');
     if(!u||!Number.isInteger(+u.active_fy)||![1,2,3,4].includes(+u.active_fq)||!numeric(u.obligated_amount)||!numeric(u.budget_authority_amount)||!nextOblig.some(x=>x.fy===+u.active_fy))throw new Error('Incomplete agency status');
     const nextStatus={fy:String(u.active_fy),q:String(u.active_fq),oblig:+(u.obligated_amount/1e9).toFixed(2),ba:+(u.budget_authority_amount/1e9).toFixed(2)};
@@ -641,6 +695,7 @@ async function refresh(){feedStatus.USAspending='loading';budgetCheckedAt=new Da
   }catch(e){feedStatus.USAspending='unavailable';console.warn('USAspending',e);}
   renderAll();}
 
+const refresh=WorldBankPublicData.installRefresh(refreshAgencyOnce);
 function clockTick(){$('#clock').textContent=new Date().toISOString().replace('T',' ').slice(0,19)+' UTC';}
 renderAll();clockTick();setInterval(clockTick,1000);refresh();
 </script>
@@ -649,11 +704,12 @@ renderAll();clockTick();setInterval(clockTick,1000);refresh();
 (function(){
  const SNAP=[["Central African Republic",27.3],["Somalia",20.4],["Burundi",18.1],["Afghanistan",17.8],["Mozambique",15.3],["Gambia, The",14.6],["Liberia",13.7],["Malawi",13.2],["Rwanda",9.9],["Madagascar",8.1],["Sierra Leone",7.8],["Niger",7.8],["Burkina Faso",7.6],["Congo, Dem. Rep.",6.4],["Chad",6.3],["Togo",6.3],["Zambia",5.5],["Haiti",5.4],["Mali",5.4],["Uganda",4.7],["Ethiopia",4.0],["Sudan",3.5],["Guinea",2.6]];
  const N=12;
+ const safe=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const col=v=>v>=15?'var(--red)':v>=8?'var(--amber)':'#3a7a5e';
  function draw(rows,live){
    const el=document.getElementById('econdep'); if(!el)return;
    const top=rows.slice(0,N), mx=Math.max.apply(null,rows.map(r=>r[1]));
-   el.innerHTML=top.map(r=>'<div class="rank"><div class="nm" style="width:152px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)" title="'+r[0]+'">'+r[0]+'</div>'+
+   el.innerHTML=top.map(r=>'<div class="rank"><div class="nm" style="width:152px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)" title="'+safe(r[0])+'">'+safe(r[0])+'</div>'+
      '<div class="barwrap"><div class="bar" style="width:'+Math.min(100,r[1]/mx*100).toFixed(0)+'%;background:'+col(r[1])+'"></div></div>'+
      '<div class="val">'+r[1].toFixed(1)+'% <small>'+(r[2]||2023)+'</small></div></div>').join('')+
      '<div class="caveat" style="margin-top:5px">Most aid-dependent of the recipients queried ('+rows.length+' returned). Bars scaled to the top value.</div>';
@@ -661,13 +717,15 @@ renderAll();clockTick();setInterval(clockTick,1000);refresh();
  }
  draw(SNAP,false);
  const CC="CAF;SOM;BDI;AFG;MOZ;GMB;LBR;MWI;RWA;MDG;SLE;NER;BFA;COD;TCD;TGO;ZMB;HTI;MLI;UGA;ETH;SDN;GIN";
- fetch('https://api.worldbank.org/v2/country/'+CC+'/indicator/DT.ODA.ODAT.GN.ZS?format=json&date=2019:2024&per_page=600')
-   .then(r=>r.json()).then(d=>{
-     const recs=(Array.isArray(d)&&d[1])||[]; const best={};
-     recs.forEach(r=>{if(r.value==null)return;const c=r.country.value,y=+r.date;if(!best[c]||y>best[c][1])best[c]=[r.value,y];});
-     const rows=Object.keys(best).map(c=>[c,best[c][0],best[c][1]]).sort((a,b)=>b[1]-a[1]);
-     if(rows.length>=8) draw(rows,true);
-   }).catch(e=>console.warn('WorldBank econdep',e));
+ let lastEdition=null,lastBest=Object.fromEntries(CC.split(';').map((code,i)=>[code,[...SNAP[i],2023]]));
+ const refreshEconomic=WorldBankPublicData.installRefresh(async function(){
+   const f=document.getElementById('econdepfeed');if(f)f.textContent='(checking annual public records; retaining last good)';
+   try{const result=await WorldBankPublicData.fetchRows({codes:CC.split(';'),indicator:'DT.ODA.ODAT.GN.ZS',startYear:2019}),best={};
+    if(lastEdition&&result.sourceUpdatedAt<lastEdition)throw Error('World Bank source edition regressed');result.rows.forEach(r=>{if(r.value===null)return;const code=r.countryiso3code||r.country.id,y=+r.date;if(!best[code]||y>best[code][2])best[code]=[r.country.value,r.value,y];});
+    let retained=0;for(const [code,prior]of Object.entries(lastBest))if(!best[code]||best[code][2]<prior[2]){best[code]=prior;retained++;}const rows=Object.values(best).sort((a,b)=>b[1]-a[1]);if(rows.length<8)throw Error('Insufficient annual country coverage');draw(rows,true);lastBest=best;lastEdition=result.sourceUpdatedAt;
+    if(f)f.textContent='(annual observation years shown; retrieved '+result.checkedAt+'; World Bank source updated '+result.sourceUpdatedAt+(retained?'; '+retained+' country observations retained because source latest is missing/older':'')+')';
+   }catch(error){if(f)f.textContent='(annual update unavailable; last good context retained)';}
+ });refreshEconomic();
 })();
 </script>
 <!-- CONSOLE_RESPONSE_ADAPTER_START -->
