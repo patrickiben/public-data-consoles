@@ -67,7 +67,7 @@ try{
   window.ASSET_IDS=['SPY','TLT','QQQ'];window.STORE={SPY:{},TLT:{},QQQ:{}};window.COMP={SPY:{F:[62]},TLT:{F:[40]},QQQ:{F:[70]}};
   window.L_LAG=2;window.SCEN='none';window.SURR=false;window.DATA_VER=1;window.MODE='live';window.SEL='SPY';window.W_IND=90;
   window.NETSTATE={n:30,asOf:0,scenario:'none',dataVersion:1,A:{SPY:{TLT:.8},TLT:{QQQ:.4},QQQ:{SPY:.2}},thrPair:{SPY:{TLT:.1},TLT:{QQQ:.1},QQQ:{SPY:.1}}};
-  window.alignedReturns=()=>({mat:{SPY:[0,0],TLT:[2,4],QQQ:[1,1]}});window.compAt=()=>0;
+  window.alignedReturns=()=>({mat:{SPY:Array(20).fill(0),TLT:[...Array(10).fill(2),...Array(10).fill(4)],QQQ:Array(20).fill(1)}});window.compAt=()=>0;
   window.dayToMs=()=>Date.parse('2026-10-20T00:00:00Z');window.msToDateStr=ms=>new Date(ms).toISOString().slice(0,10);
  },async page=>{
   let p=await plan(page);ten(p);assert.equal(metric(p,2).value,3);

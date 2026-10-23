@@ -77,6 +77,7 @@ class NHSRefreshTests(unittest.TestCase):
                         'NumberWithin4HoursEpisode':60,'NumberOver4HoursEpisode':40,
                         'NumberOver8HoursEpisode':20,'NumberOver12HoursEpisode':10})
         for hb in nhs.BOARDS:
+            rows['flow'].append({'Quarter':'2025Q4','QuarterQF':'p','HBR':hb,'HBT':hb,'Stays':100,'Episodes':120,'CrossBoundaryFlag':0})
             for specialty,occupied in [('All Specialties',80),('All Acute',40),('Allergy',3)]:
                 rows['beds'].append({'Quarter':'2025Q4','HB':hb,'Location':hb,'SpecialtyName':specialty,
                     'AllStaffedBeddays':100,'TotalOccupiedBeddays':occupied,'PercentageOccupancy':occupied})
@@ -95,6 +96,45 @@ class NHSRefreshTests(unittest.TestCase):
         self.assertEqual(result['national'][-1]['pct4'],60)
         self.assertEqual(sum(r['n']for r in result['delayed']),140)
         self.assertTrue(all(r['occPct']==80 for r in result['occupancy']))
+
+    def test_real_care_use_counts_have_explicit_origins_and_missing_cell_semantics(self):
+        flow=self.data['careUse'];nhs.validate_care_use(flow,self.now)
+        self.assertEqual(flow['residenceBoards'],sorted(nhs.BOARDS))
+        cohort=[r for r in flow['cells'] if r['residence'] in nhs.BOARDS]
+        self.assertEqual(flow['totalStays'],sum(r['stays'] for r in cohort))
+        self.assertEqual(flow['outsideBoardStays'],sum(r['stays'] for r in cohort if r['residence']!=r['treatment']))
+        self.assertGreater(flow['unreportedCohortCells'],0)
+        self.assertEqual(len(flow['cells']),flow['publishedCellCount'])
+
+    def test_care_use_preserves_explicit_zeros_and_never_fills_unpublished_cells(self):
+        raw=[{'Quarter':'2025Q4','QuarterQF':'','HBR':hb,'HBT':hb,'Stays':'10','Episodes':'12','CrossBoundaryFlag':'0'} for hb in nhs.BOARDS]
+        a,b=list(nhs.BOARDS)[:2]
+        raw.append({'Quarter':'2025Q4','QuarterQF':'','HBR':a,'HBT':b,'Stays':'0','Episodes':'0','CrossBoundaryFlag':'1'})
+        flow=nhs.collect_care_use(raw);nhs.validate_care_use(flow,self.now)
+        self.assertEqual(flow['publishedCellCount'],15)
+        self.assertEqual(flow['outsideBoardStays'],0)
+        self.assertEqual(flow['unreportedCohortCells'],14*len(nhs.FLOW_PROVIDERS)-15)
+        self.assertEqual(next(r for r in flow['cells'] if r['residence']==a and r['treatment']==b)['stays'],0)
+        raw[-1]['Stays']='*'
+        with self.assertRaises(ValueError):nhs.collect_care_use(raw)
+
+    def test_care_use_mismatch_duplicates_missing_origin_and_regression_fail(self):
+        base=self.data['careUse']
+        mutations=[lambda f:f['cells'].append(f['cells'][0]),lambda f:f.update(totalStays=0),
+          lambda f:f['cells'][0].update(crossBoundary=not f['cells'][0]['crossBoundary']),
+          lambda f:f['cells'][0].update(stays=None),lambda f:f['cells'][0].update(stays=float('inf')),
+          lambda f:f['cells'][0].update(treatment='S08099999'),lambda f:f.update(quarter='2099Q1'),
+          lambda f:f.update(unreportedCohortCells=0),
+          lambda f:f.update(cells=[r for r in f['cells'] if r['residence']!=list(nhs.BOARDS)[0]])]
+        for mutate in mutations:
+            f=copy.deepcopy(base);mutate(f)
+            with self.subTest(mutate=mutate),self.assertRaises((ValueError,TypeError)):
+                nhs.validate_care_use(f,self.now)
+        old=copy.deepcopy(base);old['quarter']='2026Q1'
+        with self.assertRaisesRegex(ValueError,'regressed'):nhs.validate_care_use(base,self.now,old)
+        f=copy.deepcopy(base);f['cells'].pop();f['publishedCellCount']-=1
+        # A same-quarter vanished cell cannot become an implicit zero.
+        with self.assertRaises(ValueError):nhs.validate_care_use(f,self.now,base)
 
 
 if __name__=='__main__':unittest.main()

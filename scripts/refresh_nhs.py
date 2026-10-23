@@ -23,6 +23,7 @@ RESOURCES = {
     'sites': '1a4e3f48-3d9b-4769-80e9-3ef6d27852fe',
     'beds': 'f272bb7d-5320-4491-84c1-614a2c064007',
     'dd': '49ca8a39-7f01-4e2b-acd6-205bc9827852',
+    'flow': '083ee176-4729-474b-958a-328954b72a5a',
 }
 BOARDS = dict(zip(
     ['S08000015','S08000016','S08000017','S08000019','S08000020','S08000022','S08000024',
@@ -30,6 +31,82 @@ BOARDS = dict(zip(
     ['NHS Ayrshire & Arran','NHS Borders','NHS Dumfries & Galloway','NHS Forth Valley',
      'NHS Grampian','NHS Highland','NHS Lothian','NHS Orkney','NHS Shetland',
      'NHS Western Isles','NHS Fife','NHS Tayside','NHS Greater Glasgow & Clyde','NHS Lanarkshire']))
+FLOW_ORIGINS = set(BOARDS) | {'RA2701', 'RA2702', 'RA2703', 'RA2704'}
+FLOW_PROVIDERS = set(BOARDS) | {'S27000001', 'SB0801'}
+
+
+def quarter_end(quarter):
+    if not isinstance(quarter, str) or not re.fullmatch(r'20\d{2}Q[1-4]', quarter):
+        raise ValueError('Invalid quarter')
+    year, q = int(quarter[:4]), int(quarter[-1])
+    return dt.date(year + (q == 4), 1 if q == 4 else q * 3 + 1, 1) - dt.timedelta(days=1)
+
+
+def collect_care_use(rows):
+    """Published SMR01 stays by residence→treatment, never transfers/people.
+
+    Preserve explicit zero cells. Unpublished cells are not filled with zero;
+    disclosure/missing tokens fail closed until their meaning can be reviewed.
+    """
+    quarter = max(row['Quarter'] for row in rows)
+    selected = [row for row in rows if row['Quarter'] == quarter]
+    cells, seen = [], set()
+    for row in selected:
+        origin, target = row['HBR'], row['HBT']
+        if origin not in FLOW_ORIGINS or target not in FLOW_PROVIDERS or (origin, target) in seen:
+            raise ValueError('Unknown/duplicate residence-treatment identity')
+        seen.add((origin, target))
+        stays, episodes = number(row['Stays'], True), number(row['Episodes'], True)
+        flag = str(row['CrossBoundaryFlag'])
+        if flag not in {'0', '1'} or stays > episodes:
+            raise ValueError('Inconsistent published care-use counts/boundary flag')
+        cells.append({'residence': origin, 'treatment': target, 'stays': stays, 'episodes': episodes,
+                      'crossBoundary': origin != target, 'sourceBoundaryFlag': int(flag)})
+    cohort = [row for row in cells if row['residence'] in BOARDS]
+    reported = len(cohort)
+    # A provider with no published cell is still an eligible unknown column.
+    providers = sorted(FLOW_PROVIDERS)
+    return {'quarter': quarter, 'quarterQualifier': sorted({row['QuarterQF'] for row in selected if row['QuarterQF']}),
+            'sourceId': 'flow', 'measure': 'published inpatient/day-case stays',
+            'direction': 'board of residence to board of treatment', 'residenceBoards': sorted(BOARDS),
+            'providerCodes': providers, 'cells': sorted(cells, key=lambda row: (row['residence'], row['treatment'])),
+            'publishedCellCount': len(cells), 'cohortCellCount': reported,
+            'unreportedCohortCells': len(BOARDS) * len(providers) - reported,
+            'totalStays': sum(row['stays'] for row in cohort),
+            'outsideBoardStays': sum(row['stays'] for row in cohort if row['crossBoundary']),
+            'missingCellMeaning': 'Unpublished cells remain unknown, not zero. Any nonnumeric/suppressed cell rejects refresh.',
+            'boundaryMethod': 'Compare paired HBR and HBT codes directly. Raw source flag is retained for audit; its dictionary wording contradicts the currently published values.',
+            'limitations': 'Repeated stays, not unique patients or interhospital transfers. Special provider codes retain source identities. Published counts may be disclosure-controlled; this is a reported numeric-stay share, not all care need or current capacity.'}
+
+
+def validate_care_use(data, captured, baseline=None):
+    if not isinstance(data, dict) or data.get('sourceId') != 'flow' or data.get('measure') != 'published inpatient/day-case stays' or data.get('direction') != 'board of residence to board of treatment':
+        raise ValueError('Invalid care-use estimand/source')
+    if quarter_end(data['quarter']) > captured.date():
+        raise ValueError('Future care-use quarter')
+    if data.get('residenceBoards') != sorted(BOARDS) or not isinstance(data.get('cells'), list) or not isinstance(data.get('quarterQualifier'), list) or any(q not in {'p','r'} for q in data['quarterQualifier']):
+        raise ValueError('Incomplete care-use origin coverage')
+    seen, origins, providers, cohort = set(), set(), set(), []
+    for row in data['cells']:
+        a, b = row['residence'], row['treatment']
+        if a not in FLOW_ORIGINS or b not in FLOW_PROVIDERS or (a, b) in seen or type(row.get('crossBoundary')) is not bool or row['crossBoundary'] != (a != b) or type(row.get('sourceBoundaryFlag')) is not int or row['sourceBoundaryFlag'] not in {0,1}:
+            raise ValueError('Invalid/duplicate care-use cell identity')
+        seen.add((a,b)); origins.add(a); providers.add(b)
+        stays, episodes = number(row['stays'],True), number(row['episodes'],True)
+        if stays > episodes or episodes > 2**53-1:
+            raise ValueError('Invalid care-use count')
+        if a in BOARDS: cohort.append(row)
+    if not set(BOARDS) <= origins or not all((code,code) in seen for code in BOARDS):
+        raise ValueError('Missing territorial origin/self-cell; absence is not zero')
+    total, outside = sum(r['stays'] for r in cohort), sum(r['stays'] for r in cohort if r['crossBoundary'])
+    if not total or total > 2**53-1 or data.get('providerCodes') != sorted(FLOW_PROVIDERS) or data.get('publishedCellCount') != len(seen) or data.get('cohortCellCount') != len(cohort) or data.get('unreportedCohortCells') != len(BOARDS)*len(FLOW_PROVIDERS)-len(cohort) or data.get('totalStays') != total or data.get('outsideBoardStays') != outside:
+        raise ValueError('Care-use denominator or coverage controls disagree')
+    if baseline:
+        if data['quarter'] < baseline['quarter']:
+            raise ValueError('Care-use quarter regressed')
+        if data['quarter'] == baseline['quarter'] and not {(r['residence'],r['treatment']) for r in baseline['cells']} <= seen:
+            raise ValueError('Previously published same-quarter care-use cells disappeared')
+    return data
 
 
 def fetch_bytes(url):
@@ -163,7 +240,8 @@ def collect(baseline, fetch=fetch_bytes, now=None):
                      'allSpecialtyLabels': ['All Specialties'],
                      'definitions': 'Type-1 EDs, AttendanceCategory=All counted once; territorial-board All Specialties bed days; age18plus All Delay Reasons census counts. The 95% line is a planning reference, not a full A&E standard assessment.'},
             'sites': sorted(sites,key=lambda r:r['pct4']), 'national': national,
-            'occupancy': sorted(occupancy,key=lambda r:-r['occPct']), 'delayed': sorted(delayed,key=lambda r:-r['n'])}
+            'occupancy': sorted(occupancy,key=lambda r:-r['occPct']), 'delayed': sorted(delayed,key=lambda r:-r['n']),
+            'careUse': collect_care_use(raw['flow'])}
     validate(data, baseline, now)
     return data
 
@@ -185,7 +263,7 @@ def validate(data, baseline=None, now=None):
     q = meta['bedsQuarter']; qend = dt.date(int(q[:4])+(q[-1]=='4'), 1 if q[-1]=='4' else int(q[-1])*3+1, 1)-dt.timedelta(days=1)
     if qend > captured.date():
         raise ValueError('Future quarter')
-    if {r['id'] for r in data['sources']} != set(RESOURCES) or len(data['sources']) != 4:
+    if {r['id'] for r in data['sources']} != set(RESOURCES) or len(data['sources']) != len(RESOURCES):
         raise ValueError('Missing source provenance')
     for source in data['sources']:
         if not re.fullmatch(r'[0-9a-f]{64}',source['sha256']) or source['resourceId'] != RESOURCES[source['id']]:
@@ -222,6 +300,7 @@ def validate(data, baseline=None, now=None):
         for row in data[collection]:
             if row['board'] != BOARDS[row['hb']]:raise ValueError('Invalid board identity')
             number(row[key],integer=key=='n',maximum=200 if key=='occPct' else None)
+    validate_care_use(data.get('careUse'), captured, baseline.get('careUse') if baseline else None)
     if baseline:
         old = baseline['meta']
         if meta['aeWeek'] < old['aeWeek'] or meta['bedsQuarter'] < old['bedsQuarter'] or meta['ddMonth'] < old['ddMonth']:

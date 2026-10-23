@@ -410,6 +410,97 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
   }
   window.ConsoleResponse.domain = { wasserstein, components, build };
 })();
+
+/* Domain-specific observation diagnostics. Pure calculations; no network or imports.
+   Hourly resampling is descriptive and never supplies continuous flood duration. */
+(function(root){
+ 'use strict';
+ const HOUR=3600000,finite=v=>typeof v==='number'&&Number.isFinite(v);
+ const time=v=>typeof v==='string'&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(v)?Date.parse(v):NaN;
+ const mean=values=>values.reduce((a,b)=>a+b,0)/values.length;
+ function empiricalW1(left,right){
+  if(!left.length||left.length!==right.length||[...left,...right].some(v=>!finite(v)))return null;
+  const a=left.slice().sort((x,y)=>x-y),b=right.slice().sort((x,y)=>x-y);
+  const value=mean(a.map((x,i)=>Math.abs(x-b[i])));return finite(value)?value:null;
+ }
+ function hourly(records,{now=Date.now(),mode='observed',end,maxAgeHours=6}={}){
+  const result={bins:new Map(),invalidRows:0,duplicateRows:0,conflictHours:new Set(),futureRows:0,latestAt:null,reason:null};
+  if(!Array.isArray(records)||!records.length||records.length>200000||!finite(now)||!['observed','hourly'].includes(mode)){result.reason='A bounded finite observation series is required';return result;}
+  const byTimestamp=new Map();let latest=-Infinity;
+  for(const row of records){
+   const stamp=time(row?.time),value=row?.value;
+   if(!finite(stamp)||!finite(value)||value===-9999||mode==='hourly'&&stamp%HOUR!==0){result.invalidRows++;continue;}
+   if(stamp>now){result.futureRows++;continue;}
+   const hour=Math.floor(stamp/HOUR)*HOUR;
+   if(byTimestamp.has(stamp)){result.duplicateRows++;if(byTimestamp.get(stamp)!==value)result.conflictHours.add(hour);continue;}
+   byTimestamp.set(stamp,value);latest=Math.max(latest,stamp);
+   if(!result.bins.has(hour)||stamp>result.bins.get(hour).stamp)result.bins.set(hour,{stamp,value});
+  }
+  for(const hour of result.conflictHours)result.bins.delete(hour);
+  result.latestAt=finite(latest)?new Date(latest).toISOString():null;
+  if(result.futureRows){result.reason='Future observations are present';return result;}
+  if(!finite(latest)||now-latest>maxAgeHours*HOUR){result.reason='Observation series is missing or stale';return result;}
+  let endpoint=end==null?Math.floor(latest/HOUR)*HOUR:time(end);
+  if(!finite(endpoint)||endpoint%HOUR!==0||endpoint>now){result.reason='The declared hourly endpoint is invalid';return result;}
+  if(mode==='observed')endpoint=Math.min(endpoint,(Math.floor(now/HOUR)-1)*HOUR);
+  result.end=endpoint;return result;
+ }
+ function windowValues(series,hours){
+  if(series.reason||!finite(series.end)||!Number.isInteger(hours)||hours<1)return null;
+  const values=[];
+  for(let i=hours-1;i>=0;i--){const row=series.bins.get(series.end-i*HOUR);if(!row)return null;values.push(row.value);}
+  return values;
+ }
+ function analyze(records,options={}){
+  const series=hourly(records,options),day=windowValues(series,24),pair=windowValues(series,48);
+  const result={latestAt:series.latestAt,end:finite(series.end)?new Date(series.end).toISOString():null,
+   method:options.mode==='hourly'?'Source-reported UTC hourly values':'Last valid observation in each completed UTC hour; no interpolation or duration estimate',
+   invalidRows:series.invalidRows,duplicateRows:series.duplicateRows,conflictingHours:series.conflictHours.size,futureRows:series.futureRows,
+   reason:series.reason,dayW1:null,persistence:null,thresholdAuc:null,scale:null,completeWindows:[]};
+  if(pair){const value=empiricalW1(pair.slice(0,24),pair.slice(24));if(value!=null)result.dayW1={value,points:48,comparison:'latest24 complete hourly bins versus preceding24',start:new Date(series.end-47*HOUR).toISOString(),end:result.end};}
+  const thresholds=options.thresholds;
+  if(day&&Array.isArray(thresholds)&&thresholds.length===4&&thresholds.every(v=>finite(v)&&v!==-9999)&&thresholds.every((v,i)=>!i||v>thresholds[i-1])&&finite(thresholds[3]-thresholds[0])){
+   const [action,,,major]=thresholds,above=day.filter(v=>v>=action).length;
+   result.persistence={value:100*above/day.length,above,total:day.length,threshold:action};
+   // Exact integral of the empirical exceedance curve over the action→major axis.
+   // Each observation contributes clamp((value-action)/(major-action),0,1).
+   const value=100*mean(day.map(v=>Math.max(0,Math.min(1,(v-action)/(major-action)))));
+   if(finite(value))result.thresholdAuc={value,points:day.length,thresholds:thresholds.slice(),method:'Integral of hourly-sample exceedance fraction across official action→major thresholds, divided by their physical-unit range'};
+  }else if(day&&Array.isArray(thresholds)&&thresholds.length&&finite(thresholds[0])&&thresholds[0]!==-9999){
+   // Persistence only needs action; threshold-AUC needs the entire ordered ladder.
+   const above=day.filter(v=>v>=thresholds[0]).length;result.persistence={value:100*above/day.length,above,total:day.length,threshold:thresholds[0]};
+  }
+  if(options.mode==='hourly'){
+   const current=options.currentValue,latest=series.bins.get(series.end)?.value,ratios=[];
+   for(const hours of [24,72,168]){const values=windowValues(series,hours);if(!values)continue;result.completeWindows.push(hours);const peak=Math.max(...values);if(finite(current)&&current>=0&&current===latest&&peak>0&&values.every(v=>v>=0))ratios.push({hours,peak,ratio:100*(current/peak)});}
+   if(ratios.length>=2){const value=Math.max(...ratios.map(r=>r.ratio))-Math.min(...ratios.map(r=>r.ratio));if(finite(value))result.scale={value,windows:ratios};}
+  }
+  return result;
+ }
+ function populationBalance(exposure){
+  const failure=reason=>({value:null,reason,countries:[],baselinePopulation:null,higherPopulation:null});
+  if(!exposure||!Array.isArray(exposure.bands)||!exposure.bands.length||!Array.isArray(exposure.countries)||!exposure.countries.length)return failure('Complete PAGER country and aggregate intensity bands are required');
+  const bands=exposure.bands,seenBands=new Set(),seenCountries=new Set();
+  if(bands.some(b=>!Number.isInteger(b.mmi)||b.mmi<1||b.mmi>12||!finite(b.population)||b.population<0||seenBands.has(b.mmi)||(seenBands.add(b.mmi),false)))return failure('Invalid aggregate PAGER intensity bands');
+  const countries=[];
+  for(const c of exposure.countries){
+   if(typeof c.code!=='string'||!/^[A-Z]{2}$/.test(c.code)||seenCountries.has(c.code)||!Array.isArray(c.populations)||c.populations.length!==bands.length||c.populations.some(v=>!finite(v)||v<0))return failure('Missing, duplicate or invalid country intensity bands');
+   seenCountries.add(c.code);let baseline=0,higher=0;
+   c.populations.forEach((value,i)=>{if(bands[i].mmi>=4)baseline+=value;if(bands[i].mmi>=7)higher+=value;});
+   countries.push({code:c.code,baselinePopulation:baseline,higherPopulation:higher});
+  }
+  // USGS exposure counts are integer populations. Allow a one-person rounding
+  // difference per country, never a percentage tolerance that conceals coverage loss.
+  if(bands.some((b,i)=>Math.abs(exposure.countries.reduce((sum,c)=>sum+c.populations[i],0)-b.population)>exposure.countries.length))return failure('Country totals do not reconcile with aggregate PAGER bands');
+  const baselinePopulation=countries.reduce((sum,c)=>sum+c.baselinePopulation,0),higherPopulation=countries.reduce((sum,c)=>sum+c.higherPopulation,0);
+  if(!finite(baselinePopulation)||!finite(higherPopulation)||baselinePopulation<=0||higherPopulation<=0)return failure('Both MMI4+ baseline and MMI7+ population totals must be positive; zero higher exposure is not a composition distribution');
+  for(const c of countries){c.baselineShare=c.baselinePopulation/baselinePopulation;c.higherShare=c.higherPopulation/higherPopulation;c.differencePercentagePoints=100*(c.higherShare-c.baselineShare);}
+  const value=50*countries.reduce((sum,c)=>sum+Math.abs(c.higherShare-c.baselineShare),0);
+  return finite(value)?{value,countries,baselinePopulation,higherPopulation,reason:null,method:'Total variation of country population-share distributions:0.5×sum|share(MMI7+)−share(MMI4+)|; nested modeled exposure groups, not independent populations'}:failure('Population-share arithmetic is not finite');
+ }
+ root.ConsoleResponse=root.ConsoleResponse||{};
+ root.ConsoleResponse.observedSeries={hourly,windowValues,analyze,empiricalW1,populationBalance};
+})(window);
 </script>
 <!-- CONSOLE_RESPONSE_HEAD_END -->
 </head>
@@ -1371,6 +1462,7 @@ function buildGridState(snap,hist,inter,meta,fuel={}){
   arr.sort((a,b)=>b.p.localeCompare(a.p));
   if(!ba[c])continue;
   ba[c].peak=Math.max(...arr.map(x=>x.v));ba[c].ramp=arr.slice(0,24).reverse().map(x=>x.v);
+  ba[c].history=arr.map(x=>({time:x.p+':00:00Z',value:x.v}));
  }
  for(const b of Object.values(ba)){
   if(b.D!=null&&b.peak)b.pct=Math.round(100*b.D/b.peak);
@@ -1545,6 +1637,18 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshPub
   }
   evidence.push({id:'coverage',label:'Reported BA coverage',value:all.length?all.length+' individual BAs with demand':'Unavailable',measuredAt,checkedAt:state.capturedAt,basis:'measured',quality:all.length&&captureCurrent?'current':'missing',source:authority,note:'Latest BA hours can differ. This is not a coincident national total or complete physical transmission network.'});
   const known=scope.length>0&&scope.every(current),ids=scope.map(b=>'ba-'+b.code),hasBaseline=scope.length>0&&scope.every(b=>b.peak>0),forecastKnown=scope.length>0&&scope.every(b=>b.DF>0),importKnown=scope.length>0&&scope.every(b=>b.TI!=null);
+
+  const series=window.ConsoleResponse.observedSeries;
+  const histories=scope.map(b=>({b,stats:series&&current(b)?series.analyze(b.history,{mode:'hourly',end:b.period+':00:00Z',currentValue:b.D,maxAgeHours:72}):null}));
+  const historyMetric=(metricId,key,label,unit,rule,mitigation,inputs)=>{
+   const eligible=histories.filter(x=>x.stats?.[key]!=null),ids=[];
+   for(const {b,stats}of eligible){const entry=stats[key],id='history-'+metricId+'-'+b.code;ids.push(id);evidence.push({id,label:b.code+' · '+label,value:+entry.value.toFixed(4),unit,measuredAt:stats.end,checkedAt:state.capturedAt,basis:'measured',quality:'current',source:authority,note:key==='dayW1'?'Exact empirical W1 of adjacent complete24-hour demand distributions in the same BA; source-reported MW, no imputation.':entry.windows.map(w=>w.hours+'h: '+w.ratio.toFixed(2)+'% of '+w.peak+' MW peak').join('; ')+'. Temporal lookback sensitivity, not geographic mixing, available capacity or reserves.'});}
+   const value=eligible.length?Math.max(...eligible.map(x=>x.stats[key].value)):null,complete=eligible.length===scope.length&&scope.length>0;
+   const status=value==null?'unknown':value>0?'triggered':complete?'clear':'unknown';
+   return {spec:[metricId,metricId===2?'comparison':'structure',label,status,ids,rule+' Assessed '+eligible.length+'/'+scope.length+' declared BA histories; '+(value==null?'no complete eligible history.':'maximum '+value.toFixed(3)+' '+unit+'.')+' Missing histories never establish a clear overview.',mitigation,inputs],value,unit};
+  };
+  const shape=historyMetric(2,'dayW1','Within-BA day-to-day demand-shape change','MW','A nonzero temporal distribution distance prompts data/baseline review.','Review the specific BA hydrograph and reported revisions; this is a distribution shift, not forecast accuracy, customer exposure or supply shortfall.','48 consecutive aligned source-reported hourly demands within a BA');
+  const scale=historyMetric(6,'scale','Temporal peak-lookback sensitivity adaptation','percentage points','Compare current demand/recent-peak ratios over complete24/72/168-hour lookbacks; review nonzero range.','Inspect which complete lookbacks change the ratio before interpreting recent-peak pressure; no geographic mixing, capacity or reserve inference is supported.','At least two complete aligned24/72/168-hour windows, nonnegative demand, positive peaks and matching current-hour demand');
   const specs=[
    [1,'comparison','Demand-weighted burden differs from BA count',known?(scope.some(b=>b.D>scope.reduce((a,x)=>a+x.D,0)/scope.length)?'triggered':'clear'):'unknown',ids,'Unequal reported demand means equal BA counts are not equal demand exposure. This comparison is descriptive.','Use demand weights and actual customer/critical-load inventories before comparing burden or resource needs.','Matched-hour demand plus verified customer/critical-load weights'],
    [2,'comparison','Shape imbalance needs retained demand histories','unknown',[],'The runtime retains a peak and24 reported ramp values, not a complete aligned7 day distribution for every comparison group.','Use aligned complete histories and an explicit normalization before computing Wasserstein distance.','Complete aligned demand histories and agreed high/low pressure groups'],
@@ -1557,7 +1661,8 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshPub
    [9,'spillover','Frontier vulnerability is unavailable','unknown',[],'BA centroids cannot locate constrained-interface assets or vulnerable customers.','Use approved interface constraints and critical-load/asset records before prioritizing boundary response.','Physical constrained interfaces, asset distances and consequence weights'],
    [10,'spillover','Matched-hour net import dependence',known&&importKnown?(scope.some(b=>b.TI<0)?'triggered':'clear'):'unknown',ids,'Negative matched-hour TI indicates net imports. Import dependence is not a failure or causal leakage estimate.','Review import share alongside verified reserves, transfer limits and current operator advisories; do not infer available switching or dispatch.','Matched-hour TI/demand plus local reserves/limits for operations']
   ];
-  for(const [metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs]of specs){const id='metric-'+metricId;diagnostics.push({id,metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs,explanation:'Domain proxy/applicability screen; no CRT estimand, validated ten-metric transfer, causal contagion or VAR/FEVD is claimed.'});for(const track of ['public','operator'])actions.push({id:id+'-'+track,track,phase:status==='unknown'?'verify':'review',when:status==='unknown'?'unknown':'triggered',diagnosticIds:[id],title:'#'+metricId+' '+label,nextStep:track==='operator'?analyticalMitigation+' Required inputs: '+requiredInputs+'. Use your approved operating SOP and current telemetry.':'Review the dated report and your utility/ISO\'s current advisories. '+(metricId===10?'Net imports are routine and do not establish an outage or conservation appeal. ':metricId===5?'Forecast error alone does not establish an emergency. ':'')+'This parameter supports planning review only; follow actual local authority instructions.',escalateWhen:'An actual utility/ISO advisory or verified local SOP trigger applies; this console does not issue conservation, switching, dispatch or outage instructions.',authorityUrl:authority});}
+  specs[1]=shape.spec;specs[5]=scale.spec;
+  for(const [metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs]of specs){const id='metric-'+metricId;diagnostics.push({id,metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs,...(metricId===2?{value:shape.value,unit:shape.unit}:metricId===6?{value:scale.value,unit:scale.unit}:{}),explanation:'Domain proxy/applicability screen; no CRT estimand, validated ten-metric transfer, causal contagion or VAR/FEVD is claimed.'});for(const track of ['public','operator'])actions.push({id:id+'-'+track,track,phase:status==='unknown'?'verify':'review',when:status==='unknown'?'unknown':'triggered',diagnosticIds:[id],title:'#'+metricId+' '+label,nextStep:track==='operator'?analyticalMitigation+' Required inputs: '+requiredInputs+'. Use your approved operating SOP and current telemetry.':'Review the dated report and your utility/ISO\'s current advisories. '+(metricId===10?'Net imports are routine and do not establish an outage or conservation appeal. ':metricId===5?'Forecast error alone does not establish an emergency. ':'')+'This parameter supports planning review only; follow actual local authority instructions.',escalateWhen:'An actual utility/ISO advisory or verified local SOP trigger applies; this console does not issue conservation, switching, dispatch or outage instructions.',authorityUrl:authority});}
   if(known&&hasBaseline)for(const b of leaders)for(const track of ['public','operator'])actions.push({id:'pressure-'+b.code+'-'+track,track,phase:'review',when:'always',diagnosticIds:[],title:b.code+': '+b.pct+'% of its recent reported peak',nextStep:track==='operator'?'Review the recent-peak baseline and forecast deviation for this BA, then compare with actual reserves/transfer constraints in approved tools. This rank is a demand-pressure proxy.':'Check your utility/ISO\'s current advisories. Being near the recent peak does not establish a capacity shortfall or an instruction to conserve.',escalateWhen:'Only current official advisories or verified local SOP thresholds establish response needs.',authorityUrl:authority});
   return {slug:'us-grid-strain',title:'Grid monitoring response plan',context:selected?selected.code+' · '+selected.name:'Reported BA overview · choose a BA for local detail',evidence,diagnostics,actions,network:{label:'Directed interchange context',basis:'measured',semantics:'Reported signed BA interchange is dated net accounting, not physical line topology. Positive TI is net export, negative TI net import.',period:state.interchangeThrough||'Unavailable',coverage:'Pairs can have different latest hours; no mixed-hour pair sum or national source/sink total is calculated here.',roles:scope.filter(b=>b.TI!=null).map(b=>({id:b.code,label:b.code,role:b.TI<0?'reported net importer':b.TI>0?'reported net exporter':'reported net balanced',inbound:b.TI<0?-b.TI:0,outbound:b.TI>0?b.TI:0,unit:'MW at '+b.period})),limitations:['Rows are matched BA TI values, not summed bilateral pairs; hours differ between BAs.','Imports/exports are routine. Loop flows, reserves, capacity and physical failure propagation are not estimated.']},limitations:['Freshness screen: capture48 hours and measurement72 hours; delayed public reports cannot establish live operating conditions.','CRT dimensions retain their names but use explicit domain proxies or not-assessable requirements; Coastal numerical thresholds are not copied.','Professional actions require current telemetry, approved SOP and decision authority.']};
  }

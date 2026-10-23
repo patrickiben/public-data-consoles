@@ -382,6 +382,97 @@ header .s{color:var(--ink2);font-size:14.5px;margin-top:7px;max-width:800px}
   }
   window.ConsoleResponse.domain = { wasserstein, components, build };
 })();
+
+/* Domain-specific observation diagnostics. Pure calculations; no network or imports.
+   Hourly resampling is descriptive and never supplies continuous flood duration. */
+(function(root){
+ 'use strict';
+ const HOUR=3600000,finite=v=>typeof v==='number'&&Number.isFinite(v);
+ const time=v=>typeof v==='string'&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(v)?Date.parse(v):NaN;
+ const mean=values=>values.reduce((a,b)=>a+b,0)/values.length;
+ function empiricalW1(left,right){
+  if(!left.length||left.length!==right.length||[...left,...right].some(v=>!finite(v)))return null;
+  const a=left.slice().sort((x,y)=>x-y),b=right.slice().sort((x,y)=>x-y);
+  const value=mean(a.map((x,i)=>Math.abs(x-b[i])));return finite(value)?value:null;
+ }
+ function hourly(records,{now=Date.now(),mode='observed',end,maxAgeHours=6}={}){
+  const result={bins:new Map(),invalidRows:0,duplicateRows:0,conflictHours:new Set(),futureRows:0,latestAt:null,reason:null};
+  if(!Array.isArray(records)||!records.length||records.length>200000||!finite(now)||!['observed','hourly'].includes(mode)){result.reason='A bounded finite observation series is required';return result;}
+  const byTimestamp=new Map();let latest=-Infinity;
+  for(const row of records){
+   const stamp=time(row?.time),value=row?.value;
+   if(!finite(stamp)||!finite(value)||value===-9999||mode==='hourly'&&stamp%HOUR!==0){result.invalidRows++;continue;}
+   if(stamp>now){result.futureRows++;continue;}
+   const hour=Math.floor(stamp/HOUR)*HOUR;
+   if(byTimestamp.has(stamp)){result.duplicateRows++;if(byTimestamp.get(stamp)!==value)result.conflictHours.add(hour);continue;}
+   byTimestamp.set(stamp,value);latest=Math.max(latest,stamp);
+   if(!result.bins.has(hour)||stamp>result.bins.get(hour).stamp)result.bins.set(hour,{stamp,value});
+  }
+  for(const hour of result.conflictHours)result.bins.delete(hour);
+  result.latestAt=finite(latest)?new Date(latest).toISOString():null;
+  if(result.futureRows){result.reason='Future observations are present';return result;}
+  if(!finite(latest)||now-latest>maxAgeHours*HOUR){result.reason='Observation series is missing or stale';return result;}
+  let endpoint=end==null?Math.floor(latest/HOUR)*HOUR:time(end);
+  if(!finite(endpoint)||endpoint%HOUR!==0||endpoint>now){result.reason='The declared hourly endpoint is invalid';return result;}
+  if(mode==='observed')endpoint=Math.min(endpoint,(Math.floor(now/HOUR)-1)*HOUR);
+  result.end=endpoint;return result;
+ }
+ function windowValues(series,hours){
+  if(series.reason||!finite(series.end)||!Number.isInteger(hours)||hours<1)return null;
+  const values=[];
+  for(let i=hours-1;i>=0;i--){const row=series.bins.get(series.end-i*HOUR);if(!row)return null;values.push(row.value);}
+  return values;
+ }
+ function analyze(records,options={}){
+  const series=hourly(records,options),day=windowValues(series,24),pair=windowValues(series,48);
+  const result={latestAt:series.latestAt,end:finite(series.end)?new Date(series.end).toISOString():null,
+   method:options.mode==='hourly'?'Source-reported UTC hourly values':'Last valid observation in each completed UTC hour; no interpolation or duration estimate',
+   invalidRows:series.invalidRows,duplicateRows:series.duplicateRows,conflictingHours:series.conflictHours.size,futureRows:series.futureRows,
+   reason:series.reason,dayW1:null,persistence:null,thresholdAuc:null,scale:null,completeWindows:[]};
+  if(pair){const value=empiricalW1(pair.slice(0,24),pair.slice(24));if(value!=null)result.dayW1={value,points:48,comparison:'latest24 complete hourly bins versus preceding24',start:new Date(series.end-47*HOUR).toISOString(),end:result.end};}
+  const thresholds=options.thresholds;
+  if(day&&Array.isArray(thresholds)&&thresholds.length===4&&thresholds.every(v=>finite(v)&&v!==-9999)&&thresholds.every((v,i)=>!i||v>thresholds[i-1])&&finite(thresholds[3]-thresholds[0])){
+   const [action,,,major]=thresholds,above=day.filter(v=>v>=action).length;
+   result.persistence={value:100*above/day.length,above,total:day.length,threshold:action};
+   // Exact integral of the empirical exceedance curve over the action→major axis.
+   // Each observation contributes clamp((value-action)/(major-action),0,1).
+   const value=100*mean(day.map(v=>Math.max(0,Math.min(1,(v-action)/(major-action)))));
+   if(finite(value))result.thresholdAuc={value,points:day.length,thresholds:thresholds.slice(),method:'Integral of hourly-sample exceedance fraction across official action→major thresholds, divided by their physical-unit range'};
+  }else if(day&&Array.isArray(thresholds)&&thresholds.length&&finite(thresholds[0])&&thresholds[0]!==-9999){
+   // Persistence only needs action; threshold-AUC needs the entire ordered ladder.
+   const above=day.filter(v=>v>=thresholds[0]).length;result.persistence={value:100*above/day.length,above,total:day.length,threshold:thresholds[0]};
+  }
+  if(options.mode==='hourly'){
+   const current=options.currentValue,latest=series.bins.get(series.end)?.value,ratios=[];
+   for(const hours of [24,72,168]){const values=windowValues(series,hours);if(!values)continue;result.completeWindows.push(hours);const peak=Math.max(...values);if(finite(current)&&current>=0&&current===latest&&peak>0&&values.every(v=>v>=0))ratios.push({hours,peak,ratio:100*(current/peak)});}
+   if(ratios.length>=2){const value=Math.max(...ratios.map(r=>r.ratio))-Math.min(...ratios.map(r=>r.ratio));if(finite(value))result.scale={value,windows:ratios};}
+  }
+  return result;
+ }
+ function populationBalance(exposure){
+  const failure=reason=>({value:null,reason,countries:[],baselinePopulation:null,higherPopulation:null});
+  if(!exposure||!Array.isArray(exposure.bands)||!exposure.bands.length||!Array.isArray(exposure.countries)||!exposure.countries.length)return failure('Complete PAGER country and aggregate intensity bands are required');
+  const bands=exposure.bands,seenBands=new Set(),seenCountries=new Set();
+  if(bands.some(b=>!Number.isInteger(b.mmi)||b.mmi<1||b.mmi>12||!finite(b.population)||b.population<0||seenBands.has(b.mmi)||(seenBands.add(b.mmi),false)))return failure('Invalid aggregate PAGER intensity bands');
+  const countries=[];
+  for(const c of exposure.countries){
+   if(typeof c.code!=='string'||!/^[A-Z]{2}$/.test(c.code)||seenCountries.has(c.code)||!Array.isArray(c.populations)||c.populations.length!==bands.length||c.populations.some(v=>!finite(v)||v<0))return failure('Missing, duplicate or invalid country intensity bands');
+   seenCountries.add(c.code);let baseline=0,higher=0;
+   c.populations.forEach((value,i)=>{if(bands[i].mmi>=4)baseline+=value;if(bands[i].mmi>=7)higher+=value;});
+   countries.push({code:c.code,baselinePopulation:baseline,higherPopulation:higher});
+  }
+  // USGS exposure counts are integer populations. Allow a one-person rounding
+  // difference per country, never a percentage tolerance that conceals coverage loss.
+  if(bands.some((b,i)=>Math.abs(exposure.countries.reduce((sum,c)=>sum+c.populations[i],0)-b.population)>exposure.countries.length))return failure('Country totals do not reconcile with aggregate PAGER bands');
+  const baselinePopulation=countries.reduce((sum,c)=>sum+c.baselinePopulation,0),higherPopulation=countries.reduce((sum,c)=>sum+c.higherPopulation,0);
+  if(!finite(baselinePopulation)||!finite(higherPopulation)||baselinePopulation<=0||higherPopulation<=0)return failure('Both MMI4+ baseline and MMI7+ population totals must be positive; zero higher exposure is not a composition distribution');
+  for(const c of countries){c.baselineShare=c.baselinePopulation/baselinePopulation;c.higherShare=c.higherPopulation/higherPopulation;c.differencePercentagePoints=100*(c.higherShare-c.baselineShare);}
+  const value=50*countries.reduce((sum,c)=>sum+Math.abs(c.higherShare-c.baselineShare),0);
+  return finite(value)?{value,countries,baselinePopulation,higherPopulation,reason:null,method:'Total variation of country population-share distributions:0.5×sum|share(MMI7+)−share(MMI4+)|; nested modeled exposure groups, not independent populations'}:failure('Population-share arithmetic is not finite');
+ }
+ root.ConsoleResponse=root.ConsoleResponse||{};
+ root.ConsoleResponse.observedSeries={hourly,windowValues,analyze,empiricalW1,populationBalance};
+})(window);
 </script>
 <!-- CONSOLE_RESPONSE_HEAD_END -->
 </head>
@@ -427,6 +518,8 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const recent=(stamp,hours)=>Number.isFinite(Date.parse(stamp))&&Date.now()-Date.parse(stamp)>=-3600000&&Date.now()-Date.parse(stamp)<=hours*3600000;
 const number=v=>(typeof v!=='number'&&typeof v!=='string')||typeof v==='string'&&!v.trim()||!Number.isFinite(+v)||+v===-9999?null:+v;
 function convertUnit(value,from,to){const units={ft:['length',1],m:['length',3.280839895],cfs:['flow',1],kcfs:['flow',1000],cms:['flow',35.3146667],'m3/s':['flow',35.3146667]};const a=units[String(from).toLowerCase()],b=units[String(to).toLowerCase()];return number(value)!=null&&a&&b&&a[0]===b[0]?number(value)*a[1]/b[1]:null;}
+function thresholdLadder(d,unit){const flow=['cfs','kcfs','cms','m3/s'].includes(String(unit).toLowerCase());return ['action','minor','moderate','major'].map(key=>{const v=d.flood?.categories?.[key];return v!=null&&typeof v!=='object'?number(v):convertUnit(v?.[flow?'flow':'stage'],d.flood?.[flow?'flowUnits':'stageUnits'],unit);});}
+async function observedFocus(lid,meta,previous){if(!lid)return null;meta=meta||await jget('https://api.water.noaa.gov/nwps/v1/gauges/'+encodeURIComponent(lid));if(String(meta?.lid).toLowerCase()!==String(lid).toLowerCase())return null;const unit=meta.status?.observed?.primaryUnit||meta.flood?.stageUnits,focus={lid,name:meta.name||lid,unit,thresholds:thresholdLadder(meta,unit),observedAt:meta.status?.observed?.validTime||null};const source='https://api.water.noaa.gov/nwps/v1/gauges/'+encodeURIComponent(lid)+'/stageflow/observed';try{const j=await jget(source,12000);if(!j||!Array.isArray(j.data)||typeof j.primaryUnits!=='string')throw new Error('Observed series/units unavailable');const records=j.data.map(p=>({time:p.validTime,value:convertUnit(p.primary,j.primaryUnits,unit)})).filter(p=>Number.isFinite(Date.parse(p.time))&&p.value!=null&&Date.parse(p.time)>=Date.now()-8*86400000);if(!records.length||records.some(p=>Date.parse(p.time)>Date.now()))throw new Error('Empty/future observed series');focus.history={records,source,unit,latestAt:records.map(p=>p.time).sort().at(-1),checkedAt:new Date().toISOString(),retainedAfterFailure:false};}catch(error){focus.history=previous?.lid===lid&&previous.unit===unit&&previous.history?{...previous.history,retainedAfterFailure:true}:null;}return focus;}
 async function boundedMap(rows,fn){const output=[];for(let i=0;i<rows.length;i+=4)output.push(...await Promise.all(rows.slice(i,i+4).map(fn)));return output;}
 const responseState=window.RiverNetworkResponse={context:'St. Louis, MO',nodes:[],loading:true,checkedAt:null,topologyComplete:false};let responseRun=0;
 async function jget(u,ms){const c=new AbortController(),to=setTimeout(()=>c.abort(),ms||12000);try{const r=await fetch(u,{signal:c.signal,headers:{Accept:'application/json'}});if(!r.ok)return null;const j=await r.json();return j?.error?null:j;}catch(e){return null;}finally{clearTimeout(to);}}
@@ -544,11 +637,11 @@ async function run(loc){activeLocation={...loc};const requestedName=loc.name,pre
  // LEAD-TIME — forecast crests for the focus + the shown in-flood sources (one parallel batch).
  const srcShown=inflood.slice(0,8);
  const fg0lid=fg0&&fg0.lid;
- const [focusC,...srcCs]=await Promise.all([forecastCrest(fg0lid),...srcShown.map(g=>forecastCrest(g.lid))]);
+ const [focusC,focusData,...srcCs]=await Promise.all([forecastCrest(fg0lid),observedFocus(fg0lid,detailByLid.get(fg0lid),previous.focus),...srcShown.map(g=>forecastCrest(g.lid))]);
  if(runId!==responseRun)return;srcShown.forEach((g,i)=>{g._crest=srcCs[i];if(g.lid===fg0lid){g._lead={txt:'this is your focus gauge',col:'var(--dim)'};g._isFocus=true;}else{g._lead=leadLabel(focusC,g._crest);}
   g.matchedImpacts=(g.impacts||[]).flatMap(p=>{const threshold=convertUnit(p.stage,g.impactUnit,g.unit),peak=g._crest?convertUnit(g._crest.stage,g._crest.unit,g.unit):null;const basis=threshold!=null&&g.stage!=null&&recent(g.observedAt,6)&&g.stage>=threshold?'observed':threshold!=null&&peak!=null&&peak>=threshold?'forecast':null;return basis&&typeof p.statement==='string'?[{statement:p.statement,threshold,unit:g.unit,basis,validTime:basis==='observed'?g.observedAt:g._crest.time.toISOString(),issuedAt:basis==='forecast'?g._crest.issuedAt:null}]:[];}).sort((a,b)=>b.threshold-a.threshold);
  });
- Object.assign(responseState,{context:requestedName,nodes,loading:false,checkedAt:new Date().toISOString(),topologyComplete,rangeKm:DIST,probeCount:probe.length,failedProbes:dmSets.filter(r=>!r.ok).length,unmatchedSiteIds:unmatched,matchCandidateLimit:40,focus:fg0?{lid:fg0.lid,name:fg0.name,crest:focusC}:null});
+ Object.assign(responseState,{context:requestedName,nodes,loading:false,checkedAt:new Date().toISOString(),topologyComplete,rangeKm:DIST,probeCount:probe.length,failedProbes:dmSets.filter(r=>!r.ok).length,unmatchedSiteIds:unmatched,matchCandidateLimit:40,focus:fg0?{lid:fg0.lid,name:fg0.name,crest:focusC,...(focusData||{})}:null});
  // verdict
  let v;
  if(!nodes.length)v='<div class="muted">No NOAA forecast gauges sit on the upstream network within ~'+DIST+' km of here. Try a larger river town.</div>';
@@ -578,7 +671,8 @@ async function run(loc){activeLocation={...loc};const requestedName=loc.name,pre
    }
   }
  }
- $('verdict').innerHTML=v+'<p class="small muted">Checked '+esc(responseState.checkedAt)+'. '+unmatched.length+' USGS sites lack a verified NOAA site-ID match; proximity-only matches are labeled and do not establish source roles.</p>';
+ const observedHistory=responseState.focus?.history;
+ $('verdict').innerHTML=v+'<p class="small muted">Checked '+esc(responseState.checkedAt)+'. '+unmatched.length+' USGS sites lack a verified NOAA site-ID match; proximity-only matches are labeled and do not establish source roles.</p><p class="small muted">Focus-gauge observed-series diagnostics: '+(observedHistory?observedHistory.records.length+' source observations; latest '+esc(observedHistory.latestAt)+'; checked '+esc(observedHistory.checkedAt)+(observedHistory.retainedAfterFailure?' (refresh failed; prior series retained)':''):'unavailable')+'. Complete hourly bins are required. These describe this gauge, not all upstream branches or continuous flood duration.</p>';
  // sources list
  $('sources').innerHTML=inflood.length?srcShown.map(g=>{const s=sev(g.cat);const lead=g._lead||{txt:'',col:'var(--dim)'};const crestNote=g._crest?' · forecast peak '+g._crest.stage+' '+esc(g._crest.unit||'(unit unavailable)'):'';
   return '<div class="src"><div class="ic" style="background:'+(g.headwater?'#34c98a22':CATCOL[s]+'22')+';color:'+(g.headwater?'#34c98a':CATCOL[s])+'"><i class="ti '+(g.headwater?'ti-droplet-filled':(g.trib?'ti-git-branch':'ti-arrow-down'))+'"></i></div><div><div class="name">'+esc(g.name)+(g.headwater?'<span class="tag" style="background:#34c98a22;color:#7ee0b4">upstream elevated ↑</span>':'')+(g.trib?'<span class="tag" style="background:#3fa9f522;color:#9fd2f0">tributary</span>':'<span class="tag" style="background:#7e93ad22;color:#aebfd2">main stem</span>')+'</div><div class="meta" style="color:'+CATCOL[s]+'">'+CATLAB[s]+crestNote+(g.headwater?' · most-upstream elevated gauge in inspected range':'')+'</div><div class="meta" style="color:'+lead.col+'">'+lead.txt+'</div><div class="meta">Observed '+esc(g.observedAt||'unavailable')+' · '+esc(g.matchMethod)+' · forecast issued '+esc(g._crest?.issuedAt||'unavailable')+'</div>'+((g.matchedImpacts||[]).length?'<div class="small" data-nwps-impacts><b>NOAA published stage-impact context</b>'+g.matchedImpacts.slice(0,3).map(p=>'<p>'+esc(p.statement)+' ('+p.basis+' threshold '+p.threshold+' '+esc(p.unit)+'; valid '+esc(p.validTime)+')</p>').join('')+'Conditional descriptions, not confirmed damage. <a href="https://water.noaa.gov/gauges/'+encodeURIComponent(g.lid.toLowerCase())+'" target="_blank" rel="noopener">Official gauge</a>.</div>':'')+'</div></div>';}).join('')
@@ -622,6 +716,15 @@ run({lat:36.71,lon:-97.06,name:'Ponca City, OK'});
   const observedIds=nodes.map(g=>'branch-'+g.lid),known=nodes.length>0&&nodes.every(g=>categories[g.cat]!=null&&fresh(g.observedAt));
   const elevated=nodes.filter(g=>categories[g.cat]>=1),trib=elevated.filter(g=>g.trib),main=elevated.filter(g=>!g.trib);
   evidence.push({id:'ten-branches',label:'Elevated branch comparison',value:known?trib.length+' tributary and '+main.length+' main-stem elevated gauges':'Not assessable',checkedAt:s.checkedAt,basis:'interpretive',quality:known?'current':'missing',source:'https://water.noaa.gov/',note:'Counts describe matched forecast gauges, not branch discharge or exposed population.'});
+
+  const focus=s.focus,history=focus?.history,series=window.ConsoleResponse.observedSeries;
+  const historyStats=history&&series?series.analyze(history.records,{thresholds:focus.thresholds,maxAgeHours:6}):null;
+  const historyQuality=historyStats?.reason?'stale':historyStats?'current':'missing';
+  const historyMetric=(metricId,key,label,unit,rule,mitigation,inputs)=>{
+   const entry=historyStats?.[key],id='focus-history-'+metricId,value=entry?.value??null;
+   evidence.push({id,label:(focus?.name||'Focus gauge')+' · '+label,value,unit,measuredAt:historyStats?.end||history?.latestAt,checkedAt:history?.checkedAt,basis:'measured',quality:value==null?'missing':historyQuality,source:history?.source||'https://water.noaa.gov/',note:(historyStats?.method||'Complete compatible observation history required')+'. Focus gauge only; no inference about uninspected branches. '+(history?.retainedAfterFailure?'Retained after a failed refresh; source dates unchanged. ':'')+(key==='thresholdAuc'?'Exact normalized integral across this gauge’s official action→major physical-unit axis; not flooded area, population, contamination or damage.':key==='persistence'?'Share of last24 completed hourly samples at/above action; not continuous flood duration.':'Adjacent24-hour empirical distributions at the same gauge; no cross-datum pooling.')});
+   return [metricId,metricId===2?'comparison':metricId===8?'spillover':'structure',label,value==null?'unknown':value>0?'triggered':'clear',[id],rule+' '+(value==null?'Unavailable: '+(historyStats?.reason||'incomplete hourly bins or compatible thresholds'):(+value.toFixed(3))+' '+unit+'; '+historyStats.end+'.'),mitigation,inputs];
+  };
   const specs=[
    [1,'comparison','Branch count is not population balance','unknown',[],'Gauge counts cannot weight downstream communities or assets.','Collect exposed population/asset and service weights before comparing response burden across branches.','Geocoded exposure denominators and downstream dependency weights'],
    [2,'comparison','Comparable shape distributions are unavailable','unknown',[],'Observed categories and gauge-specific stage datums do not supply comparable flow distributions.','Use aligned, compatible discharge or threshold-normalized histories before computing a Wasserstein distance.','Comparable aligned discharge/exceedance histories for branch groups'],
@@ -634,7 +737,11 @@ run({lat:36.71,lon:-97.06,name:'Ponca City, OK'});
    [9,'spillover','Frontier asset exposure is unavailable','unknown',[],'The most-upstream inspected gauge does not locate an inundation/asset boundary.','Use official inundation maps and verified local asset impact weights before frontier prioritization.','Inundation boundary, asset distances and consequence weights'],
    [10,'spillover','Directed upstream-role coverage',s.topologyComplete?(elevated.some(g=>g.headwater)?'triggered':'clear'):'unknown',['topology',...observedIds],'A most-upstream elevated role is shown only after every required inspected topology probe succeeds. This is topology accounting, not physical leakage.','Confirm the named watchpoint and downstream contacts; document uninspected branches and the120 km limit.','Successful complete directed probes and current observed categories']
   ];
-  for(const [metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs]of specs){const id='metric-'+metricId;diagnostics.push({id,metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs,explanation:'Research-informed proxy/applicability screen; no fitted CRT or causal source contribution is claimed.'});for(const track of ['public','operator'])actions.push({id:id+'-'+track,track,phase:status==='unknown'?'verify':'review',when:status==='unknown'?'unknown':'triggered',diagnosticIds:[id],title:'#'+metricId+' '+label,nextStep:analyticalMitigation+(track==='operator'?' Required inputs: '+requiredInputs+'. Apply approved agency SOP before operations.':' Ask the responsible local authority for this context; continue following current official warnings.'),escalateWhen:'Verified local impacts or the responsible authority\'s actual activation rule apply; missing evidence requires verification.',authorityUrl:'https://water.noaa.gov/'});}
+
+  specs[1]=historyMetric(2,'dayW1','Focus-gauge day-to-day observation-shape change',focus?.unit||'gauge units','Review a nonzero exact empirical W1 between the latest24 and preceding24 complete hourly bins.','Check the dated hydrograph and local thresholds; a temporal distribution shift is not a flood extent or a routed contribution.','48 consecutive completed UTC hourly bins in the same compatible gauge unit');
+  specs[7]=historyMetric(8,'thresholdAuc','Focus-gauge hydraulic threshold-AUC adaptation','% normalized threshold range','Review positive integrated hourly-sample exceedance over action→major.','Read this hydraulic threshold screen alongside published local impacts and actual warnings; it does not measure affected people or property.','24 complete hourly bins plus all four official strictly ordered action/minor/moderate/major thresholds in compatible units');
+  specs[4]=historyMetric(5,'persistence','Focus-gauge observed action-threshold persistence','% hourly samples','Review any sampled action-threshold exceedance in the last24 complete hours.','Check whether local observations and official warnings still support the condition; hourly sample share does not establish continuous duration.','24 complete hourly bins and this gauge’s official action threshold in compatible units');
+  for(const [metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs]of specs){const id='metric-'+metricId;diagnostics.push({id,metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs,...(evidenceIds[0]?.startsWith('focus-history-')?{value:evidence.find(e=>e.id===evidenceIds[0])?.value,unit:evidence.find(e=>e.id===evidenceIds[0])?.unit}:{}),explanation:'Research-informed proxy/applicability screen; no fitted CRT or causal source contribution is claimed.'});for(const track of ['public','operator'])actions.push({id:id+'-'+track,track,phase:status==='unknown'?'verify':'review',when:status==='unknown'?'unknown':'triggered',diagnosticIds:[id],title:'#'+metricId+' '+label,nextStep:analyticalMitigation+(track==='operator'?' Required inputs: '+requiredInputs+'. Apply approved agency SOP before operations.':' Ask the responsible local authority for this context; continue following current official warnings.'),escalateWhen:'Verified local impacts or the responsible authority\'s actual activation rule apply; missing evidence requires verification.',authorityUrl:'https://water.noaa.gov/'});}
 
   return {slug:'river-flood-network',title:'Upstream branch response plan',context:s.context||'Choose a river location',evidence,diagnostics,actions,network:{label:'Upstream branch roles',basis:'measured',semantics:'USGS directed reach membership and confirmed most-upstream elevated-gauge position. No quantitative flow accounting is available.',period:'Topology screening; observations retain separate timestamps',coverage:'120 km; at most15 elevated-gauge topology probes',roles:nodes.map(g=>({id:g.lid,label:g.name,role:g.headwater?'confirmed upstream elevated boundary':g.trib?'tributary watchpoint':'main-stem watchpoint',inbound:null,outbound:null,unit:'not measured'})),limitations:['Causal driver, contribution fractions, discharge routing and VAR/FEVD are not estimated.','Forecast peak separation is not observed travel time.']},limitations:['CRT comparison/structure/spillover principles guide review; all ten Coastal diagnostics and thresholds are not imposed.','Observed categories older than6 hours are withheld from current response triggers.','Operator steps require agency telemetry, authority and SOP.']};
  }

@@ -49,6 +49,23 @@ try{
   state.status=503;await page.locator('#nhs-refresh').click();await page.waitForFunction(()=>!nhsBusy);
   assert.match(await page.locator('#nhs-update-status').textContent(),/retained last good/);
  });
+ await scenario('care-use matrix validates coverage, timestamps, counts and raw flag ambiguity',async(page,state)=>{
+  for(const change of [d=>delete d.careUse,d=>d.careUse.cells.push(d.careUse.cells[0]),
+    d=>d.careUse.totalStays++,d=>d.careUse.cells[0].stays=null,
+    d=>d.careUse.cells[0].sourceBoundaryFlag=true,d=>d.careUse.quarterQualifier='p',
+    d=>d.careUse.quarter='2099Q1',d=>d.careUse.quarter='2020Q1',
+    d=>{const f=d.careUse,i=f.cells.findIndex(r=>f.residenceBoards.includes(r.residence)&&r.crossBoundary),r=f.cells.splice(i,1)[0];f.publishedCellCount--;f.cohortCellCount--;f.unreportedCohortCells++;f.totalStays-=r.stays;f.outsideBoardStays-=r.stays;}]){
+   state.payload=structuredClone(original);change(state.payload);
+   await page.locator('#nhs-refresh').click();await page.waitForFunction(()=>!nhsBusy);
+   assert.equal(await page.evaluate(()=>SNAP.careUse.totalStays),original.careUse.totalStays);
+   assert.match(await page.locator('#nhs-update-status').textContent(),/retained last good/);
+  }
+  const next=structuredClone(original);next.capturedAt=new Date(Date.parse(original.capturedAt)+60000).toISOString();
+  next.careUse.cells.forEach(r=>r.sourceBoundaryFlag=1-r.sourceBoundaryFlag);state.payload=next;
+  await page.locator('#nhs-refresh').click();await page.waitForFunction(()=>!nhsBusy);
+  assert.match(await page.locator('#nhs-update-status').textContent(),/Published reports loaded/);
+  assert.equal(await page.evaluate(()=>SNAP.careUse.outsideBoardStays),original.careUse.outsideBoardStays,'paired IDs define outside-board stays, independently of source flag wording');
+ });
  await scenario('six-hour automatic refresh and preserved scenario selection',async(page,state)=>{
   await page.locator('#scen').selectOption('staff');const before=state.requests;
   await page.clock.fastForward(21600001);await page.waitForFunction(()=>!nhsBusy);

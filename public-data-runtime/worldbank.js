@@ -41,9 +41,53 @@
 
   return {...current,years,agg,cty,vintage:latest,responseDownloadedAt:new Date().toISOString(),responseCheckedAt:new Date().toISOString(),responseSourceUpdatedAt:sourceUpdates,responseRetainedSeries:retained,responseError:null};
  }
+ const CONTEXT_INDICATORS={population:'SP.POP.TOTL',landArea:'AG.LND.TOTL.K2'};
+ function validISO(value){const t=Date.parse(value);return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value)&&Number.isFinite(t)&&new Date(t).toISOString().slice(0,10)===value.slice(0,10)&&t<=Date.now()+864e5;}
+ function validateContext(data,previous,codes){
+  if(data?.schemaVersion!==1||!validISO(data.capturedAt)||!data.countries||(!Array.isArray(data.sources)||data.sources.length!==2||new Set(data.sources.map(s=>s.id)).size!==2))throw Error('Invalid population/land context');
+  for(const [key,indicator]of Object.entries(CONTEXT_INDICATORS)){
+   const edition=data.sourceUpdatedAt?.[key],source=data.sources.find(s=>s.id===key);
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(edition||'')||!validISO(edition+'T00:00:00Z')||new Date(edition+'T00:00:00Z').toISOString().slice(0,10)!==edition||source?.indicator!==indicator||!/^https:\/\/api\.worldbank\.org\//.test(source.url||'')||!new URL(source.url).pathname.endsWith('/indicator/'+indicator))throw Error('Invalid denominator source provenance');
+   if(previous?.sourceUpdatedAt?.[key]&&edition<previous.sourceUpdatedAt[key])throw Error('Denominator source edition regressed');
+  }
+  if(previous&&data.capturedAt<previous.capturedAt)throw Error('Denominator capture regressed');
+  for(const code of codes){const record=data.countries[code];if(!record)throw Error('Denominator country coverage missing');
+   for(const key of Object.keys(CONTEXT_INDICATORS)){const series=record[key];if(!series||!Object.keys(series).length||!Object.values(series).some(finite))throw Error('Missing denominator series');
+    for(const [year,value]of Object.entries(series)){if(!/^\d{4}$/.test(year)||+year<2000||+year>new Date().getUTCFullYear()||(value!==null&&(!finite(value)||value<0||key==='population'&&value>Number.MAX_SAFE_INTEGER)))throw Error('Invalid population/land observation');}
+    for(const [year,value]of Object.entries(previous?.countries?.[code]?.[key]||{}))if(finite(value)&&!finite(series[year]))throw Error('Prior denominator missing from refresh; last good retained');
+   }
+  }
+  return data;
+ }
+ async function refreshContext(previous,codes){
+  const replies=await Promise.all(Object.entries(CONTEXT_INDICATORS).map(async([key,indicator])=>({key,indicator,...await fetchRows({codes,indicator,startYear:2000})}))),now=new Date().toISOString(),countries=Object.fromEntries(codes.map(c=>[c,{population:{},landArea:{}}])),sources=[],sourceUpdatedAt={};
+  for(const reply of replies){sourceUpdatedAt[reply.key]=reply.sourceUpdatedAt;sources.push({id:reply.key,indicator:reply.indicator,url:BASE+'/country/'+codes.join(';')+'/indicator/'+reply.indicator+'?format=json&date=2000:'+new Date().getUTCFullYear(),retrievedAt:now});for(const row of reply.rows)countries[row.countryiso3code||row.country.id][reply.key][row.date]=row.value;}
+  return validateContext({schemaVersion:1,capturedAt:now,sourceUpdatedAt,sources,countries},previous,codes);
+ }
+ function comparisonContext(snapshot,key,year,group){
+  const context=snapshot.responseAnnualContext,known=['HIC','UMC','LMC','LIC'],all=Object.entries(snapshot.cty||{}),rows=all.filter(([,c])=>known.includes(c.income)&&finite(c.latest?.[key]?.v)&&String(c.latest[key].y)===year),a=rows.filter(([,c])=>c.income===group),b=rows.filter(([,c])=>c.income!==group),result={year,eligible:rows.length,displayed:all.length,aCodes:a.map(([c])=>c),bCodes:b.map(([c])=>c),aCount:a.length,bCount:b.length,context,population:null,density:null,missingPopulation:[],missingLand:[]};
+  if(!context||!/^\d{4}$/.test(year||'')||+year>new Date().getUTCFullYear()||!known.includes(group)||a.length<2||b.length<2)return result;
+  function totals(groupRows){let population=0,area=0;for(const [code]of groupRows){const p=context.countries?.[code]?.population?.[year],land=context.countries?.[code]?.landArea?.[year];if(!finite(p)||p<0||p>Number.MAX_SAFE_INTEGER)result.missingPopulation.push(code);else population+=p;if(!finite(land)||land<=0)result.missingLand.push(code);else area+=land;}return {population,area};}
+  const ta=totals(a),tb=totals(b),den=ta.population+tb.population;if(!result.missingPopulation.length&&Number.isSafeInteger(den)&&den>0){const score=2*Math.min(ta.population/den,tb.population/den);result.population={score,a:ta.population,b:tb.population,total:den};}
+  if(result.population&&!result.missingLand.length&&finite(ta.area)&&finite(tb.area)&&ta.area>0&&tb.area>0){const da=ta.population/ta.area,db=tb.population/tb.area,ds=da+db,score=2*Math.min(da/ds,db/ds);if(finite(da)&&finite(db)&&finite(ds)&&ds>0&&finite(score))result.density={score,a:da,b:db,aArea:ta.area,bArea:tb.area};}
+  return result;
+ }
+ function airExposureContext(snapshot,iso){
+  const c=snapshot.cty?.[iso],years=snapshot.years||[],values=c?.pm25||[];if(values.length!==years.length)return null;let last=-1;for(let i=0;i<values.length;i++)if(finite(values[i])&&values[i]>=0)last=i;if(last<4)return null;const rows=[];
+  for(let i=last-4;i<=last;i++){const y=years[i],v=values[i];if(!/^\d{4}$/.test(y)||+y>new Date().getUTCFullYear()||!finite(v)||v<0||rows.length&&+y!==+rows.at(-1)[0]+1)return null;rows.push([y,v]);}
+  const total=rows.reduce((sum,[,v])=>sum+Math.max(0,v-5),0);if(!finite(total))return null;return {value:total,reference:5,start:rows[0][0],end:rows.at(-1)[0],rows};
+ }
+ function installContext(options){
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',()=>installContext(options),{once:true});return null;}
+  const codes=options.countries,element=document.getElementById('worldbank-population-area');
+  if(element)try{const snapshot=options.getSnapshot(),data=validateContext(JSON.parse(element.textContent),null,codes);options.setSnapshot({...snapshot,responseAnnualContext:data,responseContextEmbedded:true});}catch(error){const snapshot=options.getSnapshot();options.setSnapshot({...snapshot,responseContextError:error.message});}
+  const refresh=installRefresh(async()=>{const previous=options.getSnapshot().responseAnnualContext;try{const context=await refreshContext(previous,codes),snapshot=options.getSnapshot();options.setSnapshot({...snapshot,responseAnnualContext:context,responseContextEmbedded:false,responseContextCheckedAt:new Date().toISOString(),responseContextError:null});}catch(error){const snapshot=options.getSnapshot();options.setSnapshot({...snapshot,responseContextCheckedAt:new Date().toISOString(),responseContextError:error.message});}});
+  if(location.protocol!=='file:')refresh();return refresh;
+ }
+
  function escape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
- function sourceChip(snapshot){const downloaded=snapshot.responseDownloadedAt,date=downloaded||snapshot.embedded,age=(Date.now()-Date.parse(date))/864e5;return '<span class="badge '+(downloaded?'b-meas':'b-mod')+'">'+(downloaded?'downloaded':'snapshot')+'</span> World Bank annual data'+(date?' · '+escape(downloaded?'retrieved '+date:'embedded '+date):'')+(snapshot.responseError?' · refresh unavailable; last good retained':'')+(snapshot.responseRetainedSeries?.length?' · partial refresh; '+snapshot.responseRetainedSeries.length+' prior series retained (latest source observation missing/older)':'')+(age>=30?' · snapshot '+Math.floor(age)+' days old':'');}
+ function sourceChip(snapshot){const downloaded=snapshot.responseDownloadedAt,date=downloaded||snapshot.embedded,age=(Date.now()-Date.parse(date))/864e5;return '<span class="badge '+(downloaded?'b-meas':'b-mod')+'">'+(downloaded?'downloaded':'snapshot')+'</span> World Bank annual data'+(date?' · '+escape(downloaded?'retrieved '+date:'embedded '+date):'')+(snapshot.responseError?' · refresh unavailable; last good retained':'')+(snapshot.responseRetainedSeries?.length?' · partial refresh; '+snapshot.responseRetainedSeries.length+' prior series retained (latest source observation missing/older)':'')+(snapshot.responseAnnualContext?' · population/land '+(snapshot.responseContextEmbedded?'snapshot ':'retrieved ')+escape(snapshot.responseAnnualContext.capturedAt):'')+(snapshot.responseContextError?' · population/land refresh unavailable; last good retained':'')+(snapshot.responseAnnualContext&&(Date.now()-Date.parse(snapshot.responseAnnualContext.capturedAt))/864e5>=30?' · population/land snapshot '+Math.floor((Date.now()-Date.parse(snapshot.responseAnnualContext.capturedAt))/864e5)+' days old':'')+(age>=30?' · snapshot '+Math.floor(age)+' days old':'');}
  function vintageText(snapshot){return 'Latest reported year '+snapshot.vintage+(snapshot.responseDownloadedAt?' · downloaded '+snapshot.responseDownloadedAt:' · embedded '+snapshot.embedded)+'. Individual observation years differ.';}
  function installRefresh(run,options={}){const cadence=options.cadenceMs??6*3600e3;let inflight=null,checked=0;function refresh(){if(inflight)return inflight;checked=Date.now();inflight=Promise.resolve().then(run).finally(()=>{inflight=null;});return inflight;}setInterval(()=>{if(!document.hidden)refresh();},cadence);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-checked>=cadence)refresh();});return refresh;}
- root.WorldBankPublicData={fetchRows,refreshSnapshot,sourceChip,vintageText,installRefresh};
+ root.WorldBankPublicData={fetchRows,refreshSnapshot,sourceChip,vintageText,installRefresh,validateContext,refreshContext,comparisonContext,airExposureContext,installContext};
 })(globalThis);

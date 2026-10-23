@@ -382,6 +382,97 @@ header .s{color:var(--ink2);font-size:13.5px;margin-top:6px;max-width:640px}
   }
   window.ConsoleResponse.domain = { wasserstein, components, build };
 })();
+
+/* Domain-specific observation diagnostics. Pure calculations; no network or imports.
+   Hourly resampling is descriptive and never supplies continuous flood duration. */
+(function(root){
+ 'use strict';
+ const HOUR=3600000,finite=v=>typeof v==='number'&&Number.isFinite(v);
+ const time=v=>typeof v==='string'&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(v)?Date.parse(v):NaN;
+ const mean=values=>values.reduce((a,b)=>a+b,0)/values.length;
+ function empiricalW1(left,right){
+  if(!left.length||left.length!==right.length||[...left,...right].some(v=>!finite(v)))return null;
+  const a=left.slice().sort((x,y)=>x-y),b=right.slice().sort((x,y)=>x-y);
+  const value=mean(a.map((x,i)=>Math.abs(x-b[i])));return finite(value)?value:null;
+ }
+ function hourly(records,{now=Date.now(),mode='observed',end,maxAgeHours=6}={}){
+  const result={bins:new Map(),invalidRows:0,duplicateRows:0,conflictHours:new Set(),futureRows:0,latestAt:null,reason:null};
+  if(!Array.isArray(records)||!records.length||records.length>200000||!finite(now)||!['observed','hourly'].includes(mode)){result.reason='A bounded finite observation series is required';return result;}
+  const byTimestamp=new Map();let latest=-Infinity;
+  for(const row of records){
+   const stamp=time(row?.time),value=row?.value;
+   if(!finite(stamp)||!finite(value)||value===-9999||mode==='hourly'&&stamp%HOUR!==0){result.invalidRows++;continue;}
+   if(stamp>now){result.futureRows++;continue;}
+   const hour=Math.floor(stamp/HOUR)*HOUR;
+   if(byTimestamp.has(stamp)){result.duplicateRows++;if(byTimestamp.get(stamp)!==value)result.conflictHours.add(hour);continue;}
+   byTimestamp.set(stamp,value);latest=Math.max(latest,stamp);
+   if(!result.bins.has(hour)||stamp>result.bins.get(hour).stamp)result.bins.set(hour,{stamp,value});
+  }
+  for(const hour of result.conflictHours)result.bins.delete(hour);
+  result.latestAt=finite(latest)?new Date(latest).toISOString():null;
+  if(result.futureRows){result.reason='Future observations are present';return result;}
+  if(!finite(latest)||now-latest>maxAgeHours*HOUR){result.reason='Observation series is missing or stale';return result;}
+  let endpoint=end==null?Math.floor(latest/HOUR)*HOUR:time(end);
+  if(!finite(endpoint)||endpoint%HOUR!==0||endpoint>now){result.reason='The declared hourly endpoint is invalid';return result;}
+  if(mode==='observed')endpoint=Math.min(endpoint,(Math.floor(now/HOUR)-1)*HOUR);
+  result.end=endpoint;return result;
+ }
+ function windowValues(series,hours){
+  if(series.reason||!finite(series.end)||!Number.isInteger(hours)||hours<1)return null;
+  const values=[];
+  for(let i=hours-1;i>=0;i--){const row=series.bins.get(series.end-i*HOUR);if(!row)return null;values.push(row.value);}
+  return values;
+ }
+ function analyze(records,options={}){
+  const series=hourly(records,options),day=windowValues(series,24),pair=windowValues(series,48);
+  const result={latestAt:series.latestAt,end:finite(series.end)?new Date(series.end).toISOString():null,
+   method:options.mode==='hourly'?'Source-reported UTC hourly values':'Last valid observation in each completed UTC hour; no interpolation or duration estimate',
+   invalidRows:series.invalidRows,duplicateRows:series.duplicateRows,conflictingHours:series.conflictHours.size,futureRows:series.futureRows,
+   reason:series.reason,dayW1:null,persistence:null,thresholdAuc:null,scale:null,completeWindows:[]};
+  if(pair){const value=empiricalW1(pair.slice(0,24),pair.slice(24));if(value!=null)result.dayW1={value,points:48,comparison:'latest24 complete hourly bins versus preceding24',start:new Date(series.end-47*HOUR).toISOString(),end:result.end};}
+  const thresholds=options.thresholds;
+  if(day&&Array.isArray(thresholds)&&thresholds.length===4&&thresholds.every(v=>finite(v)&&v!==-9999)&&thresholds.every((v,i)=>!i||v>thresholds[i-1])&&finite(thresholds[3]-thresholds[0])){
+   const [action,,,major]=thresholds,above=day.filter(v=>v>=action).length;
+   result.persistence={value:100*above/day.length,above,total:day.length,threshold:action};
+   // Exact integral of the empirical exceedance curve over the action→major axis.
+   // Each observation contributes clamp((value-action)/(major-action),0,1).
+   const value=100*mean(day.map(v=>Math.max(0,Math.min(1,(v-action)/(major-action)))));
+   if(finite(value))result.thresholdAuc={value,points:day.length,thresholds:thresholds.slice(),method:'Integral of hourly-sample exceedance fraction across official action→major thresholds, divided by their physical-unit range'};
+  }else if(day&&Array.isArray(thresholds)&&thresholds.length&&finite(thresholds[0])&&thresholds[0]!==-9999){
+   // Persistence only needs action; threshold-AUC needs the entire ordered ladder.
+   const above=day.filter(v=>v>=thresholds[0]).length;result.persistence={value:100*above/day.length,above,total:day.length,threshold:thresholds[0]};
+  }
+  if(options.mode==='hourly'){
+   const current=options.currentValue,latest=series.bins.get(series.end)?.value,ratios=[];
+   for(const hours of [24,72,168]){const values=windowValues(series,hours);if(!values)continue;result.completeWindows.push(hours);const peak=Math.max(...values);if(finite(current)&&current>=0&&current===latest&&peak>0&&values.every(v=>v>=0))ratios.push({hours,peak,ratio:100*(current/peak)});}
+   if(ratios.length>=2){const value=Math.max(...ratios.map(r=>r.ratio))-Math.min(...ratios.map(r=>r.ratio));if(finite(value))result.scale={value,windows:ratios};}
+  }
+  return result;
+ }
+ function populationBalance(exposure){
+  const failure=reason=>({value:null,reason,countries:[],baselinePopulation:null,higherPopulation:null});
+  if(!exposure||!Array.isArray(exposure.bands)||!exposure.bands.length||!Array.isArray(exposure.countries)||!exposure.countries.length)return failure('Complete PAGER country and aggregate intensity bands are required');
+  const bands=exposure.bands,seenBands=new Set(),seenCountries=new Set();
+  if(bands.some(b=>!Number.isInteger(b.mmi)||b.mmi<1||b.mmi>12||!finite(b.population)||b.population<0||seenBands.has(b.mmi)||(seenBands.add(b.mmi),false)))return failure('Invalid aggregate PAGER intensity bands');
+  const countries=[];
+  for(const c of exposure.countries){
+   if(typeof c.code!=='string'||!/^[A-Z]{2}$/.test(c.code)||seenCountries.has(c.code)||!Array.isArray(c.populations)||c.populations.length!==bands.length||c.populations.some(v=>!finite(v)||v<0))return failure('Missing, duplicate or invalid country intensity bands');
+   seenCountries.add(c.code);let baseline=0,higher=0;
+   c.populations.forEach((value,i)=>{if(bands[i].mmi>=4)baseline+=value;if(bands[i].mmi>=7)higher+=value;});
+   countries.push({code:c.code,baselinePopulation:baseline,higherPopulation:higher});
+  }
+  // USGS exposure counts are integer populations. Allow a one-person rounding
+  // difference per country, never a percentage tolerance that conceals coverage loss.
+  if(bands.some((b,i)=>Math.abs(exposure.countries.reduce((sum,c)=>sum+c.populations[i],0)-b.population)>exposure.countries.length))return failure('Country totals do not reconcile with aggregate PAGER bands');
+  const baselinePopulation=countries.reduce((sum,c)=>sum+c.baselinePopulation,0),higherPopulation=countries.reduce((sum,c)=>sum+c.higherPopulation,0);
+  if(!finite(baselinePopulation)||!finite(higherPopulation)||baselinePopulation<=0||higherPopulation<=0)return failure('Both MMI4+ baseline and MMI7+ population totals must be positive; zero higher exposure is not a composition distribution');
+  for(const c of countries){c.baselineShare=c.baselinePopulation/baselinePopulation;c.higherShare=c.higherPopulation/higherPopulation;c.differencePercentagePoints=100*(c.higherShare-c.baselineShare);}
+  const value=50*countries.reduce((sum,c)=>sum+Math.abs(c.higherShare-c.baselineShare),0);
+  return finite(value)?{value,countries,baselinePopulation,higherPopulation,reason:null,method:'Total variation of country population-share distributions:0.5×sum|share(MMI7+)−share(MMI4+)|; nested modeled exposure groups, not independent populations'}:failure('Population-share arithmetic is not finite');
+ }
+ root.ConsoleResponse=root.ConsoleResponse||{};
+ root.ConsoleResponse.observedSeries={hourly,windowValues,analyze,empiricalW1,populationBalance};
+})(window);
 </script>
 <!-- CONSOLE_RESPONSE_HEAD_END -->
 </head>
@@ -557,7 +648,8 @@ async function loadExposure(prods){const el=$('exposure');const lp=prods.losspag
  const bands=pe.mmi.map((m,i)=>({mmi:m,population:pe.aggregated_exposure[i]}));
  const strongPopulation=bands.filter(b=>b.mmi>=7).reduce((a,b)=>a+b.population,0),totalPopulation=bands.reduce((a,b)=>a+b.population,0);
  if(!Number.isFinite(strongPopulation)||!Number.isFinite(totalPopulation)){panelFail('exposure','PAGER population totals are invalid.');return;}
- RESPONSE_EXPOSURE={eventId:CUR.id,bands,strongPopulation,totalPopulation,updatedAt:Number.isFinite(lp.updateTime)?new Date(lp.updateTime).toISOString():null,checkedAt:new Date().toISOString(),source:purl(lp,'json/exposures.json')};
+ const countries=Array.isArray(pe.country_exposures)?pe.country_exposures.map(c=>({code:c.country_code,populations:c.exposure})):[];
+ RESPONSE_EXPOSURE={eventId:CUR.id,bands,countries,strongPopulation,totalPopulation,updatedAt:Number.isFinite(lp.updateTime)?new Date(lp.updateTime).toISOString():null,checkedAt:new Date().toISOString(),source:purl(lp,'json/exposures.json')};
  const rows=bands.map(b=>({m:b.mmi,pop:b.population})).filter(x=>x.pop>0&&x.m>=4);
  const max=Math.max(1,...rows.map(x=>x.pop));const strong=rows.filter(x=>x.m>=7).reduce((a,x)=>a+x.pop,0);
  el.innerHTML='<div class="big" style="color:#f97316">'+fmtN(strong)+'</div><div class="range">people in strong shaking (MMI 7+), where serious damage is likely</div>'+
@@ -676,7 +768,7 @@ loadList();
 (function () {
   const R=window.ConsoleResponse,H=R.domain,authority='https://www.usgs.gov/faqs/what-do-i-do-after-earthquake';
   const rows=[
-    {requiredInputs:['Verified exposed populations','Comparable catchments','Confirmed asset/service weights'],analyticalMitigation:'Mapped asset counts and assumed hospital beds are not an exposed-population denominator.',publicAction:'Check official local impact and shelter information; a sparse map is not evidence of no exposure.',operatorAction:'Verify exposed catchments and service users before weighting inspection priorities.'},
+    {requiredInputs:['Complete official PAGER country/intensity population bands','Reconciled aggregate totals'],analyticalMitigation:'Compare country composition of modeled MMI7+ exposure with the nested MMI4+ baseline using total variation; it is not equitable service allocation.',publicAction:'Read the official exposure context and local reports; a country-share contrast does not establish damage or a confirmed toll.',operatorAction:'Check the PAGER/LandScan model, product revision and country coverage before comparing geographic exposure; obtain actual service/catchment weights separately.'},
     {requiredInputs:['Comparable shaking distributions by asset group','Explicit model provenance'],analyticalMitigation:'Compare modeled MMI distributions for hospitals versus mapped utility assets with an empirical Wasserstein distance.',publicAction:'Read distribution differences as a reason to check official impact reports, not as observed damage.',operatorAction:'Check fragility, construction and backup differences before interpreting the modeled distribution gap.'},
     {requiredInputs:['A complete asset inventory','Exposure-area and population denominators'],analyticalMitigation:'OSM inventory density depends on mapping completeness; it cannot establish density symmetry by itself.',publicAction:'Verify coverage in communities absent from the map.',operatorAction:'Reconcile the public inventory with approved asset and coverage records.'},
     {requiredInputs:['Verified dependency edges','Declared shaking screen'],analyticalMitigation:'A component count on the screened graph is a contiguity proxy, not a full Euler-characteristic estimate.',publicAction:'Use official access and shelter information for each affected area.',operatorAction:'Treat disconnected modeled fronts as inspection questions; verify routes and topology before allocating crews.'},
@@ -714,10 +806,12 @@ loadList();
     const evidence=[ev('shape','Hospital/utility MMI distribution W1',distance,'MMI'),ev('components','Screened graph components',components,'components'),ev('margin','Assets within 0.5 MMI of screen',margin,'mapped assets'),ev('scale','Assets changing under +1 MMI screen',sensitivity,'mapped assets'),ev('auc','MMI 5–8 exposure-screen AUC',auc,'% normalized over declared ladder'),ev('frontier','One-to-three-hop frontier proxy',frontier,'% of initially unscreened nodes'),ev('leakage','Cross-screen dependency fraction',leakage,'% of modeled edges')];
     const exposure=state.exposure,officialPopulation=exposure&&Number.isFinite(exposure.strongPopulation)&&Number.isFinite(exposure.totalPopulation);
     evidence.push({id:'pager-population',label:'Official PAGER modeled population at MMI 7+',value:officialPopulation?exposure.strongPopulation:null,unit:'modeled residents in shaking bands',measuredAt:exposure?.updatedAt,checkedAt:exposure?.checkedAt,basis:'modeled',quality:officialPopulation?quality:'missing',source:exposure?.source||p?.url||'https://earthquake.usgs.gov/',note:'USGS PAGER/LandScan exposure product; not actual affected customers, confirmed damage, casualties or available beds. Each band is a separate official modeled exposure cohort.'});
+    const balance=R.observedSeries?.populationBalance(exposure),balanceValue=balance?.value??null;
+    evidence.push({id:'pager-balance',label:'Country composition: modeled MMI7+ versus MMI4+',value:balanceValue,unit:'percentage points total variation',measuredAt:exposure?.updatedAt,checkedAt:exposure?.checkedAt,basis:'modeled',quality:balanceValue==null?'missing':quality,source:exposure?.source||p?.url||'https://earthquake.usgs.gov/',note:balanceValue==null?(balance?.reason||'Complete PAGER country bands required'):balance.method+'; '+balance.countries.length+' countries; baseline '+balance.baselinePopulation+' and higher '+balance.higherPopulation+' modeled residents. Country bands reconcile to aggregate bands. No damage, equity, service-population or causal conclusion follows.'});
     const officialActions=officialPopulation?['public','operator'].map(track=>({id:'pager-population-'+track,track,phase:'verify',when:'always',title:'Review the official PAGER exposure distribution',nextStep:'USGS models '+exposure.strongPopulation.toLocaleString()+' residents at MMI 7+ within '+exposure.totalPopulation.toLocaleString()+' residents across the published shaking bands. Product updated '+(exposure.updatedAt||'unavailable')+'; checked '+exposure.checkedAt+'. Read the USGS exposure/loss distributions and current local situation reports. These are model estimates, not a confirmed toll or the service population of the hypothetical network.',escalateWhen:'Follow current official local instructions and verified incident reports; do not use modeled exposure as a dispatch or casualty estimate.',authorityUrl:p?.url||authority})):[];
     const mark=(id,value,rule,explanation)=>({status:value==null?'unknown':value>0?'triggered':'clear',value:evidence.find(e=>e.id===id)?.value,unit:evidence.find(e=>e.id===id)?.unit,evidenceIds:[id],rule,explanation});
     return H.build({slug:'quake-consequence',title:'Ten-parameter impact-review plan',context:event?'USGS '+event.id+' · '+p.place:'Select an event; current event evidence is unavailable',rows,evidence,authorityUrl:authority,
-      overrides:{2:mark('shape',distance,'Review a nonzero modeled MMI-distribution gap.','Exact empirical Wasserstein distance; hazard, fragility and inventory completeness remain distinct.'),4:mark('components',components==null?null:components-1,'Review more than one screened graph component.','Component-count adaptation on an assumed dependency graph, not verified disconnected response zones.'),5:mark('margin',margin,'Review mapped assets within the declared 0.5 MMI sensitivity band.','Scenario margin count; not a safety or damage classification.'),6:mark('scale',sensitivity,'Review classifications changing under a +1 MMI screen.','Threshold sensitivity only; no spatial-mixing estimator is fitted.'),8:mark('auc',auc,'Review positive integrated screening exposure over MMI 5–8.','Trapezoidal exposure-screen AUC adaptation, not expected damage or a casualty estimate.'),9:mark('frontier',frontier,'Review initially unscreened model nodes reachable within 1–3 hops.','A declared graph-depth exposure proxy; no wave arrival or outage timing is estimated.'),10:mark('leakage',leakage,'Verify dependencies crossing the scenario partition.','Modeled cross-screen link fraction; no observed mobility or causal effect is measured.')},
+      overrides:{1:mark('pager-balance',balanceValue,'Review a nonzero country-composition contrast between nested modeled exposure groups.','Descriptive population-balance adaptation from complete official PAGER bands. MMI7+ is a subset of MMI4+, not an independent population or a validated CRT estimator.'),2:mark('shape',distance,'Review a nonzero modeled MMI-distribution gap.','Exact empirical Wasserstein distance; hazard, fragility and inventory completeness remain distinct.'),4:mark('components',components==null?null:components-1,'Review more than one screened graph component.','Component-count adaptation on an assumed dependency graph, not verified disconnected response zones.'),5:mark('margin',margin,'Review mapped assets within the declared 0.5 MMI sensitivity band.','Scenario margin count; not a safety or damage classification.'),6:mark('scale',sensitivity,'Review classifications changing under a +1 MMI screen.','Threshold sensitivity only; no spatial-mixing estimator is fitted.'),8:mark('auc',auc,'Review positive integrated screening exposure over MMI 5–8.','Trapezoidal exposure-screen AUC adaptation, not expected damage or a casualty estimate.'),9:mark('frontier',frontier,'Review initially unscreened model nodes reachable within 1–3 hops.','A declared graph-depth exposure proxy; no wave arrival or outage timing is estimated.'),10:mark('leakage',leakage,'Verify dependencies crossing the scenario partition.','Modeled cross-screen link fraction; no observed mobility or causal effect is measured.')},
       network:{label:'Dependency assumptions supporting the ten-parameter review',basis:'modeled',semantics:graph?.supplied?'Locally supplied dependency edges; their validity/status is not established by this public tool.':'Nearest-asset proximity assumptions, not observed utility connections.',period:measuredAt,coverage:nodes.length+' mapped nodes; '+edges.length+' assumed links',roles:[],limitations:['A source/sink label or restoration ranking cannot authorize field dispatch.']},
       escalateWhen:'Follow current local emergency instructions; operators escalate verified damage/service loss under their own incident command and safety procedures.',
       limitations:['No original CRT estimator, variational-free-energy model or causal contagion estimator is fitted.','Unknown dimensions require the listed inputs; they are not an all-clear.','The lifeline scenario uses contour-membership/approximate intensity and assumed dependencies/capacity where actual records are missing; it is distinct from official PAGER exposure and loss products.','If authoritative ShakeMap contours or the inventory are absent, the numerical screening dimensions remain unassessed.'],

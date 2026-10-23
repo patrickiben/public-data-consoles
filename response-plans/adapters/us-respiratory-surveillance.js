@@ -47,11 +47,11 @@
       "Reconcile country and reference vintages; seek repeated local measurements before escalating any persistent-service-gap claim."
     ],
     [
-      "National / local scale stability",
-      "Aligned, comparable local and national respiratory preparedness observations with coverage metadata.",
-      "Check whether local reporting and population composition support a national-to-local comparison; do not manufacture a spatial mixing value.",
-      "Check whether the comparison changes with the reference group; a country mean does not describe every community.",
-      "Review world/income-reference sensitivity and repeat respiratory preparedness assessment across defensible local aggregation scales."
+      "National / jurisdiction direction sensitivity",
+      "Same pathogen/drug definition, units and exact endpoint periods for national and at least two reporting jurisdictions; report missing pairs and coverage.",
+      "Check direction agreement on the paired reporting subset and its source/sample composition. Missing coverage cannot establish stable local or national conditions.",
+      "Read the exact dates and reporting coverage; national direction can differ from participating jurisdictions and does not establish your local or personal risk.",
+      "Reconcile the same-period jurisdiction and national definitions, source revisions and reporting/site composition. Obtain local surveillance before any authority-reviewed operational escalation."
     ],
     [
       "Model / missingness review",
@@ -144,6 +144,16 @@
     var tail=ed.slice(-8), contiguous=tail.length===8 && tail.every(function(p,i){return !i || Date.parse(p[0]+'T00:00:00Z')-Date.parse(tail[i-1][0]+'T00:00:00Z')===7*86400000;}), shape=contiguous?w1(tail.slice(0,4).map(function(p){return p[1];}),tail.slice(4).map(function(p){return p[1];})):null;
     evidence.push(fact('shape-w1','ED-share empirical W1 · previous four versus latest four weeks',round(shape),'percentage points',last && last[0],cfg.source,q,'interpretive','Equal weight per week in two declared time windows; not independent treatment groups. Requires eight consecutive weeks.',checked));
     ov[2]=assess(2,'Four-versus-four weekly ED distribution W1 (temporal adaptation)',shape==null?'unknown':shape>1e-10?'triggered':'clear',['ed','shape-w1'],'A nonzero descriptive W1 prompts source and trend review, with no risk or clinical cutoff.','This compares ED-share distributions in consecutive windows, not CRT arms or patient-level disease severity.');
+    var wwEnd=w && w[0],wwStart=wwEnd?new Date(Date.parse(wwEnd+'T00:00:00Z')-28*86400000).toISOString().slice(0,10):'',stateRows={};
+    (snap.wval_state_expected && snap.wval_state_expected[key] || []).forEach(function(state){stateRows[state]=[];});
+    Object.entries(snap.wval_state_series || {}).forEach(function(entry){if(entry[1] && entry[1][key])stateRows[entry[0]]=entry[1][key];});
+    var scale=typeof HealthPublicData==='object' && HealthPublicData.directionAgreement?HealthPublicData.directionAgreement(wastewater,stateRows,wwStart,wwEnd):null;
+    var scaleQuality=w?freshness(wwEnd+'T00:00:00Z',35):'missing';
+    var detail=scale?scale.rows.map(function(r){var counts=snap.wval_state_site_counts && snap.wval_state_site_counts[r.id] && snap.wval_state_site_counts[r.id][key] || {};return r.id+': '+round(r.start)+'→'+round(r.end)+' (valid sites '+(counts[wwStart]??'not supplied')+'→'+(counts[wwEnd]??'not supplied')+')';}).join('; '):'No pair of states has both exact endpoint weeks.';
+    var scaleNote='Same pathogen '+label+' and exact wastewater-category weeks '+wwStart+' to '+(wwEnd || 'unavailable')+'. '+(scale?'Paired '+scale.paired+' of '+scale.observed+' states/territories with a downloaded five-week history; missing pairs: '+(scale.missing.join(', ')||'none within downloaded coverage')+'. National index '+round(scale.nationalStart)+'→'+round(scale.nationalEnd)+'. ':'')+'Unweighted ordinal site-category means, not concentration, infection prevalence, personal exposure or an official national WVAL. Site composition/coverage changes can alter direction. Not population weighted; no inference about unobserved states or a causal spatial-mixing process. '+detail;
+    evidence.push(fact('scale-coverage','Paired state/territory wastewater reporting coverage',scale?scale.paired:null,'paired jurisdictions of '+(scale?scale.observed:'unknown')+' downloaded',wwEnd,'https://data.cdc.gov/resource/atcp-73re.json',scaleQuality,'interpretive',scaleNote,checked));
+    evidence.push(fact('scale-disagreement','State versus national four-week wastewater direction disagreement',scale?round(100*scale.disagreementShare):null,'% of paired reporting jurisdictions',wwEnd,'https://data.cdc.gov/resource/atcp-73re.json',scaleQuality,'interpretive',scaleNote,checked));
+    ov[6]=Object.assign(assess(6,'Matched-week national/state direction sensitivity (surveillance scale proxy)',scale?(scale.disagree?'triggered':scale.missing.length?'unknown':'clear'):'unknown',['scale-coverage','scale-disagreement'],'Any observed direction disagreement prompts scale-specific source review. Missing endpoint pairs cannot establish agreement; no disagreement only describes the paired reporting subset, never a national or local all-clear.','Same pathogen, units and exact four-week endpoints are required. Direction sensitivity is descriptive; no local disease burden, fitted spatial mixing, mechanism or intervention effect is estimated.'),{value:scale?round(100*scale.disagreementShare):null,unit:'% paired jurisdictions with different direction'});
     return plan('United States · '+label+' selected in “At a glance” · ED week '+(last?last[0]:'unavailable')+' · national surveillance planning',evidence,ov);
   }
   ConsoleResponse.connect(read,['#glsel','#glchart','#glv','#gls','#hosps','#wwstats','#srcchip']);

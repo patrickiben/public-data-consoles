@@ -7,6 +7,7 @@ const root=new URL('../',import.meta.url),NOW=Date.parse('2026-10-23T16:00:00Z')
 const iso=ms=>new Date(ms).toISOString();
 const core=await readFile(new URL('response-plans/core.js',root),'utf8');
 const domain=await readFile(new URL('response-plans/domain-helpers.js',root),'utf8');
+const observed=await readFile(new URL('response-plans/observed-series.js',root),'utf8');
 const browser=await chromium.launch({headless:true,channel:process.env.CHROME_CHANNEL||undefined});
 let passed=0;
 function gauges(options={}){
@@ -17,12 +18,13 @@ function gauges(options={}){
 }
 const features=rows=>rows.filter(g=>g.usgsId!=='999').map(g=>({type:'Feature',properties:{identifier:'USGS-'+g.usgsId,name:g.name},geometry:{type:'Point',coordinates:[g.longitude,g.latitude]}}));
 async function scenario(slug,options,verify){
- const context=await browser.newContext({serviceWorkers:'block'}),state={fail:false,requests:[],release:null,holdStarted:false};
+ const context=await browser.newContext({serviceWorkers:'block'}),state={fail:false,failObserved:false,observedCalls:0,requests:[],release:null,holdStarted:false};
  let html=await readFile(new URL('consoles/'+slug+'/index.html',root),'utf8');
  html=html.replace(/<!-- CONSOLE_RESPONSE_(HEAD|MOUNT|ADAPTER)_START -->[\s\S]*?<!-- CONSOLE_RESPONSE_\1_END -->\n?/g,'');
  const adapter=await readFile(new URL('response-plans/adapters/'+slug+'.js',root),'utf8');
- html=html.replace('<head>','<head><script>'+core+'</script><script>'+domain+'</script>').replace('</body>','<section id="console-response"></section><script>'+adapter+'</script></body>');
+ html=html.replace('<head>','<head><script>'+core+'</script><script>'+domain+'</script><script>'+observed+'</script>').replace('</body>','<section id="console-response"></section><script>'+adapter+'</script></body>');
  const origin='https://hazard-fixture.invalid/'+slug+'/',rows=gauges(options);
+ if(options.observedHistory)for(const g of rows){g.flood.categories.moderate={stage:20,flow:-9999};g.flood.categories.major={stage:30,flow:-9999};}
  if(options.flow){rows[1].status.observed.primaryUnit='kcfs';rows[1].status.observed.primary=20;rows[1].flood.categories.action={stage:3,flow:options.sentinel?-9999:20000};}
  if(options.blankNumber){rows[0].status.observed.primary=' \t';rows[0].flood.categories.action.stage=' \t';}
  if(options.wrongNearby){rows.unshift({...structuredClone(rows[0]),lid:'WRONG',usgsId:'999',name:'Nearby wrong river'});}
@@ -39,6 +41,7 @@ async function scenario(slug,options,verify){
    if(u.hostname==='api.water.noaa.gov'){
     const lid=u.pathname.match(/\/gauges\/([^/]+)/)?.[1],g=rows.find(g=>g.lid.toLowerCase()===lid?.toLowerCase());
     if(state.fail&&slug!=='us-local-hazards')return route.fulfill({status:503,body:'refresh failed'});
+    if(u.pathname.endsWith('/stageflow/observed')){const call=++state.observedCalls;if(state.failObserved)return route.fulfill({status:503,body:'observations failed'});if(options.historyRace&&call===1){state.holdStarted=true;await new Promise(resolve=>state.release=resolve);}if(!options.observedHistory)return json({data:[]});const data=Array.from({length:72},(_,i)=>({validTime:iso(NOW-(72-i)*3600000),primary:i<48?10:options.historyRace&&call>1?30:20}));if(options.observedHistory==='gap')data.splice(60,1);if(options.observedHistory==='future')data.push({validTime:iso(NOW+3600000),primary:20});return json({primaryUnits:options.observedHistory==='units'?'kcfs':'ft',data});}
     if(u.pathname.endsWith('/stageflow/forecast'))return options.forecastFailure?route.fulfill({status:503,body:'forecast unavailable'}):json({issuedTime:iso(NOW),primaryUnits:g?.status.observed.primaryUnit||'ft',data:[{primary:99,validTime:iso(NOW-3600000)},{primary:options.zero&&g?.lid==='TST0'?0:25,validTime:iso(NOW+4*3600000)}]});
     return json(g||{gauges:rows});
    }
@@ -69,7 +72,7 @@ async function scenario(slug,options,verify){
    if(u.hostname==='geo.fcc.gov')return json({results:[{county_fips:'12103'}]});
    if(u.hostname==='usdmdataservices.unl.edu')return json([{county:'Pinellas',state:'FL',mapDate:'2026-10-20',d0:20,d1:10,d2:5,d3:0,d4:0}]);
    if(u.hostname==='earthquake.usgs.gov'){
-    if(u.pathname.endsWith('exposures.json'))return json({population_exposure:{mmi:[4,6,7,8],aggregated_exposure:options.badPopulation?[100,20,null,5]:options.zeroPopulation?[100,20,0,0]:state.fail?[100,20,null,5]:[100,20,0,5]}});
+    if(u.pathname.endsWith('exposures.json'))return json({population_exposure:{mmi:[4,6,7,8],aggregated_exposure:options.badPopulation?[100,20,null,5]:options.zeroPopulation?[100,20,0,0]:state.fail?[100,20,null,5]:[100,20,0,5],country_exposures:options.badCountries?[{country_code:'AA',exposure:[100,0,0,0]}]:[{country_code:'AA',exposure:[100,0,0,0]},{country_code:'BB',exposure:options.zeroPopulation?[0,20,0,0]:[0,20,0,5]}]}});
     if(u.pathname.endsWith('alerts.json')){const bins=[{min:'0',max:'1',probability:.8,color:'green'},{min:'1',max:'10',probability:.2,color:'yellow'}];if(options.badProbability==='null')bins[0].probability=null;if(options.badProbability==='zero')bins.forEach(b=>b.probability=0);if(options.badProbability==='sum')bins.forEach(b=>b.probability=.8);if(options.badProbability==='overlap')bins[1].min='0';return json({fatality:{bins},economic:{bins:[{min:'0',max:'1',probability:1,color:'green'}]}});}
     if(u.pathname.endsWith('comments.json'))return json({impact1:'Official modeled loss context'});
     if(u.searchParams.has('eventid')){const e=event(u.searchParams.get('eventid'));if(state.fail&&options.badEvent==='id')e.id='OTHER';if(state.fail&&options.badEvent==='revision')e.properties.updated=NOW-86400000;if(state.fail&&options.badEvent==='future')e.properties.time=NOW+2*86400000;return json(e);}
@@ -79,6 +82,7 @@ async function scenario(slug,options,verify){
    return json({features:[],elements:[],data:[],results:[]});
   });
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(10000);await page.clock.install({time:new Date(NOW)});await page.goto(origin,{waitUntil:'load'});
+  if(options.historyRace){while(!state.holdStarted)await new Promise(resolve=>setTimeout(resolve,10));await page.locator('#q').fill('22222');await page.locator('#go').click();await page.waitForFunction(slug=>(slug.endsWith('network')?RiverNetworkResponse:RiverPropagationResponse).context.includes('Latest town')&&(slug.endsWith('network')?RiverNetworkResponse:RiverPropagationResponse).loading===false,slug);state.release();}
   if(slug==='river-flood-propagation')await page.waitForFunction(()=>RiverPropagationResponse.loading===false&&RiverPropagationResponse.nodes.length>0);
   if(slug==='river-flood-network')await page.waitForFunction(()=>RiverNetworkResponse.loading===false&&RiverNetworkResponse.nodes.length>0);
   if(slug==='us-local-hazards'){await page.locator('#q').fill('33701');await page.locator('#go').click();if(!options.race)await page.waitForFunction(()=>LocalHazardsResponse.loading===false);}
@@ -89,6 +93,13 @@ async function scenario(slug,options,verify){
 }
 const plan=page=>page.evaluate(()=>ConsoleResponse.exportPlan().plan);
 try{
+ for(const slug of ['river-flood-propagation','river-flood-network']){
+  await scenario(slug,{observedHistory:'complete'},async(page,state)=>{const p=await plan(page),metric=id=>p.diagnostics.find(d=>d.id==='metric-'+id);assert.equal(metric(2).value,10);assert.equal(metric(2).status,'triggered');assert.equal(metric(8).value,50);assert.equal(metric(8).status,'triggered');assert.match(p.evidence.find(e=>e.id==='focus-history-8').note,/not flooded area/);if(slug.endsWith('network'))assert.equal(metric(5).value,100);const focusBefore=await page.evaluate(slug=>slug.endsWith('network')?RiverNetworkResponse.focus.history:RiverPropagationResponse.nodes.find(n=>n.lid===RiverPropagationResponse.focusLid).history,slug);state.failObserved=true;await page.clock.fastForward((slug.endsWith('network')?10:5)*60000+1);await page.waitForFunction(slug=>(slug.endsWith('network')?RiverNetworkResponse.focus?.history:RiverPropagationResponse.nodes.find(n=>n.lid===RiverPropagationResponse.focusLid)?.history)?.retainedAfterFailure===true,slug);await page.waitForFunction(()=>ConsoleResponse.exportPlan().plan.diagnostics.find(d=>d.id==='metric-2')?.value===10);const p2=await plan(page);assert.equal(p2.evidence.find(e=>e.id==='focus-history-2').measuredAt,focusBefore.latestAt,'failed refresh does not invent newer observations');await page.clock.fastForward(7*3600000);await page.waitForFunction(()=>ConsoleResponse.exportPlan().plan.diagnostics.find(d=>d.id==='metric-2')?.status==='unknown');assert.equal((await plan(page)).diagnostics.find(d=>d.id==='metric-8').status,'unknown','retained observations age out despite repeated metadata checks');});
+  await scenario(slug,{observedHistory:'complete',historyRace:true},async page=>{await page.waitForFunction(()=>ConsoleResponse.exportPlan().plan.diagnostics.find(d=>d.id==='metric-2')?.value===20);const s=await page.evaluate(slug=>slug.endsWith('network')?RiverNetworkResponse:RiverPropagationResponse,slug);assert.match(s.context,/Latest town/);assert.equal((await plan(page)).diagnostics.find(d=>d.id==='metric-2').value,20,'older held history cannot replace the newest selected-location run');});
+  for(const kind of ['gap','future','units'])await scenario(slug,{observedHistory:kind},async page=>{const p=await plan(page);for(const id of [2,8])assert.equal(p.diagnostics.find(d=>d.id==='metric-'+id).status,'unknown',kind+' must not fabricate a complete compatible history');});
+ }
+ await scenario('quake-consequence',{},async page=>{const p=await plan(page);assert.equal(p.diagnostics.find(d=>d.id==='metric-1').value,80);assert.equal(p.diagnostics.find(d=>d.id==='metric-1').status,'triggered');assert.match(p.evidence.find(e=>e.id==='pager-balance').note,/nested modeled exposure/);});
+ await scenario('quake-consequence',{badCountries:true},async page=>{const p=await plan(page);assert.equal(p.diagnostics.find(d=>d.id==='metric-1').status,'unknown');assert.equal(await page.evaluate(()=>QuakeResponse.read().exposure.strongPopulation),5,'aggregate model remains available when country composition is incomplete');});
  await scenario('river-flood-propagation',{},async page=>{const s=await page.evaluate(()=>RiverPropagationResponse);assert.equal(s.nodes.length,7,'fetches outermost included link');assert.equal(s.nodes[0].crest,25,'past maximum excluded');assert.equal(s.nodes[0].actionThreshold,10);assert.match(await page.locator('#chain').textContent(),/Official conditional road-impact description/);assert.doesNotMatch(await page.locator('#chain').textContent(),/Unreached impact must not be claimed/);const p=await plan(page);assert.equal(p.diagnostics.find(d=>d.id==='gauge-TST0-forecast').status,'triggered');assert.ok(p.actions.some(a=>a.id==='gauge-TST0-impacts-operator'&&a.selected));});
  await scenario('river-flood-propagation',{flow:true},async page=>{const n=await page.evaluate(()=>RiverPropagationResponse.nodes.find(n=>n.lid==='TST1'));assert.equal(n.unit,'kcfs');assert.equal(n.actionThreshold,20,'converts cfs threshold to kcfs');assert.equal(n.matchedImpacts.length,0,'stage impact cannot be compared to flow');});
  await scenario('river-flood-propagation',{flow:true,sentinel:true},async page=>{assert.equal(await page.evaluate(()=>RiverPropagationResponse.nodes.find(n=>n.lid==='TST1').actionThreshold),null);assert.equal((await plan(page)).diagnostics.find(d=>d.id==='gauge-TST1-forecast').status,'unknown');});

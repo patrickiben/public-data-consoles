@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-10-23T19:06:02.490812+00:00",
+  "capturedAt": "2026-10-23T19:22:16.834880+00:00",
   "refreshEveryHours": 168,
   "sources": [
     {
@@ -8,7 +8,7 @@
       "resourceId": "a5f7ca94-c810-41b5-a7c9-25c18d43e5a4",
       "url": "https://www.opendata.nhs.scot/dataset/0d57311a-db66-4eaa-bd6d-cc622b6cbdfa/resource/a5f7ca94-c810-41b5-a7c9-25c18d43e5a4/download/weekly_ae_activity_20261011.csv",
       "metadataUrl": "https://www.opendata.nhs.scot/api/3/action/resource_show?id=a5f7ca94-c810-41b5-a7c9-25c18d43e5a4",
-      "retrievedAt": "2026-10-23T19:06:02.490812+00:00",
+      "retrievedAt": "2026-10-23T19:22:16.834880+00:00",
       "sourceModified": "2026-10-20T08:29:53.838102",
       "sha256": "9ffe7f3364a1592f7c8d2d083df9fe4425d4fd2bd84dfed0a3567bececcd1a38",
       "rows": 43185,
@@ -20,7 +20,7 @@
       "resourceId": "1a4e3f48-3d9b-4769-80e9-3ef6d27852fe",
       "url": "https://www.opendata.nhs.scot/dataset/a877470a-06a9-492f-b9e8-992f758894d0/resource/1a4e3f48-3d9b-4769-80e9-3ef6d27852fe/download/ae_hospital_site_list_09_09_2025.csv",
       "metadataUrl": "https://www.opendata.nhs.scot/api/3/action/resource_show?id=1a4e3f48-3d9b-4769-80e9-3ef6d27852fe",
-      "retrievedAt": "2026-10-23T19:06:02.490812+00:00",
+      "retrievedAt": "2026-10-23T19:22:16.834880+00:00",
       "sourceModified": "2025-09-10T08:18:46.495090",
       "sha256": "daf58bb958f48543eabe3dd83e7e165ca89a2ecc72acca0f60988611c67c9bee",
       "rows": 102,
@@ -32,7 +32,7 @@
       "resourceId": "f272bb7d-5320-4491-84c1-614a2c064007",
       "url": "https://www.opendata.nhs.scot/dataset/554b0e7a-ccac-4bb6-82db-1a8b306fcb36/resource/f272bb7d-5320-4491-84c1-614a2c064007/download/beds_by_nhs_board_of_treatment_and_specialty.csv",
       "metadataUrl": "https://www.opendata.nhs.scot/api/3/action/resource_show?id=f272bb7d-5320-4491-84c1-614a2c064007",
-      "retrievedAt": "2026-10-23T19:06:02.490812+00:00",
+      "retrievedAt": "2026-10-23T19:22:16.834880+00:00",
       "sourceModified": "2026-05-26T08:16:35.883994",
       "sha256": "b29512791555a09640c54818c78097fa41542d3fccafb84ee5574b83f00d0d4a",
       "rows": 29930,
@@ -44,12 +44,24 @@
       "resourceId": "49ca8a39-7f01-4e2b-acd6-205bc9827852",
       "url": "https://www.opendata.nhs.scot/dataset/52591cba-fd71-48b2-bac3-e71ac108dfee/resource/49ca8a39-7f01-4e2b-acd6-205bc9827852/download/2026-08_delayed-discharge-census-health-board.csv",
       "metadataUrl": "https://www.opendata.nhs.scot/api/3/action/resource_show?id=49ca8a39-7f01-4e2b-acd6-205bc9827852",
-      "retrievedAt": "2026-10-23T19:06:02.490812+00:00",
+      "retrievedAt": "2026-10-23T19:22:16.834880+00:00",
       "sourceModified": "2026-10-06T08:47:21.775392",
       "sha256": "8476d0089f7cb13415bfe378d7ffc5217fba8d224a4cf1c7468b428db3a21e62",
       "rows": 27450,
       "countUrl": "https://www.opendata.nhs.scot/api/3/action/datastore_search?resource_id=49ca8a39-7f01-4e2b-acd6-205bc9827852&limit=1",
       "verifiedRecordCount": 27450
+    },
+    {
+      "id": "flow",
+      "resourceId": "083ee176-4729-474b-958a-328954b72a5a",
+      "url": "https://www.opendata.nhs.scot/dataset/d73b93ab-b09f-4d39-9cfb-0e5e34085803/resource/083ee176-4729-474b-958a-328954b72a5a/download/inpatient_and_daycase_cross_boundary_flow.csv",
+      "metadataUrl": "https://www.opendata.nhs.scot/api/3/action/resource_show?id=083ee176-4729-474b-958a-328954b72a5a",
+      "retrievedAt": "2026-10-23T19:22:16.834880+00:00",
+      "sourceModified": "2026-05-26T08:18:30.535497",
+      "sha256": "20c63c7c6a70d0afb3897faa18ce67e7fac637e5b8e20cc53da8e648b32b7367",
+      "rows": 4800,
+      "countUrl": "https://www.opendata.nhs.scot/api/3/action/datastore_search?resource_id=083ee176-4729-474b-958a-328954b72a5a&limit=1",
+      "verifiedRecordCount": 4800
     }
   ],
   "meta": {
@@ -62,7 +74,8 @@
       "ae": "a5f7ca94-c810-41b5-a7c9-25c18d43e5a4",
       "sites": "1a4e3f48-3d9b-4769-80e9-3ef6d27852fe",
       "beds": "f272bb7d-5320-4491-84c1-614a2c064007",
-      "dd": "49ca8a39-7f01-4e2b-acd6-205bc9827852"
+      "dd": "49ca8a39-7f01-4e2b-acd6-205bc9827852",
+      "flow": "083ee176-4729-474b-958a-328954b72a5a"
     },
     "allSpecialtyLabels": [
       "All Specialties"
@@ -726,5 +739,1818 @@
       "board": "NHS Shetland",
       "n": 14
     }
-  ]
+  ],
+  "careUse": {
+    "quarter": "2025Q4",
+    "quarterQualifier": [
+      "p"
+    ],
+    "sourceId": "flow",
+    "measure": "published inpatient/day-case stays",
+    "direction": "board of residence to board of treatment",
+    "residenceBoards": [
+      "S08000015",
+      "S08000016",
+      "S08000017",
+      "S08000019",
+      "S08000020",
+      "S08000022",
+      "S08000024",
+      "S08000025",
+      "S08000026",
+      "S08000028",
+      "S08000029",
+      "S08000030",
+      "S08000031",
+      "S08000032"
+    ],
+    "providerCodes": [
+      "S08000015",
+      "S08000016",
+      "S08000017",
+      "S08000019",
+      "S08000020",
+      "S08000022",
+      "S08000024",
+      "S08000025",
+      "S08000026",
+      "S08000028",
+      "S08000029",
+      "S08000030",
+      "S08000031",
+      "S08000032",
+      "S27000001",
+      "SB0801"
+    ],
+    "cells": [
+      {
+        "residence": "RA2701",
+        "treatment": "S08000015",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2701",
+        "treatment": "S08000017",
+        "stays": 3,
+        "episodes": 4,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2701",
+        "treatment": "S08000019",
+        "stays": 1,
+        "episodes": 3,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2701",
+        "treatment": "S08000020",
+        "stays": 2,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2701",
+        "treatment": "S08000022",
+        "stays": 2,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2701",
+        "treatment": "S08000024",
+        "stays": 4,
+        "episodes": 12,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2701",
+        "treatment": "S08000029",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2701",
+        "treatment": "S08000030",
+        "stays": 4,
+        "episodes": 7,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2701",
+        "treatment": "S08000031",
+        "stays": 1,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2701",
+        "treatment": "S08000032",
+        "stays": 1,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000015",
+        "stays": 36,
+        "episodes": 51,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000016",
+        "stays": 65,
+        "episodes": 98,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000017",
+        "stays": 41,
+        "episodes": 64,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000019",
+        "stays": 34,
+        "episodes": 60,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000020",
+        "stays": 36,
+        "episodes": 52,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000022",
+        "stays": 64,
+        "episodes": 111,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000024",
+        "stays": 126,
+        "episodes": 207,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000025",
+        "stays": 6,
+        "episodes": 6,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000026",
+        "stays": 5,
+        "episodes": 5,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000028",
+        "stays": 4,
+        "episodes": 4,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000029",
+        "stays": 26,
+        "episodes": 37,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000030",
+        "stays": 57,
+        "episodes": 86,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000031",
+        "stays": 130,
+        "episodes": 242,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "S08000032",
+        "stays": 27,
+        "episodes": 45,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2702",
+        "treatment": "SB0801",
+        "stays": 0,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2703",
+        "treatment": "S08000015",
+        "stays": 3,
+        "episodes": 6,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2703",
+        "treatment": "S08000017",
+        "stays": 5,
+        "episodes": 5,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2703",
+        "treatment": "S08000019",
+        "stays": 2,
+        "episodes": 7,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2703",
+        "treatment": "S08000020",
+        "stays": 12,
+        "episodes": 16,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2703",
+        "treatment": "S08000022",
+        "stays": 31,
+        "episodes": 53,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2703",
+        "treatment": "S08000024",
+        "stays": 72,
+        "episodes": 103,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2703",
+        "treatment": "S08000025",
+        "stays": 5,
+        "episodes": 5,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2703",
+        "treatment": "S08000028",
+        "stays": 7,
+        "episodes": 10,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2703",
+        "treatment": "S08000029",
+        "stays": 5,
+        "episodes": 8,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2703",
+        "treatment": "S08000030",
+        "stays": 4,
+        "episodes": 4,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2703",
+        "treatment": "S08000031",
+        "stays": 37,
+        "episodes": 74,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2704",
+        "treatment": "S08000016",
+        "stays": 1,
+        "episodes": 3,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2704",
+        "treatment": "S08000019",
+        "stays": 12,
+        "episodes": 17,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2704",
+        "treatment": "S08000020",
+        "stays": 9,
+        "episodes": 11,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2704",
+        "treatment": "S08000022",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2704",
+        "treatment": "S08000024",
+        "stays": 60,
+        "episodes": 96,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2704",
+        "treatment": "S08000026",
+        "stays": 5,
+        "episodes": 5,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2704",
+        "treatment": "S08000029",
+        "stays": 3,
+        "episodes": 3,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2704",
+        "treatment": "S08000030",
+        "stays": 16,
+        "episodes": 25,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2704",
+        "treatment": "S08000031",
+        "stays": 84,
+        "episodes": 166,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "RA2704",
+        "treatment": "S08000032",
+        "stays": 4,
+        "episodes": 4,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S08000015",
+        "stays": 18497,
+        "episodes": 24059,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S08000016",
+        "stays": 3,
+        "episodes": 5,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S08000017",
+        "stays": 10,
+        "episodes": 11,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S08000019",
+        "stays": 10,
+        "episodes": 10,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S08000020",
+        "stays": 8,
+        "episodes": 8,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S08000022",
+        "stays": 7,
+        "episodes": 13,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S08000024",
+        "stays": 39,
+        "episodes": 66,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S08000029",
+        "stays": 2,
+        "episodes": 3,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S08000030",
+        "stays": 8,
+        "episodes": 8,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S08000031",
+        "stays": 2264,
+        "episodes": 2818,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S08000032",
+        "stays": 152,
+        "episodes": 260,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "S27000001",
+        "stays": 58,
+        "episodes": 73,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000015",
+        "treatment": "SB0801",
+        "stays": 451,
+        "episodes": 537,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "S08000015",
+        "stays": 2,
+        "episodes": 3,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "S08000016",
+        "stays": 5217,
+        "episodes": 6200,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "S08000017",
+        "stays": 3,
+        "episodes": 6,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "S08000019",
+        "stays": 3,
+        "episodes": 5,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "S08000020",
+        "stays": 2,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "S08000022",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "S08000024",
+        "stays": 776,
+        "episodes": 1139,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "S08000029",
+        "stays": 3,
+        "episodes": 4,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "S08000030",
+        "stays": 3,
+        "episodes": 3,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "S08000031",
+        "stays": 24,
+        "episodes": 39,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "S08000032",
+        "stays": 17,
+        "episodes": 31,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000016",
+        "treatment": "SB0801",
+        "stays": 76,
+        "episodes": 79,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000017",
+        "treatment": "S08000015",
+        "stays": 38,
+        "episodes": 51,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000017",
+        "treatment": "S08000016",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000017",
+        "treatment": "S08000017",
+        "stays": 6973,
+        "episodes": 10021,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000017",
+        "treatment": "S08000019",
+        "stays": 4,
+        "episodes": 4,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000017",
+        "treatment": "S08000020",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000017",
+        "treatment": "S08000022",
+        "stays": 1,
+        "episodes": 3,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000017",
+        "treatment": "S08000024",
+        "stays": 200,
+        "episodes": 291,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000017",
+        "treatment": "S08000030",
+        "stays": 4,
+        "episodes": 4,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000017",
+        "treatment": "S08000031",
+        "stays": 248,
+        "episodes": 319,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000017",
+        "treatment": "S08000032",
+        "stays": 68,
+        "episodes": 132,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000017",
+        "treatment": "SB0801",
+        "stays": 74,
+        "episodes": 122,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000015",
+        "stays": 9,
+        "episodes": 12,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000016",
+        "stays": 5,
+        "episodes": 8,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000017",
+        "stays": 3,
+        "episodes": 5,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000019",
+        "stays": 10761,
+        "episodes": 20187,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000020",
+        "stays": 2,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000022",
+        "stays": 7,
+        "episodes": 7,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000024",
+        "stays": 409,
+        "episodes": 709,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000025",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000028",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000029",
+        "stays": 20,
+        "episodes": 21,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000030",
+        "stays": 29,
+        "episodes": 38,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000031",
+        "stays": 1303,
+        "episodes": 1585,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S08000032",
+        "stays": 22,
+        "episodes": 30,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "S27000001",
+        "stays": 50,
+        "episodes": 65,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000019",
+        "treatment": "SB0801",
+        "stays": 59,
+        "episodes": 94,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000015",
+        "stays": 9,
+        "episodes": 19,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000016",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000017",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000019",
+        "stays": 5,
+        "episodes": 8,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000020",
+        "stays": 17284,
+        "episodes": 20459,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000022",
+        "stays": 749,
+        "episodes": 794,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000024",
+        "stays": 77,
+        "episodes": 139,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000025",
+        "stays": 3,
+        "episodes": 3,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000026",
+        "stays": 9,
+        "episodes": 9,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000029",
+        "stays": 6,
+        "episodes": 9,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000030",
+        "stays": 436,
+        "episodes": 477,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000031",
+        "stays": 75,
+        "episodes": 113,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "S08000032",
+        "stays": 9,
+        "episodes": 16,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000020",
+        "treatment": "SB0801",
+        "stays": 264,
+        "episodes": 268,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S08000015",
+        "stays": 8,
+        "episodes": 13,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S08000017",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S08000019",
+        "stays": 17,
+        "episodes": 20,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S08000020",
+        "stays": 148,
+        "episodes": 215,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S08000022",
+        "stays": 10598,
+        "episodes": 14310,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S08000024",
+        "stays": 109,
+        "episodes": 195,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S08000028",
+        "stays": 3,
+        "episodes": 4,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S08000029",
+        "stays": 3,
+        "episodes": 4,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S08000030",
+        "stays": 54,
+        "episodes": 73,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S08000031",
+        "stays": 3652,
+        "episodes": 5263,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S08000032",
+        "stays": 10,
+        "episodes": 18,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "S27000001",
+        "stays": 33,
+        "episodes": 43,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000022",
+        "treatment": "SB0801",
+        "stays": 149,
+        "episodes": 178,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S08000015",
+        "stays": 8,
+        "episodes": 9,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S08000016",
+        "stays": 19,
+        "episodes": 25,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S08000017",
+        "stays": 2,
+        "episodes": 3,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S08000019",
+        "stays": 50,
+        "episodes": 82,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S08000020",
+        "stays": 16,
+        "episodes": 19,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S08000022",
+        "stays": 12,
+        "episodes": 13,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S08000024",
+        "stays": 35765,
+        "episodes": 49822,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S08000029",
+        "stays": 170,
+        "episodes": 176,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S08000030",
+        "stays": 44,
+        "episodes": 62,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S08000031",
+        "stays": 214,
+        "episodes": 289,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S08000032",
+        "stays": 48,
+        "episodes": 78,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "S27000001",
+        "stays": 28,
+        "episodes": 28,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000024",
+        "treatment": "SB0801",
+        "stays": 777,
+        "episodes": 782,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000025",
+        "treatment": "S08000017",
+        "stays": 1,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000025",
+        "treatment": "S08000020",
+        "stays": 143,
+        "episodes": 213,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000025",
+        "treatment": "S08000022",
+        "stays": 10,
+        "episodes": 18,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000025",
+        "treatment": "S08000024",
+        "stays": 5,
+        "episodes": 13,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000025",
+        "treatment": "S08000025",
+        "stays": 1168,
+        "episodes": 1236,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000025",
+        "treatment": "S08000030",
+        "stays": 4,
+        "episodes": 4,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000025",
+        "treatment": "S08000031",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000025",
+        "treatment": "S08000032",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000025",
+        "treatment": "SB0801",
+        "stays": 12,
+        "episodes": 12,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000026",
+        "treatment": "S08000019",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000026",
+        "treatment": "S08000020",
+        "stays": 92,
+        "episodes": 138,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000026",
+        "treatment": "S08000022",
+        "stays": 2,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000026",
+        "treatment": "S08000024",
+        "stays": 10,
+        "episodes": 11,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000026",
+        "treatment": "S08000025",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000026",
+        "treatment": "S08000026",
+        "stays": 886,
+        "episodes": 955,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000026",
+        "treatment": "S08000031",
+        "stays": 1,
+        "episodes": 7,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000026",
+        "treatment": "SB0801",
+        "stays": 12,
+        "episodes": 12,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000028",
+        "treatment": "S08000015",
+        "stays": 2,
+        "episodes": 4,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000028",
+        "treatment": "S08000019",
+        "stays": 1,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000028",
+        "treatment": "S08000020",
+        "stays": 3,
+        "episodes": 6,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000028",
+        "treatment": "S08000022",
+        "stays": 124,
+        "episodes": 228,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000028",
+        "treatment": "S08000024",
+        "stays": 5,
+        "episodes": 11,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000028",
+        "treatment": "S08000028",
+        "stays": 1182,
+        "episodes": 1386,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000028",
+        "treatment": "S08000029",
+        "stays": 1,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000028",
+        "treatment": "S08000031",
+        "stays": 132,
+        "episodes": 226,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000028",
+        "treatment": "S27000001",
+        "stays": 13,
+        "episodes": 15,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000028",
+        "treatment": "SB0801",
+        "stays": 16,
+        "episodes": 27,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S08000015",
+        "stays": 5,
+        "episodes": 7,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S08000016",
+        "stays": 6,
+        "episodes": 7,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S08000017",
+        "stays": 4,
+        "episodes": 5,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S08000019",
+        "stays": 156,
+        "episodes": 285,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S08000020",
+        "stays": 15,
+        "episodes": 17,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S08000022",
+        "stays": 20,
+        "episodes": 26,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S08000024",
+        "stays": 1242,
+        "episodes": 1812,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S08000029",
+        "stays": 15130,
+        "episodes": 20704,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S08000030",
+        "stays": 1827,
+        "episodes": 2477,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S08000031",
+        "stays": 67,
+        "episodes": 96,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S08000032",
+        "stays": 3,
+        "episodes": 6,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "S27000001",
+        "stays": 4,
+        "episodes": 5,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000029",
+        "treatment": "SB0801",
+        "stays": 6,
+        "episodes": 8,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000015",
+        "stays": 8,
+        "episodes": 11,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000016",
+        "stays": 2,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000017",
+        "stays": 4,
+        "episodes": 10,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000019",
+        "stays": 82,
+        "episodes": 137,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000020",
+        "stays": 52,
+        "episodes": 65,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000022",
+        "stays": 225,
+        "episodes": 233,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000024",
+        "stays": 211,
+        "episodes": 505,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000026",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000029",
+        "stays": 135,
+        "episodes": 199,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000030",
+        "stays": 17394,
+        "episodes": 24616,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000031",
+        "stays": 98,
+        "episodes": 152,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "S08000032",
+        "stays": 6,
+        "episodes": 11,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000030",
+        "treatment": "SB0801",
+        "stays": 68,
+        "episodes": 69,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000015",
+        "stays": 67,
+        "episodes": 86,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000016",
+        "stays": 5,
+        "episodes": 7,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000017",
+        "stays": 12,
+        "episodes": 16,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000019",
+        "stays": 28,
+        "episodes": 40,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000020",
+        "stays": 14,
+        "episodes": 20,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000022",
+        "stays": 17,
+        "episodes": 25,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000024",
+        "stays": 119,
+        "episodes": 211,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000025",
+        "stays": 2,
+        "episodes": 2,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000026",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000029",
+        "stays": 13,
+        "episodes": 19,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000030",
+        "stays": 33,
+        "episodes": 45,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000031",
+        "stays": 61313,
+        "episodes": 95520,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S08000032",
+        "stays": 343,
+        "episodes": 515,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "S27000001",
+        "stays": 159,
+        "episodes": 177,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000031",
+        "treatment": "SB0801",
+        "stays": 1898,
+        "episodes": 2231,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000015",
+        "stays": 34,
+        "episodes": 39,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000016",
+        "stays": 10,
+        "episodes": 10,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000017",
+        "stays": 29,
+        "episodes": 44,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000019",
+        "stays": 309,
+        "episodes": 401,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000020",
+        "stays": 8,
+        "episodes": 9,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000022",
+        "stays": 4,
+        "episodes": 5,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000024",
+        "stays": 201,
+        "episodes": 319,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000026",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000028",
+        "stays": 1,
+        "episodes": 1,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000029",
+        "stays": 11,
+        "episodes": 15,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000030",
+        "stays": 21,
+        "episodes": 29,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000031",
+        "stays": 7947,
+        "episodes": 10591,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S08000032",
+        "stays": 25630,
+        "episodes": 41615,
+        "crossBoundary": false,
+        "sourceBoundaryFlag": 0
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "S27000001",
+        "stays": 154,
+        "episodes": 172,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      },
+      {
+        "residence": "S08000032",
+        "treatment": "SB0801",
+        "stays": 1087,
+        "episodes": 1270,
+        "crossBoundary": true,
+        "sourceBoundaryFlag": 1
+      }
+    ],
+    "publishedCellCount": 220,
+    "cohortCellCount": 174,
+    "unreportedCohortCells": 50,
+    "totalStays": 258866,
+    "outsideBoardStays": 31068,
+    "missingCellMeaning": "Unpublished cells remain unknown, not zero. Any nonnumeric/suppressed cell rejects refresh.",
+    "boundaryMethod": "Compare paired HBR and HBT codes directly. Raw source flag is retained for audit; its dictionary wording contradicts the currently published values.",
+    "limitations": "Repeated stays, not unique patients or interhospital transfers. Special provider codes retain source identities. Published counts may be disclosure-controlled; this is a reported numeric-stay share, not all care need or current capacity."
+  }
 }

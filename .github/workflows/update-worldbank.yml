@@ -1,0 +1,94 @@
+name: Update keyless global and CDC context
+
+on:
+  schedule:
+    - cron: '43 14 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-worldbank-health-main
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CHROME_CHANNEL: chrome
+    permissions:
+      contents: write
+      pages: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - name: Record the checked-out main revision
+        id: base
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+        timeout-minutes: 5
+      - run: google-chrome --version
+      - name: Reacquire official WDI population and land denominators
+        run: python scripts/refresh_worldbank_context.py
+        timeout-minutes: 10
+      - name: Reacquire public CDC aggregate snapshot fallbacks
+        run: node scripts/refresh_health_snapshots.mjs
+        timeout-minutes: 10
+      - name: Update standalone population context and maintained response blocks
+        run: |
+          python scripts/embed_worldbank_runtime.py
+          python scripts/embed_response_plans.py
+      - run: python scripts/refresh_worldbank_context.py --check
+      - run: node scripts/refresh_health_snapshots.mjs --check
+      # The built-in token's data commit does not start push CI or Pages itself.
+      - run: python scripts/refresh_nhs.py --check
+      - run: python scripts/check_catalog.py
+      - run: python scripts/embed_response_plans.py --check
+      - run: python scripts/embed_worldbank_runtime.py --check
+      - run: python scripts/embed_health_runtime.py --check
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/refresh_fred.py --check
+      - run: npm test
+        timeout-minutes: 20
+      - name: Commit only validated global and CDC context
+        id: target
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_main=$(git ls-remote --exit-code origin refs/heads/main | cut -f1)
+          if [ "$remote_main" != "$BASE_SHA" ]; then
+            echo 'Main advanced during validation; refusing to overwrite or rebase. Run again from current main.' >&2
+            exit 1
+          fi
+          git add -- consoles/global-health-atlas/data/population-area.json consoles/us-respiratory-surveillance/data/cdc-context.json consoles/us-overdose-surveillance/data/cdc-context.json consoles/global-air-pollution/index.html consoles/global-demographic-transition/index.html consoles/global-health-atlas/index.html consoles/global-health-systems/index.html consoles/global-hiv-tb-malaria/index.html consoles/global-immunization/index.html consoles/global-maternal-child-health/index.html consoles/global-mental-health/index.html consoles/global-ncd-burden/index.html consoles/global-nutrition/index.html consoles/global-road-safety/index.html consoles/global-wash/index.html consoles/us-respiratory-surveillance/index.html consoles/us-overdose-surveillance/index.html
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'data: refresh public global and CDC context'
+            git push origin HEAD:refs/heads/main
+          else
+            echo 'Public global and CDC context is unchanged; no data commit.'
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Publish or recover Pages and verify the global/CDC payloads
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --data-path consoles/global-health-atlas/data/population-area.json --timeout-seconds 720
+          python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --data-path consoles/us-respiratory-surveillance/data/cdc-context.json --timeout-seconds 720
+          python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --data-path consoles/us-overdose-surveillance/data/cdc-context.json --timeout-seconds 720
+        timeout-minutes: 20

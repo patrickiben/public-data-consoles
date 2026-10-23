@@ -54,7 +54,7 @@ def generate(root=ROOT, check=False):
     slugs = [entry["slug"] for entry in entries]
     if len(slugs) != len(set(slugs)) or set(slugs) != actual:
         raise ValueError("Manifest must list every console exactly once")
-    core = (source / "core.js").read_text() + "\n" + (source / "domain-helpers.js").read_text()
+    core = (source / "core.js").read_text() + "\n" + (source / "domain-helpers.js").read_text() + "\n" + (source / "observed-series.js").read_text()
     style = (source / "style.css").read_text()
     outputs = {}
     for entry in entries:

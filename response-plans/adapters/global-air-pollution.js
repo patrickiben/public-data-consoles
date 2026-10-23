@@ -12,11 +12,11 @@
   "limit": "Country averages, unequal observation years and selected-country coverage limit comparison. Income groups are declared comparison strata, not causal treatment arms. Annual PM2.5 is not current AQI; the original >10 µg/m³ series is a historical indicator definition, not a current alert threshold.",
   "lenses": [
     [
-      "Population / need balance",
-      "Aligned population and exposure-group denominators and air-quality and exposure planning needs by subgroup; sampling weights.",
-      "Compare need-weighted coverage after checking age, sex, ascertainment and denominators.",
-      "Ask the public-health service which population and exposure-group groups are absent from the country average.",
-      "Obtain disaggregated population and exposure-group denominators and document which needs/service groups a air-quality and exposure planning plan covers."
+      "Resident population balance of comparison strata",
+      "Selected-year indicator values, declared displayed-country income strata and same-year WDI resident population for every comparator country.",
+      "Review resident totals and the equal-country versus population-weighted estimand. Do not reinterpret all residents as beneficiaries, target cohorts or service need.",
+      "Read each group's resident total before treating an equal-country comparison as equally representative of people. Population balance here does not establish equal needs or access.",
+      "Document exact country/year/stratum membership and resident denominators; compare population-weighted and equal-country summaries only when the indicator definition supports weighting. Obtain eligible/service populations before resource decisions."
     ],
     [
       "Same-year country-distribution shape",
@@ -26,11 +26,11 @@
       "Audit same-year registry/survey definitions and group composition before using the W1 comparison in air-quality and exposure planning resource planning."
     ],
     [
-      "Local density / access symmetry",
-      "Geocoded air-quality monitoring and health services, population denominators and defined comparable catchments.",
-      "Estimate service/need density within comparable catchments, with suppression for small counts.",
-      "Ask whether rural, remote and underserved communities have comparable access to air-quality monitoring and health services.",
-      "Inventory air-quality monitoring and health services and catchment denominators; assess density contrasts before choosing outreach locations."
+      "Coarse resident-density symmetry",
+      "Exactly the same comparator countries and year, WDI midyear resident populations and positive official land areas in km². Geocoded local services/catchments are still required to assess access.",
+      "Review pooled geographic density differences and country selection. Coarse population/land ratios cannot establish local service-density symmetry, access or equity.",
+      "Read geographic density as context for comparing country summaries; consult the official local service directory for actual access.",
+      "Check population and land-year alignment and identical country membership. Obtain geocoded services, catchments and travel-time evidence before any access-equity or outreach-location decision."
     ],
     [
       "Service contiguity",
@@ -61,11 +61,11 @@
       "Assign an analyst to review air-quality and exposure planning measurement uncertainty and missingness; do not invent a VFE score from a rate."
     ],
     [
-      "Shared-exposure gradient",
-      "Observed dated ambient and household pollutant concentrations across a defined dose/distance range and aligned air-quality and exposure planning outcomes.",
-      "Prespecify the exposure range and weighting; test confounding and measurement error before integrating an AUC.",
-      "Use current official air-quality and exposure planning guidance; the national average does not identify a shared exposure for a household.",
-      "Collect privacy-protected dated ambient and household pollutant concentrations measurements with public-health oversight; assess an exposure gradient before any local intervention inference."
+      "Historical integrated PM2.5 exposure above a fixed reference",
+      "Five consecutive annual WDI population-weighted PM2.5 exposure estimates and the WHO2021 annual5µg/m³ reference; current local measurements are needed for current action.",
+      "Verify all five annual inputs and the fixed reference. Review contemporary local monitoring; do not convert concentration-years into deaths, benefit or personal dose.",
+      "Read the five historical years and current official air-quality information. A national historical mean cannot identify your personal exposure or current conditions.",
+      "Check the annual-step exposure integral and source revisions, then obtain current local monitoring and emissions evidence before developing an authority-reviewed air-quality plan. No intervention benefit is estimated."
     ],
     [
       "Access frontier / buffer",
@@ -144,6 +144,24 @@
     evidence.push(fact('world-reference','World reference in selected country year',worldV,meta && meta.unit,valid?year:null,src,'historical','modeled','Only the identical indicator/year is used.',checked));
     evidence.push(fact('income-reference','Income-group reference in selected country year',incomeV,meta && meta.unit,valid?year:null,src,'historical','modeled','Published aggregate; may use different weights from the equal-country W1.',checked));
     ov[6]=assess(6,'World / income-reference direction sensitivity (proxy)',sensitive==null?'unknown':sensitive?'triggered':'clear',['selected-value','world-reference','income-reference'],'Review when the selected-value gap changes sign using world versus income-group reference.','Reference-group sensitivity is not geographic mixing or within-country scale stability; no higher/lower value is automatically labeled good or bad.');
+    var geography=typeof WorldBankPublicData==='object' && WorldBankPublicData.comparisonContext?WorldBankPublicData.comparisonContext(snap,key,year,group):null;
+    var pop=geography && geography.population,density=geography && geography.density,context=geography && geography.context,contextChecked=context && context.capturedAt;
+    var comparisonNote='Same countries/year/declared income strata as the indicator comparison: '+(geography?geography.aCount+' versus '+geography.bCount+' countries; '+geography.eligible+' of '+geography.displayed+' displayed countries eligible':'coverage unavailable')+'. Population is all resident midyear estimates, not beneficiaries or need. Income classifications are the displayed classifications, not reconstructed historical income groups. Source editions: '+(context?JSON.stringify(context.sourceUpdatedAt):'unavailable')+'. '+(snap.responseContextError?'Context refresh unavailable; using the dated last-good context.':'');
+    var popSource='https://data.worldbank.org/indicator/SP.POP.TOTL',areaSource='https://data.worldbank.org/indicator/AG.LND.TOTL.K2';
+    evidence.push(fact('population-a','Resident population · selected income comparison stratum',pop?pop.a:null,'people',year,popSource,'historical','modeled',comparisonNote,contextChecked));
+    evidence.push(fact('population-b','Resident population · other known-income comparison countries',pop?pop.b:null,'people',year,popSource,'historical','modeled',comparisonNote,contextChecked));
+    evidence.push(fact('population-balance','Resident-total symmetry between displayed comparison strata',pop?round(pop.score):null,'0–1; 1 means equal resident totals',year,popSource,'historical','interpretive','2 × min(Pa, Pb) / (Pa + Pb). '+comparisonNote+' Missing same-year population: '+(geography && geography.missingPopulation.join(', ')||'none / context unavailable')+'.',contextChecked));
+    ov[1]=Object.assign(assess(1,'Resident population balance of the actual comparison strata (geographic proxy)',pop?(pop.score<1-1e-10?'triggered':'clear'):'unknown',['population-a','population-b','population-balance'],'Unequal resident totals prompt review of the equal-country comparison and population weighting. Equality only describes these resident totals; it does not establish needs, service equity or balanced CRT arms.','The exact included comparator countries, observation year and strata are unchanged. Resident totals do not measure eligible cohorts, service catchments or beneficiaries.'),{value:pop?round(pop.score):null,unit:'0–1 resident-total symmetry'});
+    evidence.push(fact('land-a','Pooled land area · selected income comparison stratum',density?density.aArea:null,'km²',year,areaSource,'historical','measured','Official country land area excludes inland waters. '+comparisonNote,contextChecked));
+    evidence.push(fact('land-b','Pooled land area · other known-income comparison countries',density?density.bArea:null,'km²',year,areaSource,'historical','measured','Same included countries; no substitution of a different land-area year. '+comparisonNote,contextChecked));
+    evidence.push(fact('density-a','Pooled resident density · selected comparison stratum',density?round(density.a):null,'people/km²',year,popSource,'historical','interpretive','Pa / pooled land km². '+comparisonNote,contextChecked));
+    evidence.push(fact('density-b','Pooled resident density · other comparison countries',density?round(density.b):null,'people/km²',year,popSource,'historical','interpretive','Pb / pooled land km². '+comparisonNote,contextChecked));
+    evidence.push(fact('density-symmetry','Coarse resident-density symmetry of comparison strata',density?round(density.score):null,'0–1; 1 means equal pooled densities',year,areaSource,'historical','interpretive','2 × min(Da, Db) / (Da + Db), with Da=Pa/Aa and Db=Pb/Ab. This describes coarse geography, not local spatial point density, service access, travel times or equity. Missing same-year positive land areas: '+(geography && geography.missingLand.join(', ')||'none / context unavailable')+'. '+comparisonNote,contextChecked));
+    ov[3]=Object.assign(assess(3,'Coarse pooled resident-density symmetry (geographic context proxy)',density?(density.score<1-1e-10?'triggered':'clear'):'unknown',['population-a','population-b','land-a','land-b','density-a','density-b','density-symmetry'],'Different pooled resident densities prompt geographic-comparability review. Equal density only describes the supplied country totals and areas; it cannot establish equal access or service coverage.','Population and land use exactly the indicator year and identical comparator country membership. No local catchment, adjacency, facility network or density field is invented.'),{value:density?round(density.score):null,unit:'0–1 coarse density symmetry'});
+    var exposure=typeof WorldBankPublicData==='object' && WorldBankPublicData.airExposureContext?WorldBankPublicData.airExposureContext(snap,iso):null;
+    evidence.push(fact('pm25-reference','WHO 2021 annual PM2.5 guideline reference',5,'µg/m³ annual mean','2021','https://www.who.int/teams/environment-climate-change-and-health/air-quality-and-health/health-impacts/types-of-pollutants','historical','measured','A health-based annual guideline reference, not a local legal standard or an individual safe/unsafe boundary.',checked));
+    evidence.push(fact('pm25-excess-auc','Five-calendar-year integrated annual PM2.5 excess above the WHO reference',exposure?round(exposure.value):null,'µg·year/m³',exposure?exposure.start+'–'+exposure.end:null,'https://data.worldbank.org/indicator/EN.ATM.PM25.MC.M3','historical','interpretive','Sum of max(annual population-weighted PM2.5 − 5, 0) × one calendar year for five consecutive complete annual means; no interpolation or imputation. '+(exposure?'Inputs: '+exposure.rows.map(function(p){return p[0]+': '+p[1]+' µg/m³';}).join('; ')+'. ':'Five consecutive finite annual exposure inputs are unavailable. ')+'The ecological exposure estimates use changing national populations, not a fixed person cohort. This is not contamination between CRT arms, personal dose, deaths, benefits or a forecast.',checked));
+    ov[8]=Object.assign(assess(8,'Historical five-year PM2.5 excess-exposure integral (environmental adaptation)',exposure?(exposure.value>0?'triggered':'clear'):'unknown',['pm25-reference','pm25-excess-auc'],'A positive integral identifies historical annual mean exposure above the fixed WHO reference and prompts source/local-monitoring review. Zero means no excess in these five annual means, not zero exposure or an all-clear.','The integral is an annual-step environmental exposure summary in concentration-years. No disease-response function, causal transport graph, intervention benefit or CRT contamination estimand is fitted.'),{value:exposure?round(exposure.value):null,unit:'µg·year/m³'});
     return plan((country?country.name:'No country selected')+' · '+(meta?meta.name:'No indicator selected')+' · '+(valid?year:'measurement unavailable')+' · annual structural planning',evidence,ov);
   }
   ConsoleResponse.connect(read,['#profcards','#profmeta','#cmpbars','#cysel','#cmpind','#srcchip','#vintchip']);

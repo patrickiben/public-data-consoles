@@ -328,3 +328,19 @@ older ICE spread history when the source window is truncated, and keeps claims i
 Missing files, invalid numbers, shifted sampling, stale tails and interior deletions stop the refresh
 without changing packaged outputs. Review the diff and browser rendering before publishing; the
 script updates the FRED data/vintage labels and portable provenance, never market data or algorithms.
+
+
+### Additional public-data dimensions
+
+The [response-plan field guide](response-plans/guide.html) documents the new supported
+calculations: population/land-area comparisons, NHS residence-to-treatment stays,
+river observation histories, grid demand windows, PAGER country exposure, market
+return-density comparisons and matched-period CDC scale checks. Missing or incomplete
+comparisons remain unknown; none supplies a causal CRT effect or an operational clearance.
+
+Coastal now opens on its **real public station map** and defaults its checklist to
+City-owned public terrain. Online OpenStreetMap street tiles need no visitor key;
+public-domain Natural Earth 5.1.1 land geometry is embedded for offline orientation.
+The generalized coastline is not a local survey. The separate **Synthetic exercise**
+tab preserves the fictional network, calibration and diagnostic demonstration.
+Map points are official published locations; no real pipe connections are inferred.

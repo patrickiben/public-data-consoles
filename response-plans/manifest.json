@@ -9,7 +9,7 @@
     {
       "slug": "coastal-water-resilience",
       "native": true,
-      "method": "Native coastal plan: measured monitoring, modeled synthetic topology and interpretive actions; no validated CRT transfer."
+      "method": "Native coastal plan: real public station/terrain screens, measured monitoring and a separate synthetic exercise; geometric scenarios and interpretive actions do not establish operating state or a validated CRT transfer."
     },
     {
       "slug": "global-air-pollution",
@@ -104,7 +104,7 @@
     {
       "slug": "nhs-scotland-strain",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Historical service comparisons plus published residence-to-treatment care-use connectivity and outside-board stay shares; missing cells remain unknown, and stays do not establish unique people, transfers or current capacity."
     },
     {
       "slug": "prescription-savings",

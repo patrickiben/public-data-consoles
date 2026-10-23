@@ -47,11 +47,11 @@
       "Reconcile country and reference vintages; seek repeated local measurements before escalating any persistent-service-gap claim."
     ],
     [
-      "National / local scale stability",
-      "Aligned, comparable local and national overdose prevention observations with coverage metadata.",
-      "Check whether local reporting and population composition support a national-to-local comparison; do not manufacture a spatial mixing value.",
-      "Check whether the comparison changes with the reference group; a country mean does not describe every community.",
-      "Review world/income-reference sensitivity and repeat overdose prevention assessment across defensible local aggregation scales."
+      "National / jurisdiction direction sensitivity",
+      "Same pathogen/drug definition, units and exact endpoint periods for national and at least two reporting jurisdictions; report missing pairs and coverage.",
+      "Check direction agreement on the paired reporting subset and its source/sample composition. Missing coverage cannot establish stable local or national conditions.",
+      "Read the exact dates and reporting coverage; national direction can differ from participating jurisdictions and does not establish your local or personal risk.",
+      "Reconcile the same-period jurisdiction and national definitions, source revisions and reporting/site composition. Obtain local surveillance before any authority-reviewed operational escalation."
     ],
     [
       "Model / missingness review",
@@ -142,6 +142,12 @@
     var tail=pairs.slice(-12), contiguous=tail.length===12 && tail.every(function(p,i){if(!i)return true;var a=tail[i-1][0].split('-').map(Number),b=p[0].split('-').map(Number);return b[0]*12+b[1]===a[0]*12+a[1]+1;}), shape=contiguous?w1(tail.slice(0,6).map(function(p){return p[1];}),tail.slice(6).map(function(p){return p[1];})):null;
     evidence.push(fact('shape-w1','Temporal empirical W1 · previous six versus latest six monthly rolling totals',round(shape),'deaths in rolling 12-month totals',period,cfg.source,q,'interpretive','The windows contain serially overlapping 12-month totals, not independent observations or different populations. An empirical descriptive shape comparison only.',checked));
     ov[2]=assess(2,'Six-versus-six rolling-total distribution W1 (temporal adaptation)',shape==null?'unknown':shape>1e-10?'triggered':'clear',['selected-total','shape-w1'],'A nonzero W1 prompts review of changing burden and reporting; twelve consecutive monthly estimates are required.','The metric has no clinical cutoff, independent-sample significance or CRT arm interpretation.');
+    var stateRows={};if(['total','syn'].includes(key))(snap.stateHistoryExpectedJurisdictions || []).forEach(function(code){stateRows[code]=[];});if(['total','syn'].includes(key))Object.entries(snap.stateMonthly || {}).forEach(function(entry){if(entry[1] && entry[1][key])stateRows[entry[0]]=entry[1][key];});
+    var scale=typeof HealthPublicData==='object' && HealthPublicData.directionAgreement?HealthPublicData.directionAgreement(pairs,stateRows,prevPeriod,period):null;
+    var scaleNote='Exactly matched rolling-12-month ending periods '+prevPeriod+' and '+(period || 'unavailable')+' for '+label+'. '+(scale?'Paired '+scale.paired+' of '+scale.observed+' downloaded jurisdictions; missing pairs: '+(scale.missing.join(', ')||'none within downloaded coverage')+'. National predicted counts '+scale.nationalStart+'→'+scale.nationalEnd+'. ':'State history is downloaded for all-drug totals and synthetic opioids only. ')+'Jurisdictions are compared separately, never summed; New York excludes NYC and YC is New York City. This is unweighted jurisdiction-direction sensitivity, not a resident-weighted rate, a current-month incident, causal spillover or a complete population coverage claim. Retained display-only latest counts do not replace missing source-history endpoints. '+(scale?scale.rows.map(function(r){return r.id+': '+r.start+'→'+r.end;}).join('; '):'');
+    evidence.push(fact('scale-coverage','Matched-period jurisdiction reporting coverage',scale?scale.paired:null,'paired jurisdictions of '+(scale?scale.observed:'unknown')+' downloaded',period,cfg.source,q,'interpretive',scaleNote,checked));
+    evidence.push(fact('scale-disagreement','Jurisdiction versus national year-on-year direction disagreement',scale?round(100*scale.disagreementShare):null,'% of paired reporting jurisdictions',period,cfg.source,q,'interpretive',scaleNote,checked));
+    ov[6]=Object.assign(assess(6,'Matched-period national/jurisdiction direction sensitivity (scale proxy)',scale?(scale.disagree?'triggered':scale.missing.length?'unknown':'clear'):'unknown',['selected-total','scale-coverage','scale-disagreement'],'Any observed direction disagreement prompts review of spatial aggregation and reporting. Missing exact-period pairs cannot establish agreement; no disagreement only describes the paired subset, not a national or local all-clear.','Compare the same drug definition and exact rolling-year ending months. No cross-jurisdiction transmission, population weighting or intervention effect is inferred.'),{value:scale?round(100*scale.disagreementShare):null,unit:'% paired jurisdictions with different direction'});
     return plan('United States · '+label+' · '+(period || 'period unavailable')+' ending-month provisional surveillance · planning only',evidence,ov);
   }
   ConsoleResponse.connect(read,['#response-public-focus','#srcchip','#vintchip','#natv','#waves','#states']);
