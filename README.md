@@ -19,10 +19,14 @@ combines live NOAA/NHC/NWS coastal information with a ten-metric diagnostic suit
 ([preprint](https://doi.org/10.5281/zenodo.23486177)) and directed source/sink topology accounting
 informed by [directed-asymmetry contagion research](https://github.com/patrickiben/directed-asymmetry-contagion).
 It demonstrates translating methods across domains, integrating data sources, and building an interactive
-explanation with explicit provenance. A separate **public-station register** shows 131 officially
+explanation with explicit provenance. Its default **real public-station register** shows 131 officially
 published locations, including 82 City-owned/maintained stations, County evacuation-zone intersections
-and USGS NAVD88 terrain estimates. The ten-metric calibration network remains synthetic and separate;
-its connections are not real pipe topology. Projected impacts automatically combine the remaining NOAA
+and USGS NAVD88 terrain estimates. Projected impacts and response plans share this real station scope
+and the exact remaining NOAA forecast peak (or an explicitly selected scenario level). Eight of the ten
+planning dimensions can use public geographic data when coverage is complete; probabilistic free-energy
+and hydraulic leakage remain unknown. Real diagnostics use their own descriptive methods and review
+criteria, without importing thresholds from the separate synthetic calibration exercise.
+Projected impacts automatically combine the remaining NOAA
 forecast, public terrain, source-defined sewer basins, Census block populations and published annual
 treatment flows. Population is geographic context, and throughput remains a whole-facility historical
 reference. Optional local scenarios expose their duration, population, flow, repair-cost and funding
@@ -239,17 +243,24 @@ are shown. Repair costs, downtime and funding shares remain optional local input
 cannot establish them.
 
 The [coastal source workflow](https://github.com/patrickiben/public-data-consoles/actions/workflows/update-coastal.yml)
-checks the official basin/Census services and discovers the latest published FDEP annual workbook
-**weekly**, using GitHub's built-in token and no additional secret. Source count/ID/aggregate controls,
-geometry coverage, workbook schema and all automated checks must pass before the portable JSON and
-offline HTML are committed and Pages is explicitly verified. Source failure preserves the last good
+reacquires the official station register, county zone intersections and basin/Census services, and
+discovers the latest published FDEP annual workbook **weekly**, using GitHub's built-in token and no
+additional secret. Unchanged coordinates retain their independently verified terrain samples and
+original acquisition/retrieval dates; new or moved points require a successful USGS/datum check.
+Source count/ID/aggregate controls,
+geometry coverage, workbook schema and all automated checks must pass before both portable JSON files
+and offline HTML are committed together and Pages is explicitly verified. A fingerprint binds the
+geographic context to the exact station inventory; a page with an older inventory asks for a reload
+instead of mixing editions. Source failure preserves the last good
 publication. A visible page checks the same-origin context at startup, every six hours and on return
 to the foreground; malformed, incomplete or older updates retain its last good context. Local files use
 the embedded reference data. A new retrieval does not change the displayed Census or flow reference year.
 
 Maintainers can run `python3 scripts/refresh_coastal_impact.py` to reacquire the public inputs and
 `python3 scripts/refresh_coastal_impact.py --check` for the offline publication guard. The portable
-payload is [impact-context.json](consoles/coastal-water-resilience/data/impact-context.json). Collectors
+payloads are [public-stations.json](consoles/coastal-water-resilience/data/public-stations.json) and
+[impact-context.json](consoles/coastal-water-resilience/data/impact-context.json). Use `--refresh-terrain`
+for a deliberate full USGS resampling; ordinary refreshes preserve unchanged valid samples. Collectors
 use Python's standard library; no spreadsheet or GIS package is required on the runner.
 
 ## Automatic NHS Scotland reports
@@ -344,3 +355,9 @@ public-domain Natural Earth 5.1.1 land geometry is embedded for offline orientat
 The generalized coastline is not a local survey. The separate **Synthetic exercise**
 tab preserves the fictional network, calibration and diagnostic demonstration.
 Map points are official published locations; no real pipe connections are inferred.
+
+Real station review links connect the map, impact screen and ten-parameter plan. Each future NOAA
+sample shows the count of terrain-screened public stations; this is not a prediction of flooding or
+outage duration. Public and operator checklists retain all ten questions, with explicit verification
+actions when required evidence is unavailable. Public population comparisons use deduplicated Census
+blocks in source-labeled basins, never an inferred customer-to-station or station-to-plant allocation.

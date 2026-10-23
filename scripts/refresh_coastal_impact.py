@@ -42,7 +42,7 @@ def allowed_url(url):
     parsed = urlsplit(url)
     host = (parsed.hostname or "").lower()
     return parsed.scheme == "https" and not parsed.username and not parsed.password and (
-        host in {"tigerweb.geo.census.gov", "floridadep.gov", "www.floridadep.gov", "www.stpete.org", "stpete.org"}
+        host in {"tigerweb.geo.census.gov", "floridadep.gov", "www.floridadep.gov", "www.stpete.org", "stpete.org", "epqs.nationalmap.gov", "elevation.nationalmap.gov"}
         or host == "services.arcgis.com" or re.fullmatch(r"services\d+\.arcgis\.com", host) is not None
     )
 
@@ -54,12 +54,19 @@ class PublicFetch:
         self.receipts = []
 
     def __call__(self, url):
+        return self._read(url, use_cache=True)
+
+    def fresh(self, url):
+        """Control rereads must reach the provider, even for identical URLs."""
+        return self._read(url, use_cache=False)
+
+    def _read(self, url, *, use_cache):
         if not allowed_url(url):
             raise RefreshError("Source URL must remain on a verified public provider")
-        if url in self.cache:
+        if use_cache and url in self.cache:
             return self.cache[url]
-        if len(self.receipts) >= 100:
-            raise RefreshError("Public refresh exceeded its 100-request bound")
+        if len(self.receipts) >= 500:
+            raise RefreshError("Public refresh exceeded its 500-request bound")
         request = Request(url, headers={"User-Agent": "Public-Data-Consoles-Coastal/1.0", "Accept": "application/json,text/html,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})
         with urlopen(request, timeout=30) as response:
             if not allowed_url(response.url):
@@ -77,11 +84,19 @@ def finite(value):
     return not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value)
 
 
-def validate(payload, inventory, *, now=None):
+def inventory_fingerprint(inventory):
+    """Bind geographic/flow context to the exact separately published inventory."""
+    raw = json.dumps(inventory, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
+    return {"capturedAt": inventory["capturedAt"], "sha256": hashlib.sha256(raw).hexdigest()}
+
+
+def validate(payload, inventory, *, now=None, previous=None):
     if not isinstance(payload, dict) or payload.get("schemaVersion") != 1:
         raise RefreshError("Expected coastal impact schemaVersion 1")
     if timestamp(payload.get("capturedAt")) > (now or dt.datetime.now(dt.timezone.utc)) + dt.timedelta(minutes=5):
         raise RefreshError("Coastal source capture cannot be in the future")
+    if payload.get("inventoryFingerprint") != inventory_fingerprint(inventory):
+        raise RefreshError("Coastal context belongs to a different public station inventory; reload the matched publication")
     sources = payload.get("sources")
     if not isinstance(sources, list) or not sources:
         raise RefreshError("Public sources and provenance are required")
@@ -142,6 +157,27 @@ def validate(payload, inventory, *, now=None):
         raise RefreshError("Aggregate throughput cannot represent a finite 48-hour equivalent")
     if not payload.get("populationMethod") or not isinstance(payload.get("limitations"), list):
         raise RefreshError("Population method and interpretation limits are required")
+    if previous is not None:
+        if timestamp(payload["capturedAt"]) < timestamp(previous.get("capturedAt")):
+            raise RefreshError("Coastal context capture regressed")
+        current_flows = {f["id"]: f for f in flows}
+        for prior in previous.get("flowAggregates", []):
+            current = current_flows.get(prior.get("id"))
+            if current is None:
+                raise RefreshError("Previously published treatment facility disappeared")
+            if prior.get("periodEnd"):
+                try:
+                    prior_end = dt.date.fromisoformat(prior["periodEnd"])
+                    current_end = dt.date.fromisoformat(current.get("periodEnd", ""))
+                except (TypeError, ValueError) as exc:
+                    raise RefreshError("Treatment reference period missing/invalid") from exc
+                if current_end < prior_end:
+                    raise RefreshError("Published treatment reference period regressed")
+        current_blocks = {b["id"]: b for b in blocks}
+        for block in previous.get("populationBlocks", []):
+            current = current_blocks.get(block.get("id"))
+            if current and current["referenceYear"] < block["referenceYear"]:
+                raise RefreshError("Census population reference year regressed")
     return payload
 
 
@@ -154,6 +190,7 @@ def collect(inventory, *, fetch=None, now=None):
     population = dict(collect_population_context(inventory, fetch=fetch, now=now))
     utility = dict(collect_utility_context(fetch=fetch, now=now))
     result = {"schemaVersion": 1, "capturedAt": now.isoformat().replace("+00:00", "Z"), "refreshEveryHours": 168,
+              "inventoryFingerprint": inventory_fingerprint(inventory),
               "sources": population.pop("sources") + utility.pop("sources"), **population, **utility}
     result["limitations"] = result.pop("populationLimitations", []) + result.pop("utilityLimitations", [])
     return validate(result, inventory, now=now)
@@ -166,32 +203,65 @@ def embedded(html):
     return matches[0]
 
 
-def outputs(payload, html):
+def outputs(payload, html, inventory=None):
     match = embedded(html)
     compact = json.dumps(payload, separators=(",", ":"), ensure_ascii=True, allow_nan=False).replace("<", "\\u003c")
     updated = html[:match.start(2)] + compact + html[match.end(2):]
-    return {CONTEXT: (json.dumps(payload, indent=2, ensure_ascii=True, allow_nan=False) + "\n").encode(), HTML: updated.encode()}
+    result = {CONTEXT: (json.dumps(payload, indent=2, ensure_ascii=True, allow_nan=False) + "\n").encode()}
+    if inventory is not None:
+        if payload.get("inventoryFingerprint") != inventory_fingerprint(inventory):
+            raise RefreshError("Cannot publish mismatched public inventory and impact context")
+        pattern = r'(<script type="application/json" id="public-station-snapshot">)(.*?)(</script>)'
+        matches = list(re.finditer(pattern, updated, flags=re.S))
+        if len(matches) != 1:
+            raise RefreshError("Expected exactly one public-station-snapshot JSON anchor")
+        match = matches[0]
+        compact_inventory = json.dumps(inventory, separators=(",", ":"), ensure_ascii=True, allow_nan=False).replace("<", "\\u003c")
+        updated = updated[:match.start(2)] + compact_inventory + updated[match.end(2):]
+        result[INVENTORY] = (json.dumps(inventory, indent=2, ensure_ascii=True, allow_nan=False) + "\n").encode()
+    result[HTML] = updated.encode()
+    return result
+
+
+def collect_transaction(previous, *, previous_context=None, fetch=None, now=None, refresh_terrain=False, inventory_collector=None, context_collector=None):
+    """Acquire/validate every source before returning any proposed output bytes."""
+    if inventory_collector is None:
+        from coastal_inventory import collect_inventory
+        inventory_collector = collect_inventory
+    now = now or dt.datetime.now(dt.timezone.utc)
+    fetch = fetch or PublicFetch()
+    inventory = inventory_collector(previous, fetch=fetch, now=now, refresh_terrain=refresh_terrain)
+    payload = (context_collector or collect)(inventory, fetch=fetch, now=now)
+    validate(payload, inventory, now=now, previous=previous_context)
+    return inventory, payload
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Validate portable/offline publication without network")
     parser.add_argument("--receipts", type=Path, help="Optional local audit-receipt output")
+    parser.add_argument("--refresh-terrain", action="store_true", help="Requery all public USGS terrain samples; otherwise retain valid unchanged-coordinate samples with original dates")
     args = parser.parse_args()
     try:
         inventory = json.loads(INVENTORY.read_text())
         if args.check:
+            from coastal_inventory import validate_inventory
+            validate_inventory(inventory)
             html = HTML.read_text()
             payload = validate(json.loads(CONTEXT.read_text()), inventory)
             if json.loads(embedded(html).group(2)) != payload:
                 raise RefreshError("Portable coastal context differs from embedded offline JSON")
+            anchors = re.findall(r'<script type="application/json" id="public-station-snapshot">(.*?)</script>', html, flags=re.S)
+            if len(anchors) != 1 or json.loads(anchors[0]) != inventory:
+                raise RefreshError("Portable public inventory differs from embedded offline JSON")
             print("PASS: coastal source context, basin/block coverage, flow provenance and offline JSON agree")
             return
         fetch = PublicFetch()
-        payload = collect(inventory, fetch=fetch)
+        previous_context = json.loads(CONTEXT.read_text()) if CONTEXT.exists() else None
+        inventory, payload = collect_transaction(inventory, previous_context=previous_context, fetch=fetch, refresh_terrain=args.refresh_terrain)
         # Re-read after provider calls so concurrent work outside the JSON marker is preserved.
         html = HTML.read_text()
-        changes = outputs(payload, html)
+        changes = outputs(payload, html, inventory)
         if args.receipts:
             changes[args.receipts] = (json.dumps(fetch.receipts, indent=2) + "\n").encode()
         from refresh_grid_snapshot import atomic_outputs

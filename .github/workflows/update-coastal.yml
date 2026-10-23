@@ -16,7 +16,7 @@ jobs:
   refresh:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
     env:
       CHROME_CHANNEL: chrome
     permissions:
@@ -39,11 +39,12 @@ jobs:
       - run: npm ci
         timeout-minutes: 5
       - run: google-chrome --version
-      - name: Reacquire public basin, Census and annual treatment-flow context
+      - name: Reacquire public stations, zones, basin/Census and annual treatment context
         run: python scripts/refresh_coastal_impact.py
         timeout-minutes: 15
       # The built-in token's data commit does not start push CI or Pages itself.
       - run: python scripts/refresh_coastal_impact.py --check
+      - run: python scripts/embed_coastal_runtime.py --check
       - run: python scripts/refresh_nhs.py --check
       - run: python scripts/check_catalog.py
       - run: python scripts/embed_response_plans.py --check
@@ -65,7 +66,7 @@ jobs:
             echo 'Main advanced during validation; refusing to overwrite or rebase. Run again from current main.' >&2
             exit 1
           fi
-          git add -- consoles/coastal-water-resilience/index.html consoles/coastal-water-resilience/data/impact-context.json
+          git add -- consoles/coastal-water-resilience/index.html consoles/coastal-water-resilience/data/public-stations.json consoles/coastal-water-resilience/data/impact-context.json
           if ! git diff --cached --quiet; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -79,5 +80,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ steps.target.outputs.sha }}
-        run: python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --data-path consoles/coastal-water-resilience/data/impact-context.json --timeout-seconds 720
-        timeout-minutes: 15
+        run: |
+          python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --data-path consoles/coastal-water-resilience/data/impact-context.json --timeout-seconds 720
+          python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --data-path consoles/coastal-water-resilience/data/public-stations.json --timeout-seconds 720
+        timeout-minutes: 25

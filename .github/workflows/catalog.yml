@@ -17,6 +17,7 @@ jobs:
       - run: python scripts/embed_response_plans.py --check
       - run: python scripts/embed_worldbank_runtime.py --check
       - run: python scripts/embed_health_runtime.py --check
+      - run: python scripts/embed_coastal_runtime.py --check
       - run: python scripts/refresh_coastal_impact.py --check
       - run: python scripts/refresh_nhs.py --check
       - run: python scripts/refresh_worldbank_context.py --check

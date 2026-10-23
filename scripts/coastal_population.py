@@ -102,10 +102,11 @@ class Capture:
     def __init__(self, fetch):
         self.fetch, self.records = fetch, []
 
-    def read(self, base, **params):
+    def read(self, base, *, fresh=False, **params):
         params["f"] = "json"
         url = base + "?" + urlencode(params)
-        raw = self.fetch(url)
+        reader = getattr(self.fetch, "fresh", self.fetch) if fresh else self.fetch
+        raw = reader(url)
         if not isinstance(raw, bytes) or not raw or len(raw) > MAX_DOWNLOAD:
             raise PopulationContextError("GIS response must be nonempty bounded bytes")
         try:
@@ -120,7 +121,7 @@ class Capture:
 
 def _features(capture, base, where, fields, geometry=False):
     """Check the complete ID inventory, ordered pages and a post-capture count."""
-    metadata = capture.read(base)
+    metadata = capture.read(base, fresh=True)
     schema = metadata.get("fields")
     if not isinstance(schema, list):
         raise PopulationContextError("Official GIS metadata has no field schema")
@@ -128,10 +129,10 @@ def _features(capture, base, where, fields, geometry=False):
     if not set(fields).issubset(available):
         raise PopulationContextError("Official GIS schema lost required fields")
     max_records = _integer(metadata.get("maxRecordCount"), "maxRecordCount", 1)
-    count = _integer(capture.read(base + "/query", where=where, returnCountOnly="true").get("count"), "feature count", 1)
+    count = _integer(capture.read(base + "/query", fresh=True, where=where, returnCountOnly="true").get("count"), "feature count", 1)
     if count > MAX_FEATURES:
         raise PopulationContextError("Official GIS capture exceeds the bounded feature limit")
-    inventory = capture.read(base + "/query", where=where, returnIdsOnly="true")
+    inventory = capture.read(base + "/query", fresh=True, where=where, returnIdsOnly="true")
     ids = inventory.get("objectIds")
     if not isinstance(ids, list) or len(ids) != count or inventory.get("exceededTransferLimit"):
         raise PopulationContextError("Incomplete official GIS object-ID inventory")
@@ -164,7 +165,7 @@ def _features(capture, base, where, fields, geometry=False):
             if sr.get("latestWkid", sr.get("wkid")) != 4326:
                 raise PopulationContextError("Basin polygons are not returned in WGS84")
         features.extend(batch)
-    after = _integer(capture.read(base + "/query", where=where, returnCountOnly="true").get("count"), "post-capture count", 1)
+    after = _integer(capture.read(base + "/query", fresh=True, where=where, returnCountOnly="true").get("count"), "post-capture count", 1)
     if after != count:
         raise PopulationContextError("Official GIS inventory changed during capture")
     return features, metadata

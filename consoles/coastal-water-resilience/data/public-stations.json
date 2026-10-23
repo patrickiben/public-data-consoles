@@ -1,31 +1,258 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-10-23T17:27:37Z",
+  "capturedAt": "2026-10-23T20:10:37Z",
   "title": "Official publicly published lift-station register",
-  "coverage": "131 agency-published Current-register lift stations: 82 City-owned/maintained and 49 privately owned. Default City-only view is an ownership filter, not a city-limit or service-area boundary.",
+  "coverage": "131 agency-published Current-register lift stations: 82 City-owned and 49 privately owned. Default City-only view is an ownership filter, not a city-limit or service-area boundary.",
   "sources": [
     {
       "id": "city-stations",
-      "title": "City of St. Petersburg Water Resources · PublicWastewater · Sewer Lift Station",
+      "title": "City of St. Petersburg Water Resources \u00b7 PublicWastewater \u00b7 Sewer Lift Station",
       "url": "https://services2.arcgis.com/9qPLjNtocjo438CJ/arcgis/rest/services/PublicWastewater/FeatureServer/1",
-      "itemUrl": "https://www.arcgis.com/home/item.html?id=4193e411d4564e2c8e5c9e5966bb5482",
-      "retrievedAt": "2026-10-23T17:27:37Z",
+      "retrievedAt": "2026-10-23T20:10:37Z",
+      "sha256": "42cc74295afa51f829ba2304b4c5f868d806d8f02a299a4a40ee87cf64a935da",
+      "hashBasis": "SHA256 of canonical URL/response-hash capture manifest",
+      "captures": [
+        {
+          "url": "https://services2.arcgis.com/9qPLjNtocjo438CJ/arcgis/rest/services/PublicWastewater/FeatureServer/1?f=json",
+          "sha256": "3cfbca7b5713fb2640209b723d2b422c1ec9ee8efc5103f392e0837033b70038",
+          "bytes": 22234
+        },
+        {
+          "url": "https://services2.arcgis.com/9qPLjNtocjo438CJ/arcgis/rest/services/PublicWastewater/FeatureServer/1/query?f=json&where=1%3D1&returnCountOnly=true",
+          "sha256": "a8ed217650d56ac76a7ad818f1081060bfe33e5ae669d065527ef1899e1c295b",
+          "bytes": 13
+        },
+        {
+          "url": "https://services2.arcgis.com/9qPLjNtocjo438CJ/arcgis/rest/services/PublicWastewater/FeatureServer/1/query?f=json&where=1%3D1&returnIdsOnly=true",
+          "sha256": "0303a6181d3ef96dee9021d489e9806c8439b6ebfa7c87611f7f339114488e56",
+          "bytes": 476
+        },
+        {
+          "url": "https://services2.arcgis.com/9qPLjNtocjo438CJ/arcgis/rest/services/PublicWastewater/FeatureServer/1/query?f=json&where=1%3D1&outFields=OBJECTID%2CFACILITYID%2CGLOBALID%2CNAME%2CLSID%2CSTATUS%2CBASINNUMBER%2COWNEDBY%2CMAINTBY&returnGeometry=true&outSR=4326&orderByFields=OBJECTID+ASC&resultOffset=0&resultRecordCount=200",
+          "sha256": "f14ce41f050e2fb68bfa1d9895ee342cb8d25017de967dc3e98e54744055ddf9",
+          "bytes": 37379
+        },
+        {
+          "url": "https://services2.arcgis.com/9qPLjNtocjo438CJ/arcgis/rest/services/PublicWastewater/FeatureServer/1/query?f=json&where=1%3D1&returnCountOnly=true",
+          "sha256": "a8ed217650d56ac76a7ad818f1081060bfe33e5ae669d065527ef1899e1c295b",
+          "bytes": 13
+        },
+        {
+          "url": "https://services2.arcgis.com/9qPLjNtocjo438CJ/arcgis/rest/services/PublicWastewater/FeatureServer/1?f=json",
+          "sha256": "3cfbca7b5713fb2640209b723d2b422c1ec9ee8efc5103f392e0837033b70038",
+          "bytes": 22234
+        }
+      ],
       "dataLastEditedAt": "2026-10-03T14:50:55Z",
-      "sourceModifiedAt": "2026-10-03T14:52:03Z",
-      "filter": "1=1",
-      "sha256": "45bb89282d7c23195e86228d54ca61b1234f4a49365e061dde07a8f6b662c565",
-      "updateNote": "Service description says approximately monthly updates; GIS inventory status is not live operating status."
+      "filter": "STATUS='C' after complete 1=1 source capture",
+      "updateNote": "Approximately monthly GIS inventory updates; not live operating status."
     },
     {
       "id": "county-evacuation-zones",
-      "title": "Pinellas County · public Know Your Zone parcel evacuation-zone layer",
+      "title": "Pinellas County \u00b7 public Know Your Zone parcel evacuation-zone layer",
       "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0",
-      "itemUrl": "https://www.arcgis.com/home/item.html?id=db64151834cb403ea5ce39ea600dedba",
-      "webMapUrl": "https://www.arcgis.com/home/item.html?id=1601d428bfb94a06bf7d692b8823910e",
-      "retrievedAt": "2026-10-23T17:27:37Z",
+      "retrievedAt": "2026-10-23T20:10:37Z",
+      "sha256": "8afff62f2710ec5d13cc3b94ad275aefd4bbad08707b50bb91374ab465c76915",
+      "hashBasis": "SHA256 of canonical URL/response-hash capture manifest",
+      "captures": [
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0?f=json",
+          "sha256": "75fa2f1faaaa935c82e715665f223ce51a573b6fc2f53956a8e2ada1befb1457",
+          "bytes": 12382
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.63997706%2C27.84438848%5D%2C%5B-82.64327117%2C27.84463285%5D%2C%5B-82.71625391%2C27.76656573%5D%2C%5B-82.64675963%2C27.7313401%5D%2C%5B-82.66223943%2C27.7837154%5D%2C%5B-82.64632812%2C27.84347682%5D%2C%5B-82.65884516%2C27.70227823%5D%2C%5B-82.66440428%2C27.88156097%5D%2C%5B-82.68651373%2C27.71651137%5D%2C%5B-82.63786383%2C27.85548451%5D%2C%5B-82.71787264%2C27.7064871%5D%2C%5B-82.64345659%2C27.77326784%5D%2C%5B-82.63013088%2C27.74624328%5D%2C%5B-82.68879536%2C27.74812877%5D%2C%5B-82.66518429%2C27.79388065%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "d3884a655094762fdb8366eccad5d19e7ed4e90e2cfe25582220dd94c714bd16",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.63997706%2C27.84438848%5D%2C%5B-82.64327117%2C27.84463285%5D%2C%5B-82.71625391%2C27.76656573%5D%2C%5B-82.64675963%2C27.7313401%5D%2C%5B-82.66223943%2C27.7837154%5D%2C%5B-82.64632812%2C27.84347682%5D%2C%5B-82.65884516%2C27.70227823%5D%2C%5B-82.66440428%2C27.88156097%5D%2C%5B-82.68651373%2C27.71651137%5D%2C%5B-82.63786383%2C27.85548451%5D%2C%5B-82.71787264%2C27.7064871%5D%2C%5B-82.64345659%2C27.77326784%5D%2C%5B-82.63013088%2C27.74624328%5D%2C%5B-82.68879536%2C27.74812877%5D%2C%5B-82.66518429%2C27.79388065%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
+          "sha256": "8f96c212f00744ab0ece4f18dcbb1acf837c76e0deeb4048581cf54952db4150",
+          "bytes": 385
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.63997706%2C27.84438848%5D%2C%5B-82.64327117%2C27.84463285%5D%2C%5B-82.71625391%2C27.76656573%5D%2C%5B-82.64675963%2C27.7313401%5D%2C%5B-82.66223943%2C27.7837154%5D%2C%5B-82.64632812%2C27.84347682%5D%2C%5B-82.65884516%2C27.70227823%5D%2C%5B-82.66440428%2C27.88156097%5D%2C%5B-82.68651373%2C27.71651137%5D%2C%5B-82.63786383%2C27.85548451%5D%2C%5B-82.71787264%2C27.7064871%5D%2C%5B-82.64345659%2C27.77326784%5D%2C%5B-82.63013088%2C27.74624328%5D%2C%5B-82.68879536%2C27.74812877%5D%2C%5B-82.66518429%2C27.79388065%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID%2CEvacZone&returnGeometry=true&outSR=4326&orderByFields=OBJECTID+ASC&resultOffset=0&resultRecordCount=200",
+          "sha256": "a0ddf65e55ab1e62cfd519e24b0fff2054b3f1baacadd39cde4c4a8cdb174658",
+          "bytes": 77590
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.63997706%2C27.84438848%5D%2C%5B-82.64327117%2C27.84463285%5D%2C%5B-82.71625391%2C27.76656573%5D%2C%5B-82.64675963%2C27.7313401%5D%2C%5B-82.66223943%2C27.7837154%5D%2C%5B-82.64632812%2C27.84347682%5D%2C%5B-82.65884516%2C27.70227823%5D%2C%5B-82.66440428%2C27.88156097%5D%2C%5B-82.68651373%2C27.71651137%5D%2C%5B-82.63786383%2C27.85548451%5D%2C%5B-82.71787264%2C27.7064871%5D%2C%5B-82.64345659%2C27.77326784%5D%2C%5B-82.63013088%2C27.74624328%5D%2C%5B-82.68879536%2C27.74812877%5D%2C%5B-82.66518429%2C27.79388065%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "d3884a655094762fdb8366eccad5d19e7ed4e90e2cfe25582220dd94c714bd16",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.64397673%2C27.86499041%5D%2C%5B-82.67579876%2C27.74090392%5D%2C%5B-82.67127892%2C27.87943559%5D%2C%5B-82.66649868%2C27.88772205%5D%2C%5B-82.74051577%2C27.76523308%5D%2C%5B-82.62330083%2C27.80010621%5D%2C%5B-82.6602778%2C27.74229357%5D%2C%5B-82.67414353%2C27.76144962%5D%2C%5B-82.62659893%2C27.86447484%5D%2C%5B-82.67966695%2C27.70768896%5D%2C%5B-82.74755611%2C27.80575048%5D%2C%5B-82.5962958%2C27.81846459%5D%2C%5B-82.64925174%2C27.87694619%5D%2C%5B-82.74709364%2C27.77072872%5D%2C%5B-82.74707786%2C27.77066431%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "d79e56c6f5cdd06304e4d430c72c4929de1c1231cdc6a25d9ef3d87280df906a",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.64397673%2C27.86499041%5D%2C%5B-82.67579876%2C27.74090392%5D%2C%5B-82.67127892%2C27.87943559%5D%2C%5B-82.66649868%2C27.88772205%5D%2C%5B-82.74051577%2C27.76523308%5D%2C%5B-82.62330083%2C27.80010621%5D%2C%5B-82.6602778%2C27.74229357%5D%2C%5B-82.67414353%2C27.76144962%5D%2C%5B-82.62659893%2C27.86447484%5D%2C%5B-82.67966695%2C27.70768896%5D%2C%5B-82.74755611%2C27.80575048%5D%2C%5B-82.5962958%2C27.81846459%5D%2C%5B-82.64925174%2C27.87694619%5D%2C%5B-82.74709364%2C27.77072872%5D%2C%5B-82.74707786%2C27.77066431%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
+          "sha256": "0f7f04e9631f0b92cf50f5ff9c31d4514b956ff8b9c64092177598bc29d7bdd4",
+          "bytes": 226
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.64397673%2C27.86499041%5D%2C%5B-82.67579876%2C27.74090392%5D%2C%5B-82.67127892%2C27.87943559%5D%2C%5B-82.66649868%2C27.88772205%5D%2C%5B-82.74051577%2C27.76523308%5D%2C%5B-82.62330083%2C27.80010621%5D%2C%5B-82.6602778%2C27.74229357%5D%2C%5B-82.67414353%2C27.76144962%5D%2C%5B-82.62659893%2C27.86447484%5D%2C%5B-82.67966695%2C27.70768896%5D%2C%5B-82.74755611%2C27.80575048%5D%2C%5B-82.5962958%2C27.81846459%5D%2C%5B-82.64925174%2C27.87694619%5D%2C%5B-82.74709364%2C27.77072872%5D%2C%5B-82.74707786%2C27.77066431%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID%2CEvacZone&returnGeometry=true&outSR=4326&orderByFields=OBJECTID+ASC&resultOffset=0&resultRecordCount=200",
+          "sha256": "f7bb3ad2580e2bf70f28980d3f65cce1caf5ac186de4026f804f9b1f3a1722db",
+          "bytes": 26672
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.64397673%2C27.86499041%5D%2C%5B-82.67579876%2C27.74090392%5D%2C%5B-82.67127892%2C27.87943559%5D%2C%5B-82.66649868%2C27.88772205%5D%2C%5B-82.74051577%2C27.76523308%5D%2C%5B-82.62330083%2C27.80010621%5D%2C%5B-82.6602778%2C27.74229357%5D%2C%5B-82.67414353%2C27.76144962%5D%2C%5B-82.62659893%2C27.86447484%5D%2C%5B-82.67966695%2C27.70768896%5D%2C%5B-82.74755611%2C27.80575048%5D%2C%5B-82.5962958%2C27.81846459%5D%2C%5B-82.64925174%2C27.87694619%5D%2C%5B-82.74709364%2C27.77072872%5D%2C%5B-82.74707786%2C27.77066431%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "d79e56c6f5cdd06304e4d430c72c4929de1c1231cdc6a25d9ef3d87280df906a",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.61078003%2C27.83541199%5D%2C%5B-82.74113475%2C27.78656586%5D%2C%5B-82.63471342%2C27.87584203%5D%2C%5B-82.61424498%2C27.8364963%5D%2C%5B-82.67270488%2C27.71466756%5D%2C%5B-82.68585426%2C27.79942887%5D%2C%5B-82.67392256%2C27.74214592%5D%2C%5B-82.63574116%2C27.7338262%5D%2C%5B-82.64884232%2C27.72513198%5D%2C%5B-82.72707689%2C27.67400053%5D%2C%5B-82.72029388%2C27.80240512%5D%2C%5B-82.68557176%2C27.73730286%5D%2C%5B-82.65108912%2C27.84776339%5D%2C%5B-82.62740732%2C27.80396749%5D%2C%5B-82.63691725%2C27.86678174%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "d59d65a093208684c0f9f9ccb3eff9db8dc3cce2f4b3308693636f27df343fc1",
+          "bytes": 13
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.61078003%2C27.83541199%5D%2C%5B-82.74113475%2C27.78656586%5D%2C%5B-82.63471342%2C27.87584203%5D%2C%5B-82.61424498%2C27.8364963%5D%2C%5B-82.67270488%2C27.71466756%5D%2C%5B-82.68585426%2C27.79942887%5D%2C%5B-82.67392256%2C27.74214592%5D%2C%5B-82.63574116%2C27.7338262%5D%2C%5B-82.64884232%2C27.72513198%5D%2C%5B-82.72707689%2C27.67400053%5D%2C%5B-82.72029388%2C27.80240512%5D%2C%5B-82.68557176%2C27.73730286%5D%2C%5B-82.65108912%2C27.84776339%5D%2C%5B-82.62740732%2C27.80396749%5D%2C%5B-82.63691725%2C27.86678174%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
+          "sha256": "80ba43af97ce8b29a383dd1d7b4e22fd99afe20b7f1d46a5dc30b2274531bf50",
+          "bytes": 1719
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.61078003%2C27.83541199%5D%2C%5B-82.74113475%2C27.78656586%5D%2C%5B-82.63471342%2C27.87584203%5D%2C%5B-82.61424498%2C27.8364963%5D%2C%5B-82.67270488%2C27.71466756%5D%2C%5B-82.68585426%2C27.79942887%5D%2C%5B-82.67392256%2C27.74214592%5D%2C%5B-82.63574116%2C27.7338262%5D%2C%5B-82.64884232%2C27.72513198%5D%2C%5B-82.72707689%2C27.67400053%5D%2C%5B-82.72029388%2C27.80240512%5D%2C%5B-82.68557176%2C27.73730286%5D%2C%5B-82.65108912%2C27.84776339%5D%2C%5B-82.62740732%2C27.80396749%5D%2C%5B-82.63691725%2C27.86678174%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID%2CEvacZone&returnGeometry=true&outSR=4326&orderByFields=OBJECTID+ASC&resultOffset=0&resultRecordCount=200",
+          "sha256": "e9bc44da53d3704c72ad00c4a5f6bfd4356c2c5ca10c08960f475a2fb52b43a4",
+          "bytes": 272176
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.61078003%2C27.83541199%5D%2C%5B-82.74113475%2C27.78656586%5D%2C%5B-82.63471342%2C27.87584203%5D%2C%5B-82.61424498%2C27.8364963%5D%2C%5B-82.67270488%2C27.71466756%5D%2C%5B-82.68585426%2C27.79942887%5D%2C%5B-82.67392256%2C27.74214592%5D%2C%5B-82.63574116%2C27.7338262%5D%2C%5B-82.64884232%2C27.72513198%5D%2C%5B-82.72707689%2C27.67400053%5D%2C%5B-82.72029388%2C27.80240512%5D%2C%5B-82.68557176%2C27.73730286%5D%2C%5B-82.65108912%2C27.84776339%5D%2C%5B-82.62740732%2C27.80396749%5D%2C%5B-82.63691725%2C27.86678174%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID%2CEvacZone&returnGeometry=true&outSR=4326&orderByFields=OBJECTID+ASC&resultOffset=200&resultRecordCount=200",
+          "sha256": "da9eb9d5fc3ba2cc6ec4f79dad5be1f304e45d545a8c51cb67f5a61780a44f1d",
+          "bytes": 16403
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.61078003%2C27.83541199%5D%2C%5B-82.74113475%2C27.78656586%5D%2C%5B-82.63471342%2C27.87584203%5D%2C%5B-82.61424498%2C27.8364963%5D%2C%5B-82.67270488%2C27.71466756%5D%2C%5B-82.68585426%2C27.79942887%5D%2C%5B-82.67392256%2C27.74214592%5D%2C%5B-82.63574116%2C27.7338262%5D%2C%5B-82.64884232%2C27.72513198%5D%2C%5B-82.72707689%2C27.67400053%5D%2C%5B-82.72029388%2C27.80240512%5D%2C%5B-82.68557176%2C27.73730286%5D%2C%5B-82.65108912%2C27.84776339%5D%2C%5B-82.62740732%2C27.80396749%5D%2C%5B-82.63691725%2C27.86678174%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "d59d65a093208684c0f9f9ccb3eff9db8dc3cce2f4b3308693636f27df343fc1",
+          "bytes": 13
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.73289623%2C27.80723779%5D%2C%5B-82.65529639%2C27.84731274%5D%2C%5B-82.63562497%2C27.74239255%5D%2C%5B-82.63752121%2C27.73038325%5D%2C%5B-82.6563235%2C27.85317192%5D%2C%5B-82.65027496%2C27.85500537%5D%2C%5B-82.75069091%2C27.7606542%5D%2C%5B-82.75430411%2C27.75168043%5D%2C%5B-82.6273912%2C27.8461534%5D%2C%5B-82.71091565%2C27.77371462%5D%2C%5B-82.61377933%2C27.82135195%5D%2C%5B-82.65190178%2C27.72776706%5D%2C%5B-82.65257182%2C27.77148377%5D%2C%5B-82.70004062%2C27.71667654%5D%2C%5B-82.63841675%2C27.86879533%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "be90a0f9606c3c25a422bc22dc637c2b99af3e4d3b9d9179c5aee6aa78658585",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.73289623%2C27.80723779%5D%2C%5B-82.65529639%2C27.84731274%5D%2C%5B-82.63562497%2C27.74239255%5D%2C%5B-82.63752121%2C27.73038325%5D%2C%5B-82.6563235%2C27.85317192%5D%2C%5B-82.65027496%2C27.85500537%5D%2C%5B-82.75069091%2C27.7606542%5D%2C%5B-82.75430411%2C27.75168043%5D%2C%5B-82.6273912%2C27.8461534%5D%2C%5B-82.71091565%2C27.77371462%5D%2C%5B-82.61377933%2C27.82135195%5D%2C%5B-82.65190178%2C27.72776706%5D%2C%5B-82.65257182%2C27.77148377%5D%2C%5B-82.70004062%2C27.71667654%5D%2C%5B-82.63841675%2C27.86879533%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
+          "sha256": "4887ce0fe1cdbff9adcd34cd123c1944e05d2a3222bfb21c2050f220852f4f3e",
+          "bytes": 188
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.73289623%2C27.80723779%5D%2C%5B-82.65529639%2C27.84731274%5D%2C%5B-82.63562497%2C27.74239255%5D%2C%5B-82.63752121%2C27.73038325%5D%2C%5B-82.6563235%2C27.85317192%5D%2C%5B-82.65027496%2C27.85500537%5D%2C%5B-82.75069091%2C27.7606542%5D%2C%5B-82.75430411%2C27.75168043%5D%2C%5B-82.6273912%2C27.8461534%5D%2C%5B-82.71091565%2C27.77371462%5D%2C%5B-82.61377933%2C27.82135195%5D%2C%5B-82.65190178%2C27.72776706%5D%2C%5B-82.65257182%2C27.77148377%5D%2C%5B-82.70004062%2C27.71667654%5D%2C%5B-82.63841675%2C27.86879533%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID%2CEvacZone&returnGeometry=true&outSR=4326&orderByFields=OBJECTID+ASC&resultOffset=0&resultRecordCount=200",
+          "sha256": "fcc05ad730a89e038633220020c1370c4f9e3df5b05e719358df1694979437e2",
+          "bytes": 34878
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.73289623%2C27.80723779%5D%2C%5B-82.65529639%2C27.84731274%5D%2C%5B-82.63562497%2C27.74239255%5D%2C%5B-82.63752121%2C27.73038325%5D%2C%5B-82.6563235%2C27.85317192%5D%2C%5B-82.65027496%2C27.85500537%5D%2C%5B-82.75069091%2C27.7606542%5D%2C%5B-82.75430411%2C27.75168043%5D%2C%5B-82.6273912%2C27.8461534%5D%2C%5B-82.71091565%2C27.77371462%5D%2C%5B-82.61377933%2C27.82135195%5D%2C%5B-82.65190178%2C27.72776706%5D%2C%5B-82.65257182%2C27.77148377%5D%2C%5B-82.70004062%2C27.71667654%5D%2C%5B-82.63841675%2C27.86879533%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "be90a0f9606c3c25a422bc22dc637c2b99af3e4d3b9d9179c5aee6aa78658585",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.66035715%2C27.88826573%5D%2C%5B-82.71372612%2C27.71121307%5D%2C%5B-82.67545334%2C27.77357472%5D%2C%5B-82.65667351%2C27.86808778%5D%2C%5B-82.63842692%2C27.71823804%5D%2C%5B-82.62702077%2C27.83381645%5D%2C%5B-82.61240812%2C27.80375889%5D%2C%5B-82.6979859%2C27.7093217%5D%2C%5B-82.62511281%2C27.87291357%5D%2C%5B-82.66232371%2C27.88573781%5D%2C%5B-82.6591475%2C27.83676225%5D%2C%5B-82.64112951%2C27.8666768%5D%2C%5B-82.63294602%2C27.75742761%5D%2C%5B-82.72949109%2C27.8062229%5D%2C%5B-82.62700032%2C27.85975326%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "7512669ba3d728b7c043f6d90372533fbd036755844fb231b0bf242e2f712bbf",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.66035715%2C27.88826573%5D%2C%5B-82.71372612%2C27.71121307%5D%2C%5B-82.67545334%2C27.77357472%5D%2C%5B-82.65667351%2C27.86808778%5D%2C%5B-82.63842692%2C27.71823804%5D%2C%5B-82.62702077%2C27.83381645%5D%2C%5B-82.61240812%2C27.80375889%5D%2C%5B-82.6979859%2C27.7093217%5D%2C%5B-82.62511281%2C27.87291357%5D%2C%5B-82.66232371%2C27.88573781%5D%2C%5B-82.6591475%2C27.83676225%5D%2C%5B-82.64112951%2C27.8666768%5D%2C%5B-82.63294602%2C27.75742761%5D%2C%5B-82.72949109%2C27.8062229%5D%2C%5B-82.62700032%2C27.85975326%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
+          "sha256": "03e1b3091034242b5faa0343df4696722da59706aa18bf5186411e3058c15499",
+          "bytes": 128
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.66035715%2C27.88826573%5D%2C%5B-82.71372612%2C27.71121307%5D%2C%5B-82.67545334%2C27.77357472%5D%2C%5B-82.65667351%2C27.86808778%5D%2C%5B-82.63842692%2C27.71823804%5D%2C%5B-82.62702077%2C27.83381645%5D%2C%5B-82.61240812%2C27.80375889%5D%2C%5B-82.6979859%2C27.7093217%5D%2C%5B-82.62511281%2C27.87291357%5D%2C%5B-82.66232371%2C27.88573781%5D%2C%5B-82.6591475%2C27.83676225%5D%2C%5B-82.64112951%2C27.8666768%5D%2C%5B-82.63294602%2C27.75742761%5D%2C%5B-82.72949109%2C27.8062229%5D%2C%5B-82.62700032%2C27.85975326%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID%2CEvacZone&returnGeometry=true&outSR=4326&orderByFields=OBJECTID+ASC&resultOffset=0&resultRecordCount=200",
+          "sha256": "778334199b25ede945002cc0c08ffb09fba3801629e24cdf7bec2ed1d66eee64",
+          "bytes": 18116
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.66035715%2C27.88826573%5D%2C%5B-82.71372612%2C27.71121307%5D%2C%5B-82.67545334%2C27.77357472%5D%2C%5B-82.65667351%2C27.86808778%5D%2C%5B-82.63842692%2C27.71823804%5D%2C%5B-82.62702077%2C27.83381645%5D%2C%5B-82.61240812%2C27.80375889%5D%2C%5B-82.6979859%2C27.7093217%5D%2C%5B-82.62511281%2C27.87291357%5D%2C%5B-82.66232371%2C27.88573781%5D%2C%5B-82.6591475%2C27.83676225%5D%2C%5B-82.64112951%2C27.8666768%5D%2C%5B-82.63294602%2C27.75742761%5D%2C%5B-82.72949109%2C27.8062229%5D%2C%5B-82.62700032%2C27.85975326%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "7512669ba3d728b7c043f6d90372533fbd036755844fb231b0bf242e2f712bbf",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.65184429%2C27.83552415%5D%2C%5B-82.66470142%2C27.79738127%5D%2C%5B-82.6784886%2C27.69799069%5D%2C%5B-82.68339095%2C27.71929168%5D%2C%5B-82.63099888%2C27.75694348%5D%2C%5B-82.6558043%2C27.84375704%5D%2C%5B-82.63831894%2C27.8654214%5D%2C%5B-82.63114988%2C27.75804878%5D%2C%5B-82.65198769%2C27.87308952%5D%2C%5B-82.66690283%2C27.70462181%5D%2C%5B-82.75377468%2C27.78840488%5D%2C%5B-82.7331033%2C27.7694732%5D%2C%5B-82.68986462%2C27.73747222%5D%2C%5B-82.67832113%2C27.77029578%5D%2C%5B-82.62565836%2C27.83283252%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "84f619c76731e5454a16ea7190c363b4ef0a7a81e7d0b6c2058611b81d4cf3b3",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.65184429%2C27.83552415%5D%2C%5B-82.66470142%2C27.79738127%5D%2C%5B-82.6784886%2C27.69799069%5D%2C%5B-82.68339095%2C27.71929168%5D%2C%5B-82.63099888%2C27.75694348%5D%2C%5B-82.6558043%2C27.84375704%5D%2C%5B-82.63831894%2C27.8654214%5D%2C%5B-82.63114988%2C27.75804878%5D%2C%5B-82.65198769%2C27.87308952%5D%2C%5B-82.66690283%2C27.70462181%5D%2C%5B-82.75377468%2C27.78840488%5D%2C%5B-82.7331033%2C27.7694732%5D%2C%5B-82.68986462%2C27.73747222%5D%2C%5B-82.67832113%2C27.77029578%5D%2C%5B-82.62565836%2C27.83283252%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
+          "sha256": "316b6d0638ad0fcda9d9f01e4eb4b62a5f6e264c6bfe16b4cd439659ad194c2f",
+          "bytes": 201
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.65184429%2C27.83552415%5D%2C%5B-82.66470142%2C27.79738127%5D%2C%5B-82.6784886%2C27.69799069%5D%2C%5B-82.68339095%2C27.71929168%5D%2C%5B-82.63099888%2C27.75694348%5D%2C%5B-82.6558043%2C27.84375704%5D%2C%5B-82.63831894%2C27.8654214%5D%2C%5B-82.63114988%2C27.75804878%5D%2C%5B-82.65198769%2C27.87308952%5D%2C%5B-82.66690283%2C27.70462181%5D%2C%5B-82.75377468%2C27.78840488%5D%2C%5B-82.7331033%2C27.7694732%5D%2C%5B-82.68986462%2C27.73747222%5D%2C%5B-82.67832113%2C27.77029578%5D%2C%5B-82.62565836%2C27.83283252%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID%2CEvacZone&returnGeometry=true&outSR=4326&orderByFields=OBJECTID+ASC&resultOffset=0&resultRecordCount=200",
+          "sha256": "93950f4860c3f1f7b40be868a9420d97ee15c7a6a7e5a71d692f03a09ccec9eb",
+          "bytes": 15264
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.65184429%2C27.83552415%5D%2C%5B-82.66470142%2C27.79738127%5D%2C%5B-82.6784886%2C27.69799069%5D%2C%5B-82.68339095%2C27.71929168%5D%2C%5B-82.63099888%2C27.75694348%5D%2C%5B-82.6558043%2C27.84375704%5D%2C%5B-82.63831894%2C27.8654214%5D%2C%5B-82.63114988%2C27.75804878%5D%2C%5B-82.65198769%2C27.87308952%5D%2C%5B-82.66690283%2C27.70462181%5D%2C%5B-82.75377468%2C27.78840488%5D%2C%5B-82.7331033%2C27.7694732%5D%2C%5B-82.68986462%2C27.73747222%5D%2C%5B-82.67832113%2C27.77029578%5D%2C%5B-82.62565836%2C27.83283252%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "84f619c76731e5454a16ea7190c363b4ef0a7a81e7d0b6c2058611b81d4cf3b3",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.71893058%2C27.78894966%5D%2C%5B-82.72044862%2C27.79262931%5D%2C%5B-82.6284799%2C27.72354525%5D%2C%5B-82.62147206%2C27.7963671%5D%2C%5B-82.64731757%2C27.85826712%5D%2C%5B-82.67720237%2C27.78114762%5D%2C%5B-82.63232451%2C27.75797293%5D%2C%5B-82.67747602%2C27.7881986%5D%2C%5B-82.59173994%2C27.81702686%5D%2C%5B-82.65962613%2C27.84219014%5D%2C%5B-82.65966503%2C27.84466378%5D%2C%5B-82.6959779%2C27.71952751%5D%2C%5B-82.69289401%2C27.72143683%5D%2C%5B-82.62217094%2C27.87030907%5D%2C%5B-82.66962178%2C27.8877961%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "84f619c76731e5454a16ea7190c363b4ef0a7a81e7d0b6c2058611b81d4cf3b3",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.71893058%2C27.78894966%5D%2C%5B-82.72044862%2C27.79262931%5D%2C%5B-82.6284799%2C27.72354525%5D%2C%5B-82.62147206%2C27.7963671%5D%2C%5B-82.64731757%2C27.85826712%5D%2C%5B-82.67720237%2C27.78114762%5D%2C%5B-82.63232451%2C27.75797293%5D%2C%5B-82.67747602%2C27.7881986%5D%2C%5B-82.59173994%2C27.81702686%5D%2C%5B-82.65962613%2C27.84219014%5D%2C%5B-82.65966503%2C27.84466378%5D%2C%5B-82.6959779%2C27.71952751%5D%2C%5B-82.69289401%2C27.72143683%5D%2C%5B-82.62217094%2C27.87030907%5D%2C%5B-82.66962178%2C27.8877961%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
+          "sha256": "e4e4a0b9df7fd924a6c6168865ef9c02a9ba58d82fdb4145174c936e50781f53",
+          "bytes": 205
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.71893058%2C27.78894966%5D%2C%5B-82.72044862%2C27.79262931%5D%2C%5B-82.6284799%2C27.72354525%5D%2C%5B-82.62147206%2C27.7963671%5D%2C%5B-82.64731757%2C27.85826712%5D%2C%5B-82.67720237%2C27.78114762%5D%2C%5B-82.63232451%2C27.75797293%5D%2C%5B-82.67747602%2C27.7881986%5D%2C%5B-82.59173994%2C27.81702686%5D%2C%5B-82.65962613%2C27.84219014%5D%2C%5B-82.65966503%2C27.84466378%5D%2C%5B-82.6959779%2C27.71952751%5D%2C%5B-82.69289401%2C27.72143683%5D%2C%5B-82.62217094%2C27.87030907%5D%2C%5B-82.66962178%2C27.8877961%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID%2CEvacZone&returnGeometry=true&outSR=4326&orderByFields=OBJECTID+ASC&resultOffset=0&resultRecordCount=200",
+          "sha256": "874693849f04df2fb359dcad455bfdf5003081bab9a9c586c9be5cf291494413",
+          "bytes": 223176
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.71893058%2C27.78894966%5D%2C%5B-82.72044862%2C27.79262931%5D%2C%5B-82.6284799%2C27.72354525%5D%2C%5B-82.62147206%2C27.7963671%5D%2C%5B-82.64731757%2C27.85826712%5D%2C%5B-82.67720237%2C27.78114762%5D%2C%5B-82.63232451%2C27.75797293%5D%2C%5B-82.67747602%2C27.7881986%5D%2C%5B-82.59173994%2C27.81702686%5D%2C%5B-82.65962613%2C27.84219014%5D%2C%5B-82.65966503%2C27.84466378%5D%2C%5B-82.6959779%2C27.71952751%5D%2C%5B-82.69289401%2C27.72143683%5D%2C%5B-82.62217094%2C27.87030907%5D%2C%5B-82.66962178%2C27.8877961%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "84f619c76731e5454a16ea7190c363b4ef0a7a81e7d0b6c2058611b81d4cf3b3",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.65096848%2C27.80219178%5D%2C%5B-82.62943788%2C27.84772228%5D%2C%5B-82.62642542%2C27.76755037%5D%2C%5B-82.62835124%2C27.76662061%5D%2C%5B-82.62882374%2C27.77779785%5D%2C%5B-82.67125041%2C27.85739837%5D%2C%5B-82.65896308%2C27.84402531%5D%2C%5B-82.67642599%2C27.73835403%5D%2C%5B-82.7211189%2C27.81521633%5D%2C%5B-82.62722106%2C27.76266734%5D%2C%5B-82.60726905%2C27.81756016%5D%2C%5B-82.69672139%2C27.71210818%5D%2C%5B-82.69011098%2C27.73357582%5D%2C%5B-82.63250389%2C27.76201818%5D%2C%5B-82.66379659%2C27.74092461%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "48270895c6bf4f32f711afaaa3b45131564a9c92240e6ed2400fa43e2c414d7c",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.65096848%2C27.80219178%5D%2C%5B-82.62943788%2C27.84772228%5D%2C%5B-82.62642542%2C27.76755037%5D%2C%5B-82.62835124%2C27.76662061%5D%2C%5B-82.62882374%2C27.77779785%5D%2C%5B-82.67125041%2C27.85739837%5D%2C%5B-82.65896308%2C27.84402531%5D%2C%5B-82.67642599%2C27.73835403%5D%2C%5B-82.7211189%2C27.81521633%5D%2C%5B-82.62722106%2C27.76266734%5D%2C%5B-82.60726905%2C27.81756016%5D%2C%5B-82.69672139%2C27.71210818%5D%2C%5B-82.69011098%2C27.73357582%5D%2C%5B-82.63250389%2C27.76201818%5D%2C%5B-82.66379659%2C27.74092461%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
+          "sha256": "db206c0820a197dab7f8973b7e31567a864e6249e550a79fe6c0a4e05e91d06a",
+          "bytes": 248
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.65096848%2C27.80219178%5D%2C%5B-82.62943788%2C27.84772228%5D%2C%5B-82.62642542%2C27.76755037%5D%2C%5B-82.62835124%2C27.76662061%5D%2C%5B-82.62882374%2C27.77779785%5D%2C%5B-82.67125041%2C27.85739837%5D%2C%5B-82.65896308%2C27.84402531%5D%2C%5B-82.67642599%2C27.73835403%5D%2C%5B-82.7211189%2C27.81521633%5D%2C%5B-82.62722106%2C27.76266734%5D%2C%5B-82.60726905%2C27.81756016%5D%2C%5B-82.69672139%2C27.71210818%5D%2C%5B-82.69011098%2C27.73357582%5D%2C%5B-82.63250389%2C27.76201818%5D%2C%5B-82.66379659%2C27.74092461%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID%2CEvacZone&returnGeometry=true&outSR=4326&orderByFields=OBJECTID+ASC&resultOffset=0&resultRecordCount=200",
+          "sha256": "7ba15b2cc42c74da323bcda914ebe7b9d7908cdaa72de1bfcc6f462f7d6a317c",
+          "bytes": 42441
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.65096848%2C27.80219178%5D%2C%5B-82.62943788%2C27.84772228%5D%2C%5B-82.62642542%2C27.76755037%5D%2C%5B-82.62835124%2C27.76662061%5D%2C%5B-82.62882374%2C27.77779785%5D%2C%5B-82.67125041%2C27.85739837%5D%2C%5B-82.65896308%2C27.84402531%5D%2C%5B-82.67642599%2C27.73835403%5D%2C%5B-82.7211189%2C27.81521633%5D%2C%5B-82.62722106%2C27.76266734%5D%2C%5B-82.60726905%2C27.81756016%5D%2C%5B-82.69672139%2C27.71210818%5D%2C%5B-82.69011098%2C27.73357582%5D%2C%5B-82.63250389%2C27.76201818%5D%2C%5B-82.66379659%2C27.74092461%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "48270895c6bf4f32f711afaaa3b45131564a9c92240e6ed2400fa43e2c414d7c",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.64744816%2C27.87062337%5D%2C%5B-82.62978961%2C27.83547458%5D%2C%5B-82.62255278%2C27.77357838%5D%2C%5B-82.67515575%2C27.76196687%5D%2C%5B-82.62703365%2C27.77778398%5D%2C%5B-82.62699272%2C27.77935381%5D%2C%5B-82.67733362%2C27.77035926%5D%2C%5B-82.62886083%2C27.7620144%5D%2C%5B-82.62814752%2C27.76203627%5D%2C%5B-82.6913235%2C27.76322208%5D%2C%5B-82.64734726%2C27.80994542%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "4e49da97b6f551eb3211d5d642b4375704b9668570f7020694750e25701d5797",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.64744816%2C27.87062337%5D%2C%5B-82.62978961%2C27.83547458%5D%2C%5B-82.62255278%2C27.77357838%5D%2C%5B-82.67515575%2C27.76196687%5D%2C%5B-82.62703365%2C27.77778398%5D%2C%5B-82.62699272%2C27.77935381%5D%2C%5B-82.67733362%2C27.77035926%5D%2C%5B-82.62886083%2C27.7620144%5D%2C%5B-82.62814752%2C27.76203627%5D%2C%5B-82.6913235%2C27.76322208%5D%2C%5B-82.64734726%2C27.80994542%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
+          "sha256": "a6e33752ede55a20f69d5ab33d72472eba9e33909cb99df18a96fd57fc41589e",
+          "bytes": 276
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.64744816%2C27.87062337%5D%2C%5B-82.62978961%2C27.83547458%5D%2C%5B-82.62255278%2C27.77357838%5D%2C%5B-82.67515575%2C27.76196687%5D%2C%5B-82.62703365%2C27.77778398%5D%2C%5B-82.62699272%2C27.77935381%5D%2C%5B-82.67733362%2C27.77035926%5D%2C%5B-82.62886083%2C27.7620144%5D%2C%5B-82.62814752%2C27.76203627%5D%2C%5B-82.6913235%2C27.76322208%5D%2C%5B-82.64734726%2C27.80994542%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID%2CEvacZone&returnGeometry=true&outSR=4326&orderByFields=OBJECTID+ASC&resultOffset=0&resultRecordCount=200",
+          "sha256": "b81f16321d8464b017bfe95233ac402cffbfe5f0a1454647ec1c97041eb3ab60",
+          "bytes": 34521
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.64744816%2C27.87062337%5D%2C%5B-82.62978961%2C27.83547458%5D%2C%5B-82.62255278%2C27.77357838%5D%2C%5B-82.67515575%2C27.76196687%5D%2C%5B-82.62703365%2C27.77778398%5D%2C%5B-82.62699272%2C27.77935381%5D%2C%5B-82.67733362%2C27.77035926%5D%2C%5B-82.62886083%2C27.7620144%5D%2C%5B-82.62814752%2C27.76203627%5D%2C%5B-82.6913235%2C27.76322208%5D%2C%5B-82.64734726%2C27.80994542%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true",
+          "sha256": "4e49da97b6f551eb3211d5d642b4375704b9668570f7020694750e25701d5797",
+          "bytes": 12
+        },
+        {
+          "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0?f=json",
+          "sha256": "75fa2f1faaaa935c82e715665f223ce51a573b6fc2f53956a8e2ada1befb1457",
+          "bytes": 12382
+        }
+      ],
       "dataLastEditedAt": "2026-05-29T14:19:41Z",
-      "sha256": "6c6068adc3d78e6112aa3feaae7bafbb2ed445c2974a5af2e9d88ea9ea5086ee",
-      "method": "Exact point-in-polygon on official source parcel geometry. Only polygons intersecting agency-published station points were downloaded; no address or parcel-owner fields retained."
+      "method": "Complete bounded multipoint query batches; exact point-in-polygon, with boundaries/ambiguity unknown. No parcel-owner/address fields retained."
     },
     {
       "id": "official-zone-lookup",
@@ -34,16 +261,17 @@
     },
     {
       "id": "usgs-epqs",
-      "title": "USGS 3DEP Elevation Point Query Service · interpolated bare-earth terrain",
+      "title": "USGS 3DEP Elevation Point Query Service \u00b7 interpolated bare-earth terrain",
       "url": "https://apps.nationalmap.gov/epqs/",
+      "retrievedAt": "2026-10-23T17:27:39Z",
+      "sha256": "1b8ac3034392e200a455b646fd6f93e4d870ec38dd3492e2b06534649bb91d8b",
+      "hashBasis": "SHA256 of canonical new-request manifest, all point value/coordinate/original response-hash/date proofs, and independent raster proofs",
+      "captures": [],
       "apiUrl": "https://epqs.nationalmap.gov/v1/json",
       "accuracyUrl": "https://www.usgs.gov/faqs/how-accurate-are-elevations-generated-elevation-point-query-service-national-map",
-      "retrievedAt": "2026-10-23T17:27:39Z",
-      "sha256": "8c06caddac88f89fd6fd351ab9d33e759f41e09bea629dc17d2ce3c28e8507dc",
       "queryUnits": "international feet",
       "horizontalRequestSrid": 4326,
       "verticalDatum": "NAVD88",
-      "method": "At each agency-published station point, USGS EPQS returned terrain elevation in feet, source raster ID, resolution and acquisition date. Vertical datum independently verified against the public 3DEP ImageServer catalog for every returned raster. No ground direction is inferred for pumped flow.",
       "rasters": [
         {
           "rasterId": 9169,
@@ -221,11 +449,16 @@
           },
           "nominalHorizontalResolution": "1 meter"
         }
-      ]
+      ],
+      "method": "Unchanged exact station coordinates retain independently verified NAVD88 samples with their original retrieval/acquisition dates. New or moved points query USGS; failed points are unavailable. No ground direction is inferred for pumped flow.",
+      "retainedSourceSha256": "8c06caddac88f89fd6fd351ab9d33e759f41e09bea629dc17d2ce3c28e8507dc"
     }
   ],
   "completeness": {
     "sourceLayerRecordCount": 131,
+    "sourceRegisterStatusCounts": {
+      "C": 131
+    },
     "cityOwnedMaintainedCurrent": 82,
     "publicPrivatelyOwnedRecordCount": 49,
     "excludedPrivateRecordCount": 0,
@@ -249,22 +482,24 @@
     },
     "elevationValidCount": 131,
     "elevationMissingCount": 0,
-    "nullFacilityIdCount": 1,
-    "zoneIndependentPointQueryAgreement": "131/131; source points independently queried against the official County layer"
+    "elevationRetainedCount": 131,
+    "elevationQueriedCount": 0,
+    "elevationNewQueryUnavailableCount": 0,
+    "nullFacilityIdCount": 1
   },
   "limitations": [
-    "Public asset inventory and mapped evacuation-zone intersections only. This is not a real-time station status, flood-depth, outage, evacuation-order or facility-safety feed.",
-    "City ownership/maintenance is distinct from municipal limits, Pinellas County Utilities ownership and wastewater-service boundaries. Privately owned records here are already published by the City; ownership is labeled and never presented as a City-owned asset.",
-    "The City register itself has no ground-elevation field. Added USGS3DEP values are separately sourced, interpolated terrain (2007 / 2018–2019 acquisition), not current surveyed asset/equipment height; no pipe invert or cover elevation was substituted.",
-    "No verified station-to-station dependency graph is included. Geometry and From/To node fields in public mains layers alone do not establish a complete operational flow model or failure propagation.",
-    "Evacuation zones are planning classifications based on storm-surge risk, distinct from FEMA flood zones and event-specific evacuation orders. A no-intersection, boundary or ambiguous result is unknown, never a non-evacuation or safe classification.",
-    "Station points and parcel evacuation polygons can differ at boundaries/rights-of-way. Confirm current location-specific instructions in the official County lookup.",
-    "The City provides this public data as is without guarantees of accuracy, timeliness or completeness; conclusions are the user’s responsibility."
+    "Public GIS register status is not live operability, a flood-depth forecast, an outage, an evacuation order or facility safety.",
+    "City ownership/maintenance is not a municipal limit or wastewater service boundary. Private records are agency-published and labeled.",
+    "USGS interpolated bare-earth terrain is not surveyed equipment/wet-well height. Acquisition and original retrieval dates remain visible; unchanged coordinates may retain older samples.",
+    "No complete operational topology, station flow/capacity, failure propagation, customer allocation or spill/damage model is inferred from public inventory geometry.",
+    "Evacuation zones are planning classifications, not FEMA flood zones or current orders. No intersection, boundary, ambiguous and unsupported-code results remain unknown.",
+    "The agency provides public inventory as is; resolve location-specific decisions through current official sources."
   ],
   "topology": null,
   "stations": [
     {
       "id": "PUBLIC-000000029859",
+      "agencyGlobalId": "0d35cb3e-a53d-4f8b-8951-a6cef0832a99",
       "objectId": 1,
       "facilityId": "000000029859",
       "displayAssetId": "PVT-48",
@@ -297,17 +532,19 @@
         1042499
       ],
       "groundElevationFt": 6.5,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:27Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "444efb1811a5fca41c2928d4d75cdaa22e151db2ab7a826d26d6ed450907fda4"
+      "elevationResponseSha256": "444efb1811a5fca41c2928d4d75cdaa22e151db2ab7a826d26d6ed450907fda4",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029860",
+      "agencyGlobalId": "ccda91cd-aef3-4696-98d7-fba0426d18d1",
       "objectId": 2,
       "facilityId": "000000029860",
       "displayAssetId": "PVT-49",
@@ -340,17 +577,19 @@
         713527
       ],
       "groundElevationFt": 6.1,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:27Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "788a0dba5d2b3856b4621369979d76a6fd8b9771a9ed2c6bda34ed21cb16d3ab"
+      "elevationResponseSha256": "788a0dba5d2b3856b4621369979d76a6fd8b9771a9ed2c6bda34ed21cb16d3ab",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029861",
+      "agencyGlobalId": "dd1b9737-37ce-4130-aebc-8ceadb8cd11a",
       "objectId": 3,
       "facilityId": "000000029861",
       "displayAssetId": "24",
@@ -369,17 +608,19 @@
         1004706
       ],
       "groundElevationFt": 17.02,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:24:27Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "84d7328f76163d068079473b4e66f5afc42dd447624ee947c19c32257542ab6d"
+      "elevationResponseSha256": "84d7328f76163d068079473b4e66f5afc42dd447624ee947c19c32257542ab6d",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029862",
+      "agencyGlobalId": "77e6d1e1-6005-4abd-b3d1-f8a8e610bfda",
       "objectId": 4,
       "facilityId": "000000029862",
       "displayAssetId": "28",
@@ -399,17 +640,19 @@
         851319
       ],
       "groundElevationFt": 3.95,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:27Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "320836c87a0bd2fe763467d5a32cc011e668ae56915a4092c043f75eace7d429"
+      "elevationResponseSha256": "320836c87a0bd2fe763467d5a32cc011e668ae56915a4092c043f75eace7d429",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029863",
+      "agencyGlobalId": "5152aff0-7f6d-43a0-bea3-05bccfd1ee80",
       "objectId": 5,
       "facilityId": "000000029863",
       "displayAssetId": "58",
@@ -428,17 +671,19 @@
         1004318
       ],
       "groundElevationFt": 40.87,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:24:31Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "a616390e4a4e8f2eccebedcb0421afcbfe8d9d3a7e024affdbf36e2753f278cb"
+      "elevationResponseSha256": "a616390e4a4e8f2eccebedcb0421afcbfe8d9d3a7e024affdbf36e2753f278cb",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029864",
+      "agencyGlobalId": "1be6535d-054c-48a8-b38a-7c6f92d5c799",
       "objectId": 6,
       "facilityId": "000000029864",
       "displayAssetId": "PVT-21",
@@ -457,17 +702,19 @@
         867794
       ],
       "groundElevationFt": 4.77,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:36Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "33fc5fb59dce1e0d593a7b376e933d3312b1504d7e77fb474f0589ac7ca4aa43"
+      "elevationResponseSha256": "33fc5fb59dce1e0d593a7b376e933d3312b1504d7e77fb474f0589ac7ca4aa43",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029865",
+      "agencyGlobalId": "fa50f02e-6ef3-4c83-b1af-826b5d4c8f1b",
       "objectId": 7,
       "facilityId": "000000029865",
       "displayAssetId": "30",
@@ -488,17 +735,19 @@
         752151
       ],
       "groundElevationFt": 8.52,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:36Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "b354814d3f5ae6ed15d6a2aa6ef9ddea0bb204ee2f889ceea6962df61f6a1832"
+      "elevationResponseSha256": "b354814d3f5ae6ed15d6a2aa6ef9ddea0bb204ee2f889ceea6962df61f6a1832",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029866",
+      "agencyGlobalId": "b759b8d5-4e81-459b-84ef-ddcb207e534e",
       "objectId": 8,
       "facilityId": "000000029866",
       "displayAssetId": "PVT-15",
@@ -517,17 +766,19 @@
         725466
       ],
       "groundElevationFt": 6.0,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:37Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "cc5a51ebea6aacc39396b706f7729512c7359dde33e49cd85d3e48c9d909a723"
+      "elevationResponseSha256": "cc5a51ebea6aacc39396b706f7729512c7359dde33e49cd85d3e48c9d909a723",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029867",
+      "agencyGlobalId": "7e8774e6-58dc-4cc5-ab39-0edf5c4c6a88",
       "objectId": 9,
       "facilityId": "000000029867",
       "displayAssetId": "PVT-28",
@@ -547,17 +798,19 @@
         781174
       ],
       "groundElevationFt": 5.81,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:41Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "216894e9fa32eb814d53db872d143ae75c18c393b10b570ac6c2ed74f621a828"
+      "elevationResponseSha256": "216894e9fa32eb814d53db872d143ae75c18c393b10b570ac6c2ed74f621a828",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029869",
+      "agencyGlobalId": "f24a459f-81d2-446e-b0e1-eea83577feb9",
       "objectId": 11,
       "facilityId": "000000029869",
       "displayAssetId": "17",
@@ -576,17 +829,19 @@
         774986
       ],
       "groundElevationFt": 5.2,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:45Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "85cb44f4101c42877dbf949daaf860b0db07c3fc2fa90952009aa48992b15af8"
+      "elevationResponseSha256": "85cb44f4101c42877dbf949daaf860b0db07c3fc2fa90952009aa48992b15af8",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029870",
+      "agencyGlobalId": "ecddebe5-6015-4f7d-9a45-84f977a06391",
       "objectId": 12,
       "facilityId": "000000029870",
       "displayAssetId": "PVT-27",
@@ -603,17 +858,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 4.98,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:48Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "c4d9eb81579ffabce04204ea003c979b67d4e20dcf2b4a8dc8bca04e709408e6"
+      "elevationResponseSha256": "c4d9eb81579ffabce04204ea003c979b67d4e20dcf2b4a8dc8bca04e709408e6",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029871",
+      "agencyGlobalId": "73ab5ca0-3d9e-4315-acd8-d28c51121fab",
       "objectId": 13,
       "facilityId": "000000029871",
       "displayAssetId": "PVT-39",
@@ -632,17 +889,19 @@
         843383
       ],
       "groundElevationFt": 34.47,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:24:49Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "3bc2043bfe28f80ceb589ea4cda0709004f5b0e48274cd6cb39a8380a01913c6"
+      "elevationResponseSha256": "3bc2043bfe28f80ceb589ea4cda0709004f5b0e48274cd6cb39a8380a01913c6",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029873",
+      "agencyGlobalId": "c35862f9-ac58-4472-97e8-b4f154eadc7d",
       "objectId": 15,
       "facilityId": "000000029873",
       "displayAssetId": "06",
@@ -661,17 +920,19 @@
         797489
       ],
       "groundElevationFt": 5.8,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 9169,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:24:52Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "9b2f43934a0a12496db9922d856feefdf086beef62ebf2c388ce6b8d31dc6e15"
+      "elevationResponseSha256": "9b2f43934a0a12496db9922d856feefdf086beef62ebf2c388ce6b8d31dc6e15",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029874",
+      "agencyGlobalId": "97c0ba65-d956-4d7a-a7e9-e4363159d928",
       "objectId": 16,
       "facilityId": "000000029874",
       "displayAssetId": "53",
@@ -690,17 +951,19 @@
         754566
       ],
       "groundElevationFt": 10.39,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 9169,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:24:52Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "015c42653136618befee4ad419731be94dc9c669b7f3265cda53ae88a1544ccd"
+      "elevationResponseSha256": "015c42653136618befee4ad419731be94dc9c669b7f3265cda53ae88a1544ccd",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029875",
+      "agencyGlobalId": "d7cd7688-3224-409e-9eb0-936accc15a55",
       "objectId": 17,
       "facilityId": "000000029875",
       "displayAssetId": "26",
@@ -721,17 +984,19 @@
         836028
       ],
       "groundElevationFt": 51.3,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:24:53Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "a1d506018008fee3176d493d716c3f2a25bdb1faf2b39944d0461f014ea38be5"
+      "elevationResponseSha256": "a1d506018008fee3176d493d716c3f2a25bdb1faf2b39944d0461f014ea38be5",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029876",
+      "agencyGlobalId": "f2f0720d-30af-4018-9318-557c9dca2e33",
       "objectId": 18,
       "facilityId": "000000029876",
       "displayAssetId": "42",
@@ -750,17 +1015,19 @@
         1005839
       ],
       "groundElevationFt": 5.36,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:53Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "3dbbdcbdf27afaef05610a42219355a9b86bf4eee1c01e49e3264d87dcb0ba34"
+      "elevationResponseSha256": "3dbbdcbdf27afaef05610a42219355a9b86bf4eee1c01e49e3264d87dcb0ba34",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029877",
+      "agencyGlobalId": "a8258354-8f27-4429-b96b-81a9ca9a2098",
       "objectId": 19,
       "facilityId": "000000029877",
       "displayAssetId": "27",
@@ -779,17 +1046,19 @@
         657526
       ],
       "groundElevationFt": 11.43,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:53Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "8bfa6fd2a8da5902493486ffbf718fc8cb6d120a5a11941032ee25d2f391e167"
+      "elevationResponseSha256": "8bfa6fd2a8da5902493486ffbf718fc8cb6d120a5a11941032ee25d2f391e167",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029878",
+      "agencyGlobalId": "03e5cbe6-27d2-4b08-9adc-dc8e16229455",
       "objectId": 20,
       "facilityId": "000000029878",
       "displayAssetId": "49",
@@ -808,17 +1077,19 @@
         1029866
       ],
       "groundElevationFt": 7.41,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:57Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "0215e943c732d5ce3319650aae33e8d347264503a96978ddbdb6b7ef04b0781b"
+      "elevationResponseSha256": "0215e943c732d5ce3319650aae33e8d347264503a96978ddbdb6b7ef04b0781b",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029879",
+      "agencyGlobalId": "3928c3dc-dc5c-4734-8a73-5a58f292b637",
       "objectId": 21,
       "facilityId": "000000029879",
       "displayAssetId": "05",
@@ -838,17 +1109,19 @@
         786154
       ],
       "groundElevationFt": 5.62,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:57Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "86962d5129efbefc12770954eca94e9eb6dfa36feeeb573e0be6f5b093aa4cc5"
+      "elevationResponseSha256": "86962d5129efbefc12770954eca94e9eb6dfa36feeeb573e0be6f5b093aa4cc5",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029880",
+      "agencyGlobalId": "2cdacb35-277f-49f8-8356-46f1bff2b45c",
       "objectId": 22,
       "facilityId": "000000029880",
       "displayAssetId": "25",
@@ -867,17 +1140,19 @@
         840698
       ],
       "groundElevationFt": 3.2,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 43178,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:58Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "404be5b5b5fb7a29aa7d42c3af4eb5c40aaa0fec7cbb0804c15d937a6ac9cd31"
+      "elevationResponseSha256": "404be5b5b5fb7a29aa7d42c3af4eb5c40aaa0fec7cbb0804c15d937a6ac9cd31",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029881",
+      "agencyGlobalId": "8922008a-f15a-4975-9453-df5c6ea99d16",
       "objectId": 23,
       "facilityId": "000000029881",
       "displayAssetId": "13",
@@ -896,17 +1171,19 @@
         1017983
       ],
       "groundElevationFt": 5.54,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 133907,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:58Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "97dc824c83023412e75a698ebae73ce66bd6e56f4014e9109598ef9fb4c5a5b0"
+      "elevationResponseSha256": "97dc824c83023412e75a698ebae73ce66bd6e56f4014e9109598ef9fb4c5a5b0",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029883",
+      "agencyGlobalId": "5acc3384-4606-4843-b5df-a81213e6b546",
       "objectId": 25,
       "facilityId": "000000029883",
       "displayAssetId": "04",
@@ -925,17 +1202,19 @@
         920099
       ],
       "groundElevationFt": 7.06,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:24:59Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "009ddf718d1c38d071300243347c97423794d76b55b3b7594a8162393c0c76d4"
+      "elevationResponseSha256": "009ddf718d1c38d071300243347c97423794d76b55b3b7594a8162393c0c76d4",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029884",
+      "agencyGlobalId": "73ea9248-a07b-4707-9bbc-88d7813647a8",
       "objectId": 26,
       "facilityId": "000000029884",
       "displayAssetId": "PVT-05",
@@ -958,17 +1237,19 @@
         804393
       ],
       "groundElevationFt": 48.79,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:00Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "6a95c138fd8fae5abded23658be5087831862b07e5c62ed0d3138a17d5bbb01e"
+      "elevationResponseSha256": "6a95c138fd8fae5abded23658be5087831862b07e5c62ed0d3138a17d5bbb01e",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029885",
+      "agencyGlobalId": "e6bf1388-ed96-4ceb-85b8-4f3ba69f2cb1",
       "objectId": 27,
       "facilityId": "000000029885",
       "displayAssetId": "PVT-04",
@@ -990,17 +1271,19 @@
         1063419
       ],
       "groundElevationFt": 2.77,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:00Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "5733501ac8ad2702930b3a6a340679c44502bd9b36571b939f77cb8c341bf48e"
+      "elevationResponseSha256": "5733501ac8ad2702930b3a6a340679c44502bd9b36571b939f77cb8c341bf48e",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029886",
+      "agencyGlobalId": "94a5bc99-13cc-4458-8990-f4409630f5e5",
       "objectId": 28,
       "facilityId": "000000029886",
       "displayAssetId": "36",
@@ -1017,17 +1300,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 7.09,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:01Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "c0f1a4794ecb0ac7afb27e69d04276edfd960068b1d766dd861128420e13a594"
+      "elevationResponseSha256": "c0f1a4794ecb0ac7afb27e69d04276edfd960068b1d766dd861128420e13a594",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029887",
+      "agencyGlobalId": "014377f1-2c88-4f58-8e2a-eaf43afa41ca",
       "objectId": 29,
       "facilityId": "000000029887",
       "displayAssetId": "34",
@@ -1046,17 +1331,19 @@
         1003517
       ],
       "groundElevationFt": 18.09,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 43178,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:03Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "fe6b102ba4236164e86dda0ca1fe48d572baac41d71c1f76e66dc9dbec68520d"
+      "elevationResponseSha256": "fe6b102ba4236164e86dda0ca1fe48d572baac41d71c1f76e66dc9dbec68520d",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029888",
+      "agencyGlobalId": "aad7a1f0-591d-4fbc-a086-3bcc3026d9bf",
       "objectId": 30,
       "facilityId": "000000029888",
       "displayAssetId": "40",
@@ -1075,17 +1362,19 @@
         987608
       ],
       "groundElevationFt": 6.54,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 133907,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:04Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "2b4601cdfb1caa198222979431046d5959540766b3bbb01d2d4d2fc4ed479494"
+      "elevationResponseSha256": "2b4601cdfb1caa198222979431046d5959540766b3bbb01d2d4d2fc4ed479494",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029889",
+      "agencyGlobalId": "8fe7d94d-6b17-4103-994c-49fe041dbe28",
       "objectId": 31,
       "facilityId": "000000029889",
       "displayAssetId": "66",
@@ -1109,17 +1398,19 @@
         956945
       ],
       "groundElevationFt": 5.53,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:07Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "c650affade1fa076f36d6964a129c9153f03986e1994d430656bb15d49a6f6ca"
+      "elevationResponseSha256": "c650affade1fa076f36d6964a129c9153f03986e1994d430656bb15d49a6f6ca",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029890",
+      "agencyGlobalId": "2e7254bc-6e13-47aa-bdce-677adf98b2a8",
       "objectId": 32,
       "facilityId": "000000029890",
       "displayAssetId": "PVT-19",
@@ -1136,17 +1427,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 4.23,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 43178,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:07Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "030b8c41294defe399d6cd7ec199f02c16486941808c57588f654c62abc1c007"
+      "elevationResponseSha256": "030b8c41294defe399d6cd7ec199f02c16486941808c57588f654c62abc1c007",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029891",
+      "agencyGlobalId": "08265d28-da95-417b-b9dc-4d7be0e49a2b",
       "objectId": 33,
       "facilityId": "000000029891",
       "displayAssetId": "23",
@@ -1163,17 +1456,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 4.96,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 43178,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:11Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "b09b93b1af7675581d5fa2cb2564d6a4a3d78435838c711bd4b706a7eaf8d98b"
+      "elevationResponseSha256": "b09b93b1af7675581d5fa2cb2564d6a4a3d78435838c711bd4b706a7eaf8d98b",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029892",
+      "agencyGlobalId": "c31d99ea-9612-4b3f-862e-d14091df966e",
       "objectId": 34,
       "facilityId": "000000029892",
       "displayAssetId": "51",
@@ -1190,17 +1485,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 6.09,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 99129,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:14Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "09e9566b3d7b9e1b06cabc7f1ebab4617b1d9667cc6ea37ad81b27f03c3bd0cb"
+      "elevationResponseSha256": "09e9566b3d7b9e1b06cabc7f1ebab4617b1d9667cc6ea37ad81b27f03c3bd0cb",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029893",
+      "agencyGlobalId": "fa5a907b-acbc-4f32-bf28-51d388646275",
       "objectId": 35,
       "facilityId": "000000029893",
       "displayAssetId": "22",
@@ -1219,17 +1516,19 @@
         1003536
       ],
       "groundElevationFt": 20.03,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 43178,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:14Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "66d1ad47025559eb6521654f691edb1eaeb7d39717f41b5206523bcfe91a9030"
+      "elevationResponseSha256": "66d1ad47025559eb6521654f691edb1eaeb7d39717f41b5206523bcfe91a9030",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029894",
+      "agencyGlobalId": "658c11b2-fbdb-4cda-a08f-ba2561f16244",
       "objectId": 36,
       "facilityId": "000000029894",
       "displayAssetId": "68",
@@ -1434,17 +1733,19 @@
         1128766
       ],
       "groundElevationFt": 6.61,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:15Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "57ff618fa8befe910b8c375616c6eb863bec1b9447f591f9b484ab23f1dc2a6f"
+      "elevationResponseSha256": "57ff618fa8befe910b8c375616c6eb863bec1b9447f591f9b484ab23f1dc2a6f",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029895",
+      "agencyGlobalId": "7e656a2d-baee-458b-9e1e-8bf9ec22d149",
       "objectId": 37,
       "facilityId": "000000029895",
       "displayAssetId": "56",
@@ -1463,17 +1764,19 @@
         719330
       ],
       "groundElevationFt": 5.96,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 99129,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:17Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "456c00e67e4e3afe41701fb92ffeb65159c3984a4a2949666724e81a36fe7ad6"
+      "elevationResponseSha256": "456c00e67e4e3afe41701fb92ffeb65159c3984a4a2949666724e81a36fe7ad6",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029896",
+      "agencyGlobalId": "8a7d80bf-fd8f-49d7-bc5e-16b677ee26a0",
       "objectId": 38,
       "facilityId": "000000029896",
       "displayAssetId": "PVT-06",
@@ -1492,17 +1795,19 @@
         774660
       ],
       "groundElevationFt": 8.96,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:17Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "fc05a83b7f0f43f6c1b520b54130052915291326573e4035f4a62ae8daf6f246"
+      "elevationResponseSha256": "fc05a83b7f0f43f6c1b520b54130052915291326573e4035f4a62ae8daf6f246",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029898",
+      "agencyGlobalId": "82fbaf89-8d09-4188-af3e-140224f01fff",
       "objectId": 40,
       "facilityId": "000000029898",
       "displayAssetId": "19",
@@ -1523,17 +1828,19 @@
         791266
       ],
       "groundElevationFt": 50.68,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:17Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "31f41e3d93097d13abd934800c821f439f4d93ebfcbacdaa60f91dd570497316"
+      "elevationResponseSha256": "31f41e3d93097d13abd934800c821f439f4d93ebfcbacdaa60f91dd570497316",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029899",
+      "agencyGlobalId": "720178c6-a324-4210-afbb-60b6ae45cd31",
       "objectId": 41,
       "facilityId": "000000029899",
       "displayAssetId": "70",
@@ -1554,17 +1861,19 @@
         755364
       ],
       "groundElevationFt": 7.8,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:17Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "63f9724b2cc7eb6dbb6a42bbf6a8718f2d87af2ceffd30514942009182f6d9ab"
+      "elevationResponseSha256": "63f9724b2cc7eb6dbb6a42bbf6a8718f2d87af2ceffd30514942009182f6d9ab",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029900",
+      "agencyGlobalId": "15785fa2-2161-43ab-a8bb-37db9862d0a1",
       "objectId": 42,
       "facilityId": "000000029900",
       "displayAssetId": "02",
@@ -1583,17 +1892,19 @@
         1019092
       ],
       "groundElevationFt": 5.02,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:18Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "b77b9172c8a4987511add471bbd559b4779a420c818121e10d180c9ed2fe8f51"
+      "elevationResponseSha256": "b77b9172c8a4987511add471bbd559b4779a420c818121e10d180c9ed2fe8f51",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029901",
+      "agencyGlobalId": "81dd1222-f23e-48c6-9472-ce3109069af9",
       "objectId": 43,
       "facilityId": "000000029901",
       "displayAssetId": "47",
@@ -1613,17 +1924,19 @@
         786610
       ],
       "groundElevationFt": 5.78,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:19Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "1ce889cb1dfebdb4fffb8c1d4c90d3167d08ebc4633f94dba47e170199c591c9"
+      "elevationResponseSha256": "1ce889cb1dfebdb4fffb8c1d4c90d3167d08ebc4633f94dba47e170199c591c9",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029902",
+      "agencyGlobalId": "cf1ba155-6322-4d8c-96aa-38f3920435df",
       "objectId": 44,
       "facilityId": "000000029902",
       "displayAssetId": "65",
@@ -1642,17 +1955,19 @@
         877956
       ],
       "groundElevationFt": 10.85,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 115718,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:19Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "61946cf1330f234fec8e417320638c4d15c242c6546924b55e2b4ad702a4f194"
+      "elevationResponseSha256": "61946cf1330f234fec8e417320638c4d15c242c6546924b55e2b4ad702a4f194",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029903",
+      "agencyGlobalId": "03186526-2398-4413-81c5-ee907629ded8",
       "objectId": 45,
       "facilityId": "000000029903",
       "displayAssetId": "31",
@@ -1671,17 +1986,19 @@
         1003880
       ],
       "groundElevationFt": 17.89,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:21Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "126872907f48034fd05a38987d1f760bb51fbee1c28c42e5327e8e42fcc3f381"
+      "elevationResponseSha256": "126872907f48034fd05a38987d1f760bb51fbee1c28c42e5327e8e42fcc3f381",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029904",
+      "agencyGlobalId": "c52648e5-0bff-4c38-b736-7489896de2cb",
       "objectId": 46,
       "facilityId": "000000029904",
       "displayAssetId": "PVT-07",
@@ -1704,17 +2021,19 @@
         1126612
       ],
       "groundElevationFt": 13.53,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:21Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "b728a2ddc8e1f2714d232d68abe2f3202f4a09fee4736372b2ea98be3abd9735"
+      "elevationResponseSha256": "b728a2ddc8e1f2714d232d68abe2f3202f4a09fee4736372b2ea98be3abd9735",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029905",
+      "agencyGlobalId": "b641f5c8-9164-4440-bfd9-0db772281005",
       "objectId": 47,
       "facilityId": "000000029905",
       "displayAssetId": "38",
@@ -1733,17 +2052,19 @@
         1019263
       ],
       "groundElevationFt": 6.53,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:23Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "087892ae83caa5acc0be28a01ebbc4da00617fe6903f47698749252445fd8523"
+      "elevationResponseSha256": "087892ae83caa5acc0be28a01ebbc4da00617fe6903f47698749252445fd8523",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029906",
+      "agencyGlobalId": "71ac837e-7b7b-4a8b-93b6-49a0d70f5aed",
       "objectId": 48,
       "facilityId": "000000029906",
       "displayAssetId": "12",
@@ -1765,17 +2086,19 @@
         788055
       ],
       "groundElevationFt": 6.77,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:24Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "85f06f35251155dcbd815e22eeb33d7ae05c94535696fd4430c1f90e24d1af88"
+      "elevationResponseSha256": "85f06f35251155dcbd815e22eeb33d7ae05c94535696fd4430c1f90e24d1af88",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029907",
+      "agencyGlobalId": "b27329de-f400-4b51-9b70-81f3d6aac232",
       "objectId": 49,
       "facilityId": "000000029907",
       "displayAssetId": "PVT-20",
@@ -1792,17 +2115,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 5.21,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:25Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "a871eb507fb05055fd6c71511eb727e9c16c9423f0a9386fe2ccaeb0f9474270"
+      "elevationResponseSha256": "a871eb507fb05055fd6c71511eb727e9c16c9423f0a9386fe2ccaeb0f9474270",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029908",
+      "agencyGlobalId": "d3c88a37-e614-4421-a77f-2e871540fca8",
       "objectId": 50,
       "facilityId": "000000029908",
       "displayAssetId": "18",
@@ -1819,17 +2144,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 16.73,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 43178,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:26Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "dd4ada5dc63ca8597e2f9fba527c1c47457971eccab05fc5280501ae557bd531"
+      "elevationResponseSha256": "dd4ada5dc63ca8597e2f9fba527c1c47457971eccab05fc5280501ae557bd531",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029909",
+      "agencyGlobalId": "3e5e6fc8-d892-4f45-9aa0-530777a99072",
       "objectId": 51,
       "facilityId": "000000029909",
       "displayAssetId": "57",
@@ -1848,17 +2175,19 @@
         935989
       ],
       "groundElevationFt": 6.06,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:28Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "8142a8cc82773e347624f1e2c1062ea59556d89ca7b3c6e8670dd8cf22d8ef9c"
+      "elevationResponseSha256": "8142a8cc82773e347624f1e2c1062ea59556d89ca7b3c6e8670dd8cf22d8ef9c",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029910",
+      "agencyGlobalId": "922ec2a4-fbd6-4a7c-aa80-011ab7f7b7a3",
       "objectId": 52,
       "facilityId": "000000029910",
       "displayAssetId": "03",
@@ -1875,17 +2204,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 3.31,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:28Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "beea795001d05cdccf2afcca05a4f118a4a09c104ffd15292c8dfa0b306f088e"
+      "elevationResponseSha256": "beea795001d05cdccf2afcca05a4f118a4a09c104ffd15292c8dfa0b306f088e",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029912",
+      "agencyGlobalId": "0398f195-6cff-45f8-9f67-95e5c2760d56",
       "objectId": 54,
       "facilityId": "000000029912",
       "displayAssetId": "01",
@@ -1902,17 +2233,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 6.02,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:28Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "d8a06406fd5d8250f40b7bdbd822ff92004c2eeb42b9560b5298980a4696c34b"
+      "elevationResponseSha256": "d8a06406fd5d8250f40b7bdbd822ff92004c2eeb42b9560b5298980a4696c34b",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029913",
+      "agencyGlobalId": "e8cc1777-6bfa-42fe-a4b2-cbeb73eb43cc",
       "objectId": 55,
       "facilityId": "000000029913",
       "displayAssetId": "PVT-11",
@@ -1931,17 +2264,19 @@
         847895
       ],
       "groundElevationFt": 6.75,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:28Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "6f4d05d8aa67ee3aca0f4893767eb09dad1ad87bf660ffb6ccf3dd0c765286f6"
+      "elevationResponseSha256": "6f4d05d8aa67ee3aca0f4893767eb09dad1ad87bf660ffb6ccf3dd0c765286f6",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029914",
+      "agencyGlobalId": "50772ebe-bc56-4439-b0b9-eb9a5c361f29",
       "objectId": 56,
       "facilityId": "000000029914",
       "displayAssetId": "PVT-13",
@@ -1960,17 +2295,19 @@
         1127946
       ],
       "groundElevationFt": 5.04,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:28Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "edde3a83c94dd708d7a91519863f3a928bc2a9998424554771bcb0e10939737b"
+      "elevationResponseSha256": "edde3a83c94dd708d7a91519863f3a928bc2a9998424554771bcb0e10939737b",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029915",
+      "agencyGlobalId": "2fcac90c-24d2-4885-a79c-496c21682b68",
       "objectId": 57,
       "facilityId": "000000029915",
       "displayAssetId": "37",
@@ -1987,17 +2324,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 5.83,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 43178,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:28Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "562a6b7310eabb9b7306330525687e5fe1d98b22ccbe537cbc4aa4ac1cf75759"
+      "elevationResponseSha256": "562a6b7310eabb9b7306330525687e5fe1d98b22ccbe537cbc4aa4ac1cf75759",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029916",
+      "agencyGlobalId": "c10ddee9-265b-455e-b751-db937b427cf8",
       "objectId": 58,
       "facilityId": "000000029916",
       "displayAssetId": "PVT-10",
@@ -2016,17 +2355,19 @@
         832071
       ],
       "groundElevationFt": 4.0,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 43178,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:29Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "d4afb0360427a291b130379757aebf3ae75a0af312568205640a2920b966071f"
+      "elevationResponseSha256": "d4afb0360427a291b130379757aebf3ae75a0af312568205640a2920b966071f",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029917",
+      "agencyGlobalId": "e341a476-3df0-4f6b-a07e-8d8d59c3f3b3",
       "objectId": 59,
       "facilityId": "000000029917",
       "displayAssetId": "45",
@@ -2045,17 +2386,19 @@
         867197
       ],
       "groundElevationFt": 3.04,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:30Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "acc05396fd1fe75d85ff39b98b6278200108310fd15a5d260fa08eaa87b2605b"
+      "elevationResponseSha256": "acc05396fd1fe75d85ff39b98b6278200108310fd15a5d260fa08eaa87b2605b",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029918",
+      "agencyGlobalId": "352cb3b0-c467-429b-8515-75d044a4d2d5",
       "objectId": 60,
       "facilityId": "000000029918",
       "displayAssetId": "32",
@@ -2072,17 +2415,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 17.57,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:32Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "8aefb39e60ece69707e916a5ebb0a4214452dfc4de1a2d1b250c3c201c391724"
+      "elevationResponseSha256": "8aefb39e60ece69707e916a5ebb0a4214452dfc4de1a2d1b250c3c201c391724",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029919",
+      "agencyGlobalId": "9f7c2c7b-07ca-449d-bcd2-0aa955a64b02",
       "objectId": 61,
       "facilityId": "000000029919",
       "displayAssetId": "44",
@@ -2101,17 +2446,19 @@
         853655
       ],
       "groundElevationFt": 5.49,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 133907,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:32Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "583253aab2a0bb2662bdceb9ce1bb9b3d75b7df9ba71c696b0d5e59e9ed5c76c"
+      "elevationResponseSha256": "583253aab2a0bb2662bdceb9ce1bb9b3d75b7df9ba71c696b0d5e59e9ed5c76c",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029920",
+      "agencyGlobalId": "1af26731-721e-4a2d-8746-5bea2b207f54",
       "objectId": 62,
       "facilityId": "000000029920",
       "displayAssetId": "54",
@@ -2131,17 +2478,19 @@
         786610
       ],
       "groundElevationFt": 10.66,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:32Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "fe206669d374e3e6b45e5635fa2bf8e4f74b2bf5a1f2f97c785390bcba2a2fb3"
+      "elevationResponseSha256": "fe206669d374e3e6b45e5635fa2bf8e4f74b2bf5a1f2f97c785390bcba2a2fb3",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029921",
+      "agencyGlobalId": "5b067e6e-e447-4630-85b2-bcf832503da2",
       "objectId": 63,
       "facilityId": "000000029921",
       "displayAssetId": "55",
@@ -2160,17 +2509,19 @@
         862267
       ],
       "groundElevationFt": 43.36,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:33Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "ed2d75c6f7b74e03a55dde41f7c93e0a895158db61837449e0e6e03893238cf2"
+      "elevationResponseSha256": "ed2d75c6f7b74e03a55dde41f7c93e0a895158db61837449e0e6e03893238cf2",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029922",
+      "agencyGlobalId": "629d7547-5b3f-4a93-8b2b-70bbfdcc9046",
       "objectId": 64,
       "facilityId": "000000029922",
       "displayAssetId": "39",
@@ -2189,17 +2540,19 @@
         1049603
       ],
       "groundElevationFt": 11.32,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:34Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "1065baa36eb0e94a1617ccefc9882b18229344f819471436933e85c98a1b214a"
+      "elevationResponseSha256": "1065baa36eb0e94a1617ccefc9882b18229344f819471436933e85c98a1b214a",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029923",
+      "agencyGlobalId": "df004ba0-8441-44b9-8516-8962a684a05c",
       "objectId": 65,
       "facilityId": "000000029923",
       "displayAssetId": "PVT-23",
@@ -2226,17 +2579,19 @@
         1039334
       ],
       "groundElevationFt": 4.3,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:35Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "91f48047d3b7a1d74ee77ae3ec0c1796056246a146174cf151fd2e4dfed07ba0"
+      "elevationResponseSha256": "91f48047d3b7a1d74ee77ae3ec0c1796056246a146174cf151fd2e4dfed07ba0",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029924",
+      "agencyGlobalId": "6cc88d85-9805-412a-9b78-994a1dfd740c",
       "objectId": 66,
       "facilityId": "000000029924",
       "displayAssetId": "75",
@@ -2253,17 +2608,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 6.76,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:35Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "b0f59d2b807117d382f83812491e54b26498d09de2aeb2de2ed8c72dc8f909b4"
+      "elevationResponseSha256": "b0f59d2b807117d382f83812491e54b26498d09de2aeb2de2ed8c72dc8f909b4",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029925",
+      "agencyGlobalId": "d6d4c601-bf1f-46ad-b833-e218089e50cf",
       "objectId": 67,
       "facilityId": "000000029925",
       "displayAssetId": "35",
@@ -2280,17 +2637,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 10.23,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:35Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "49473e87d1b089251fa6aba3e40f8feb3674ef90af8f56e7946a22b3b0adeb62"
+      "elevationResponseSha256": "49473e87d1b089251fa6aba3e40f8feb3674ef90af8f56e7946a22b3b0adeb62",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029926",
+      "agencyGlobalId": "4f20f34e-ccca-4450-b77c-e477855651b4",
       "objectId": 68,
       "facilityId": "000000029926",
       "displayAssetId": "09",
@@ -2307,17 +2666,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 46.6,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:36Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "a0d6e082bc24847190795fea009d349f732abe5de188f7522b115f7fc4c0bd33"
+      "elevationResponseSha256": "a0d6e082bc24847190795fea009d349f732abe5de188f7522b115f7fc4c0bd33",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029927",
+      "agencyGlobalId": "7ef9e6b4-c21d-45f8-ad4d-64e920ae8e61",
       "objectId": 69,
       "facilityId": "000000029927",
       "displayAssetId": "PVT-25",
@@ -2337,17 +2698,19 @@
         950461
       ],
       "groundElevationFt": 9.9,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:37Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "e1850d5891e8c23cef4ecb2e29951a4ba351c4224dc527c82d4154e2fa2bed4a"
+      "elevationResponseSha256": "e1850d5891e8c23cef4ecb2e29951a4ba351c4224dc527c82d4154e2fa2bed4a",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029928",
+      "agencyGlobalId": "cb0196ef-b580-4eed-b8c5-08136bc83402",
       "objectId": 70,
       "facilityId": "000000029928",
       "displayAssetId": "29",
@@ -2366,17 +2729,19 @@
         715629
       ],
       "groundElevationFt": 8.79,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:37Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "6834f431a2abd684d43217f8e97c523e69fb3ade9553219daa291b610d3d8f38"
+      "elevationResponseSha256": "6834f431a2abd684d43217f8e97c523e69fb3ade9553219daa291b610d3d8f38",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029929",
+      "agencyGlobalId": "65d9b625-8065-4519-b89e-30b3bb8d1201",
       "objectId": 71,
       "facilityId": "000000029929",
       "displayAssetId": "67",
@@ -2395,17 +2760,19 @@
         1015540
       ],
       "groundElevationFt": 10.59,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:38Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "513742af9757af7025d5d6f69fdd1f6f1152c089e014e886c3b92fd20f34af4b"
+      "elevationResponseSha256": "513742af9757af7025d5d6f69fdd1f6f1152c089e014e886c3b92fd20f34af4b",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029930",
+      "agencyGlobalId": "e385480c-adbe-4716-a8c5-f735d2acbb38",
       "objectId": 72,
       "facilityId": "000000029930",
       "displayAssetId": "33",
@@ -2422,17 +2789,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": -0.8,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 133907,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:42Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "4d89e08f4b38d50345bd028272f6720f530d6983e011080d2220a71049eff8bb"
+      "elevationResponseSha256": "4d89e08f4b38d50345bd028272f6720f530d6983e011080d2220a71049eff8bb",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029931",
+      "agencyGlobalId": "296d7507-257e-454d-b530-c02184a20498",
       "objectId": 73,
       "facilityId": "000000029931",
       "displayAssetId": "64",
@@ -2451,17 +2820,19 @@
         1082187
       ],
       "groundElevationFt": 6.08,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:43Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "b6f888c0e78552b9d3dae26eff462e02312964b49c80af543f590a486d48042d"
+      "elevationResponseSha256": "b6f888c0e78552b9d3dae26eff462e02312964b49c80af543f590a486d48042d",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029932",
+      "agencyGlobalId": "ba786bef-425c-4b6a-944f-8ace4a4f3115",
       "objectId": 74,
       "facilityId": "000000029932",
       "displayAssetId": "77",
@@ -2480,17 +2851,19 @@
         1003990
       ],
       "groundElevationFt": 8.47,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 99129,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:43Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "b40b416071ed348c5ad8bf93f1a4182bcd16b74dfc05c36073c1f8c45056fd4c"
+      "elevationResponseSha256": "b40b416071ed348c5ad8bf93f1a4182bcd16b74dfc05c36073c1f8c45056fd4c",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029933",
+      "agencyGlobalId": "fe2d103e-a609-4481-a477-b53b1c6ce1d4",
       "objectId": 75,
       "facilityId": "000000029933",
       "displayAssetId": "PVT-01",
@@ -2509,17 +2882,19 @@
         1054120
       ],
       "groundElevationFt": 8.62,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:43Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "7b9d5368966905a37cbd4a5d04388e4f67a7476b9c338d554920b3d263e66be8"
+      "elevationResponseSha256": "7b9d5368966905a37cbd4a5d04388e4f67a7476b9c338d554920b3d263e66be8",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029934",
+      "agencyGlobalId": "2d017448-234d-452b-aaa0-32d4cb4cff34",
       "objectId": 76,
       "facilityId": "000000029934",
       "displayAssetId": "16",
@@ -2538,17 +2913,19 @@
         1068491
       ],
       "groundElevationFt": 7.1,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:44Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "a9d1d19ff0ecc09aa3bb8b94bad562e9df78ec3b08dc3775fa16ed70c5b27067"
+      "elevationResponseSha256": "a9d1d19ff0ecc09aa3bb8b94bad562e9df78ec3b08dc3775fa16ed70c5b27067",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029935",
+      "agencyGlobalId": "c20ef969-2af8-4e7c-be35-f6a0f536f1bf",
       "objectId": 77,
       "facilityId": "000000029935",
       "displayAssetId": "PVT-18",
@@ -2567,17 +2944,19 @@
         957906
       ],
       "groundElevationFt": 6.95,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:45Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "0a8c8410b6210d509b3cb2381f9877c71f21524ad9ca95b7000181688dc87138"
+      "elevationResponseSha256": "0a8c8410b6210d509b3cb2381f9877c71f21524ad9ca95b7000181688dc87138",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029936",
+      "agencyGlobalId": "60e63c7b-3c9c-40a3-9920-545705482e91",
       "objectId": 78,
       "facilityId": "000000029936",
       "displayAssetId": "PVT-37",
@@ -2596,17 +2975,19 @@
         999008
       ],
       "groundElevationFt": 4.99,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:45Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "cbd50be49920de08369281bd303fb97c849582d5b5301740c125e35d59a48ba2"
+      "elevationResponseSha256": "cbd50be49920de08369281bd303fb97c849582d5b5301740c125e35d59a48ba2",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029937",
+      "agencyGlobalId": "dc705be5-d103-4305-99aa-f5bfa905b212",
       "objectId": 79,
       "facilityId": "000000029937",
       "displayAssetId": "PVT-43",
@@ -2623,17 +3004,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 14.23,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 43178,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:45Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "10553c5f065a5807cfa3fc25087d17f6618edadb56e58c6209144fb9be0498fd"
+      "elevationResponseSha256": "10553c5f065a5807cfa3fc25087d17f6618edadb56e58c6209144fb9be0498fd",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029938",
+      "agencyGlobalId": "ede4ec27-a853-45dc-a688-8ad9fa9d57a8",
       "objectId": 80,
       "facilityId": "000000029938",
       "displayAssetId": "63",
@@ -2652,17 +3035,19 @@
         842217
       ],
       "groundElevationFt": 7.23,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:46Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "b2e848984b4b43cd3db3f7b22410b5dfd2ba4e00941ff7496f1a1df27d088b8b"
+      "elevationResponseSha256": "b2e848984b4b43cd3db3f7b22410b5dfd2ba4e00941ff7496f1a1df27d088b8b",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029939",
+      "agencyGlobalId": "e21abaf2-4392-40e7-b0f3-91fa581aafa8",
       "objectId": 81,
       "facilityId": "000000029939",
       "displayAssetId": "15",
@@ -2681,17 +3066,19 @@
         948761
       ],
       "groundElevationFt": 5.64,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:46Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "8d16f7a143ffcc184fe93cfc4c4344a101db5f1bfdd86d770e8e6bb8eeb38bb7"
+      "elevationResponseSha256": "8d16f7a143ffcc184fe93cfc4c4344a101db5f1bfdd86d770e8e6bb8eeb38bb7",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029940",
+      "agencyGlobalId": "f959664e-158e-4277-82fd-b425f2a1ea06",
       "objectId": 82,
       "facilityId": "000000029940",
       "displayAssetId": "10",
@@ -2708,17 +3095,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 54.46,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:46Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "40173c56048fab7784f9cadf9706ef43ab02d2f2ddbe441495da98b4c16506cf"
+      "elevationResponseSha256": "40173c56048fab7784f9cadf9706ef43ab02d2f2ddbe441495da98b4c16506cf",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029941",
+      "agencyGlobalId": "d8f09c11-bb93-41ac-a6dc-102d2b91ee01",
       "objectId": 83,
       "facilityId": "000000029941",
       "displayAssetId": "PVT-16",
@@ -2738,17 +3127,19 @@
         1126460
       ],
       "groundElevationFt": 4.73,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:47Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "0792301ba4e91b202d5017adca8e840ea39165e8bfd699a908a703e06d6bceee"
+      "elevationResponseSha256": "0792301ba4e91b202d5017adca8e840ea39165e8bfd699a908a703e06d6bceee",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029942",
+      "agencyGlobalId": "d07497b5-a0ef-4db1-a675-bd5cec9cdd6d",
       "objectId": 84,
       "facilityId": "000000029942",
       "displayAssetId": "60",
@@ -2765,17 +3156,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 7.15,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:48Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "f824fb8fc251fee1250c7ed98a45a67698adf07c4776b71cabba78aa66b391a2"
+      "elevationResponseSha256": "f824fb8fc251fee1250c7ed98a45a67698adf07c4776b71cabba78aa66b391a2",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029943",
+      "agencyGlobalId": "0f2b8ac6-bf4f-40e8-bb3b-f78ff4fc01b4",
       "objectId": 85,
       "facilityId": "000000029943",
       "displayAssetId": "07",
@@ -2792,17 +3185,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 4.43,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:48Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "2cb150eb9adec63111830a7cfcd7c60928b597f02edb067406f9b0794d572a28"
+      "elevationResponseSha256": "2cb150eb9adec63111830a7cfcd7c60928b597f02edb067406f9b0794d572a28",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029944",
+      "agencyGlobalId": "57ed22f6-066a-4080-a917-6457edb765b3",
       "objectId": 86,
       "facilityId": "000000029944",
       "displayAssetId": "PVT-08",
@@ -2821,17 +3216,19 @@
         753987
       ],
       "groundElevationFt": 6.31,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:48Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "5c4d862f191861ebad93d5df97141763b32bca3e09caed04d8c873eb3117cc9e"
+      "elevationResponseSha256": "5c4d862f191861ebad93d5df97141763b32bca3e09caed04d8c873eb3117cc9e",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029945",
+      "agencyGlobalId": "3e8c4b7b-9a04-4e7e-b009-8493e1615498",
       "objectId": 87,
       "facilityId": "000000029945",
       "displayAssetId": "PVT-24",
@@ -2851,17 +3248,19 @@
         1120648
       ],
       "groundElevationFt": 6.42,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:49Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "e7129bf0d5829b9f5a90b57ae7135078eeba1e83ddb3b633de8f87757c504f94"
+      "elevationResponseSha256": "e7129bf0d5829b9f5a90b57ae7135078eeba1e83ddb3b633de8f87757c504f94",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029946",
+      "agencyGlobalId": "55105594-5f2e-40fa-b237-ceef7279aca5",
       "objectId": 88,
       "facilityId": "000000029946",
       "displayAssetId": "PVT-22",
@@ -2878,17 +3277,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 4.2,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:49Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "15022914c6d145ed4c53a9c3f4c6e3038a04f6046c45bb67377d73726c7b7a8b"
+      "elevationResponseSha256": "15022914c6d145ed4c53a9c3f4c6e3038a04f6046c45bb67377d73726c7b7a8b",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029947",
+      "agencyGlobalId": "8be42bf3-b193-4e35-81fd-99d43702098c",
       "objectId": 89,
       "facilityId": "000000029947",
       "displayAssetId": "46",
@@ -2907,17 +3308,19 @@
         1014497
       ],
       "groundElevationFt": 6.74,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:49Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "b7428f15415e11c976defcd5c7fbdbe6eacc96199beca4ac793897ce0c21f3d8"
+      "elevationResponseSha256": "b7428f15415e11c976defcd5c7fbdbe6eacc96199beca4ac793897ce0c21f3d8",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029948",
+      "agencyGlobalId": "b6eb7d95-4c04-49c2-b9d9-f00329c18a46",
       "objectId": 90,
       "facilityId": "000000029948",
       "displayAssetId": "76",
@@ -2934,17 +3337,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 8.31,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:50Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "680a34b59dc74c839f6e7e0dd38bd7b9e3e2a2ff883b1b68074114e11e6204f8"
+      "elevationResponseSha256": "680a34b59dc74c839f6e7e0dd38bd7b9e3e2a2ff883b1b68074114e11e6204f8",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029949",
+      "agencyGlobalId": "f8b23353-e752-408e-b8c5-3386b344cfa7",
       "objectId": 91,
       "facilityId": "000000029949",
       "displayAssetId": "20",
@@ -2963,17 +3368,19 @@
         837688
       ],
       "groundElevationFt": 5.37,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 43178,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:50Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "f44d741b677fefb74921fe79bd72609db8b8da097c7ddfbbee9fe082e94d79a9"
+      "elevationResponseSha256": "f44d741b677fefb74921fe79bd72609db8b8da097c7ddfbbee9fe082e94d79a9",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029950",
+      "agencyGlobalId": "db5cae7a-6eeb-4f4f-a6ac-41751ab6a849",
       "objectId": 92,
       "facilityId": "000000029950",
       "displayAssetId": "61",
@@ -2990,17 +3397,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 21.68,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 43178,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:51Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "f02bac85ffebf18053c040cce2c0e82625530335c212910b9d19c15b3da526f7"
+      "elevationResponseSha256": "f02bac85ffebf18053c040cce2c0e82625530335c212910b9d19c15b3da526f7",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029951",
+      "agencyGlobalId": "ad9ab030-7e11-487a-9abe-8108035098a6",
       "objectId": 93,
       "facilityId": "000000029951",
       "displayAssetId": "72",
@@ -3020,17 +3429,19 @@
         1061222
       ],
       "groundElevationFt": 6.66,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:54Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "2f3307c5ab2d9d0ab84c71b9aa9521bf54b873a5452622840c06c53f40efc7b7"
+      "elevationResponseSha256": "2f3307c5ab2d9d0ab84c71b9aa9521bf54b873a5452622840c06c53f40efc7b7",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029952",
+      "agencyGlobalId": "d7cf778a-e877-45cf-8d55-30ea684e9cbc",
       "objectId": 94,
       "facilityId": "000000029952",
       "displayAssetId": "PVT-09",
@@ -3058,17 +3469,19 @@
         771504
       ],
       "groundElevationFt": 42.25,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:54Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "93dd193ee28689fba979ad3fd819c2d29fa837423137a459b6b7f9e0ce2fd109"
+      "elevationResponseSha256": "93dd193ee28689fba979ad3fd819c2d29fa837423137a459b6b7f9e0ce2fd109",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029953",
+      "agencyGlobalId": "43b78d64-c90a-4977-9a86-e750ea3d9bdb",
       "objectId": 95,
       "facilityId": "000000029953",
       "displayAssetId": "73",
@@ -3087,17 +3500,19 @@
         1015540
       ],
       "groundElevationFt": 8.77,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:55Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "bca978c9f1af45aaef25bdd898686b0d2179d4c656d86aa20e85f8b598438ed1"
+      "elevationResponseSha256": "bca978c9f1af45aaef25bdd898686b0d2179d4c656d86aa20e85f8b598438ed1",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029954",
+      "agencyGlobalId": "778d87e9-2bfa-492a-9340-3eaae6abfbc9",
       "objectId": 96,
       "facilityId": "000000029954",
       "displayAssetId": "21",
@@ -3116,17 +3531,19 @@
         891111
       ],
       "groundElevationFt": 16.28,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:55Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "8782ee092819a159eb7b28ffb6aff7dcf427a7bfc521111f6d7f42499d956047"
+      "elevationResponseSha256": "8782ee092819a159eb7b28ffb6aff7dcf427a7bfc521111f6d7f42499d956047",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029955",
+      "agencyGlobalId": "a1115543-2747-4802-b6fe-8d8c7e54a53d",
       "objectId": 97,
       "facilityId": "000000029955",
       "displayAssetId": "48",
@@ -3145,17 +3562,19 @@
         702713
       ],
       "groundElevationFt": 19.0,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:25:56Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "43671226208155601f2f16fe656ccf1eb856229fddf24da9f42981f2c7e2aa39"
+      "elevationResponseSha256": "43671226208155601f2f16fe656ccf1eb856229fddf24da9f42981f2c7e2aa39",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029956",
+      "agencyGlobalId": "9396bae9-f382-4484-8a37-5a1bba9b37d2",
       "objectId": 98,
       "facilityId": "000000029956",
       "displayAssetId": "52",
@@ -3183,17 +3602,19 @@
         1110112
       ],
       "groundElevationFt": 5.85,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:57Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "018e5709face6c45f3fed8c524c1392404b5c98dd1133413058007868dcf82f0"
+      "elevationResponseSha256": "018e5709face6c45f3fed8c524c1392404b5c98dd1133413058007868dcf82f0",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029957",
+      "agencyGlobalId": "6865b42c-70c2-4e80-b321-e8196f4f2aa4",
       "objectId": 99,
       "facilityId": "000000029957",
       "displayAssetId": "11",
@@ -3212,17 +3633,19 @@
         1056253
       ],
       "groundElevationFt": 3.69,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 133907,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:59Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "3cd6631d43a88e1e97addb19510ba8c7dd1332f57853f27c7f665671d1c15526"
+      "elevationResponseSha256": "3cd6631d43a88e1e97addb19510ba8c7dd1332f57853f27c7f665671d1c15526",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029958",
+      "agencyGlobalId": "a11ee708-09ce-458b-b874-eb3e91ab02de",
       "objectId": 100,
       "facilityId": "000000029958",
       "displayAssetId": "PVT-26",
@@ -3241,17 +3664,19 @@
         793167
       ],
       "groundElevationFt": 6.91,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:25:59Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "a21e9169e5833f8ac7060de21c78a256f62d2c2c9bdaea42b88a48536dc9d0d8"
+      "elevationResponseSha256": "a21e9169e5833f8ac7060de21c78a256f62d2c2c9bdaea42b88a48536dc9d0d8",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029959",
+      "agencyGlobalId": "33cb0cd9-280d-49bf-bc11-7c09a08b1c92",
       "objectId": 101,
       "facilityId": "000000029959",
       "displayAssetId": "81",
@@ -3268,17 +3693,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 49.08,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:00Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "4d74c355d0c74feced18f5f152ad5e18e3901494238dc33f625cafe409cb97f7"
+      "elevationResponseSha256": "4d74c355d0c74feced18f5f152ad5e18e3901494238dc33f625cafe409cb97f7",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029960",
+      "agencyGlobalId": "a74bb7c9-5cac-4b55-be8a-b13f0a7e729f",
       "objectId": 102,
       "facilityId": "000000029960",
       "displayAssetId": "PVT-45",
@@ -3295,17 +3722,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 4.7,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:01Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "0377905e3ce14414486c563b7ce0bf5064e3d30c8a0a1dbb66c6c8f4445912a6"
+      "elevationResponseSha256": "0377905e3ce14414486c563b7ce0bf5064e3d30c8a0a1dbb66c6c8f4445912a6",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029961",
+      "agencyGlobalId": "fd217c60-6fd7-4dd1-9dc0-4b90c6f40997",
       "objectId": 103,
       "facilityId": "000000029961",
       "displayAssetId": "PVT-40",
@@ -3322,17 +3751,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 47.17,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:01Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "fb8fd7523fac1f5fd32ab4f24fecf08bcf404283552d013d9b6d72a7b60b75a5"
+      "elevationResponseSha256": "fb8fd7523fac1f5fd32ab4f24fecf08bcf404283552d013d9b6d72a7b60b75a5",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029962",
+      "agencyGlobalId": "0d96df51-6aad-4b3d-a674-d5f178f0c6a7",
       "objectId": 104,
       "facilityId": "000000029962",
       "displayAssetId": "41",
@@ -3351,17 +3782,19 @@
         1102374
       ],
       "groundElevationFt": 3.6,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 133907,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:01Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "7dd19cfe50aae19ad8708419e2160fb82a540d7ec7d04348a65a9fa9ca36aaea"
+      "elevationResponseSha256": "7dd19cfe50aae19ad8708419e2160fb82a540d7ec7d04348a65a9fa9ca36aaea",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029963",
+      "agencyGlobalId": "4111427c-d47a-4b6a-9951-72c944a3f7ba",
       "objectId": 105,
       "facilityId": "000000029963",
       "displayAssetId": "74",
@@ -3378,17 +3811,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 6.31,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:02Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "a4c7c2bb18e2d8b2d727757e7684b0a25f49f25acca9c7d7ea2412ad4801e39d"
+      "elevationResponseSha256": "a4c7c2bb18e2d8b2d727757e7684b0a25f49f25acca9c7d7ea2412ad4801e39d",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029965",
+      "agencyGlobalId": "c8d88e13-196f-4351-a5cf-0b260ec0160f",
       "objectId": 107,
       "facilityId": "000000029965",
       "displayAssetId": "PVT-46",
@@ -3408,17 +3843,19 @@
         920191
       ],
       "groundElevationFt": 6.55,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:03Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "42c2aa584f51e705669305e688da80dd8a08bb0a6bc74c912d3c7b76b80b512b"
+      "elevationResponseSha256": "42c2aa584f51e705669305e688da80dd8a08bb0a6bc74c912d3c7b76b80b512b",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029966",
+      "agencyGlobalId": "217d6fee-ba19-4b24-82a9-d4327b30036e",
       "objectId": 108,
       "facilityId": "000000029966",
       "displayAssetId": "80",
@@ -3437,17 +3874,19 @@
         1007879
       ],
       "groundElevationFt": 6.96,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:03Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "0ffb9a4b5c02cc05c5f43f45f3b06d1d8e7b55d391613e1cdd9469962f5d97c2"
+      "elevationResponseSha256": "0ffb9a4b5c02cc05c5f43f45f3b06d1d8e7b55d391613e1cdd9469962f5d97c2",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029967",
+      "agencyGlobalId": "d1c1bb2f-b8fb-422e-8bbe-0c62a9c7b36e",
       "objectId": 109,
       "facilityId": "000000029967",
       "displayAssetId": "79",
@@ -3466,17 +3905,19 @@
         912885
       ],
       "groundElevationFt": 6.45,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:03Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "457df5ffb17ad4463c23a62ab6c2fc2ee63fc1f4553db487b1fb3394dba90e19"
+      "elevationResponseSha256": "457df5ffb17ad4463c23a62ab6c2fc2ee63fc1f4553db487b1fb3394dba90e19",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029969",
+      "agencyGlobalId": "8cc69cf1-ffaf-477c-8da4-e615dc2fb8a9",
       "objectId": 111,
       "facilityId": "000000029969",
       "displayAssetId": "78",
@@ -3495,17 +3936,19 @@
         751586
       ],
       "groundElevationFt": 9.86,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 99129,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:04Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "3955f4a745c4816d24944a91fcf232b2ca5257fabd016ef5dcef5af66c7a39d9"
+      "elevationResponseSha256": "3955f4a745c4816d24944a91fcf232b2ca5257fabd016ef5dcef5af66c7a39d9",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029970",
+      "agencyGlobalId": "adc9e744-c701-4875-a8cb-0bd987b3d0e9",
       "objectId": 112,
       "facilityId": "000000029970",
       "displayAssetId": "PVT-47",
@@ -3524,17 +3967,19 @@
         753316
       ],
       "groundElevationFt": 10.26,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:04Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "301b9427b9571c823cd7bd779e92cfa2340d9d3af6855352d303b18add51415a"
+      "elevationResponseSha256": "301b9427b9571c823cd7bd779e92cfa2340d9d3af6855352d303b18add51415a",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029971",
+      "agencyGlobalId": "cafa0bca-59c3-4498-874b-51afb3e18f6e",
       "objectId": 113,
       "facilityId": "000000029971",
       "displayAssetId": "PVT-35",
@@ -3553,17 +3998,19 @@
         870190
       ],
       "groundElevationFt": 46.65,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:04Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "975b4a943e9d73380395db07c7a01d45ba97e104aa1d93ae479206f691547294"
+      "elevationResponseSha256": "975b4a943e9d73380395db07c7a01d45ba97e104aa1d93ae479206f691547294",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029972",
+      "agencyGlobalId": "fdde2709-8d2a-4250-8fdf-64e0ff8862ea",
       "objectId": 114,
       "facilityId": "000000029972",
       "displayAssetId": "PVT-41",
@@ -3582,17 +4029,19 @@
         995615
       ],
       "groundElevationFt": 3.65,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:04Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "c027f94a6d5236ce903ee88a08d6e42385355376460113fd8728e6f56737520d"
+      "elevationResponseSha256": "c027f94a6d5236ce903ee88a08d6e42385355376460113fd8728e6f56737520d",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029973",
+      "agencyGlobalId": "2c9505d8-03dd-41cc-9a01-3b4caebdc87f",
       "objectId": 115,
       "facilityId": "000000029973",
       "displayAssetId": "PVT-36",
@@ -3617,17 +4066,19 @@
         781319
       ],
       "groundElevationFt": 3.94,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:05Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "b17d905300ff2b6a249a6c078825062b48d85e9739b988ede45ff12284b0d602"
+      "elevationResponseSha256": "b17d905300ff2b6a249a6c078825062b48d85e9739b988ede45ff12284b0d602",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029974",
+      "agencyGlobalId": "c4739ccd-1ece-4fa8-9312-cc818bb9db6e",
       "objectId": 116,
       "facilityId": "000000029974",
       "displayAssetId": "84",
@@ -3646,17 +4097,19 @@
         909048
       ],
       "groundElevationFt": 4.74,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:05Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "deca39a00746193e6fdb72099e54ab9f9378a5b52ae33a5379c615e7f3a31738"
+      "elevationResponseSha256": "deca39a00746193e6fdb72099e54ab9f9378a5b52ae33a5379c615e7f3a31738",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029975",
+      "agencyGlobalId": "8ed339dd-fb8b-49dd-ac78-cf4de33c64b2",
       "objectId": 117,
       "facilityId": "000000029975",
       "displayAssetId": "PVT-02",
@@ -3675,17 +4128,19 @@
         1058492
       ],
       "groundElevationFt": 8.46,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:05Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "86cfc4c3a5361a69e6bdfef7bf279519e3a2de4483a0122a8c1bc2724f611355"
+      "elevationResponseSha256": "86cfc4c3a5361a69e6bdfef7bf279519e3a2de4483a0122a8c1bc2724f611355",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029980",
+      "agencyGlobalId": "73739b4b-6ae6-49f9-a234-0e83ddb3ac21",
       "objectId": 122,
       "facilityId": "000000029980",
       "displayAssetId": "82",
@@ -3706,17 +4161,19 @@
         1033801
       ],
       "groundElevationFt": 11.15,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:06Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "8afb73479a4a09d4b52646a04b257d54862802ac760e1a709d53b9ba379b4803"
+      "elevationResponseSha256": "8afb73479a4a09d4b52646a04b257d54862802ac760e1a709d53b9ba379b4803",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029981",
+      "agencyGlobalId": "46f078ab-aaa7-4b6a-b4e7-418f7af0f0aa",
       "objectId": 123,
       "facilityId": "000000029981",
       "displayAssetId": "PVT-34",
@@ -3735,17 +4192,19 @@
         551695
       ],
       "groundElevationFt": 6.56,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:06Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "1525d4ccec3b499a89eb413bf6d1f601df7d9fec7fa5d6a41f3935ceeb6b3640"
+      "elevationResponseSha256": "1525d4ccec3b499a89eb413bf6d1f601df7d9fec7fa5d6a41f3935ceeb6b3640",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029982",
+      "agencyGlobalId": "2351a5af-9412-4be9-8fec-f58c9c526085",
       "objectId": 124,
       "facilityId": "000000029982",
       "displayAssetId": "PVT-14",
@@ -3767,17 +4226,19 @@
         558639
       ],
       "groundElevationFt": 22.39,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:07Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "6dfd8b2cab0b2cddbc0fef4d546c553ac395f412e4014e1cc974687c96e84cf0"
+      "elevationResponseSha256": "6dfd8b2cab0b2cddbc0fef4d546c553ac395f412e4014e1cc974687c96e84cf0",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029983",
+      "agencyGlobalId": "3b80c6bf-f3bd-4290-95fe-b8b2ef8ce8ad",
       "objectId": 125,
       "facilityId": "000000029983",
       "displayAssetId": "PVT-30",
@@ -3796,17 +4257,19 @@
         482447
       ],
       "groundElevationFt": 19.36,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:07Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "c5d0da574dd2eac7be7799573801376a89f5c62bfe061b7e868c9cfba211e5b2"
+      "elevationResponseSha256": "c5d0da574dd2eac7be7799573801376a89f5c62bfe061b7e868c9cfba211e5b2",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029984",
+      "agencyGlobalId": "32e7d91c-f03d-4ac9-bdfd-86df366f263c",
       "objectId": 126,
       "facilityId": "000000029984",
       "displayAssetId": "85",
@@ -3825,17 +4288,19 @@
         783233
       ],
       "groundElevationFt": 5.97,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:07Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "521be85dea792ef12ca15366e49afbdc1e1247dd997f88df1593fe94a3f53d6c"
+      "elevationResponseSha256": "521be85dea792ef12ca15366e49afbdc1e1247dd997f88df1593fe94a3f53d6c",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029985",
+      "agencyGlobalId": "9b6360eb-4851-47cd-a56b-865fd0026c99",
       "objectId": 127,
       "facilityId": "000000029985",
       "displayAssetId": "14",
@@ -3854,17 +4319,19 @@
         1014668
       ],
       "groundElevationFt": 3.92,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 133907,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:07Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "61d097307c2cf419f0c8f1b38371e076525f73d7d4058aa82360c0f9e6b4d858"
+      "elevationResponseSha256": "61d097307c2cf419f0c8f1b38371e076525f73d7d4058aa82360c0f9e6b4d858",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029987",
+      "agencyGlobalId": "c59994db-2947-422c-9fc8-0e4921f02591",
       "objectId": 129,
       "facilityId": "000000029987",
       "displayAssetId": "43",
@@ -3881,17 +4348,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 6.9,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:09Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "6aedd9d8fd237439fae20c3a16cc064436ad026ff03242ab2e9c887dbada3588"
+      "elevationResponseSha256": "6aedd9d8fd237439fae20c3a16cc064436ad026ff03242ab2e9c887dbada3588",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029988",
+      "agencyGlobalId": "142235e0-2116-437e-8f40-d7e88f213e4e",
       "objectId": 130,
       "facilityId": "000000029988",
       "displayAssetId": "59",
@@ -3908,17 +4377,19 @@
       "zoneMatchStatus": "no-intersection",
       "zoneSourceFeatureIds": [],
       "groundElevationFt": 7.95,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:10Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "7d64b667a292f89f76ebeb8dd7ffa00f034e78347de42c31d200597b3f27603d"
+      "elevationResponseSha256": "7d64b667a292f89f76ebeb8dd7ffa00f034e78347de42c31d200597b3f27603d",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029989",
+      "agencyGlobalId": "30fbf5fd-1ee1-432c-bd72-67d3a53a19e4",
       "objectId": 131,
       "facilityId": "000000029989",
       "displayAssetId": "PVT-17",
@@ -3941,17 +4412,19 @@
         974844
       ],
       "groundElevationFt": 7.01,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:11Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "14acb2afd78294f7c7719520bcc6507731c57f51840a08b4269f34ecf3b1897b"
+      "elevationResponseSha256": "14acb2afd78294f7c7719520bcc6507731c57f51840a08b4269f34ecf3b1897b",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000029990",
+      "agencyGlobalId": "b2e75e34-c528-4fde-ada4-f1bfbe079967",
       "objectId": 132,
       "facilityId": "000000029990",
       "displayAssetId": "86",
@@ -3970,17 +4443,19 @@
         1010137
       ],
       "groundElevationFt": 7.21,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 40924,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:11Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "fd35f3dc696dda5e7c95d75dd1f08f78bda5495bac9634cf934f9c8626b74fd4"
+      "elevationResponseSha256": "fd35f3dc696dda5e7c95d75dd1f08f78bda5495bac9634cf934f9c8626b74fd4",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000640683",
+      "agencyGlobalId": "30225608-29d1-4f98-abaa-6237fa06f7f1",
       "objectId": 321,
       "facilityId": "000000640683",
       "displayAssetId": "PVT-44",
@@ -3999,17 +4474,19 @@
         940112
       ],
       "groundElevationFt": 6.25,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:11Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "626807ee05881813ca104784b753268629272dd1bcba75fa2ad8fad37f6ddfaa"
+      "elevationResponseSha256": "626807ee05881813ca104784b753268629272dd1bcba75fa2ad8fad37f6ddfaa",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000640820",
+      "agencyGlobalId": "12f3216d-242c-4e0f-8ed2-cc1540acbb2c",
       "objectId": 642,
       "facilityId": "000000640820",
       "displayAssetId": "83",
@@ -4028,17 +4505,19 @@
         1015540
       ],
       "groundElevationFt": 11.11,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 17114,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:11Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "4e88487f274140eeab4bc35c847ea56f965c9833de97d60c39aa0c01ed61368e"
+      "elevationResponseSha256": "4e88487f274140eeab4bc35c847ea56f965c9833de97d60c39aa0c01ed61368e",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000690178",
+      "agencyGlobalId": "28dfb04a-4962-4cb0-b284-7e5d3f74579e",
       "objectId": 2561,
       "facilityId": "000000690178",
       "displayAssetId": "PVT-33",
@@ -4063,17 +4542,19 @@
         981479
       ],
       "groundElevationFt": -0.8,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 133907,
       "elevationAcquisitionDate": "3/4/2019",
       "elevationRetrievedAt": "2026-10-23T17:26:12Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "1bb3f2fc3060fe147f46684d4bbb1071e1075fa57fa2c1e8add22ab0626d1bab"
+      "elevationResponseSha256": "1bb3f2fc3060fe147f46684d4bbb1071e1075fa57fa2c1e8add22ab0626d1bab",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000742814",
+      "agencyGlobalId": "4a5e3d43-9d99-4470-9974-71f89e32852f",
       "objectId": 2881,
       "facilityId": "000000742814",
       "displayAssetId": "PVT-42",
@@ -4093,17 +4574,19 @@
         702497
       ],
       "groundElevationFt": 49.38,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:13Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "86cbd71416c1fd1b48c805866baee7be3edf82a5977202af186ec386685412b3"
+      "elevationResponseSha256": "86cbd71416c1fd1b48c805866baee7be3edf82a5977202af186ec386685412b3",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000747365",
+      "agencyGlobalId": "5bed3fc3-caec-4409-b714-d11b5d3a1b25",
       "objectId": 2897,
       "facilityId": "000000747365",
       "displayAssetId": "PVT-38",
@@ -4131,17 +4614,19 @@
         1126566
       ],
       "groundElevationFt": 5.31,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:13Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "1ee1038aefb4dfebf70c2fe640053ad9c973f57c1b9d18ac57d8bede01accd6c"
+      "elevationResponseSha256": "1ee1038aefb4dfebf70c2fe640053ad9c973f57c1b9d18ac57d8bede01accd6c",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000747367",
+      "agencyGlobalId": "5f775f07-a04d-4ca3-bc31-df49e5c96f78",
       "objectId": 2898,
       "facilityId": "000000747367",
       "displayAssetId": "PVT-32",
@@ -4160,17 +4645,19 @@
         1058492
       ],
       "groundElevationFt": 5.92,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:14Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "6535ed48aba5ad4ed6322cf8658448686285b62d9753f0c24bd9e9e7a6bdbb59"
+      "elevationResponseSha256": "6535ed48aba5ad4ed6322cf8658448686285b62d9753f0c24bd9e9e7a6bdbb59",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000747369",
+      "agencyGlobalId": "afe87d09-eba2-445b-9e6d-6cef2289b465",
       "objectId": 2899,
       "facilityId": "000000747369",
       "displayAssetId": "PVT-50",
@@ -4189,17 +4676,19 @@
         712836
       ],
       "groundElevationFt": 43.06,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:15Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "585af95aec28f88c316ce9fdce24b4d54bfe4f0e6381286760796b5aaf35044e"
+      "elevationResponseSha256": "585af95aec28f88c316ce9fdce24b4d54bfe4f0e6381286760796b5aaf35044e",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000747371",
+      "agencyGlobalId": "c15c0564-0b5f-49e6-956f-6b6958421907",
       "objectId": 2900,
       "facilityId": "000000747371",
       "displayAssetId": "PVT-31",
@@ -4222,17 +4711,19 @@
         974844
       ],
       "groundElevationFt": 7.27,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:15Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "ad554d4f053c85c9c143350cec20288bb956ae7483b4b62184178017e3698a39"
+      "elevationResponseSha256": "ad554d4f053c85c9c143350cec20288bb956ae7483b4b62184178017e3698a39",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000747373",
+      "agencyGlobalId": "852bae24-5a84-48df-add9-11e33893519b",
       "objectId": 2901,
       "facilityId": "000000747373",
       "displayAssetId": "PVT-29",
@@ -4251,17 +4742,19 @@
         892274
       ],
       "groundElevationFt": 7.54,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:16Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "b90d6c8a6e75069d336ff4d7adfdd8bdb54ec2c589aee2338ad6b68cff980258"
+      "elevationResponseSha256": "b90d6c8a6e75069d336ff4d7adfdd8bdb54ec2c589aee2338ad6b68cff980258",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-OID-2913",
+      "agencyGlobalId": "0a6e2419-7709-4d44-a7c0-96ec1dafcd64",
       "objectId": 2913,
       "facilityId": null,
       "displayAssetId": "87",
@@ -4280,17 +4773,19 @@
         800130
       ],
       "groundElevationFt": 34.91,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:27:39Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "04762c6773fd247ce4a69f86d839e13fc50e4463db440a34db4d73fb29bdb1ca"
+      "elevationResponseSha256": "04762c6773fd247ce4a69f86d839e13fc50e4463db440a34db4d73fb29bdb1ca",
+      "elevationRetained": true
     },
     {
       "id": "PUBLIC-000000968055",
+      "agencyGlobalId": "4d2f6348-fd3f-42d3-b3da-de40a85753bd",
       "objectId": 2945,
       "facilityId": "000000968055",
       "displayAssetId": "PVT-51",
@@ -4309,14 +4804,15 @@
         1051198
       ],
       "groundElevationFt": 30.16,
+      "elevationQuality": "modeled-terrain",
       "elevationSourceId": "usgs-epqs",
       "elevationBasis": "Interpolated bare-earth terrain, not surveyed station/equipment height",
       "elevationVerticalDatum": "NAVD88",
       "elevationRasterId": 14544,
       "elevationAcquisitionDate": "8/6/2007",
       "elevationRetrievedAt": "2026-10-23T17:26:16Z",
-      "elevationQuality": "modeled-terrain",
-      "elevationResponseSha256": "499f8f7719fefa138b6b120394d1db1573c76c7d1d3af57c88cc028aec00d914"
+      "elevationResponseSha256": "499f8f7719fefa138b6b120394d1db1573c76c7d1d3af57c88cc028aec00d914",
+      "elevationRetained": true
     }
   ],
   "elevation": {
@@ -4326,6 +4822,9 @@
     "validCount": 131,
     "missingCount": 0,
     "retrievedAt": "2026-10-23T17:27:39Z",
+    "oldestRetrievedAt": "2026-10-23T17:24:27Z",
+    "retainedCount": 131,
+    "queriedCount": 0,
     "sourceAcquisitionRanges": [
       {
         "dataset": "Pinellas County 2007",
@@ -4341,10 +4840,8 @@
       }
     ],
     "limitations": [
-      "Interpolated DEM terrain is not a surveyed ground/equipment/wet-well height.",
-      "A terrain threshold comparison does not model coastal water connectivity, defenses, waves, rainfall, duration, groundwater or hydraulic failure.",
-      "Nominal grid spacing is not a per-point vertical confidence interval. Use a clearly labeled user-selected sensitivity band; do not claim the band is a statistical interval.",
-      "Datum/terrain age and station-position uncertainty matter at this coastal scale."
+      "USGS interpolated bare-earth terrain is not surveyed equipment/wet-well height. Acquisition and original retrieval dates remain visible; unchanged coordinates may retain older samples.",
+      "No complete operational topology, station flow/capacity, failure propagation, customer allocation or spill/damage model is inferred from public inventory geometry."
     ]
   }
 }
