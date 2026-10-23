@@ -34,3 +34,16 @@ is a real supported observation. Unknown conclusions are withheld from both disp
 See the [field guide](guide.html), [integration contract](CONTRACT.md), and
 [automatic update guide](../data-updates.html). Public-data and offline fixtures exercise all 32 actual
 entrypoints, including the unchanged native Coastal implementation.
+
+## Priority and escalation layer
+
+All 31 shared consoles derive audience-specific ordered actions from the same public evidence as
+their impacts. The native Coastal checklist remains separate. Ranking uses source-specific meaning:
+NOAA categories and valid forecasts, actual unexpired NWS notices, same-hour EIA reports, same-week
+NHS service counts, matched-year health service gaps, and dated fiscal/reference records. A source
+check comes first when applicable data is missing. Scenario inputs stay practice.
+
+Each card names its target, evidence reason, timing, next step, escalation condition/recipient and
+recheck point. Historical records support planning, not current incident activation. Sources and
+periods remain in print/export. Core validity guards and domain fixtures cover selection changes,
+ranking changes, expiry, stale/duplicate/missing evidence, both audiences, and all 32 offline pages.

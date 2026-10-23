@@ -54,6 +54,12 @@ Each dimension shows the domain condition or numerical proxy, required inputs, a
 and practical next steps. Public and professional-operator tracks use the same evidence with different
 responsibilities, escalation routes and verify/prepare/respond/review phases.
 
+A **Do next** preview now leads to a ranked live action checklist on all 31 shared consoles.
+Each step identifies the selected place or record, the data behind its priority, timing, escalation
+trigger and responsible contact, and when to recheck. Public and operator priorities update with
+selection, evidence and expiry. Current official warnings can lead; historical reports support
+planning. Source gaps produce verification steps. The full ten-dimension follow-up stays available.
+
 The **Review impacts and source records** button opens the public quantities behind the plan:
 source gauge observations and forecasts, official modeled exposure, reported grid demand,
 NHS/CDC service and surveillance counts, annual health indicators, and dated agency/reference records.

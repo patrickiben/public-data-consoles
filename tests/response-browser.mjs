@@ -145,6 +145,18 @@ try{
           assert.ok(exported.plan.limitations.length>0,'Domain limits must be supplied: '+entry.slug);
           assert.ok(exported.plan.actions.some(a=>a.track==='public'),'Public actions: '+entry.slug);
           assert.ok(exported.plan.actions.some(a=>a.track==='operator'),'Operator actions: '+entry.slug);
+          assert.match(entry.prioritySource,/^priorities\/(hazards|health|tools)\.js$/);
+          const prioritized=exported.plan.actions.filter(a=>a.featured&&a.selected);
+          for(const audience of ['public','operator']){
+            const list=prioritized.filter(a=>a.track===audience);
+            assert.ok(list.length>=2,entry.slug+' prioritized '+audience+' actions: '+JSON.stringify(exported.plan.actions.filter(a=>a.featured).map(a=>({id:a.id,selected:a.selected,reasons:a.withheldReasons}))));
+            assert.deepEqual(list.map(a=>a.position),list.map((_,i)=>i+1));
+            for(const a of list){for(const field of ['target','reason','timing','nextStep','escalateWhen','escalateTo','reviewAfter'])assert.ok(a[field],entry.slug+' '+field);}
+          }
+          assert.ok(prioritized.every(a=>!a.id.startsWith('priority-reader-')),entry.slug+' must use its domain priorities');
+          await page.locator('#cr-open-priorities').click();
+          assert.ok(await page.locator('[data-cr-priority]').count()>=2);
+          if(process.env.PRIORITY_PROOF&&['nhs-scotland-strain','river-flood-propagation','us-grid-strain','global-wash'].includes(entry.slug))await page.screenshot({path:process.env.PRIORITY_PROOF+'/'+entry.slug+'-offline-priorities.png'});
           const impacts=exported.plan.impacts;
           assert.ok(impacts.items.length+impacts.records.length>0,'Explicit public-data impact/reference coverage: '+entry.slug);
           assert.ok(impacts.limitations.length>0,'Impact limits: '+entry.slug);

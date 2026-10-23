@@ -151,3 +151,43 @@ selectors: `#cr-open-impacts`, `[data-cr-section="impacts"]`, `[data-cr-impact="
 `[data-cr-impact-record="<id>"]`. Source publication and observation periods must survive refresh,
 selection changes, print and export. Impacts, method or scope changes reset local review notes;
 checking the same evidence again (`checkedAt` only) does not.
+
+## Prioritized response actions
+
+Each shared console registers a pure `ConsoleResponse.registerPrioritizer(slug, derive)` function
+from its manifest `prioritySource`. It receives a cloned public adapter payload. It must not read
+native/private inputs, mutate provider evidence, fetch data or persist state. It returns a short
+list for each audience; all ten existing diagnostic chains remain available as detailed follow-up.
+
+```js
+{id, track: 'public|operator', phase: 'verify|prepare|respond|review',
+ when: 'always|triggered|unknown', diagnosticIds: [], metricIds: [], evidenceIds: [],
+ title, target, reason, nextStep, priority: 'immediate|next|planned|routine', rank,
+ timing, signal: 'official-warning|observed-condition|forecast|data-gap|planning|reference|scenario',
+ requiresCurrent, validUntil, escalateWhen, escalateTo, authorityUrl, reviewAfter}
+```
+
+The core marks derived actions `featured`, resolves dimensions, validates required steps, and sorts
+by priority class, numeric rank, then stable ID. `position` numbers the selected actions separately
+for each audience. Priority classes describe review order, not an official emergency severity score.
+A selector may choose a step from evidence directly (`when: always`); its `reason` must name the
+specific evidence condition. Missing-input steps remain selectable with their named gap.
+
+Current-dependent actions require unique, dated, public source facts with current non-demo quality.
+Missing, stale, unsafe, future-dated, ambiguous or expired evidence withholds these steps. Immediate
+priority requires a current measured official warning, source authority link and future validity
+endpoint. Historical or practice evidence cannot acquire urgent priority. A clock-driven expiry or
+changed ranking clears local review notes even without a new source payload. Check-time-only updates
+that do not change the assessment preserve notes. Failed selectors fall back to source verification.
+
+Timing describes when to verify, prepare or review. Use source-native issue/valid times and existing
+local procedures; do not manufacture dispatch deadlines, routed arrival times or intervention gains.
+Different gauges, years, reporting hours, case definitions, or overlapping cohorts must not be pooled
+into one urgency score. Public notices retain identity, actual/test status, message type, location
+scope, issue time, instructions and expiry; canceled, test and expired notices are not current warnings.
+
+The compact **Do next** preview and **Open prioritized checklist** button lead to ranked cards with
+place/record, why, timing, next step, escalation trigger/recipient, recheck condition and source dates.
+Detailed dimension actions remain below in a disclosure. Public/operator views, print and local JSON
+export retain the same ordering and evidence. Selectors: `#cr-open-priorities`, `[data-cr-priority]`,
+`.cr-priority-preview`, and `[data-cr-section="followup"]`.

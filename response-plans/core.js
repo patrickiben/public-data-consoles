@@ -1,6 +1,22 @@
 (function (root) {
   'use strict';
-  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set();
+  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set(), prioritizers = new Map();
+  var priorityOrder = { immediate: 0, next: 1, planned: 2, routine: 3 };
+  function registerPrioritizer(slug, derive) {
+    if (typeof slug !== 'string' || !slug || typeof derive !== 'function') throw new TypeError('A console slug and priority function are required.');
+    prioritizers.set(slug, derive);
+  }
+  function derivePriorities(input) {
+    var derive = prioritizers.get(input.slug);
+    if (!derive) return [];
+    try {
+      var actions = derive(JSON.parse(JSON.stringify(input)));
+      if (!Array.isArray(actions)) throw new TypeError('Priority actions must be an array.');
+      return actions.map(function (a) { return Object.assign({}, a, { featured: true }); });
+    } catch (error) {
+      return ['public', 'operator'].map(function (audience) { return { id: 'priority-reader-' + audience, featured: true, track: audience, phase: 'verify', when: 'always', priority: 'next', rank: 1, signal: 'data-gap', evidenceIds: [], title: 'Verify the original source before choosing a response', target: input.context || input.slug, reason: 'The priority reader could not resolve this selection.', nextStep: 'Open the evidence sources and confirm the selected place, period and coverage.', timing: 'Before using this checklist for a decision.', escalateWhen: 'The source cannot be verified or conflicts with a current official notice.', escalateTo: 'The source publisher or your designated duty lead.', reviewAfter: 'After the source or selection is verified.' }; });
+    }
+  }
   var metrics = [
     ['Population Balance', 'comparison', 'Defined comparison groups, workload/population denominators and aligned periods.'],
     ['Wasserstein Distance / Shape Imbalance', 'comparison', 'Comparable distributions in the same unit and period; group membership.'],
@@ -113,7 +129,11 @@
     diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
     diagnostics.forEach(function (d) { if (d.status === 'unknown') d.value = null; });
     var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
-    var actions = (Array.isArray(input.actions) ? input.actions : []).map(function (action) {
+    var actionRows = (Array.isArray(input.actions) ? input.actions : []).concat(derivePriorities(input));
+    var factCounts = new Map(), actionCounts = new Map();
+    facts.forEach(function (f) { factCounts.set(f.id, (factCounts.get(f.id) || 0) + 1); });
+    actionRows.forEach(function (a) { actionCounts.set(a.id, (actionCounts.get(a.id) || 0) + 1); });
+    var actions = actionRows.map(function (action) {
       var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
       (Array.isArray(a.metricIds) ? a.metricIds : []).forEach(function (n) { var d = diagnostics.find(function (item) { return item.metricId === Number(n); }); if (d && !ids.includes(d.id)) ids.push(d.id); });
       var relevant = ids.length ? ids.map(function (id) { return byDiagnostic.get(id) || { status: 'unknown', current: false }; }) : diagnostics;
@@ -125,7 +145,37 @@
       a.practice = !!input.scenario || relevant.some(function (d) { return d.practice; });
       a.withheld = a.phase === 'respond' && a.when !== 'always' && !a.practice && !relevant.some(function (d) { return d.status === 'triggered' && d.current; });
       if (a.withheld) a.selected = false;
-      a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl); return a;
+      a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl);
+      if (a.featured) {
+        a.evidenceIds = Array.isArray(a.evidenceIds) ? Array.from(new Set(a.evidenceIds)) : [];
+        var linked = a.evidenceIds.map(function (id) { return byFact.get(id); });
+        var supported = linked.length > 0 && linked.every(function (f) { return f && factCounts.get(f.id) === 1 && f.source && text(f.measuredAt).trim() && !['missing', 'stale'].includes(f.quality); });
+        a.current = supported && linked.every(function (f) { return f.quality === 'current' && f.basis !== 'demo' && Number.isFinite(Date.parse(f.measuredAt)) && Date.parse(f.measuredAt) <= Date.now(); });
+        a.practice = !!input.scenario || a.signal === 'scenario' || linked.some(function (f) { return f && f.basis === 'demo'; });
+        a.priority = Object.prototype.hasOwnProperty.call(priorityOrder, a.priority) ? a.priority : 'planned';
+        a.rank = Number.isFinite(a.rank) && a.rank > 0 ? a.rank : 100;
+        a.withheldReasons = [];
+        if (typeof a.id !== 'string' || !a.id.trim() || actionCounts.get(a.id) !== 1) a.withheldReasons.push('A unique action identity is required.');
+        ['title', 'target', 'reason', 'nextStep', 'timing', 'escalateWhen', 'escalateTo', 'reviewAfter'].forEach(function (key) { if (!text(a[key]).trim()) a.withheldReasons.push('Missing action field: ' + key + '.'); });
+        if (a.requiresCurrent && !a.current) a.withheldReasons.push('Current, dated, unambiguous public evidence is required.');
+        if (['official-warning', 'observed-condition', 'forecast'].includes(a.signal) && !supported) a.withheldReasons.push('The named condition lacks applicable public evidence.');
+        if (a.validUntil != null && (!Number.isFinite(Date.parse(a.validUntil)) || Date.parse(a.validUntil) <= Date.now())) a.withheldReasons.push('The action evidence has expired.');
+        if (a.priority === 'immediate' && !(a.signal === 'official-warning' && a.current && a.authorityUrl && linked.every(function (f) { return f.basis === 'measured'; }) && a.validUntil && Date.parse(a.validUntil) > Date.now())) a.priority = 'next';
+        if (a.practice || linked.some(function (f) { return f && f.quality === 'historical'; })) {
+          if (priorityOrder[a.priority] < priorityOrder.planned) a.priority = 'planned';
+        }
+        a.withheld = a.withheld || a.withheldReasons.length > 0;
+        if (a.withheld) a.selected = false;
+        a.sources = linked.filter(Boolean).map(function (f) { return { id: f.id, label: f.label, source: f.source, measuredAt: f.measuredAt || null, quality: f.quality, basis: f.basis }; });
+      }
+      return a;
+    });
+    actions.sort(function (a, b) {
+      if (!!a.featured !== !!b.featured) return a.featured ? -1 : 1;
+      return a.featured ? priorityOrder[a.priority] - priorityOrder[b.priority] || a.rank - b.rank || text(a.id).localeCompare(text(b.id)) : 0;
+    });
+    ['public', 'operator'].forEach(function (audience) {
+      var n = 0; actions.forEach(function (a) { if (a.featured && a.selected && a.track === audience) a.position = ++n; });
     });
     return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
       evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null, impacts: evaluateImpacts(input, facts),
@@ -140,11 +190,16 @@
     if (!panel.dataset.mounted) {
       panel.dataset.mounted = 'true';
       panel.addEventListener('click', function (event) {
-        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact]');
+        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact],[data-cr-open-priorities]');
         if (!button) return;
         if (button.dataset.crTrack) { track = button.dataset.crTrack; render(); }
         if (button.hasAttribute('data-cr-print')) root.print();
         if (button.hasAttribute('data-cr-export')) download();
+        if (button.hasAttribute('data-cr-open-priorities')) {
+          panel.querySelector('[data-cr-section="plan"]').open = true;
+          var actions = panel.querySelector('[data-cr-section="actions"]');
+          if (actions) { actions.open = true; actions.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }
         if (button.hasAttribute('data-cr-open-impact')) {
           panel.querySelector('[data-cr-section="plan"]').open = true;
           var impacts = panel.querySelector('[data-cr-section="impacts"]');
@@ -167,6 +222,7 @@
       var printSections = null;
       function beginPrint() {
         if (printSections) return;
+        if (payload) set(payload); // Reconcile clock-based expiry before printing.
         printSections = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
         panel.querySelectorAll('details').forEach(function (d) { d.open = true; });
       }
@@ -207,9 +263,11 @@
     panel.dataset.rendered = 'true';
     var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
     h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
+    var featured = selected.filter(function (a) { return a.featured; });
+    if (featured.length) h += '<div class="cr-priority-preview"><div><b>Do next · ' + esc(track === 'operator' ? 'Professional operators' : 'Public / local decision makers') + '</b><p>' + esc(featured[0].title) + '</p><span>' + esc(featured[0].target) + ' · ' + esc(featured[0].timing) + '</span></div><button id="cr-open-priorities" data-cr-open-priorities>Open prioritized checklist (' + featured.length + ')</button></div>';
     var impactRows = plan.impacts.items.concat(plan.impacts.records), availableImpacts = impactRows.filter(function (r) { return r.status === 'available'; }).length;
     h += '<div class="cr-impact-preview"><span>' + availableImpacts + ' available impact/context ' + (availableImpacts === 1 ? 'item' : 'items') + ' · ' + impactRows.filter(function (r) { return r.status === 'unknown'; }).length + ' unavailable. Scope: ' + esc(plan.impacts.scope) + '.</span><button id="cr-open-impacts" data-cr-open-impact>Review impacts and source records</button></div>';
-    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open public-data impacts, ten-parameter checklist and evidence</summary>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open response plan, public-data impacts and ten-parameter detail</summary>';
     h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
     function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
     function impactSources(row) {
@@ -225,19 +283,30 @@
     if (plan.impacts.records.length) impactHTML += '<h3>Public records behind this view</h3><div class="cr-impact-records">' + plan.impacts.records.map(function (r) { return '<article data-cr-impact-record="' + esc(r.id) + '"><h4>' + esc(r.label) + '</h4><p class="cr-note">Record ID: ' + esc(r.id) + '</p>' + impactBadge(r) + ' <span class="cr-badge">' + esc(r.kind.toUpperCase()) + '</span><p>' + (r.status === 'unknown' ? '<b>Not assessable.</b> ' : '') + esc(r.status === 'unknown' ? 'This record cannot support the selected impact with the available evidence.' : r.summary) + '</p>' + (r.validAt ? '<p>' + (r.kind === 'forecast' ? 'Forecast valid: ' : 'Record / valid time: ') + esc(r.validAt) + '</p>' : '') + impactReasons(r) + impactSources(r) + '</article>'; }).join('') + '</div>';
     if (!impactRows.length) impactHTML += '<p class="cr-unknown">No applicable public impact records or quantified projection are available for this selection.</p>';
     impactHTML += '<ul>' + plan.impacts.limitations.map(function (limit) { return '<li>' + esc(limit) + '</li>'; }).join('') + '</ul>';
-    h += section('impacts', 'Projected impacts and public-data context', impactHTML, 'interpretive');
+    var impactSection = section('impacts', 'Projected impacts and public-data context', impactHTML, 'interpretive');
     var actionHTML = '<p>These are planning prompts, not instructions to dispatch, switch equipment, prescribe, trade or evacuate. ' + (track === 'operator' ? 'Use your organization’s verified telemetry, SOP and decision authority.' : 'Follow current official instructions for your location.') + '</p>';
+    if (featured.length) {
+      actionHTML += '<h3>Prioritized live action checklist</h3><p class="cr-note">Ordered for this selection and audience. Timing is an interpretive review prompt unless attributed to a current official notice. Source periods remain visible; older reports support planning.</p><ol class="cr-priority-list">';
+      featured.forEach(function (a) {
+        var priorityLabel = a.practice ? 'Practice / planning' : { immediate: 'Current official warning · check now', next: 'Next check', planned: 'Planning review', routine: 'Follow-up' }[a.priority];
+        actionHTML += '<li><article class="cr-action cr-priority" data-cr-action="' + esc(a.id) + '" data-cr-priority="' + esc(a.priority) + '"><div class="cr-priority-head"><span class="cr-priority-number" aria-label="Priority ' + a.position + '">' + a.position + '</span><div><span class="cr-badge">' + esc(priorityLabel) + '</span><h4>' + esc(a.title) + '</h4></div></div><p class="cr-priority-target"><b>Where / record:</b> ' + esc(a.target) + '</p><p><b>Why this is prioritized:</b> ' + esc(a.reason) + '</p><p class="cr-timing"><b>When:</b> ' + esc(a.timing) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><div class="cr-escalation"><p><b>Escalate if:</b> ' + esc(a.escalateWhen) + '</p><p><b>Escalate to:</b> ' + esc(a.escalateTo) + '</p></div><p><b>Recheck:</b> ' + esc(a.reviewAfter) + '</p>' + (a.validUntil ? '<p class="cr-note">Evidence valid until: ' + esc(a.validUntil) + '</p>' : '') + (a.diagnosticIds.length ? '<p class="cr-note">Checklist dimensions: ' + esc(a.diagnosticIds.map(function (id) { var d = plan.diagnostics.find(function (item) { return item.id === id; }); return d ? (d.metricId ? '#' + d.metricId + ' ' : '') + d.label : id; }).join('; ')) + '</p>' : '') + impactSources(a) + '<p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article></li>';
+      });
+      actionHTML += '</ol>';
+    }
+    var followupHTML = '';
     ['verify', 'prepare', 'respond', 'review'].forEach(function (phase) {
-      var list = selected.filter(function (a) { return a.phase === phase; }); if (!list.length) return;
-      actionHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
+      var list = selected.filter(function (a) { return !a.featured && a.phase === phase; }); if (!list.length) return;
+      followupHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
       list.forEach(function (a) {
         var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
-        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
       });
     });
+    actionHTML += featured.length ? section('followup', 'Dimension-by-dimension follow-up', followupHTML, 'interpretive') : followupHTML;
     if (!selected.length) actionHTML += '<p class="cr-unknown">No supported conditional action is available for this track. Verify missing evidence and consult the responsible authority; this is not an all-clear.</p>';
     actionHTML += '<p class="cr-note">Checks are temporary local planning notes, not completed operations. Context or evidence changes reset them. Nothing is transmitted or stored by this response layer.</p>';
-    h += section('actions', '1. Condition-dependent response plan', actionHTML, 'interpretive');
+    h += section('actions', featured.length ? '1. Prioritized response plan' : '1. Condition-dependent response plan', actionHTML, 'interpretive');
+    h += impactSection;
     var evidenceHTML = plan.evidence.length ? '<ul>' + plan.evidence.map(function (f) { return '<li><b>' + esc(f.label || f.id) + ':</b> ' + esc(f.quality === 'missing' ? 'Unavailable' : f.value) + (f.unit ? ' ' + esc(f.unit) : '') + ' ' + badge(f.basis) + ' <span class="cr-quality">' + esc(f.quality) + '</span><br>Observed / reported: ' + esc(f.measuredAt || 'not supplied') + '; checked: ' + esc(f.checkedAt || 'not supplied') + '. ' + sourceLink(f.source) + (f.note ? '<br>' + esc(f.note) : '') + '</li>'; }).join('') + '</ul>' : '<p class="cr-unknown">Evidence unavailable. No current incident status can be inferred.</p>';
     h += section('evidence', '2. Evidence, dates and sources', evidenceHTML, 'interpretive');
     var diagnosticHTML = ['comparison', 'structure', 'spillover'].map(function (pillar) {
@@ -267,14 +336,23 @@
     // transition an evidence revision on the existing visible-minute refresh.
     var impact = input && input.impacts || {};
     var clockState = (impact.items || []).concat(impact.records || []).filter(function (r) { return r && r.kind === 'forecast' && r.validAt != null; }).map(function (r) { var at = Date.parse(r.validAt); return [r.id, Number.isFinite(at) && at > Date.now()]; });
-    var nextRevision = signature([input || {}, clockState]);
+    var priorities = evaluate(input).actions.filter(function (a) { return a.featured; });
+    var nextRevision = signature([input || {}, clockState, priorities]);
     if (nextRevision === revision) return;
     function evidenceOnly(value) {
       if (Array.isArray(value)) return value.map(evidenceOnly);
       if (value && typeof value === 'object') { var out = {}; Object.keys(value).forEach(function (key) { if (key !== 'checkedAt') out[key] = evidenceOnly(value[key]); }); return out; }
       return value;
     }
-    var nextEvidence = signature([evidenceOnly(input || {}), clockState]);
+    // A successful check can renew a derived freshness cutoff without changing
+    // the evidence or chosen steps. Preserve notes until the assessment changes.
+    var priorityAssessment = priorities.map(function (a) { return {
+      id: a.id, track: a.track, priority: a.priority, rank: a.rank, position: a.position,
+      signal: a.signal, current: a.current, practice: a.practice, selected: a.selected,
+      withheld: a.withheld, withheldReasons: a.withheldReasons,
+      evidenceIds: a.evidenceIds, diagnosticIds: a.diagnosticIds
+    }; });
+    var nextEvidence = signature([evidenceOnly(input || {}), clockState, priorityAssessment]);
     if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
     evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
   }
@@ -331,7 +409,7 @@
     return area;
   }
   var definitions = Object.freeze(metrics.map(function (m, i) { return Object.freeze({ id: i + 1, name: m[0], pillar: m[1], requiredInputs: m[2] }); }));
-  var api = { set: set, connect: connect, evaluate: evaluate, exportPlan: exportPlan, metricDefinitions: definitions, math: { wasserstein1: wasserstein1 }, version: 1 };
+  var api = { registerPrioritizer: registerPrioritizer, set: set, connect: connect, evaluate: evaluate, exportPlan: exportPlan, metricDefinitions: definitions, math: { wasserstein1: wasserstein1 }, version: 1 };
   root.ConsoleResponse = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (doc) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', mount, { once: true }); else mount(); }

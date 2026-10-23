@@ -63,6 +63,11 @@ def generate(root=ROOT, check=False):
         if not entry.get("method"):
             raise ValueError("Every console needs an explicit method applicability explanation")
         adapter = "" if entry.get("native") else adapter_path.read_text()
+        if not entry.get("native") and entry.get("prioritySource"):
+            priority = source / entry["prioritySource"]
+            if priority.resolve().parent != (source / "priorities").resolve():
+                raise ValueError("Priority source must be in response-plans/priorities")
+            adapter = priority.read_text() + "\n" + adapter
         original = page.read_text()
         expected = build(original, entry, core, style, adapter)
         if expected != original:

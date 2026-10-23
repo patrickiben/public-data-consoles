@@ -18,6 +18,10 @@ class ResponseEmbedding(unittest.TestCase):
         self.assertEqual({e["slug"] for e in entries}, {p.parent.name for p in (ROOT / "consoles").glob("*/index.html")})
         self.assertTrue(next(e for e in entries if e["slug"] == "coastal-water-resilience")["native"])
         self.assertTrue(all(e["method"] for e in entries))
+        for entry in entries:
+            if not entry.get("native"):
+                self.assertIn(entry["prioritySource"], {"priorities/hazards.js", "priorities/health.js", "priorities/tools.js"})
+                self.assertTrue((ROOT / "response-plans" / entry["prioritySource"]).is_file())
 
     def test_generation_is_idempotent_preserves_original_program_and_detects_drift(self):
         original = '<!doctype html><html><head><title>Example</title></head><body>Original<script>window.original=42;</script></body></html>'
@@ -60,3 +64,29 @@ class ResponseEmbedding(unittest.TestCase):
             with self.assertRaises(ValueError):
                 embed.generate(root)
             self.assertEqual(good.read_text(), "<head></head><body>Keep me</body>")
+
+    def test_priority_source_drift_and_missing_source_are_checked_before_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "response-plans"
+            (source / "adapters").mkdir(parents=True)
+            (source / "priorities").mkdir()
+            (root / "consoles/a").mkdir(parents=True)
+            page = root / "consoles/a/index.html"
+            page.write_text("<head></head><body>Original</body>")
+            for name in ("core.js", "domain-helpers.js", "observed-series.js", "style.css"):
+                (source / name).write_text("")
+            (source / "adapters/a.js").write_text("window.adapter=1;")
+            priority = source / "priorities/tools.js"
+            priority.write_text("window.priority=1;")
+            (source / "manifest.json").write_text(json.dumps({"consoles": [{"slug": "a", "method": "test", "prioritySource": "priorities/tools.js"}]}))
+            self.assertTrue(embed.generate(root))
+            self.assertLess(page.read_text().index("window.priority=1"), page.read_text().index("window.adapter=1"))
+            original = page.read_text()
+            priority.write_text("window.priority=2;")
+            self.assertFalse(embed.generate(root, check=True))
+            self.assertEqual(page.read_text(), original)
+            priority.unlink()
+            with self.assertRaises(OSError):
+                embed.generate(root)
+            self.assertEqual(page.read_text(), original)

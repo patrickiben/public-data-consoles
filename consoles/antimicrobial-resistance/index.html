@@ -81,11 +81,30 @@ svg.spk{display:block}
 @media(max-width:640px){#console-response{margin:10px 6px;padding:13px}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:19px}}
 @media print{#console-response-shortcut,#console-response .cr-toolbar{display:none!important}#console-response{background:white!important;color:#111!important;max-width:none;border:1px solid #555}#console-response *{color:#111!important;box-shadow:none!important}#console-response details{display:block!important}#console-response details>*{display:block!important}#console-response .cr-action{break-inside:avoid;background:white!important}#console-response .cr-badge{border-color:#555}}
 @media print{#console-response .cr-impact-records{max-height:none;overflow:visible}#console-response .cr-impact-item,#console-response .cr-impact-records article{break-inside:avoid;background:white!important}#console-response .cr-impact-preview button{display:none!important}}
+
+#console-response .cr-priority-preview{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;border:1px solid #5bbfcb;border-radius:9px;padding:14px;margin:12px 0;background:#133747}#console-response .cr-priority-preview>div{flex:1;min-width:180px}#console-response .cr-priority-preview span{color:#bdd9e5}#console-response .cr-priority-preview p{font-size:16px;font-weight:650;color:#f1f8fc}#console-response .cr-priority-list{list-style:none;margin:12px 0;padding:0}#console-response .cr-priority-list>li{margin:0}#console-response .cr-priority{border-left:4px solid #55beca;overflow-wrap:anywhere}#console-response .cr-priority[data-cr-priority="immediate"]{border-left-color:#f0cc87}#console-response .cr-priority-head{display:flex;gap:12px;align-items:flex-start}#console-response .cr-priority-number{display:flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#227184;color:#fff;font-weight:750}#console-response .cr-priority-head h4{margin:7px 0}#console-response .cr-timing{color:#a7f0f2}#console-response .cr-escalation{border-left:2px solid #e5b35a;padding-left:10px;margin:10px 0}#console-response .cr-priority label{min-height:44px;align-content:center}
+@media print{#console-response .cr-priority-preview button{display:none!important}#console-response .cr-priority-list>li{display:block!important}#console-response .cr-priority-head{display:flex!important}}
 </style>
 <script>
 (function (root) {
   'use strict';
-  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set();
+  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set(), prioritizers = new Map();
+  var priorityOrder = { immediate: 0, next: 1, planned: 2, routine: 3 };
+  function registerPrioritizer(slug, derive) {
+    if (typeof slug !== 'string' || !slug || typeof derive !== 'function') throw new TypeError('A console slug and priority function are required.');
+    prioritizers.set(slug, derive);
+  }
+  function derivePriorities(input) {
+    var derive = prioritizers.get(input.slug);
+    if (!derive) return [];
+    try {
+      var actions = derive(JSON.parse(JSON.stringify(input)));
+      if (!Array.isArray(actions)) throw new TypeError('Priority actions must be an array.');
+      return actions.map(function (a) { return Object.assign({}, a, { featured: true }); });
+    } catch (error) {
+      return ['public', 'operator'].map(function (audience) { return { id: 'priority-reader-' + audience, featured: true, track: audience, phase: 'verify', when: 'always', priority: 'next', rank: 1, signal: 'data-gap', evidenceIds: [], title: 'Verify the original source before choosing a response', target: input.context || input.slug, reason: 'The priority reader could not resolve this selection.', nextStep: 'Open the evidence sources and confirm the selected place, period and coverage.', timing: 'Before using this checklist for a decision.', escalateWhen: 'The source cannot be verified or conflicts with a current official notice.', escalateTo: 'The source publisher or your designated duty lead.', reviewAfter: 'After the source or selection is verified.' }; });
+    }
+  }
   var metrics = [
     ['Population Balance', 'comparison', 'Defined comparison groups, workload/population denominators and aligned periods.'],
     ['Wasserstein Distance / Shape Imbalance', 'comparison', 'Comparable distributions in the same unit and period; group membership.'],
@@ -198,7 +217,11 @@ svg.spk{display:block}
     diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
     diagnostics.forEach(function (d) { if (d.status === 'unknown') d.value = null; });
     var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
-    var actions = (Array.isArray(input.actions) ? input.actions : []).map(function (action) {
+    var actionRows = (Array.isArray(input.actions) ? input.actions : []).concat(derivePriorities(input));
+    var factCounts = new Map(), actionCounts = new Map();
+    facts.forEach(function (f) { factCounts.set(f.id, (factCounts.get(f.id) || 0) + 1); });
+    actionRows.forEach(function (a) { actionCounts.set(a.id, (actionCounts.get(a.id) || 0) + 1); });
+    var actions = actionRows.map(function (action) {
       var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
       (Array.isArray(a.metricIds) ? a.metricIds : []).forEach(function (n) { var d = diagnostics.find(function (item) { return item.metricId === Number(n); }); if (d && !ids.includes(d.id)) ids.push(d.id); });
       var relevant = ids.length ? ids.map(function (id) { return byDiagnostic.get(id) || { status: 'unknown', current: false }; }) : diagnostics;
@@ -210,7 +233,37 @@ svg.spk{display:block}
       a.practice = !!input.scenario || relevant.some(function (d) { return d.practice; });
       a.withheld = a.phase === 'respond' && a.when !== 'always' && !a.practice && !relevant.some(function (d) { return d.status === 'triggered' && d.current; });
       if (a.withheld) a.selected = false;
-      a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl); return a;
+      a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl);
+      if (a.featured) {
+        a.evidenceIds = Array.isArray(a.evidenceIds) ? Array.from(new Set(a.evidenceIds)) : [];
+        var linked = a.evidenceIds.map(function (id) { return byFact.get(id); });
+        var supported = linked.length > 0 && linked.every(function (f) { return f && factCounts.get(f.id) === 1 && f.source && text(f.measuredAt).trim() && !['missing', 'stale'].includes(f.quality); });
+        a.current = supported && linked.every(function (f) { return f.quality === 'current' && f.basis !== 'demo' && Number.isFinite(Date.parse(f.measuredAt)) && Date.parse(f.measuredAt) <= Date.now(); });
+        a.practice = !!input.scenario || a.signal === 'scenario' || linked.some(function (f) { return f && f.basis === 'demo'; });
+        a.priority = Object.prototype.hasOwnProperty.call(priorityOrder, a.priority) ? a.priority : 'planned';
+        a.rank = Number.isFinite(a.rank) && a.rank > 0 ? a.rank : 100;
+        a.withheldReasons = [];
+        if (typeof a.id !== 'string' || !a.id.trim() || actionCounts.get(a.id) !== 1) a.withheldReasons.push('A unique action identity is required.');
+        ['title', 'target', 'reason', 'nextStep', 'timing', 'escalateWhen', 'escalateTo', 'reviewAfter'].forEach(function (key) { if (!text(a[key]).trim()) a.withheldReasons.push('Missing action field: ' + key + '.'); });
+        if (a.requiresCurrent && !a.current) a.withheldReasons.push('Current, dated, unambiguous public evidence is required.');
+        if (['official-warning', 'observed-condition', 'forecast'].includes(a.signal) && !supported) a.withheldReasons.push('The named condition lacks applicable public evidence.');
+        if (a.validUntil != null && (!Number.isFinite(Date.parse(a.validUntil)) || Date.parse(a.validUntil) <= Date.now())) a.withheldReasons.push('The action evidence has expired.');
+        if (a.priority === 'immediate' && !(a.signal === 'official-warning' && a.current && a.authorityUrl && linked.every(function (f) { return f.basis === 'measured'; }) && a.validUntil && Date.parse(a.validUntil) > Date.now())) a.priority = 'next';
+        if (a.practice || linked.some(function (f) { return f && f.quality === 'historical'; })) {
+          if (priorityOrder[a.priority] < priorityOrder.planned) a.priority = 'planned';
+        }
+        a.withheld = a.withheld || a.withheldReasons.length > 0;
+        if (a.withheld) a.selected = false;
+        a.sources = linked.filter(Boolean).map(function (f) { return { id: f.id, label: f.label, source: f.source, measuredAt: f.measuredAt || null, quality: f.quality, basis: f.basis }; });
+      }
+      return a;
+    });
+    actions.sort(function (a, b) {
+      if (!!a.featured !== !!b.featured) return a.featured ? -1 : 1;
+      return a.featured ? priorityOrder[a.priority] - priorityOrder[b.priority] || a.rank - b.rank || text(a.id).localeCompare(text(b.id)) : 0;
+    });
+    ['public', 'operator'].forEach(function (audience) {
+      var n = 0; actions.forEach(function (a) { if (a.featured && a.selected && a.track === audience) a.position = ++n; });
     });
     return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
       evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null, impacts: evaluateImpacts(input, facts),
@@ -225,11 +278,16 @@ svg.spk{display:block}
     if (!panel.dataset.mounted) {
       panel.dataset.mounted = 'true';
       panel.addEventListener('click', function (event) {
-        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact]');
+        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact],[data-cr-open-priorities]');
         if (!button) return;
         if (button.dataset.crTrack) { track = button.dataset.crTrack; render(); }
         if (button.hasAttribute('data-cr-print')) root.print();
         if (button.hasAttribute('data-cr-export')) download();
+        if (button.hasAttribute('data-cr-open-priorities')) {
+          panel.querySelector('[data-cr-section="plan"]').open = true;
+          var actions = panel.querySelector('[data-cr-section="actions"]');
+          if (actions) { actions.open = true; actions.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }
         if (button.hasAttribute('data-cr-open-impact')) {
           panel.querySelector('[data-cr-section="plan"]').open = true;
           var impacts = panel.querySelector('[data-cr-section="impacts"]');
@@ -252,6 +310,7 @@ svg.spk{display:block}
       var printSections = null;
       function beginPrint() {
         if (printSections) return;
+        if (payload) set(payload); // Reconcile clock-based expiry before printing.
         printSections = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
         panel.querySelectorAll('details').forEach(function (d) { d.open = true; });
       }
@@ -292,9 +351,11 @@ svg.spk{display:block}
     panel.dataset.rendered = 'true';
     var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
     h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
+    var featured = selected.filter(function (a) { return a.featured; });
+    if (featured.length) h += '<div class="cr-priority-preview"><div><b>Do next · ' + esc(track === 'operator' ? 'Professional operators' : 'Public / local decision makers') + '</b><p>' + esc(featured[0].title) + '</p><span>' + esc(featured[0].target) + ' · ' + esc(featured[0].timing) + '</span></div><button id="cr-open-priorities" data-cr-open-priorities>Open prioritized checklist (' + featured.length + ')</button></div>';
     var impactRows = plan.impacts.items.concat(plan.impacts.records), availableImpacts = impactRows.filter(function (r) { return r.status === 'available'; }).length;
     h += '<div class="cr-impact-preview"><span>' + availableImpacts + ' available impact/context ' + (availableImpacts === 1 ? 'item' : 'items') + ' · ' + impactRows.filter(function (r) { return r.status === 'unknown'; }).length + ' unavailable. Scope: ' + esc(plan.impacts.scope) + '.</span><button id="cr-open-impacts" data-cr-open-impact>Review impacts and source records</button></div>';
-    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open public-data impacts, ten-parameter checklist and evidence</summary>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open response plan, public-data impacts and ten-parameter detail</summary>';
     h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
     function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
     function impactSources(row) {
@@ -310,19 +371,30 @@ svg.spk{display:block}
     if (plan.impacts.records.length) impactHTML += '<h3>Public records behind this view</h3><div class="cr-impact-records">' + plan.impacts.records.map(function (r) { return '<article data-cr-impact-record="' + esc(r.id) + '"><h4>' + esc(r.label) + '</h4><p class="cr-note">Record ID: ' + esc(r.id) + '</p>' + impactBadge(r) + ' <span class="cr-badge">' + esc(r.kind.toUpperCase()) + '</span><p>' + (r.status === 'unknown' ? '<b>Not assessable.</b> ' : '') + esc(r.status === 'unknown' ? 'This record cannot support the selected impact with the available evidence.' : r.summary) + '</p>' + (r.validAt ? '<p>' + (r.kind === 'forecast' ? 'Forecast valid: ' : 'Record / valid time: ') + esc(r.validAt) + '</p>' : '') + impactReasons(r) + impactSources(r) + '</article>'; }).join('') + '</div>';
     if (!impactRows.length) impactHTML += '<p class="cr-unknown">No applicable public impact records or quantified projection are available for this selection.</p>';
     impactHTML += '<ul>' + plan.impacts.limitations.map(function (limit) { return '<li>' + esc(limit) + '</li>'; }).join('') + '</ul>';
-    h += section('impacts', 'Projected impacts and public-data context', impactHTML, 'interpretive');
+    var impactSection = section('impacts', 'Projected impacts and public-data context', impactHTML, 'interpretive');
     var actionHTML = '<p>These are planning prompts, not instructions to dispatch, switch equipment, prescribe, trade or evacuate. ' + (track === 'operator' ? 'Use your organization’s verified telemetry, SOP and decision authority.' : 'Follow current official instructions for your location.') + '</p>';
+    if (featured.length) {
+      actionHTML += '<h3>Prioritized live action checklist</h3><p class="cr-note">Ordered for this selection and audience. Timing is an interpretive review prompt unless attributed to a current official notice. Source periods remain visible; older reports support planning.</p><ol class="cr-priority-list">';
+      featured.forEach(function (a) {
+        var priorityLabel = a.practice ? 'Practice / planning' : { immediate: 'Current official warning · check now', next: 'Next check', planned: 'Planning review', routine: 'Follow-up' }[a.priority];
+        actionHTML += '<li><article class="cr-action cr-priority" data-cr-action="' + esc(a.id) + '" data-cr-priority="' + esc(a.priority) + '"><div class="cr-priority-head"><span class="cr-priority-number" aria-label="Priority ' + a.position + '">' + a.position + '</span><div><span class="cr-badge">' + esc(priorityLabel) + '</span><h4>' + esc(a.title) + '</h4></div></div><p class="cr-priority-target"><b>Where / record:</b> ' + esc(a.target) + '</p><p><b>Why this is prioritized:</b> ' + esc(a.reason) + '</p><p class="cr-timing"><b>When:</b> ' + esc(a.timing) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><div class="cr-escalation"><p><b>Escalate if:</b> ' + esc(a.escalateWhen) + '</p><p><b>Escalate to:</b> ' + esc(a.escalateTo) + '</p></div><p><b>Recheck:</b> ' + esc(a.reviewAfter) + '</p>' + (a.validUntil ? '<p class="cr-note">Evidence valid until: ' + esc(a.validUntil) + '</p>' : '') + (a.diagnosticIds.length ? '<p class="cr-note">Checklist dimensions: ' + esc(a.diagnosticIds.map(function (id) { var d = plan.diagnostics.find(function (item) { return item.id === id; }); return d ? (d.metricId ? '#' + d.metricId + ' ' : '') + d.label : id; }).join('; ')) + '</p>' : '') + impactSources(a) + '<p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article></li>';
+      });
+      actionHTML += '</ol>';
+    }
+    var followupHTML = '';
     ['verify', 'prepare', 'respond', 'review'].forEach(function (phase) {
-      var list = selected.filter(function (a) { return a.phase === phase; }); if (!list.length) return;
-      actionHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
+      var list = selected.filter(function (a) { return !a.featured && a.phase === phase; }); if (!list.length) return;
+      followupHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
       list.forEach(function (a) {
         var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
-        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
       });
     });
+    actionHTML += featured.length ? section('followup', 'Dimension-by-dimension follow-up', followupHTML, 'interpretive') : followupHTML;
     if (!selected.length) actionHTML += '<p class="cr-unknown">No supported conditional action is available for this track. Verify missing evidence and consult the responsible authority; this is not an all-clear.</p>';
     actionHTML += '<p class="cr-note">Checks are temporary local planning notes, not completed operations. Context or evidence changes reset them. Nothing is transmitted or stored by this response layer.</p>';
-    h += section('actions', '1. Condition-dependent response plan', actionHTML, 'interpretive');
+    h += section('actions', featured.length ? '1. Prioritized response plan' : '1. Condition-dependent response plan', actionHTML, 'interpretive');
+    h += impactSection;
     var evidenceHTML = plan.evidence.length ? '<ul>' + plan.evidence.map(function (f) { return '<li><b>' + esc(f.label || f.id) + ':</b> ' + esc(f.quality === 'missing' ? 'Unavailable' : f.value) + (f.unit ? ' ' + esc(f.unit) : '') + ' ' + badge(f.basis) + ' <span class="cr-quality">' + esc(f.quality) + '</span><br>Observed / reported: ' + esc(f.measuredAt || 'not supplied') + '; checked: ' + esc(f.checkedAt || 'not supplied') + '. ' + sourceLink(f.source) + (f.note ? '<br>' + esc(f.note) : '') + '</li>'; }).join('') + '</ul>' : '<p class="cr-unknown">Evidence unavailable. No current incident status can be inferred.</p>';
     h += section('evidence', '2. Evidence, dates and sources', evidenceHTML, 'interpretive');
     var diagnosticHTML = ['comparison', 'structure', 'spillover'].map(function (pillar) {
@@ -352,14 +424,23 @@ svg.spk{display:block}
     // transition an evidence revision on the existing visible-minute refresh.
     var impact = input && input.impacts || {};
     var clockState = (impact.items || []).concat(impact.records || []).filter(function (r) { return r && r.kind === 'forecast' && r.validAt != null; }).map(function (r) { var at = Date.parse(r.validAt); return [r.id, Number.isFinite(at) && at > Date.now()]; });
-    var nextRevision = signature([input || {}, clockState]);
+    var priorities = evaluate(input).actions.filter(function (a) { return a.featured; });
+    var nextRevision = signature([input || {}, clockState, priorities]);
     if (nextRevision === revision) return;
     function evidenceOnly(value) {
       if (Array.isArray(value)) return value.map(evidenceOnly);
       if (value && typeof value === 'object') { var out = {}; Object.keys(value).forEach(function (key) { if (key !== 'checkedAt') out[key] = evidenceOnly(value[key]); }); return out; }
       return value;
     }
-    var nextEvidence = signature([evidenceOnly(input || {}), clockState]);
+    // A successful check can renew a derived freshness cutoff without changing
+    // the evidence or chosen steps. Preserve notes until the assessment changes.
+    var priorityAssessment = priorities.map(function (a) { return {
+      id: a.id, track: a.track, priority: a.priority, rank: a.rank, position: a.position,
+      signal: a.signal, current: a.current, practice: a.practice, selected: a.selected,
+      withheld: a.withheld, withheldReasons: a.withheldReasons,
+      evidenceIds: a.evidenceIds, diagnosticIds: a.diagnosticIds
+    }; });
+    var nextEvidence = signature([evidenceOnly(input || {}), clockState, priorityAssessment]);
     if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
     evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
   }
@@ -416,7 +497,7 @@ svg.spk{display:block}
     return area;
   }
   var definitions = Object.freeze(metrics.map(function (m, i) { return Object.freeze({ id: i + 1, name: m[0], pillar: m[1], requiredInputs: m[2] }); }));
-  var api = { set: set, connect: connect, evaluate: evaluate, exportPlan: exportPlan, metricDefinitions: definitions, math: { wasserstein1: wasserstein1 }, version: 1 };
+  var api = { registerPrioritizer: registerPrioritizer, set: set, connect: connect, evaluate: evaluate, exportPlan: exportPlan, metricDefinitions: definitions, math: { wasserstein1: wasserstein1 }, version: 1 };
   root.ConsoleResponse = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (doc) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', mount, { once: true }); else mount(); }
@@ -725,6 +806,293 @@ $('drivers').innerHTML=DRIVERS.map(d=>'<div class="drv"><div class="t">'+d[0]+'<
 </script>
 <!-- CONSOLE_RESPONSE_ADAPTER_START -->
 <script>
+/* Public-evidence planning sequence, not clinical triage or a risk score.
+ * Pure selectors: no DOM, native/private state, network or ambient clock.
+ * A rank compares records only where unit, cohort and reporting period agree.
+ */
+(function (root) {
+  'use strict';
+  const R = root.ConsoleResponse;
+  if (!R || typeof R.registerPrioritizer !== 'function') return;
+  const urls = {
+    wb: 'https://data.worldbank.org/', who: 'https://www.who.int/data/gho',
+    vaccine: 'https://www.who.int/news-room/fact-sheets/detail/immunization-coverage',
+    wash: 'https://www.who.int/health-topics/water-sanitation-and-hygiene-wash',
+    respiratory: 'https://www.cdc.gov/respiratory-viruses/data/index.html',
+    overdose: 'https://www.cdc.gov/nchs/nvss/vsrr/drug-overdose-data.htm',
+    nhs: 'https://www.nhsinform.scot/campaigns/right-care-right-place',
+    cancer: 'https://gco.iarc.who.int/',
+    amr: 'https://www.who.int/news-room/fact-sheets/detail/antimicrobial-resistance',
+    ntd: 'https://www.who.int/health-topics/neglected-tropical-diseases',
+    outbreak: 'https://www.who.int/emergencies/disease-outbreak-news'
+  };
+  const numeric = v => typeof v === 'number' && Number.isFinite(v);
+  const fmt = n => numeric(n) ? n.toLocaleString('en-US', {maximumFractionDigits: 3}) : 'unavailable';
+  const safeURL = s => typeof s === 'string' && /^https?:\/\/[^\s]+$/i.test(s);
+  function period(s) {
+    if (typeof s !== 'string' || !/^\d{4}(?:-(?:0[1-9]|1[0-2])(?:-(?:0[1-9]|[12]\d|3[01]))?)?$/.test(s)) return null;
+    const iso = s.length === 4 ? s + '-01-01' : s.length === 7 ? s + '-01' : s;
+    const ms = Date.parse(iso + 'T00:00:00Z');
+    return Number.isFinite(ms) && new Date(ms).toISOString().slice(0, 10) === iso ? ms : null;
+  }
+  function facts(input) {
+    const rows = Array.isArray(input.evidence) ? input.evidence.filter(Boolean) : [], counts = new Map();
+    rows.forEach(f => counts.set(f.id, (counts.get(f.id) || 0) + 1));
+    return rows.filter(f => typeof f.id === 'string' && counts.get(f.id) === 1);
+  }
+  const get = (rows, id) => rows.find(f => f.id === id);
+  const ids = rows => [...new Set(rows.filter(Boolean).map(f => f.id))];
+  const usable = f => !!f && ['current', 'historical'].includes(f.quality) &&
+    (numeric(f.value) || typeof f.value === 'string' && !!f.value.trim()) &&
+    period(f.measuredAt) != null && safeURL(f.source);
+  const number = f => usable(f) && numeric(f.value);
+  const current = f => usable(f) && f.quality === 'current' && f.basis !== 'demo';
+  const cleanLabel = f => String(f?.label || 'Selected public context');
+  const place = input => String(input.impacts?.scope || input.context || input.slug).split(' · ')[0];
+  const selectedName = f => cleanLabel(f).split(' · ').slice(1).join(' · ') || cleanLabel(f);
+  function concept(key, data) { return Object.assign({key, phase: 'review', signal: 'planning', priority: 'planned', evidenceIds: [], requiresCurrent: false}, data); }
+  function finalize(input, concepts, authority) {
+    return concepts.slice(0, 5).flatMap((c, index) => ['public', 'operator'].map(track => {
+      const e = facts(input), linked = c.evidenceIds.map(id => get(e, id)).filter(Boolean);
+      const practice = !!input.scenario || linked.some(f => f.basis === 'demo');
+      return {
+        id: 'health-priority-' + input.slug + '-' + c.key + '-' + track,
+        track, phase: practice ? 'review' : c.phase, when: 'always', evidenceIds: c.evidenceIds,
+        metricIds: c.metricIds || [], title: (practice ? 'Practice: ' : '') + c.title,
+        target: c.target, reason: c.reason, nextStep: track === 'public' ? c.publicStep : c.operatorStep,
+        priority: practice ? 'planned' : c.priority, rank: index + 1,
+        timing: c.timing || 'Before the next planning review or use of these figures',
+        signal: practice ? 'scenario' : c.signal, requiresCurrent: practice ? false : c.requiresCurrent,
+        validUntil: practice ? undefined : c.validUntil,
+        escalateWhen: c.escalateWhen || 'The responsible authority verifies a current service concern, or a source discrepancy changes the planning conclusion.',
+        escalateTo: track === 'public' ? c.publicOwner || 'The relevant health authority or service information team' : c.operatorOwner || 'The accountable public-health/service planning lead and source data owner',
+        authorityUrl: c.authorityUrl || authority,
+        reviewAfter: c.reviewAfter || 'Recheck after the next official release, source revision or change of selection.'
+      };
+    }));
+  }
+  function gap(key, target, rows, reason, specific) {
+    return concept(key, {title: 'Verify ' + target, target, evidenceIds: ids(rows), signal: 'data-gap', phase: 'verify', reason,
+      publicStep: 'Check the linked reporting period and coverage with the publishing health authority. ' + specific,
+      operatorStep: 'Recover and validate the named source period, definition and coverage before using this selection. ' + specific,
+      timing: 'Before comparing or acting on this selection',
+      escalateWhen: 'The missing, stale or conflicting record affects an actual decision or conflicts with an official current report.'});
+  }
+  function applicability(input, rows, target, detail, authority) {
+    const dates = [...new Set(rows.filter(usable).map(f => f.measuredAt))].sort();
+    return concept('applicability', {title: 'Confirm current local applicability', target,
+      evidenceIds: ids(rows), signal: dates.length ? 'planning' : 'data-gap', phase: 'verify',
+      reason: 'Source periods: ' + (dates.join(', ') || 'not available') + '. ' + detail,
+      publicStep: 'Use the responsible local authority’s current information for practical decisions; ask whether this dated source represents your area and population.',
+      operatorStep: 'Reconcile current local coverage, definitions and capacity with this dated planning evidence; document the decision owner and unresolved inputs.',
+      authorityUrl: authority, timing: 'Before a real service or public-health decision',
+      reviewAfter: 'Recheck when local conditions, cohort definitions or the official source release change.'});
+  }
+  const wb = [
+    'global-air-pollution', 'global-demographic-transition', 'global-health-atlas', 'global-health-systems',
+    'global-hiv-tb-malaria', 'global-immunization', 'global-maternal-child-health', 'global-mental-health',
+    'global-ncd-burden', 'global-nutrition', 'global-road-safety', 'global-wash'
+  ];
+  const coverageSets = {
+    'global-wash': {keys: ['smdw', 'basw', 'smss', 'bass', 'hygn', 'odfc'], cohort: 'total residents', url: urls.wash},
+    'global-immunization': {keys: ['dtp', 'mcv'], cohort: 'children aged 12–23 months', url: urls.vaccine},
+    'global-health-atlas': {keys: ['dtp', 'mcv'], cohort: 'children aged 12–23 months', url: urls.vaccine}
+  };
+  function worldbank(input) {
+    const e = facts(input), selected = get(e, 'selected-value'), country = place(input), groups = [];
+    if (!number(selected)) groups.push(gap('selected-source', country + ' · ' + selectedName(selected), [selected],
+      'The selected annual source value, reporting year or public source link is unavailable or stale.',
+      'Do not substitute a neighboring year, a zero or another country.'));
+    const config = coverageSets[input.slug];
+    if (config) {
+      const rows = config.keys.map(key => ({key, f: get(e, 'impact-source-' + key)}))
+        .filter(r => number(r.f) && /^\d{4}$/.test(r.f.measuredAt) && r.f.value >= 0 && r.f.value <= 100);
+      // Exact-year comparisons only. The newest year with at least two compatible
+      // measures wins; singleton records remain selected context, never a league table.
+      const years = [...new Set(rows.map(r => r.f.measuredAt))].sort().reverse();
+      const year = years.find(y => rows.filter(r => r.f.measuredAt === y).length >= 2);
+      const eligible = rows.filter(r => r.f.measuredAt === year).map(r => ({...r, gap: r.key === 'odfc' ? r.f.value : 100 - r.f.value}))
+        .sort((a, b) => b.gap - a.gap || a.key.localeCompare(b.key));
+      eligible.slice(0, 2).forEach((r, index) => {
+        const meaning = r.key === 'odfc' ? 'reported open-defecation share' : 'share outside this reported service standard';
+        groups.push(concept('coverage-' + r.key, {title: (index ? 'Then review ' : 'Review the largest comparable coverage gap: ') + selectedName(r.f),
+          target: country + ' · ' + selectedName(r.f) + ' · ' + year, evidenceIds: [r.f.id],
+          reason: fmt(r.gap) + '% ' + meaning + ' among ' + config.cohort + ' in ' + year +
+            '; source value ' + fmt(r.f.value) + '%. Ranked only among ' + eligible.length + ' compatible measures in that exact year. Overlapping standards are not summed; this orders coverage, not health harm.',
+          publicStep: 'Ask the responsible programme which communities in this cohort lack the specified service and read its current local coverage plan.',
+          operatorStep: 'Review the corresponding same-cohort subnational coverage and delivery constraints before prioritizing programme outreach or capacity; retain the source definition and denominator.',
+          authorityUrl: config.url, timing: 'At the next programme planning review, after confirming the source year'}));
+      });
+      if (!year) groups.push(gap('coverage-alignment', country + ' · comparable ' + config.cohort + ' coverage', rows.map(r => r.f),
+        'No pair of supported coverage measures shares an exact observation year and declared cohort.',
+        'Keep different years and vaccine/service cohorts separate; no cross-year gap ranking is supplied.'));
+    }
+    if (number(selected) && !groups.some(g => g.evidenceIds.some(id => {
+      const f = get(e, id); return f && f.label === selected.label && f.measuredAt === selected.measuredAt && f.value === selected.value;
+    }))) {
+      const items = input.impacts?.items || [], source = e.find(f => f.id.startsWith('impact-source-') && f.label === selected.label && f.value === selected.value && f.measuredAt === selected.measuredAt);
+      const quantity = source && items.find(i => numeric(i.value) && i.evidenceIds?.includes(source.id) && i.evidenceIds.every(id => number(get(e, id))));
+      groups.push(concept('selected-context', {title: 'Review the selected source-defined measure', target: country + ' · ' + selectedName(selected),
+        evidenceIds: quantity ? quantity.evidenceIds : [selected.id],
+        reason: fmt(selected.value) + ' ' + (selected.unit || 'source units') + ' in ' + selected.measuredAt +
+          (quantity && quantity.unit !== selected.unit ? '; supported annual context: ' + fmt(quantity.value) + ' ' + quantity.unit + '. ' + quantity.method : '.') +
+          ' Different conditions, cohorts and units are not ranked as equivalent need or clinical risk.',
+        publicStep: 'Read the named cohort, measurement definition and year; ask the relevant programme about its current local situation and service plan.',
+        operatorStep: 'Review this selected measure in its own programme and cohort, validate any exact-year denominator and compare current subnational records before resource decisions.',
+        timing: 'At the next review of this programme or population'}));
+    }
+    const baseline = number(selected) ? [selected] : e.filter(f => f.id.startsWith('impact-source-') && number(f)).slice(0, 2);
+    groups.push(applicability(input, baseline, country + ' · local programme applicability',
+      'National annual measures and geographic population/land comparisons do not identify service catchments, current access equity, staffed capacity or individual outcomes.', urls.wb));
+    return finalize(input, groups, config?.url || urls.who);
+  }
+  function nhs(input) {
+    const e = facts(input), groups = [], siteFacts = e.filter(f => /^impact-site-.+-o12$/.test(f.id));
+    const sites = siteFacts.map(f => ({f, att: get(e, f.id.replace(/-o12$/, '-att'))}));
+    const usableSites = sites.filter(s => number(s.f) && number(s.att) && s.f.unit === 'attendances' && s.att.unit === 'attendances' && Number.isSafeInteger(s.f.value) && s.f.value >= 0 &&
+      Number.isSafeInteger(s.att.value) && s.att.value >= s.f.value && s.f.measuredAt === s.att.measuredAt);
+    const dates = usableSites.map(s => s.f.measuredAt).sort(), latest = dates.at(-1);
+    const cohort = usableSites.filter(s => s.f.measuredAt === latest).sort((a, b) => b.f.value - a.f.value || a.f.id.localeCompare(b.f.id));
+    const missing = sites.filter(s => !usableSites.includes(s));
+    if (missing.length || !cohort.length) {
+      const first = missing.slice().sort((a, b) => (number(b.att) ? b.att.value : -1) - (number(a.att) ? a.att.value : -1) || a.f.id.localeCompare(b.f.id))[0];
+      groups.push(gap('site-coverage', first ? cleanLabel(first.f).replace(/ · o12$/, '') + ' · over-12-hour count' : 'NHS site-week workload coverage',
+        first ? [first.f, first.att] : siteFacts,
+        missing.length + ' site records lack a valid matched-week attendance/over-12-hour pair; missing values do not mean no long waits.',
+        'Recover the published site counts; do not invert a rounded percentage or fill an unknown with zero.'));
+    }
+    cohort.slice(0, 2).forEach((s, index) => groups.push(concept('site-' + s.f.id, {
+      title: (index ? 'Then review reported waits at ' : 'Review the largest reported long-wait workload: ') + cleanLabel(s.f).replace(/ · o12$/, ''),
+      target: cleanLabel(s.f).replace(/ · o12$/, '') + ' · week ' + latest, evidenceIds: ids([s.f, s.att]),
+      reason: fmt(s.f.value) + ' reported attendances over 12 hours out of ' + fmt(s.att.value) + ' attendances in ' + latest +
+        '; ordered by reported count among ' + cohort.length + ' complete same-week sites. Visits can repeat; over-12-hour counts are already inside over-8-hour counts. This is workload, not adjusted performance or individual risk.',
+      publicStep: 'Check current NHS guidance and the board’s service information. A historical wait count should not direct where you seek care or delay needed care.',
+      operatorStep: 'Reconcile the site’s current timestamped queue, case mix, staffed capacity and approved escalation pathway before choosing any operational response.',
+      timing: 'At the next site-capacity planning review; verify current conditions before operational use'})));
+    const delayed = e.filter(f => f.id.startsWith('impact-delay-') && number(f) && Number.isSafeInteger(f.value) && f.value >= 0);
+    const month = delayed.map(f => f.measuredAt).sort().at(-1), top = delayed.filter(f => f.measuredAt === month).sort((a, b) => b.value - a.value || a.id.localeCompare(b.id))[0];
+    if (top) groups.push(concept('delayed-board', {title: 'Review the separately dated discharge census', target: cleanLabel(top) + ' · ' + month,
+      evidenceIds: [top.id], reason: fmt(top.value) + ' people aged 18+ in the All Delay Reasons census, the largest reported board count in this source month. This census is neither added to A&E visits nor converted into future bed days.',
+      publicStep: 'Ask the board about its current discharge-support and continuity information; the census does not predict an individual discharge.',
+      operatorStep: 'Review current discharge coordination and support constraints with the accountable board teams; keep this monthly census separate from the weekly A&E stream.', timing: 'At the next board discharge-planning review'}));
+    groups.push(applicability(input, [get(e, 'impact-ae-att'), get(e, 'impact-delayed')].filter(Boolean), 'NHS Scotland · current service and source dates',
+      'Historical A&E weeks, discharge months and bed/care-use quarters differ; none supplies a live queue, current spare beds or a clinical routing decision.', urls.nhs));
+    return finalize(input, groups, urls.nhs);
+  }
+  function cdc(input) {
+    const respiratory = input.slug === 'us-respiratory-surveillance', e = facts(input), groups = [];
+    const main = get(e, respiratory ? 'ed' : 'selected-total'), change = get(e, respiratory ? 'four-week-change' : 'year-change');
+    const scope = respiratory ? place(input) : String(input.impacts?.scope || input.context || '').split(' · ').slice(0, 2).join(' · ');
+    if (!current(main) || !numeric(main?.value)) groups.push(gap('surveillance-source', scope + ' · ' + cleanLabel(main), [main, change],
+      'The selected surveillance value has no applicable current source period. A stale or retained display record cannot establish the present trend.',
+      'Use the next successful official release; missing surveillance does not establish low activity.'));
+    else {
+      const aligned = current(change) && numeric(change.value) && change.measuredAt === main.measuredAt;
+      groups.push(concept('selected-trend', {title: 'Review the selected reported trend', target: scope + ' · ' + main.measuredAt,
+        evidenceIds: ids(aligned ? [main, change] : [main]), priority: 'next', signal: 'observed-condition', requiresCurrent: true,
+        validUntil: surveillanceExpiry(main.measuredAt, respiratory),
+        reason: cleanLabel(main) + ': ' + fmt(main.value) + ' ' + main.unit + ' at ' + main.measuredAt +
+          (aligned ? '; ' + fmt(change.value) + ' ' + change.unit + ' ' + (respiratory ? 'versus exactly four weeks earlier.' : 'versus the same ending month one year earlier.') : '; the matched change is unavailable.') +
+          (respiratory ? ' An ED share is not an infection probability or patient count.' : ' Predicted means lag-adjusted past rolling-year deaths, not future deaths; overlapping drug classes are not summed.'),
+        publicStep: 'Read the selected condition, source period and current CDC/local health-department information; this descriptive trend supplies no individual diagnosis or triage instruction.',
+        operatorStep: 'Review source revisions and the selected condition against compatible current local surveillance and your approved preparedness pathway; no numeric clinical trigger is inferred.',
+        timing: 'At the next official surveillance check, before local operational interpretation',
+        reviewAfter: 'Recheck on the next official release, revision or condition selection change.'}));
+    }
+    const pattern = respiratory ? /^impact-state-/ : /^impact-jurisdiction-/;
+    const rows = e.filter(f => pattern.test(f.id));
+    const matchedPeriod = respiratory ? get(e, 'wastewater')?.measuredAt : main?.measuredAt;
+    const good = rows.filter(f => current(f) && numeric(f.value) && f.value >= 0 && f.measuredAt === matchedPeriod);
+    const missing = rows.filter(f => !good.includes(f));
+    if (missing.length || !good.length) groups.push(gap('geographic-coverage', scope + ' · ' + (missing[0] ? cleanLabel(missing[0]) : 'geographic reporting'),
+      missing.length ? missing.slice(0, 3) : [get(e, 'scale-coverage')],
+      missing.length + ' of ' + rows.length + ' downloaded jurisdiction records lack a valid exact-period report for ' + (matchedPeriod || 'the selected period') +
+        '. ' + (respiratory ? 'Wastewater coverage is reporting sites, not residents; unreported areas are not low-activity areas.' : 'Retained older display values are not substituted; NY excludes NYC and YC is separate.'),
+      'Verify the named jurisdiction and the published coverage before making a geographic comparison.'));
+    if (!respiratory && good.length) {
+      const top = good.slice().sort((a, b) => b.value - a.value || a.id.localeCompare(b.id))[0];
+      groups.push(concept('jurisdiction-workload', {title: 'Review the largest matched-period reported count', target: cleanLabel(top) + ' · ' + matchedPeriod,
+        evidenceIds: [top.id], signal: 'observed-condition', priority: 'next', requiresCurrent: true,
+        validUntil: surveillanceExpiry(top.measuredAt, false),
+        reason: fmt(top.value) + ' lag-adjusted predicted deaths in the rolling year among ' + good.length + ' compatible downloaded jurisdiction reports. A count orders reported workload, not per-capita risk, current incidents or treatment benefit; jurisdictions and drug classes are not summed.',
+        publicStep: 'Read the jurisdiction definition and current health-department prevention/service information; this count does not predict personal harm.',
+        operatorStep: 'Review the jurisdiction’s data quality and compatible local prevention/service coverage; obtain matched population definitions before any rate or equity comparison.',
+        timing: 'At the next provisional-mortality planning review'}));
+    }
+    const coverage = get(e, 'scale-coverage'), disagreement = get(e, 'scale-disagreement');
+    if (current(coverage) && current(disagreement) && numeric(coverage.value) && coverage.value > 0 && numeric(disagreement.value) && coverage.measuredAt === disagreement.measuredAt) {
+      groups.push(concept('direction-coverage', {title: 'Review where the reporting subset changes direction', target: scope + ' · matched geographic direction',
+        evidenceIds: ids([coverage, disagreement]), metricIds: [6], signal: 'observed-condition', priority: 'next', requiresCurrent: true,
+        validUntil: surveillanceExpiry(coverage.measuredAt, respiratory),
+        reason: fmt(disagreement.value) + '% direction disagreement among ' + fmt(coverage.value) + ' ' + coverage.unit + ' at ' + coverage.measuredAt +
+          '. ' + (respiratory ? 'Derived ordinal site-category means are not concentration, prevalence or official national WVAL.' : 'Rolling-year directions are not causal spillover or present-month incidents.') + ' Agreement in a partial reporting subset does not establish an all-clear.',
+        publicStep: 'Check whether your area and the selected condition are represented before interpreting a national direction.',
+        operatorStep: 'Inspect the exact endpoint weeks/months, source definitions and missing jurisdictions; review local directions separately rather than averaging incompatible signals.',
+        timing: 'After the selected-source check, before geographic interpretation'}));
+    }
+    groups.push(applicability(input, main ? [main] : [], scope + ' · local applicability',
+      respiratory ? 'ED shares, hospitalization rates and wastewater site categories use different populations and periods; no calibrated individual-outcome or hospital-demand forecast is supplied.' :
+        'Provisional rolling-year mortality is revisable, lagged and not an individual prognosis, current emergency count or intervention-benefit estimate.', respiratory ? urls.respiratory : urls.overdose));
+    return finalize(input, groups, respiratory ? urls.respiratory : urls.overdose);
+  }
+  // Match the maintained adapters' display-age limits exactly. These are data-age
+  // guards, not clinical deadlines. Core rechecks expiry even on an unchanged export.
+  function surveillanceExpiry(value, respiratory) {
+    if (period(value) == null) return undefined;
+    const base = respiratory ? period(value) : /^\d{4}-\d{2}$/.test(value) ?
+      Date.UTC(Number(value.slice(0, 4)), Number(value.slice(5, 7)), 0) : null;
+    return base == null ? undefined : new Date(base + (respiratory ? 35 : 240) * 86400000).toISOString();
+  }
+  function reference(input) {
+    const e = facts(input), groups = [], selected = get(e, 'published-estimate'), target = cleanLabel(selected);
+    const cancer = input.slug === 'global-cancer', ntd = input.slug === 'global-ntds', url = cancer ? urls.cancer : ntd ? urls.ntd : urls.amr;
+    const dateGap = get(e, 'disease-specific-period');
+    if (!number(selected) || ntd && !usable(dateGap)) groups.push(gap('reference-date', target + ' · disease-specific definition and date', [selected, dateGap],
+      ntd ? 'The selected disease reference has mixed burden definitions and no exact disease-specific observation year. The 2024 intervention headline does not date this disease row.' : 'The selected published estimate lacks a valid quantity, observation period or public source.',
+      'Verify the exact publication table, observation year, population and estimate definition; do not use retrieval time as the measurement date.'));
+    if (number(selected) && !ntd) groups.push(concept('selected-burden', {title: 'Review the selected published burden context', target,
+      evidenceIds: [selected.id], signal: 'reference', reason: fmt(selected.value) + ' ' + selected.unit + ' in ' + selected.measuredAt +
+        (cancer ? '. Modeled incidence and mortality are separate populations; no survival or case-fatality ratio is calculated.' : '. Attributable and associated AMR deaths use different counterfactuals and are not added; the estimate is not current local susceptibility.'),
+      publicStep: 'Read the selected site/pathogen definition and reference year; ask the responsible programme about current local services and evidence.',
+      operatorStep: cancer ? 'Use current registry scope, population, stage mix and service records to review actual local workload before capacity planning.' :
+        'Review current local surveillance and laboratory coverage with the accountable surveillance/stewardship team; this global reference does not select an antibiotic or predict a patient outcome.',
+      timing: 'At the next programme or service-planning review'}));
+    const headline = get(e, 'intervention-headline');
+    if (ntd && number(headline)) groups.push(concept('intervention-headline', {title: 'Use the dated intervention-coverage context separately', target: 'WHO NTD programme context · ' + headline.measuredAt,
+      evidenceIds: [headline.id], signal: 'reference', reason: fmt(headline.value) + ' ' + headline.unit + ' in ' + headline.measuredAt + '. People requiring interventions are not infections; disease rows with overlapping or different definitions are not summed.',
+      publicStep: 'Ask the relevant programme which disease-specific interventions and communities this headline covers.',
+      operatorStep: 'Validate the disease-specific eligible population, intervention coverage and observation year before prioritizing delivery gaps.', timing: 'At the next disease-programme planning review'}));
+    groups.push(applicability(input, ntd && number(headline) ? [headline] : selected ? [selected] : [], target + ' · current local evidence',
+      'A published global burden reference does not supply a current local catchment, capacity, individual prognosis or causal intervention benefit.', url));
+    return finalize(input, groups, url);
+  }
+  function outbreak(input) {
+    const e = facts(input), groups = [], rows = e.filter(f => /^mpox-country-.+-cases$/.test(f.id)), good = rows.filter(number);
+    const ordered = good.slice().sort((a, b) => period(a.measuredAt) - period(b.measuredAt) || a.id.localeCompare(b.id));
+    const oldest = ordered[0], newest = ordered.at(-1), missing = rows.filter(f => !number(f));
+    if (missing.length) groups.push(gap('country-date-gap', cleanLabel(missing[0]), missing.slice(0, 3), missing.length + ' country cumulative records lack a valid reporting date/count.', 'Do not substitute a World date for a country’s report date.'));
+    groups.push(concept('country-alignment', {title: 'Align the oldest country report before comparison', target: oldest ? cleanLabel(oldest) + ' · ' + oldest.measuredAt : 'Mpox country reporting dates',
+      evidenceIds: ids(oldest ? [oldest, newest] : [get(e, 'mpox-dates')]), signal: oldest ? 'planning' : 'data-gap', phase: 'verify',
+      reason: oldest ? 'Oldest supported country date ' + oldest.measuredAt + '; newest ' + newest.measuredAt + '; ' + fmt((period(newest.measuredAt) - period(oldest.measuredAt)) / 86400000) +
+        ' days apart among ' + good.length + ' dated rows. Cumulative cases cannot establish active burden, current incidence or transmission links.' : 'No dated country comparison is supported.',
+      publicStep: 'Read each country’s date and current health-authority notices before repeating a cumulative ranking.',
+      operatorStep: 'Obtain compatible incident-case definitions, surveillance coverage and matched epidemiological intervals before geographic response comparisons.', timing: 'Before interpreting country rankings'}));
+    const measles = get(e, 'measles-count'), window = get(e, 'annual'), partial = /partial|year.to.date/i.test(String(window?.value || '') + ' ' + String(measles?.note || ''));
+    groups.push(concept('measles-window', {title: 'Verify the measles archive window', target: 'U.S. measles · ' + (measles?.measuredAt || 'year unavailable'),
+      evidenceIds: ids([measles, window]), signal: number(measles) ? 'reference' : 'data-gap', phase: 'verify',
+      reason: number(measles) ? fmt(measles.value) + ' archived confirmed cases in ' + measles.measuredAt + (partial ? '; partial/year-to-date cutoff is not supplied, so a full-year comparison is unsupported.' : '; this dated annual total is not a current local count.') : 'No valid archived measles count/year is available.',
+      publicStep: 'Use current CDC/local health-department information for present conditions; retain the archived period label when sharing this figure.',
+      operatorStep: 'Recover the exact epidemiological cutoff and case-definition revision, then compare matched windows separately from full-year totals.',
+      authorityUrl: 'https://www.cdc.gov/measles/data-research/index.html', timing: 'Before a year-on-year claim or local interpretation'}));
+    return finalize(input, groups, urls.outbreak);
+  }
+  wb.forEach(slug => R.registerPrioritizer(slug, worldbank));
+  R.registerPrioritizer('nhs-scotland-strain', nhs);
+  ['us-respiratory-surveillance', 'us-overdose-surveillance'].forEach(slug => R.registerPrioritizer(slug, cdc));
+  ['global-cancer', 'global-ntds', 'antimicrobial-resistance'].forEach(slug => R.registerPrioritizer(slug, reference));
+  R.registerPrioritizer('global-outbreak-tracker', outbreak);
+})(typeof window === 'object' ? window : globalThis);
+
 // Maintainer adapter: public evidence only; no private questionnaire values.
 (function () {
   'use strict';

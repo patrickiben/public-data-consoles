@@ -70,11 +70,30 @@
 @media(max-width:640px){#console-response{margin:10px 6px;padding:13px}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:19px}}
 @media print{#console-response-shortcut,#console-response .cr-toolbar{display:none!important}#console-response{background:white!important;color:#111!important;max-width:none;border:1px solid #555}#console-response *{color:#111!important;box-shadow:none!important}#console-response details{display:block!important}#console-response details>*{display:block!important}#console-response .cr-action{break-inside:avoid;background:white!important}#console-response .cr-badge{border-color:#555}}
 @media print{#console-response .cr-impact-records{max-height:none;overflow:visible}#console-response .cr-impact-item,#console-response .cr-impact-records article{break-inside:avoid;background:white!important}#console-response .cr-impact-preview button{display:none!important}}
+
+#console-response .cr-priority-preview{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;border:1px solid #5bbfcb;border-radius:9px;padding:14px;margin:12px 0;background:#133747}#console-response .cr-priority-preview>div{flex:1;min-width:180px}#console-response .cr-priority-preview span{color:#bdd9e5}#console-response .cr-priority-preview p{font-size:16px;font-weight:650;color:#f1f8fc}#console-response .cr-priority-list{list-style:none;margin:12px 0;padding:0}#console-response .cr-priority-list>li{margin:0}#console-response .cr-priority{border-left:4px solid #55beca;overflow-wrap:anywhere}#console-response .cr-priority[data-cr-priority="immediate"]{border-left-color:#f0cc87}#console-response .cr-priority-head{display:flex;gap:12px;align-items:flex-start}#console-response .cr-priority-number{display:flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#227184;color:#fff;font-weight:750}#console-response .cr-priority-head h4{margin:7px 0}#console-response .cr-timing{color:#a7f0f2}#console-response .cr-escalation{border-left:2px solid #e5b35a;padding-left:10px;margin:10px 0}#console-response .cr-priority label{min-height:44px;align-content:center}
+@media print{#console-response .cr-priority-preview button{display:none!important}#console-response .cr-priority-list>li{display:block!important}#console-response .cr-priority-head{display:flex!important}}
 </style>
 <script>
 (function (root) {
   'use strict';
-  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set();
+  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set(), prioritizers = new Map();
+  var priorityOrder = { immediate: 0, next: 1, planned: 2, routine: 3 };
+  function registerPrioritizer(slug, derive) {
+    if (typeof slug !== 'string' || !slug || typeof derive !== 'function') throw new TypeError('A console slug and priority function are required.');
+    prioritizers.set(slug, derive);
+  }
+  function derivePriorities(input) {
+    var derive = prioritizers.get(input.slug);
+    if (!derive) return [];
+    try {
+      var actions = derive(JSON.parse(JSON.stringify(input)));
+      if (!Array.isArray(actions)) throw new TypeError('Priority actions must be an array.');
+      return actions.map(function (a) { return Object.assign({}, a, { featured: true }); });
+    } catch (error) {
+      return ['public', 'operator'].map(function (audience) { return { id: 'priority-reader-' + audience, featured: true, track: audience, phase: 'verify', when: 'always', priority: 'next', rank: 1, signal: 'data-gap', evidenceIds: [], title: 'Verify the original source before choosing a response', target: input.context || input.slug, reason: 'The priority reader could not resolve this selection.', nextStep: 'Open the evidence sources and confirm the selected place, period and coverage.', timing: 'Before using this checklist for a decision.', escalateWhen: 'The source cannot be verified or conflicts with a current official notice.', escalateTo: 'The source publisher or your designated duty lead.', reviewAfter: 'After the source or selection is verified.' }; });
+    }
+  }
   var metrics = [
     ['Population Balance', 'comparison', 'Defined comparison groups, workload/population denominators and aligned periods.'],
     ['Wasserstein Distance / Shape Imbalance', 'comparison', 'Comparable distributions in the same unit and period; group membership.'],
@@ -187,7 +206,11 @@
     diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
     diagnostics.forEach(function (d) { if (d.status === 'unknown') d.value = null; });
     var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
-    var actions = (Array.isArray(input.actions) ? input.actions : []).map(function (action) {
+    var actionRows = (Array.isArray(input.actions) ? input.actions : []).concat(derivePriorities(input));
+    var factCounts = new Map(), actionCounts = new Map();
+    facts.forEach(function (f) { factCounts.set(f.id, (factCounts.get(f.id) || 0) + 1); });
+    actionRows.forEach(function (a) { actionCounts.set(a.id, (actionCounts.get(a.id) || 0) + 1); });
+    var actions = actionRows.map(function (action) {
       var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
       (Array.isArray(a.metricIds) ? a.metricIds : []).forEach(function (n) { var d = diagnostics.find(function (item) { return item.metricId === Number(n); }); if (d && !ids.includes(d.id)) ids.push(d.id); });
       var relevant = ids.length ? ids.map(function (id) { return byDiagnostic.get(id) || { status: 'unknown', current: false }; }) : diagnostics;
@@ -199,7 +222,37 @@
       a.practice = !!input.scenario || relevant.some(function (d) { return d.practice; });
       a.withheld = a.phase === 'respond' && a.when !== 'always' && !a.practice && !relevant.some(function (d) { return d.status === 'triggered' && d.current; });
       if (a.withheld) a.selected = false;
-      a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl); return a;
+      a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl);
+      if (a.featured) {
+        a.evidenceIds = Array.isArray(a.evidenceIds) ? Array.from(new Set(a.evidenceIds)) : [];
+        var linked = a.evidenceIds.map(function (id) { return byFact.get(id); });
+        var supported = linked.length > 0 && linked.every(function (f) { return f && factCounts.get(f.id) === 1 && f.source && text(f.measuredAt).trim() && !['missing', 'stale'].includes(f.quality); });
+        a.current = supported && linked.every(function (f) { return f.quality === 'current' && f.basis !== 'demo' && Number.isFinite(Date.parse(f.measuredAt)) && Date.parse(f.measuredAt) <= Date.now(); });
+        a.practice = !!input.scenario || a.signal === 'scenario' || linked.some(function (f) { return f && f.basis === 'demo'; });
+        a.priority = Object.prototype.hasOwnProperty.call(priorityOrder, a.priority) ? a.priority : 'planned';
+        a.rank = Number.isFinite(a.rank) && a.rank > 0 ? a.rank : 100;
+        a.withheldReasons = [];
+        if (typeof a.id !== 'string' || !a.id.trim() || actionCounts.get(a.id) !== 1) a.withheldReasons.push('A unique action identity is required.');
+        ['title', 'target', 'reason', 'nextStep', 'timing', 'escalateWhen', 'escalateTo', 'reviewAfter'].forEach(function (key) { if (!text(a[key]).trim()) a.withheldReasons.push('Missing action field: ' + key + '.'); });
+        if (a.requiresCurrent && !a.current) a.withheldReasons.push('Current, dated, unambiguous public evidence is required.');
+        if (['official-warning', 'observed-condition', 'forecast'].includes(a.signal) && !supported) a.withheldReasons.push('The named condition lacks applicable public evidence.');
+        if (a.validUntil != null && (!Number.isFinite(Date.parse(a.validUntil)) || Date.parse(a.validUntil) <= Date.now())) a.withheldReasons.push('The action evidence has expired.');
+        if (a.priority === 'immediate' && !(a.signal === 'official-warning' && a.current && a.authorityUrl && linked.every(function (f) { return f.basis === 'measured'; }) && a.validUntil && Date.parse(a.validUntil) > Date.now())) a.priority = 'next';
+        if (a.practice || linked.some(function (f) { return f && f.quality === 'historical'; })) {
+          if (priorityOrder[a.priority] < priorityOrder.planned) a.priority = 'planned';
+        }
+        a.withheld = a.withheld || a.withheldReasons.length > 0;
+        if (a.withheld) a.selected = false;
+        a.sources = linked.filter(Boolean).map(function (f) { return { id: f.id, label: f.label, source: f.source, measuredAt: f.measuredAt || null, quality: f.quality, basis: f.basis }; });
+      }
+      return a;
+    });
+    actions.sort(function (a, b) {
+      if (!!a.featured !== !!b.featured) return a.featured ? -1 : 1;
+      return a.featured ? priorityOrder[a.priority] - priorityOrder[b.priority] || a.rank - b.rank || text(a.id).localeCompare(text(b.id)) : 0;
+    });
+    ['public', 'operator'].forEach(function (audience) {
+      var n = 0; actions.forEach(function (a) { if (a.featured && a.selected && a.track === audience) a.position = ++n; });
     });
     return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
       evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null, impacts: evaluateImpacts(input, facts),
@@ -214,11 +267,16 @@
     if (!panel.dataset.mounted) {
       panel.dataset.mounted = 'true';
       panel.addEventListener('click', function (event) {
-        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact]');
+        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact],[data-cr-open-priorities]');
         if (!button) return;
         if (button.dataset.crTrack) { track = button.dataset.crTrack; render(); }
         if (button.hasAttribute('data-cr-print')) root.print();
         if (button.hasAttribute('data-cr-export')) download();
+        if (button.hasAttribute('data-cr-open-priorities')) {
+          panel.querySelector('[data-cr-section="plan"]').open = true;
+          var actions = panel.querySelector('[data-cr-section="actions"]');
+          if (actions) { actions.open = true; actions.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }
         if (button.hasAttribute('data-cr-open-impact')) {
           panel.querySelector('[data-cr-section="plan"]').open = true;
           var impacts = panel.querySelector('[data-cr-section="impacts"]');
@@ -241,6 +299,7 @@
       var printSections = null;
       function beginPrint() {
         if (printSections) return;
+        if (payload) set(payload); // Reconcile clock-based expiry before printing.
         printSections = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
         panel.querySelectorAll('details').forEach(function (d) { d.open = true; });
       }
@@ -281,9 +340,11 @@
     panel.dataset.rendered = 'true';
     var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
     h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
+    var featured = selected.filter(function (a) { return a.featured; });
+    if (featured.length) h += '<div class="cr-priority-preview"><div><b>Do next · ' + esc(track === 'operator' ? 'Professional operators' : 'Public / local decision makers') + '</b><p>' + esc(featured[0].title) + '</p><span>' + esc(featured[0].target) + ' · ' + esc(featured[0].timing) + '</span></div><button id="cr-open-priorities" data-cr-open-priorities>Open prioritized checklist (' + featured.length + ')</button></div>';
     var impactRows = plan.impacts.items.concat(plan.impacts.records), availableImpacts = impactRows.filter(function (r) { return r.status === 'available'; }).length;
     h += '<div class="cr-impact-preview"><span>' + availableImpacts + ' available impact/context ' + (availableImpacts === 1 ? 'item' : 'items') + ' · ' + impactRows.filter(function (r) { return r.status === 'unknown'; }).length + ' unavailable. Scope: ' + esc(plan.impacts.scope) + '.</span><button id="cr-open-impacts" data-cr-open-impact>Review impacts and source records</button></div>';
-    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open public-data impacts, ten-parameter checklist and evidence</summary>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open response plan, public-data impacts and ten-parameter detail</summary>';
     h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
     function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
     function impactSources(row) {
@@ -299,19 +360,30 @@
     if (plan.impacts.records.length) impactHTML += '<h3>Public records behind this view</h3><div class="cr-impact-records">' + plan.impacts.records.map(function (r) { return '<article data-cr-impact-record="' + esc(r.id) + '"><h4>' + esc(r.label) + '</h4><p class="cr-note">Record ID: ' + esc(r.id) + '</p>' + impactBadge(r) + ' <span class="cr-badge">' + esc(r.kind.toUpperCase()) + '</span><p>' + (r.status === 'unknown' ? '<b>Not assessable.</b> ' : '') + esc(r.status === 'unknown' ? 'This record cannot support the selected impact with the available evidence.' : r.summary) + '</p>' + (r.validAt ? '<p>' + (r.kind === 'forecast' ? 'Forecast valid: ' : 'Record / valid time: ') + esc(r.validAt) + '</p>' : '') + impactReasons(r) + impactSources(r) + '</article>'; }).join('') + '</div>';
     if (!impactRows.length) impactHTML += '<p class="cr-unknown">No applicable public impact records or quantified projection are available for this selection.</p>';
     impactHTML += '<ul>' + plan.impacts.limitations.map(function (limit) { return '<li>' + esc(limit) + '</li>'; }).join('') + '</ul>';
-    h += section('impacts', 'Projected impacts and public-data context', impactHTML, 'interpretive');
+    var impactSection = section('impacts', 'Projected impacts and public-data context', impactHTML, 'interpretive');
     var actionHTML = '<p>These are planning prompts, not instructions to dispatch, switch equipment, prescribe, trade or evacuate. ' + (track === 'operator' ? 'Use your organization’s verified telemetry, SOP and decision authority.' : 'Follow current official instructions for your location.') + '</p>';
+    if (featured.length) {
+      actionHTML += '<h3>Prioritized live action checklist</h3><p class="cr-note">Ordered for this selection and audience. Timing is an interpretive review prompt unless attributed to a current official notice. Source periods remain visible; older reports support planning.</p><ol class="cr-priority-list">';
+      featured.forEach(function (a) {
+        var priorityLabel = a.practice ? 'Practice / planning' : { immediate: 'Current official warning · check now', next: 'Next check', planned: 'Planning review', routine: 'Follow-up' }[a.priority];
+        actionHTML += '<li><article class="cr-action cr-priority" data-cr-action="' + esc(a.id) + '" data-cr-priority="' + esc(a.priority) + '"><div class="cr-priority-head"><span class="cr-priority-number" aria-label="Priority ' + a.position + '">' + a.position + '</span><div><span class="cr-badge">' + esc(priorityLabel) + '</span><h4>' + esc(a.title) + '</h4></div></div><p class="cr-priority-target"><b>Where / record:</b> ' + esc(a.target) + '</p><p><b>Why this is prioritized:</b> ' + esc(a.reason) + '</p><p class="cr-timing"><b>When:</b> ' + esc(a.timing) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><div class="cr-escalation"><p><b>Escalate if:</b> ' + esc(a.escalateWhen) + '</p><p><b>Escalate to:</b> ' + esc(a.escalateTo) + '</p></div><p><b>Recheck:</b> ' + esc(a.reviewAfter) + '</p>' + (a.validUntil ? '<p class="cr-note">Evidence valid until: ' + esc(a.validUntil) + '</p>' : '') + (a.diagnosticIds.length ? '<p class="cr-note">Checklist dimensions: ' + esc(a.diagnosticIds.map(function (id) { var d = plan.diagnostics.find(function (item) { return item.id === id; }); return d ? (d.metricId ? '#' + d.metricId + ' ' : '') + d.label : id; }).join('; ')) + '</p>' : '') + impactSources(a) + '<p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article></li>';
+      });
+      actionHTML += '</ol>';
+    }
+    var followupHTML = '';
     ['verify', 'prepare', 'respond', 'review'].forEach(function (phase) {
-      var list = selected.filter(function (a) { return a.phase === phase; }); if (!list.length) return;
-      actionHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
+      var list = selected.filter(function (a) { return !a.featured && a.phase === phase; }); if (!list.length) return;
+      followupHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
       list.forEach(function (a) {
         var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
-        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
       });
     });
+    actionHTML += featured.length ? section('followup', 'Dimension-by-dimension follow-up', followupHTML, 'interpretive') : followupHTML;
     if (!selected.length) actionHTML += '<p class="cr-unknown">No supported conditional action is available for this track. Verify missing evidence and consult the responsible authority; this is not an all-clear.</p>';
     actionHTML += '<p class="cr-note">Checks are temporary local planning notes, not completed operations. Context or evidence changes reset them. Nothing is transmitted or stored by this response layer.</p>';
-    h += section('actions', '1. Condition-dependent response plan', actionHTML, 'interpretive');
+    h += section('actions', featured.length ? '1. Prioritized response plan' : '1. Condition-dependent response plan', actionHTML, 'interpretive');
+    h += impactSection;
     var evidenceHTML = plan.evidence.length ? '<ul>' + plan.evidence.map(function (f) { return '<li><b>' + esc(f.label || f.id) + ':</b> ' + esc(f.quality === 'missing' ? 'Unavailable' : f.value) + (f.unit ? ' ' + esc(f.unit) : '') + ' ' + badge(f.basis) + ' <span class="cr-quality">' + esc(f.quality) + '</span><br>Observed / reported: ' + esc(f.measuredAt || 'not supplied') + '; checked: ' + esc(f.checkedAt || 'not supplied') + '. ' + sourceLink(f.source) + (f.note ? '<br>' + esc(f.note) : '') + '</li>'; }).join('') + '</ul>' : '<p class="cr-unknown">Evidence unavailable. No current incident status can be inferred.</p>';
     h += section('evidence', '2. Evidence, dates and sources', evidenceHTML, 'interpretive');
     var diagnosticHTML = ['comparison', 'structure', 'spillover'].map(function (pillar) {
@@ -341,14 +413,23 @@
     // transition an evidence revision on the existing visible-minute refresh.
     var impact = input && input.impacts || {};
     var clockState = (impact.items || []).concat(impact.records || []).filter(function (r) { return r && r.kind === 'forecast' && r.validAt != null; }).map(function (r) { var at = Date.parse(r.validAt); return [r.id, Number.isFinite(at) && at > Date.now()]; });
-    var nextRevision = signature([input || {}, clockState]);
+    var priorities = evaluate(input).actions.filter(function (a) { return a.featured; });
+    var nextRevision = signature([input || {}, clockState, priorities]);
     if (nextRevision === revision) return;
     function evidenceOnly(value) {
       if (Array.isArray(value)) return value.map(evidenceOnly);
       if (value && typeof value === 'object') { var out = {}; Object.keys(value).forEach(function (key) { if (key !== 'checkedAt') out[key] = evidenceOnly(value[key]); }); return out; }
       return value;
     }
-    var nextEvidence = signature([evidenceOnly(input || {}), clockState]);
+    // A successful check can renew a derived freshness cutoff without changing
+    // the evidence or chosen steps. Preserve notes until the assessment changes.
+    var priorityAssessment = priorities.map(function (a) { return {
+      id: a.id, track: a.track, priority: a.priority, rank: a.rank, position: a.position,
+      signal: a.signal, current: a.current, practice: a.practice, selected: a.selected,
+      withheld: a.withheld, withheldReasons: a.withheldReasons,
+      evidenceIds: a.evidenceIds, diagnosticIds: a.diagnosticIds
+    }; });
+    var nextEvidence = signature([evidenceOnly(input || {}), clockState, priorityAssessment]);
     if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
     evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
   }
@@ -405,7 +486,7 @@
     return area;
   }
   var definitions = Object.freeze(metrics.map(function (m, i) { return Object.freeze({ id: i + 1, name: m[0], pillar: m[1], requiredInputs: m[2] }); }));
-  var api = { set: set, connect: connect, evaluate: evaluate, exportPlan: exportPlan, metricDefinitions: definitions, math: { wasserstein1: wasserstein1 }, version: 1 };
+  var api = { registerPrioritizer: registerPrioritizer, set: set, connect: connect, evaluate: evaluate, exportPlan: exportPlan, metricDefinitions: definitions, math: { wasserstein1: wasserstein1 }, version: 1 };
   root.ConsoleResponse = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (doc) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', mount, { once: true }); else mount(); }
@@ -755,6 +836,128 @@ render();clockTick();setInterval(clockTick,1000);
 </script>
 <!-- CONSOLE_RESPONSE_ADAPTER_START -->
 <script>
+/* Ordered planning steps from the adapter's PUBLIC payload only.
+ * No DOM, native state, network, personal inputs or ambient clock is read here.
+ * Ranks indicate a review sequence, not incident severity or expected benefit.
+ */
+(function () {
+  'use strict';
+  const R=window.ConsoleResponse;
+  const urls={grid:'https://www.eia.gov/electricity/gridmonitor/',market:'https://www.investor.gov/introduction-investing',agency:'https://api.usaspending.gov/docs/endpoints',rx:'https://www.medicaid.gov/medicaid/nadac',travel:'https://www.cdc.gov/yellow-book/hcp/health-care-abroad/medical-tourism.html',debt:'https://www.cms.gov/initiatives/your-patient-rights/medical-bill-rights/get-help/dispute-bill',safeguarding:'https://www.transportation.gov/stop-human-trafficking/roadmap',va:'https://www.va.gov/resources/choosing-between-urgent-and-emergency-care/'};
+  const numeric=v=>typeof v==='number'&&Number.isFinite(v);
+  function date(value){
+    if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}(?:T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d))?$/.test(value))return null;
+    // Validate the calendar date separately: converting a valid offset to UTC
+    // can legitimately cross midnight, and must not invalidate the timestamp.
+    const calendar=Date.parse(value.slice(0,10)+'T00:00:00Z'),ms=Date.parse(value);
+    return Number.isFinite(ms)&&Number.isFinite(calendar)&&new Date(calendar).toISOString().slice(0,10)===value.slice(0,10)?ms:null;
+  }
+  const iso=ms=>Number.isFinite(ms)?new Date(ms).toISOString():null;
+  const fmt=n=>numeric(n)?String(+n.toFixed(3)):'unreported';
+  function facts(input){
+    const rows=Array.isArray(input.evidence)?input.evidence:[],seen=new Set(),duplicates=new Set();
+    rows.forEach(f=>{if(f&&seen.has(f.id))duplicates.add(f.id);if(f)seen.add(f.id);});
+    return rows.filter(f=>f&&typeof f.id==='string'&&!duplicates.has(f.id));
+  }
+  const ids=rows=>[...new Set(rows.filter(Boolean).map(f=>f.id))];
+  const usable=f=>!!f&&['current','historical'].includes(f.quality)&&f.value!=null&&(numeric(f.value)||typeof f.value==='string'&&!!f.value.trim())&&typeof f.measuredAt==='string'&&!!f.measuredAt.trim()&&typeof f.source==='string'&&/^https?:\/\/[^\s]+$/i.test(f.source)&&(date(f.measuredAt)==null||date(f.checkedAt)==null||date(f.measuredAt)<=date(f.checkedAt));
+  const current=f=>usable(f)&&f.quality==='current'&&f.basis!=='demo';
+  const byId=(rows,id)=>rows.find(f=>f.id===id);
+  function action(key,track,options){
+    return Object.assign({id:'priority-'+key+'-'+track,track,phase:'verify',when:'always',evidenceIds:[],title:'Verify the public source',target:'Public evidence',reason:'Required inputs need verification.',nextStep:'Review the linked official source before relying on this summary.',priority:'planned',rank:1,timing:'Before the next planning decision',signal:'planning',requiresCurrent:false,escalateWhen:'The responsible professional or authority confirms a condition requiring action.',escalateTo:'The responsible professional or authority',authorityUrl:'',reviewAfter:'Recheck when the source, scope or decision changes.'},options);
+  }
+  function pair(key,options){return ['public','operator'].map(track=>action(key,track,typeof options==='function'?options(track):options));}
+  function ranked(groups){
+    const rows=groups.flat(),count={public:0,operator:0};return rows.map(a=>Object.assign({},a,{rank:++count[a.track]}));
+  }
+  function expiry(rows,reportHours,captureHours){
+    const limits=[];for(const f of rows){const report=date(f.measuredAt),capture=date(f.checkedAt);if(report!=null)limits.push(report+reportHours*3600000);if(capture!=null)limits.push(capture+captureHours*3600000);}
+    return limits.length?iso(Math.min(...limits)):undefined;
+  }
+  function grid(input){
+    const e=facts(input),groups=[],reports=e.filter(f=>f.id.startsWith('demand-')),bad=e.filter(f=>/^(demand|forecast|gap|interchange)-/.test(f.id)&&!current(f));
+    const eligible=e.filter(f=>f.id.startsWith('gap-')&&current(f)&&numeric(f.value)&&f.unit==='MW').map(g=>{
+      const code=g.id.slice(4),d=byId(e,'demand-'+code),f=byId(e,'forecast-'+code),at=date(g.measuredAt),checked=date(g.checkedAt);
+      return {code,g,d,f,at,ok:current(d)&&current(f)&&numeric(d.value)&&d.value>=0&&numeric(f.value)&&f.value>=0&&d.unit==='MW'&&f.unit==='MW'&&at!=null&&(checked==null||at<=checked)&&d.measuredAt===g.measuredAt&&f.measuredAt===g.measuredAt&&Math.abs(g.value-(d.value-f.value))<=1e-8*Math.max(1,Math.abs(g.value))};
+    }).filter(x=>x.ok);
+    const latest=eligible.length?Math.max(...eligible.map(x=>x.at)):null,cohort=eligible.filter(x=>x.at===latest).sort((a,b)=>Math.abs(b.g.value)-Math.abs(a.g.value)||a.code.localeCompare(b.code)),top=cohort[0];
+    if(bad.length||!top)groups.push(pair('grid-coverage',track=>({title:'Verify missing or delayed BA reports first',target:input.context||'Reported balancing authorities',reason:bad.length?bad.length+' public demand/forecast/interchange fields are missing, stale or not current.':'No complete current matched-hour demand/forecast comparison is available.',evidenceIds:ids(bad.length?bad:reports),signal:'data-gap',priority:'next',timing:'Before interpreting demand pressure',authorityUrl:urls.grid,nextStep:track==='operator'?'Identify the affected BA/source hours and verify them in approved current telemetry; keep missing reports unassessed.':'Check the source dates and your utility or ISO updates; a missing report does not indicate either an outage or safety.',escalateWhen:'Missing reports affect an actual operating decision or an official utility/ISO advisory applies.',escalateTo:track==='operator'?'The BA data owner and authorized operations lead':'Your utility or ISO information service',reviewAfter:'Recheck after the next successful source refresh or a BA selection change.'})));
+    if(top){
+      const sourceIds=ids([top.g,top.d,top.f]),at=top.g.measuredAt,why=cohort.length>1?'Largest absolute MW difference among '+cohort.length+' complete reports at exactly this hour; BA size affects this ordering.':'The selected/latest complete matched-hour report; no comparison with a different report hour.';
+      groups.push(pair('grid-gap-'+top.code,track=>({title:(top.g.value===0?'Verify matched-hour agreement for ':'Review the forecast difference for ')+top.code,target:top.code+' · '+at,reason:'Actual minus its day-ahead forecast is '+fmt(top.g.value)+' MW. '+why,evidenceIds:sourceIds,metricIds:[5],phase:'review',signal:'observed-condition',priority:'next',requiresCurrent:true,validUntil:expiry([top.g,top.d,top.f],72,48),timing:'At the next source check, before operational interpretation',authorityUrl:urls.grid,nextStep:track==='operator'?'Check revisions and the signed difference against current load, reserves and approved operating limits; this ranking cannot establish a shortfall.':'Read the source hour and current utility/ISO notices. A forecast difference alone supplies no conservation or outage instruction.',escalateWhen:'A current official advisory or verified local SOP trigger applies, rather than the size of this difference.',escalateTo:track==='operator'?'The authorized BA/ISO operations lead':'Your utility or ISO official advisory channel',reviewAfter:'Recheck on the next report revision, refresh or BA selection change.'})));
+    }
+    const flows=e.filter(f=>f.id.startsWith('interchange-')&&current(f)&&numeric(f.value)&&f.unit==='MW').map(f=>({code:f.id.slice(12),f,at:date(f.measuredAt)})).filter(x=>{const d=byId(e,'demand-'+x.code),checked=date(x.f.checkedAt);return x.at!=null&&(checked==null||x.at<=checked)&&current(d)&&d.measuredAt===x.f.measuredAt;});
+    const flowHour=flows.length?Math.max(...flows.map(x=>x.at)):null,interchange=flows.filter(x=>x.at===flowHour).sort((a,b)=>a.f.value-b.f.value||a.code.localeCompare(b.code)),imported=interchange.find(x=>x.f.value<0),flow=imported||interchange[0];
+      if(flow)groups.push(pair('grid-interchange-'+flow.code,track=>({title:imported?'Review reported net inflow for '+flow.code:'Keep interchange in its operating context',target:flow.code+' · '+flow.f.measuredAt,reason:'Signed TI is '+fmt(flow.f.value)+' MW; negative denotes inflow. '+(imported?'Largest reported net inflow within the same-hour comparison cohort.':'No negative TI is reported in the eligible same-hour cohort.')+' Routine interchange is not a failure or available transfer capacity.',evidenceIds:[flow.f.id],metricIds:[10],phase:'review',signal:'observed-condition',priority:'next',requiresCurrent:true,validUntil:expiry([flow.f],72,48),timing:'After the matched-hour source check',authorityUrl:urls.grid,nextStep:track==='operator'?'Compare this hour with authorized reserves, transfer limits and actual advisories before considering any operational response.':'Check the BA/utility explanation and current notices; imports alone do not establish an outage or personal action.',escalateWhen:'Verified local limits or an actual official advisory require review.',escalateTo:track==='operator'?'The authorized system operations lead':'Your utility or ISO information service',reviewAfter:'Recheck after the next same-hour report update or local advisory.'})));
+    groups.push(pair('grid-authority',track=>({title:track==='operator'?'Confirm authority and decision inputs':'Use current local electricity advisories',target:input.context||'Current BA selection',reason:'Public hourly accounting omits live reserves, physical switching state and customer consequences.',evidenceIds:ids(top?[top.d]:reports.slice(0,1)),signal:'planning',timing:'Before any real operating or household decision',authorityUrl:urls.grid,nextStep:track==='operator'?'Use current approved tools and SOPs for dispatch or switching; record the decision owner and missing inputs.':'Use your utility or ISO official information for actual instructions; retain this console as dated report context.',escalateWhen:'An actual service concern or current official instruction applies.',escalateTo:track==='operator'?'The designated operations authority':'Your utility official support/advisory channel',reviewAfter:'Recheck when local instructions or the selected BA changes.'})));
+    return ranked(groups);
+  }
+  function market(input){
+    const e=facts(input),macros=e.filter(f=>f.id.startsWith('macro-')),models=e.filter(f=>['shape','density','components','margin','scale','auc','frontier','leakage'].includes(f.id)),missing=[...macros,...models].filter(f=>!usable(f)),groups=[];
+    if(missing.length||!macros.length)groups.push(pair('market-source-gap',track=>({title:'Resolve public-source gaps before model review',target:input.context||'Market and economic source scope',reason:missing.length+' linked public/model fields are missing or stale; '+macros.length+' public economic reference series are present.',evidenceIds:ids(missing.length?missing:models.slice(0,1)),signal:'data-gap',priority:'next',authorityUrl:urls.market,timing:'Before interpreting model colors or comparing dates',nextStep:track==='operator'?'Identify missing provider/series dates, restore the approved source and rerun the aligned analysis; keep unsupported conclusions unknown.':'Read the source-status and observation dates before interpreting the model; do not treat a failed feed as a new market signal.',escalateWhen:'Missing dates or coverage affect the question being reviewed.',escalateTo:track==='operator'?'The source owner or responsible model analyst':'The source provider or a qualified adviser',reviewAfter:'Recheck after source recovery or the next successful dated refresh.'})));
+    const lagged=macros.filter(f=>usable(f)&&date(f.measuredAt)!=null).map(f=>({f,at:date(f.measuredAt),lag:date(f.checkedAt)!=null?date(f.checkedAt)-date(f.measuredAt):null})).sort((a,b)=>(b.lag??-1)-(a.lag??-1)||a.at-b.at||a.f.id.localeCompare(b.f.id))[0];
+    const dates=[...new Set(macros.filter(usable).map(f=>f.measuredAt))];
+    groups.push(pair('market-vintage',track=>({title:'Align the observation windows before comparison',target:lagged?lagged.f.label+' · '+lagged.f.measuredAt:'Economic and return-network observation dates',reason:lagged?'The largest available observation-to-check lag is '+(lagged.lag==null?'not known':Math.floor(lagged.lag/86400000)+' days')+' for this reference. Natural annual/monthly/daily frequencies differ; this lag alone is not a failed feed. '+dates.length+' distinct economic observation dates are present.':'Comparable dated economic references are not available; a retrieval date cannot replace their observation periods.',evidenceIds:ids(lagged?[lagged.f]:macros.slice(0,1)),signal:lagged?'planning':'data-gap',timing:'Before combining macro references with a selected network window',authorityUrl:lagged?lagged.f.source:urls.market,nextStep:track==='operator'?'Check the source release frequency/revisions, record each observation window and keep mixed-vintage references separate from the aligned return model.':'Compare each displayed observation date with the network date; an older annual series is not a current daily condition.',escalateWhen:'A comparison assumes dates/frequencies are interchangeable or a source period appears inconsistent.',escalateTo:track==='operator'?'The source owner or responsible analyst':'The source provider or a qualified adviser',reviewAfter:'Recheck when any observation period or selected network date changes.'})));
+    const review=models.filter(usable).sort((a,b)=>a.id.localeCompare(b.id));
+    const diagnostics=Array.isArray(input.diagnostics)?input.diagnostics:[];
+    // A documented review sequence, never a cross-unit severity comparison:
+    // threshold sensitivity before distribution, graph and scenario interpretation.
+    const topic=[6,3,2,4,5,8,9,10].map(n=>diagnostics.find(d=>d.metricId===n&&d.status==='triggered'&&Array.isArray(d.evidenceIds)&&d.evidenceIds.length&&d.evidenceIds.every(id=>usable(byId(e,id))))).find(Boolean);
+    groups.push(pair('market-model',track=>({title:input.scenario?'Review the selected practice assumptions':'Review model assumptions after source dates',target:topic?(topic.label||'Dimension '+topic.metricId)+' · '+(input.context||'selected network'):input.context||'Descriptive return-network model',reason:input.scenario?'This selection is an explicit scenario; public references do not validate its assumed outcomes.':review.length+' dated descriptive model fields are available; they estimate associations and sensitivity, not investment returns or causal transmission.'+(topic?' The selected review topic is dimension '+topic.metricId+'; method sensitivity is reviewed before interpretation, not ranked as a financial threat.':''),evidenceIds:ids(review),metricIds:[2,3,4,5,6,8,9,10],phase:'review',signal:input.scenario?'scenario':review.length?'planning':'data-gap',timing:'After source checks, at the next model-review session',authorityUrl:urls.market,nextStep:track==='operator'?'Review calendar alignment, reference choice, gate/threshold sensitivity and common-factor explanations under your approved model-governance process.':'Use the model to inspect assumptions and limitations; personal goals, circumstances and qualified advice belong in a separate decision process.',escalateWhen:'A model conclusion changes with data/window assumptions or is being used outside its documented purpose.',escalateTo:track==='operator'?'The accountable model owner or review committee':'A qualified investment professional for personal decisions',reviewAfter:'Recheck after a scenario, instrument, estimation window or source revision; no trade is generated.'})));
+    return ranked(groups);
+  }
+  function agency(input){
+    const e=facts(input),latest=e.filter(f=>f.id.startsWith('agency-latest-')),known=latest.filter(usable),bad=latest.filter(f=>!usable(f)),absent=['agency-latest-obligationsUSD','agency-latest-budgetaryResourcesUSD','agency-latest-outlaysUSD'].filter(id=>!byId(e,id)),records=e.filter(f=>/^agency-fy-\d+$/.test(f.id)&&usable(f)).sort((a,b)=>date(b.measuredAt)-date(a.measuredAt)||b.id.localeCompare(a.id)),status=byId(e,'agency-status-record'),country=byId(e,'country-periods'),groups=[];
+    const periods=[...new Set(known.map(f=>f.measuredAt))].sort(),period=periods.length?periods.join(', '):records[0]?.measuredAt||null,gap=bad.length>0||absent.length>0||!known.length;
+    groups.push(pair('agency-period',track=>({title:gap?'Verify missing fiscal fields and last-good dates':'Verify the actual fiscal reporting windows',target:period?'Agency accounting through '+period:'Agency accounting period unavailable',reason:period?'Annual-resource records are dated '+period+(usable(status)?'; the separate status endpoint is dated '+status.measuredAt:'; the independent status period is unavailable')+'. '+(periods.length>1?'The latest amount fields themselves have different dates. ':'')+'Different endpoint windows do not establish a matched-year cut.':'No supported fiscal accounting date is available; an agency download is not current country-service evidence.',evidenceIds:ids([...known,...bad,...(status?[status]:[])]),metricIds:[5],signal:gap?'data-gap':'planning',priority:gap?'next':'planned',timing:'Before quoting a funding comparison',authorityUrl:urls.agency,nextStep:track==='operator'?'Confirm fiscal year, accounting period, field definitions and missing coverage in the official agency records; retain the prior dated report when a refresh fails.':'Read the period attached to each amount and keep the annual-resource/status endpoints separate; do not compare a partial window with a completed year.',escalateWhen:'A fiscal period regresses, a required field disappears or a claim assumes unmatched windows are comparable.',escalateTo:track==='operator'?'The responsible finance/data owner':'The publishing agency or responsible program finance contact',reviewAfter:'Recheck on the next successful agency refresh or reporting-period revision.'})));
+    groups.push(pair('agency-services',track=>({title:'Verify service continuity independently of dollars',target:country?'Archived country/service context · '+(country.measuredAt||'undated'):'Country/service telemetry unavailable',reason:'Agency obligations, budgetary resources and outlays are distinct accounts; none identifies current clinic capacity, supplies, beneficiaries or deaths.',evidenceIds:ids(country?[country]:records.slice(0,1)),signal:usable(country)?'planning':'data-gap',timing:'Before making a service-loss or health-impact statement',authorityUrl:urls.agency,nextStep:track==='operator'?'Ask responsible programs to verify current aggregate staffing, stock, service coverage and backfill under their continuity procedures; do not export protected records.':'Use the dated service context as a question for the responsible program, rather than translating dollars into health outcomes.',escalateWhen:'The responsible program confirms an actual current interruption or approved continuity trigger.',escalateTo:track==='operator'?'The accountable program continuity lead':'The responsible program’s official information channel',reviewAfter:'Recheck when verified service evidence or backfill changes.'})));
+    groups.push(pair('agency-comparison',track=>({title:'Document the scope of any allocation comparison',target:'Selected countries and completed fiscal fields',reason:'The archived distribution compares selected recipients, not all donors, current beneficiary need or measured mortality.',evidenceIds:ids([byId(e,'shape'),country]),metricIds:[2],phase:'review',signal:'planning',timing:'At the next planning review, after period and service checks',authorityUrl:urls.agency,nextStep:track==='operator'?'Record country selection, equal-country weighting, omitted donors and comparable fiscal definitions before communicating the distribution shift.':'Read which countries and years are included before repeating a budget or health claim.',escalateWhen:'An allocation result is generalized beyond its recorded scope or used as an incident forecast.',escalateTo:track==='operator'?'The responsible finance/methods reviewer':'The responsible program or source publisher',reviewAfter:'Recheck when recipient scope, accounting definitions or source years change.'})));
+    return ranked(groups);
+  }
+  const references={
+    'medical-cost-abroad':{url:urls.travel,owner:'A qualified treating/travel clinician',source:'official-guidance',steps:[
+      ['clinical-review','Arrange a qualified pre-travel review','Clinical suitability and travel preparation','Public guidance cannot determine individual suitability, complication risk or the quality of a quoted procedure.','Discuss suitability, records and planned follow-up with qualified clinicians before committing to travel.','Use a qualified clinical review pathway; keep procedure-specific and personal details in the appropriate protected workflow.'],
+      ['followup','Confirm follow-up and complication arrangements','Care responsibilities before and after travel','A lower illustrative price does not establish a complete care pathway.','Ask treating and follow-up clinicians to clarify responsibility for complications and aftercare.','Verify accountable handoffs and written aftercare/complication arrangements before approving a comparison.'],
+      ['terms','Verify complete written terms separately','Quotes, coverage and exclusions','The console supplies no verified all-in quote or personal savings estimate.','Obtain written terms and check coverage privately; do not infer a personal saving from the public example.','Audit itemized inclusions, exclusions and coverage in the authorized process; preserve unknown costs until verified.']
+    ]},
+    'medical-debt-assistant':{url:urls.debt,owner:'CMS guidance resources or qualified billing/legal assistance',source:'official-guidance',steps:[
+      ['route','Check the applicable official billing-help route','CMS process and eligibility instructions','The public $400-above-estimate condition is only one part of a process; no individual eligibility or deadline is computed.','Read the current CMS route and conditions before choosing a process.','Check the current official route/conditions privately before selecting an assistance workflow.'],
+      ['documents','Review the required records privately','Estimate, bill and relevant dates','Public guidance cannot verify a bill, coverage status, amount owed or personal timing.','Keep your estimate and itemized bill for qualified review; follow official instructions about dates.','Review required documents/dates in the protected workflow, without placing identifying records in this public export.'],
+      ['assistance','Resolve uncertainty through qualified assistance','Unclear eligibility, bill or process','A checklist acknowledgment is not a dispute filing, debt determination or verified saving.','Use official help resources or qualified assistance for unresolved questions before submitting anything.','Record the responsible assistance route and review unresolved conditions before any submission; do not automate eligibility.']
+    ]},
+    'human-trafficking':{url:urls.safeguarding,owner:'The designated trained safeguarding or reporting lead',source:'official-guidance',steps:[
+      ['safe-route','Use the established trained reporting route','Organizational safeguarding protocol','This reference has no case evidence and cannot identify a person, establish prevalence or decide a situation is safe.','Review the established safe reporting/referral route; avoid independent investigation or confrontation.','Confirm the designated trained response owner and role-based protocol before acting on a concern.'],
+      ['privacy','Confirm privacy and response responsibilities','Protected referral and case handling','Public awareness material does not justify publishing identifying narratives or locations.','Keep personal narratives and identifying details out of the public plan; use the designated private route.','Review need-to-know handling, referral ownership and do-no-harm requirements with the trained lead.'],
+      ['readiness','Review public resources and staff readiness','Training and organizational preparedness','The source is a dated roadmap, not a live incident feed or detector.','Review the official resource and how to reach trained help through established local pathways.','Rehearse authorized referral responsibilities and review training/resources at the next preparedness session.']
+    ]}
+  };
+  function reference(input,cfg){
+    const e=facts(input),source=byId(e,cfg.source),available=usable(source);
+    return ranked(cfg.steps.map((s,i)=>pair(input.slug+'-'+s[0],track=>({title:i===0&&!available?'Verify the current official guidance first':s[1],target:s[2],reason:(i===0?'Reference '+(available?'dated '+source.measuredAt:'date/content unavailable')+'. ':'')+s[3],evidenceIds:ids(source?[source]:[]),signal:!available&&i===0?'data-gap':'reference',priority:'planned',timing:i===0?'Before choosing a course of action':i===1?'Before relying on the proposed arrangement':'At the next planning review or before submission/commitment',authorityUrl:cfg.url,nextStep:i===0&&!available?'Open the official source and verify the current instructions; keep the public checklist unassessed until they are available.':track==='operator'?s[5]:s[4],escalateWhen:'A relevant concern or unresolved question needs qualified review; public guidance alone does not establish an incident or personal outcome.',escalateTo:cfg.owner,reviewAfter:'Recheck when official guidance, circumstances or the proposed arrangement changes; use source-defined timing, not a deadline invented here.'}))));
+  }
+  function prescriptions(input){
+    const e=facts(input),release=byId(e,'cms-release'),method=byId(e,'cms-method'),known=usable(release)&&date(release.measuredAt)!=null,groups=[];
+    groups.push(pair('rx-release',track=>({title:known?'Verify NADAC release '+release.measuredAt:'Obtain dated public NADAC release metadata',target:'CMS release and acquisition-cost reference',reason:known?'The universal release date is '+release.measuredAt+'; it is not a medicine-specific retail quote.':'A valid universal release date is missing; no date is inferred from a private medication search.',evidenceIds:ids([release,method]),signal:known?'reference':'data-gap',timing:'Before interpreting any acquisition benchmark',authorityUrl:urls.rx,nextStep:track==='operator'?'Verify the public dataset/release and pricing units against CMS before reviewing any authorized product-level record.':'Check the official release date and what the acquisition benchmark measures before using an example price.',escalateWhen:'The release, effective date or pricing unit cannot be verified.',escalateTo:'The CMS data publisher or a qualified pharmacist/data reviewer',reviewAfter:'Recheck at the next public release or when the source metadata changes.'})));
+    groups.push(pair('rx-product',track=>({title:'Verify the exact product and actual quote separately',target:'Qualified product and price review',reason:'No medication, strength/form match, personal coverage or pharmacy quote is present in this public plan.',evidenceIds:ids(method?[method]:[]),signal:'data-gap',timing:'Before any substitution or purchase decision',authorityUrl:urls.rx,nextStep:track==='operator'?'Use the authorized pharmacy workflow for exact product verification and actual coverage/price terms; export no patient or query details here.':'Ask a pharmacist to verify the product and obtain actual pharmacy/plan terms privately; the acquisition benchmark is not your final price.',escalateWhen:'Product identity, safe substitution or actual terms are uncertain.',escalateTo:'A qualified pharmacist and the relevant pharmacy/plan',reviewAfter:'Recheck whenever the verified product, actual quote or coverage terms change.'})));
+    groups.push(pair('rx-method',track=>({title:'Document acquisition-benchmark limitations',target:'Source units and CMS methodology',reason:'CMS publishes acquisition references; generic monthly smoothing and weekly releases do not determine individual savings.',evidenceIds:ids(method?[method]:[]),phase:'review',signal:'reference',priority:'routine',timing:'At the next reference/methods review',authorityUrl:urls.rx,nextStep:track==='operator'?'Document source units, dates and smoothing; keep unmatched products and personal savings unknown.':'Keep acquisition references separate from actual retail/insured costs and any substitution decision.',escalateWhen:'An acquisition value is presented as a guaranteed personal price or saving.',escalateTo:'The responsible pharmacy/data reviewer',reviewAfter:'Recheck when CMS methodology or the comparison purpose changes.'})));
+    return ranked(groups);
+  }
+  function va(input){
+    const e=facts(input),guide=byId(e,'va-official-guidance'),demo=e.filter(f=>['margin','scale','balance'].includes(f.id)&&f.basis==='demo'&&usable(f)),groups=[];
+    groups.push(pair('va-scope',track=>({title:track==='operator'?'Confirm the drill and authorized-data boundary':'Use real VA care information outside the drill',target:'Synthetic capacity template; not actual service availability',reason:demo.length?'Available capacity quantities are synthetic practice values.':'Capacity values are unavailable or local overrides are withheld; no real capacity is inferred.',evidenceIds:ids([guide,...demo]),signal:'scenario',timing:'Before interpreting any capacity quantity',authorityUrl:urls.va,nextStep:track==='operator'?'Confirm exercise ownership and keep protected local operating data in approved systems; do not activate an incident from this template.':'Use official VA guidance and facility channels for actual care questions; this template does not select or delay care.',escalateWhen:'A real care/operations concern exists outside the exercise.',escalateTo:track==='operator'?'The authorized clinical/operations lead':'The appropriate VA or emergency-care pathway',reviewAfter:'Recheck when exercise scope or actual official care information changes.'})));
+    const candidate=['margin','scale','balance'].map(id=>byId(demo,id)).find(f=>f&&numeric(f.value)&&f.value>0)||demo[0];
+    groups.push(pair('va-drill',track=>({title:candidate?'Rehearse the '+candidate.label.toLowerCase()+' review':'Identify the authorized inputs needed for a drill',target:candidate?candidate.label:'Census, staffed capacity and service definitions',reason:candidate?'Synthetic value '+fmt(candidate.value)+' '+(candidate.unit||'')+'; chosen as an exercise discussion target, not real facility strain.':'No supported synthetic capacity comparison is available; unverified local values remain withheld.',evidenceIds:ids(candidate?[candidate]:e.filter(f=>['balance','margin','scale'].includes(f.id))),metricIds:candidate?[candidate.id==='margin'?5:candidate.id==='scale'?6:1]:[1,5,6],phase:'review',signal:'scenario',timing:'During the next scheduled exercise review',authorityUrl:urls.va,nextStep:track==='operator'?'Walk through the declared drill screen and its assumptions with the exercise lead; replace illustrative thresholds only through approved local governance.':'Use the example to understand what information an authorized team would need; it is not an actual facility assessment.',escalateWhen:'An exercise finding reveals unclear ownership or unsupported assumptions; real events follow the actual facility pathway.',escalateTo:'The exercise lead; real concerns to the authorized facility team',reviewAfter:'Recheck after scenario, synthetic census/capacity or exercise-rule changes.'})));
+    groups.push(pair('va-handoff',track=>({title:'Confirm the real-world verification pathway',target:'Accountable care and operating information',reason:'Public guidance and lagged access information cannot establish internal bed census, RN staffing or transfer state.',evidenceIds:ids(guide?[guide]:[]),signal:'scenario',timing:'Before a real service or operating decision',authorityUrl:urls.va,nextStep:track==='operator'?'Document who owns current verified operating inputs and the approved escalation route; public checklist notes are not completed operations.':'Confirm relevant care/access information with official VA channels instead of inferring it from the drill.',escalateWhen:'Actual care or operations require information absent from this public template.',escalateTo:track==='operator'?'The authorized facility clinical/command pathway':'The appropriate official VA care pathway',reviewAfter:'Recheck when the verified service pathway or exercise purpose changes.'})));
+    return ranked(groups);
+  }
+  R.registerPrioritizer('us-grid-strain',grid);
+  R.registerPrioritizer('resilience-telemetry',market);
+  R.registerPrioritizer('usaid-consequence',agency);
+  R.registerPrioritizer('prescription-savings',prescriptions);
+  Object.keys(references).forEach(slug=>R.registerPrioritizer(slug,input=>reference(input,references[slug])));
+  R.registerPrioritizer('va-strain',va);
+})();
+
 (function () {
   const R=window.ConsoleResponse,H=R.domain,authority='https://www.va.gov/resources/choosing-between-urgent-and-emergency-care/';
   const rows=[
