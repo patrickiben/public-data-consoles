@@ -21,6 +21,12 @@ published network-level aggregates; it contains no real station locations. Live 
 aggregates, synthetic computations and interpretive guidance carry separate labels. The directed component
 is source/sink accounting, not a port of the contagion paper's VAR/FEVD estimation.
 
+[Resilience Telemetry](https://patrickiben.github.io/public-data-consoles/consoles/resilience-telemetry/)
+also adapts the directed-contagion work; its [research guide](https://patrickiben.github.io/public-data-consoles/consoles/resilience-telemetry/wiki.html#s8b)
+explains the methodological correspondence and differences.
+See the [manuscript → code → demo map](https://github.com/patrickiben/patrickiben/blob/main/RESEARCH_MAP.md)
+for each paper's draft, code/data archive and related applications.
+
 ## Live demo
 
 [Open the console catalog](https://patrickiben.github.io/public-data-consoles/).
