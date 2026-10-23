@@ -76,6 +76,7 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
     <div id="chips"></div>
   </header>
   <div id="map"></div>
+  <div id="map-status" class="muted" role="status" hidden style="margin:-10px 0 18px"></div>
   <div id="grid" class="grid"></div>
   <div id="foot">
     <div class="note"><b>About.</b> A volunteer, <b>unofficial</b> tool that pulls openly available U.S. federal hazard data for the place you enter. It can lag, have gaps or be briefly offline and is <b>not</b> a substitute for official warnings. Always follow the National Weather Service and your local emergency management, and <b>call 911 in an emergency.</b></div>
@@ -85,11 +86,10 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function(){
-/* =========================================================================
-   CONFIG — add a free AirNow API key to enable the live Air Quality panel:
-   get one in ~1 min at https://docs.airnowapi.org/account/request/ and paste below.
-   (Everything else needs no key.)  ======================================= */
-const AIRNOW_KEY=''; /* scrubbed for public repo — paste your own free EPA AirNow key to enable the live AQ panel */
+/* AirNow's public reporting-area file is keyless. Only hourly observations are used.
+   Format: https://docs.airnowapi.org/docs/ReportingAreaFactSheet.pdf */
+const AIRNOW_FILE='https://files.airnowtech.org/airnow/today/reportingarea.dat';
+let airFilePromise=null, airFetchedAt=0;
 
 const $=id=>document.getElementById(id);
 const C={ok:'#34c98a',info:'#5b9bd5',watch:'#f0b429',high:'#f97316',alert:'#ef5350',purple:'#b46ff0',dim:'#7e93ad'};
@@ -100,8 +100,16 @@ function pip(pt,geom){if(!geom)return false;const rings=geom.type==='MultiPolygo
  for(const r of rings){for(let i=0,j=r.length-1;i<r.length;j=i++){const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];
   if(((yi>pt[1])!=(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi))inside=!inside;}}return inside;}
 
+// Searches and data cards remain usable when the optional mapping CDN is blocked.
+const hasMap=!!window.L;
+function noMapLayer(){const layer={};['setView','addTo','bindPopup','clearLayers','on'].forEach(k=>layer[k]=()=>layer);return layer;}
+const L=hasMap?window.L:{map:noMapLayer,tileLayer:noMapLayer,layerGroup:noMapLayer,circleMarker:noMapLayer,geoJSON:noMapLayer};
 const map=L.map('map',{zoomControl:true,worldCopyJump:true}).setView([39,-98],4);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+const basemap=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'});
+basemap.on('tileerror',()=>{$('map-status').hidden=false;$('map-status').textContent='Basemap unavailable. Hazard markers and the data cards below remain available; use the official-source links for geographic context.';});
+if(/^https?:$/.test(location.protocol))basemap.addTo(map);else{$('map-status').hidden=false;$('map-status').textContent='Map tiles are available over HTTP(S). Search and hazard data cards remain usable in this local file.';}
+if(!hasMap){$('map').style.minHeight='100px';$('map').style.height='auto';$('map').innerHTML='<p class="muted" style="padding:20px">Map unavailable. Search above to use the hazard data cards and official-source links below.</p>';}
+
 const G={pt:L.layerGroup().addTo(map),flood:L.layerGroup().addTo(map),poly:L.layerGroup().addTo(map),nat:L.layerGroup().addTo(map)};
 
 /* ---------- card scaffold ---------- */
@@ -109,7 +117,7 @@ const CARDS=[
  ['alerts','ti-alert-triangle','Active warnings','National Weather Service'],
  ['wx','ti-cloud','Weather now','NWS forecast'],
  ['spc','ti-bolt','Severe weather outlook','NOAA SPC, today'],
- ['air','ti-lungs','Air quality','EPA AirNow'],
+ ['air','ti-lungs','Air quality','MEASURED · AirNow reporting-area observations'],
  ['water','ti-ripple','Flood &amp; water','FEMA · NOAA'],
  ['fire','ti-flame','Wildfire','NIFC'],
  ['quake','ti-activity-heartbeat','Earthquakes','USGS, 30 days'],
@@ -185,13 +193,52 @@ async function loadSPC(lat,lon){const el=$('spc');try{
  else{lvl('spc','none',C.ok);el.innerHTML='<div class="muted">No severe-thunderstorm risk area over your location in today\'s SPC outlook.</div>';}
 }catch(e){el.innerHTML='<div class="muted">SPC outlook unavailable.</div>';}}
 
+function airEscape(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function airStamp(date,time,zone){
+ const d=/^(\d{2})\/(\d{2})\/(\d{2})$/.exec(date),t=/^(\d{1,2}):(\d{2})$/.exec(time);
+ const offsets={UTC:0,GMT:0,EDT:-4,EST:-5,CDT:-5,CST:-6,MDT:-6,MST:-7,AZT:-7,PDT:-7,PST:-8,AKDT:-8,AKST:-9,HDT:-9,HST:-10,AST:-4,ADT:-3,CHST:10,SST:-11};
+ if(!d||!t||!(zone in offsets))return NaN;
+ const month=+d[1],day=+d[2],year=2000+(+d[3]),hour=+t[1],minute=+t[2];
+ const local=Date.UTC(year,month-1,day,hour,minute),check=new Date(local);
+ if(month<1||month>12||day<1||hour>23||minute>59||check.getUTCMonth()!==month-1||check.getUTCDate()!==day)return NaN;
+ return local-offsets[zone]*3600000;
+}
+function airMiles(lat1,lon1,lat2,lon2){
+ const r=Math.PI/180,a=Math.sin((lat2-lat1)*r/2)**2+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin((lon2-lon1)*r/2)**2;
+ return 3958.8*2*Math.atan2(Math.sqrt(a),Math.sqrt(Math.max(0,1-a)));
+}
+async function airFile(){
+ if(!airFilePromise||Date.now()-airFetchedAt>5*60000){
+  airFetchedAt=Date.now();
+  airFilePromise=(async()=>{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+   try{const response=await fetch(AIRNOW_FILE,{signal:controller.signal});if(!response.ok)throw new Error('AirNow HTTP '+response.status);
+    return {text:await response.text(),fetched:Date.now()};
+   }finally{clearTimeout(timer);}
+  })().catch(error=>{airFilePromise=null;throw error;});
+ }
+ return airFilePromise;
+}
 async function loadAir(lat,lon){const el=$('air');
- if(!AIRNOW_KEY){lvl('air','key needed',C.dim);el.innerHTML='<div class="muted">Live air quality needs a free EPA <b>AirNow</b> API key. Get one at <a href="https://docs.airnowapi.org/account/request/" target="_blank" rel="noopener">airnowapi.org</a> and paste it into <code>AIRNOW_KEY</code> at the top of the file. Air-quality <em>alerts</em> still show in Active warnings.</div>';return;}
- try{const j=await(await fetch('https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude='+lat+'&longitude='+lon+'&distance=60&API_KEY='+AIRNOW_KEY)).json();
-  if(j&&j.length){const w=j.reduce((a,b)=>b.AQI>a.AQI?b:a,j[0]);const cat=w.Category.Name;const col=w.AQI<=50?C.ok:w.AQI<=100?C.watch:w.AQI<=150?C.high:C.alert;
-   lvl('air',cat,col);el.innerHTML=`<div class="big" style="color:${col}">AQI ${w.AQI} · ${cat}</div><div class="muted" style="margin-top:4px">Worst current pollutant: ${w.ParameterName}. Reporting area: ${w.ReportingArea}, ${w.StateCode}.</div>`;}
-  else{lvl('air','—',C.dim);el.innerHTML='<div class="muted">No AirNow station reporting near this location.</div>';}
- }catch(e){el.innerHTML='<div class="muted">Air-quality feed unavailable.</div>';}}
+ const links='<a href="https://www.airnow.gov/" target="_blank" rel="noopener">Check official AirNow</a> · <a href="https://files.airnowtech.org/airnow/today/reportingarea.dat" target="_blank" rel="noopener">public source file</a>';
+ try{const file=await airFile();if(!here||here.lat!==lat||here.lon!==lon)return;
+  const states=new Set('AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC PR VI GU AS MP'.split(' '));
+  const rows=[];
+  for(const line of file.text.split(/\r?\n/)){const f=line.split('|');if(f.length<17||f[5]!=='O'||!states.has(f[8])||!f[12].trim()||!f[9].trim()||!f[10].trim())continue;
+   const aqi=Number(f[12]),x=Number(f[9]),y=Number(f[10]),stamp=airStamp(f[1],f[2],f[3]);
+   if(!Number.isFinite(aqi)||aqi<0||aqi>500||!Number.isFinite(x)||Math.abs(x)>90||!Number.isFinite(y)||Math.abs(y)>180||!Number.isFinite(stamp))continue;
+   const distance=airMiles(lat,lon,x,y);if(distance<=60)rows.push({aqi,stamp,distance,name:f[7],state:f[8],pollutant:f[11],when:f[1]+' '+f[2]+' '+f[3],key:f[7]+'|'+f[8]+'|'+f[9]+'|'+f[10]});
+  }
+  if(!rows.length){lvl('air','unavailable',C.dim);el.innerHTML='<div class="muted">No usable hourly AirNow reporting-area observation within 60 miles. No local AQI is inferred. '+links+'.</div>';return;}
+  rows.sort((a,b)=>a.distance-b.distance);const nearest=rows[0].key,near=rows.filter(r=>r.key===nearest),latest=Math.max(...near.map(r=>r.stamp));
+  const latestRows=near.filter(r=>r.stamp===latest),w=latestRows.reduce((a,b)=>b.aqi>a.aqi?b:a),age=(Date.now()-latest)/3600000;
+  if(age>6||age< -1){lvl('air','stale / unavailable',C.dim);el.innerHTML='<div class="muted">Nearest reporting area: '+airEscape(w.name)+', '+airEscape(w.state)+'. Its latest hourly observation is '+airEscape(w.when)+'; no current AQI is shown. '+links+'.</div>';return;}
+  const category=w.aqi<=50?'Good':w.aqi<=100?'Moderate':w.aqi<=150?'Unhealthy for sensitive groups':w.aqi<=200?'Unhealthy':w.aqi<=300?'Very unhealthy':'Hazardous';
+  const col=w.aqi<=50?C.ok:w.aqi<=100?C.watch:w.aqi<=150?C.high:C.alert;
+  lvl('air',category,col);el.innerHTML='<div class="big" style="color:'+col+'">AQI '+Math.round(w.aqi)+' · '+category+'</div>'+
+   '<div class="small" style="margin-top:6px"><b>MEASURED · preliminary AirNow observation</b><br>Reporting area: '+airEscape(w.name)+', '+airEscape(w.state)+' (about '+Math.round(w.distance)+' mi from its centroid). Highest AQI among pollutants reported for that area/hour: '+airEscape(w.pollutant)+'.</div>'+
+   '<div class="muted" style="margin-top:6px">Observed '+airEscape(w.when)+' · fetched '+new Date(file.fetched).toISOString().slice(0,16).replace('T',' ')+' UTC. Reporting-area values may differ from conditions at your address. These preliminary data can be revised. Forecast and yesterday-maximum records are excluded. '+links+'.</div>';
+ }catch(error){if(!here||here.lat!==lat||here.lon!==lon)return;lvl('air','unavailable',C.dim);el.innerHTML='<div class="muted">AirNow hourly observations are unavailable right now. No AQI value is substituted. '+links+'. Air-quality alerts may still appear in Active warnings.</div>';}
+}
 
 function fzText(z){return z?({A:'a high-risk 100-year flood zone (A)',AE:'a high-risk flood zone (AE) — insurance typically required',AO:'a high-risk shallow-flooding zone (AO)',V:'a high-risk COASTAL flood zone (V) — wave hazard',VE:'a high-risk coastal flood zone (VE) — wave hazard',X:'a minimal-risk zone (X)'})[z]||('flood zone '+z):null;}
 async function loadWater(lat,lon){const el=$('water');let flood=null,tide=null,gauges=0;
@@ -272,8 +319,8 @@ function buildResources(lat,lon){const off=(here.office||'').toLowerCase(),rel=h
   lk('https://www.airnow.gov/?city='+encodeURIComponent(rel.city||'')+'&state='+encodeURIComponent(rel.state||''),'ti-lungs','AirNow air quality','EPA — current &amp; forecast')+
   lk('https://www.ready.gov/','ti-shield-check','Ready.gov','Make a plan, build a kit')+
   lk('https://www.google.com/search?q='+encodeURIComponent((rel.city?rel.city+' ':'')+(rel.state||'')+' emergency management'),'ti-urgent','Your local emergency management','County / city office')+
-  lk('River_Flood_Network.html','ti-git-fork','River Flood Network','Which upstream tributary drives a flood')+
-  lk('River_Flood_Propagation.html','ti-arrow-down','River Flood Propagation','Downstream flood lead times along a river');
+  lk('../river-flood-network/','ti-git-fork','River Flood Network','Which upstream tributary drives a flood')+
+  lk('../river-flood-propagation/','ti-arrow-down','River Flood Propagation','Downstream flood lead times along a river');
 }
 
 /* ================= ORCHESTRATION ================= */
@@ -296,7 +343,7 @@ async function go(){const q=$('q').value;if(!q.trim())return;$('place').innerHTM
 $('go').onclick=go;$('q').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
 $('loc').onclick=function(){if(!navigator.geolocation)return;$('place').innerHTML='<span class="muted"><span class="spin"></span> locating…</span>';
  navigator.geolocation.getCurrentPosition(p=>loadLocation({lat:p.coords.latitude,lon:p.coords.longitude,name:'your location'}),()=>{$('place').innerHTML='<span style="color:'+C.alert+'">Location denied — type a ZIP or town.</span>';});};
-$('src').innerHTML='Sources (all public, no account): NWS api.weather.gov (warnings, forecast), NOAA SPC severe-weather outlook, EPA AirNow (key), FEMA National Flood Hazard Layer, NOAA Tides &amp; Currents, NOAA National Water Prediction Service, NIFC/Esri wildfire incidents, USGS earthquakes &amp; volcano alerts, U.S. Drought Monitor, NOAA National Hurricane Center. Geocoding: Zippopotam.us &amp; OpenStreetMap Nominatim. Lookups run in your browser; nothing is stored.';
+$('src').innerHTML='Sources (all public, no account): NWS api.weather.gov (warnings, forecast), NOAA SPC severe-weather outlook, EPA AirNow keyless reporting-area observations (preliminary), FEMA National Flood Hazard Layer, NOAA Tides &amp; Currents, NOAA National Water Prediction Service, NIFC/Esri wildfire incidents, USGS earthquakes &amp; volcano alerts, U.S. Drought Monitor, NOAA National Hurricane Center. Geocoding: Zippopotam.us &amp; OpenStreetMap Nominatim. Lookups run in your browser; nothing is stored.';
 loadNational();
 })();
 </script>

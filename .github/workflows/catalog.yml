@@ -16,3 +16,16 @@ jobs:
       - run: python scripts/check_catalog.py
       - run: python -m unittest discover -s tests -v
       - run: python scripts/refresh_fred.py --check
+  keyless-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps --only-shell chromium
+        timeout-minutes: 10
+      - run: npm test

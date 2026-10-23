@@ -61,6 +61,11 @@ header .s{color:var(--ink2);font-size:14.5px;margin-top:7px;max-width:800px}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function(){
+// Map rendering is optional: data panels keep working if the mapping library is blocked.
+const hasMap=!!window.L;
+function noMapLayer(){const layer={};['setView','addTo','bindPopup','bindTooltip','clearLayers','on','fitBounds','getBounds','pad'].forEach(k=>layer[k]=()=>layer);return layer;}
+const L=hasMap?window.L:{map:noMapLayer,tileLayer:noMapLayer,layerGroup:noMapLayer,circleMarker:noMapLayer,geoJSON:noMapLayer,polyline:noMapLayer,marker:noMapLayer,divIcon:noMapLayer,latLngBounds:noMapLayer,control:noMapLayer,DomUtil:{create:(tag,cls)=>{const el=document.createElement(tag);el.className=cls;return el;}}};
+if(!hasMap){const el=document.getElementById('map');el.style.minHeight='100px';el.style.height='auto';el.innerHTML='<p role="status" style="padding:20px">Map unavailable. Data panels and official-source links remain available below.</p>';}
 const $=id=>document.getElementById(id);
 const NLDI='https://api.water.usgs.gov/nldi/linked-data';
 const CAT={no_flooding:0,action:1,minor:2,moderate:3,major:4};
@@ -70,7 +75,15 @@ const sev=c=>CAT[c]!=null?CAT[c]:0;
 async function jget(u,ms){try{const c=new AbortController();const to=setTimeout(()=>c.abort(),ms||12000);const r=await fetch(u,{signal:c.signal,headers:{'Accept':'application/json'}});clearTimeout(to);return r.ok?await r.json():null;}catch(e){return null;}}
 
 const map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([38.6,-90.2],8); // canvas renderer: handles the large DIST=120 flowline tree without choking the DOM
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+// Standard public OSM tiles need no account or API key. Browser caching and Referer stay intact.
+// Request only the visible viewport; no offline tile download or prefetch.
+let basemapNotice;
+const basemapStatus=L.control({position:'topright'});
+basemapStatus.onAdd=function(){basemapNotice=L.DomUtil.create('div','basemap-status');basemapNotice.setAttribute('role','status');basemapNotice.style.cssText='display:none;max-width:240px;padding:8px 10px;background:#16273d;color:#eaf1f8;border:1px solid #7e93ad;border-radius:8px;font:12px/1.4 system-ui';return basemapNotice;};basemapStatus.addTo(map);
+const basemap=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,keepBuffer:1,updateWhenIdle:true,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'});
+basemap.on('loading',()=>{basemapNotice.style.display='none';});
+basemap.on('tileerror',()=>{basemapNotice.textContent='Some basemap tiles are unavailable. Data panels and overlays remain available.';basemapNotice.style.display='block';});
+if(/^https?:$/.test(location.protocol))basemap.addTo(map);else if(basemapNotice){basemapNotice.textContent='Map tiles are available over HTTP(S). Data panels and overlays remain usable in this local file.';basemapNotice.style.display='block';}
 let G=L.layerGroup().addTo(map);
 const lg=L.control({position:'bottomright'});lg.onAdd=function(){const d=L.DomUtil.create('div','legend');d.innerHTML='<b>Gauge status</b><br><i style="background:#34c98a"></i>normal<br><i style="background:#f0b429"></i>action<br><i style="background:#f97316"></i>minor<br><i style="background:#ef5350"></i>moderate<br><i style="background:#b46ff0"></i>major<br><span style="color:#9fb6cf">◎ = this location · lines = upstream rivers</span>';return d;};lg.addTo(map);
 $('method').innerHTML='This is <b>directedness‑not‑connectedness</b> on a branching network. The loud, flooding gauge is usually <b>downstream</b> — it integrates everything above it. The cause is an upstream <b>source</b>. So this takes your point, finds its river reach (USGS NLDI), walks the <b>upstream‑main</b> path and the <b>upstream‑tributary</b> tree, attaches NOAA flood status to every gauge, and separates the <b>main stem</b> from each <b>tributary</b>. The driver is the in‑flood source sitting highest on a branch — and the genuinely useful answer is when a single tributary is in flood while the main stem is calm: that tributary is what to watch, even though it isn\'t where the water is loudest yet.';

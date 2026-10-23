@@ -1,6 +1,6 @@
 # Public-Data Consoles
 
-A collection of **32 self-contained, browser-only dashboards** built on **live public data feeds**.
+A collection of **32 self-contained, browser-only dashboards** built on **public data feeds and dated snapshots**.
 Every console is a single HTML file: open it (or visit the GitHub Pages URL) and it runs — no install,
 no account, no build step, no server.
 
@@ -40,9 +40,9 @@ for each paper's draft, code/data archive and related applications.
 | [Earthquake Consequence](consoles/quake-consequence/) | Live, global | USGS PAGER / ShakeMap / ground-failure / DYFI, OSM/Overpass lifelines |
 | [River Flood Propagation](consoles/river-flood-propagation/) | Live, U.S. | NOAA National Water Prediction Service (NWPS) |
 | [River Flood Network](consoles/river-flood-network/) | Live, U.S. | USGS NLDI (network-linked data index) |
-| [Hazards Near You](consoles/us-local-hazards/) | Live, U.S. | NWS, NOAA SPC/NHC/Tides, USGS, FEMA NFHL, EPA AirNow\*, U.S. Drought Monitor |
+| [Hazards Near You](consoles/us-local-hazards/) | Live, U.S. | NWS, NOAA SPC/NHC/Tides, USGS, FEMA NFHL, keyless EPA AirNow observations, U.S. Drought Monitor |
 | [Coastal Water Resilience](consoles/coastal-water-resilience/) | Live + modeled (synthetic network) | NOAA CO-OPS gauge 8726520 (water level, tide predictions, OFS forecast), NOAA NHC (Esri Active Hurricanes), NWS alerts |
-| [U.S. Grid Strain](consoles/us-grid-strain/) | Live, U.S. | EIA Hourly Electric Grid Monitor (EIA-930)\*\* |
+| [U.S. Grid Strain](consoles/us-grid-strain/) | Dated snapshot; optional live connection, U.S. | Official EIA-930 public downloads; optional EIA OpenData connection |
 | [Global Outbreak & Emerging-Threat Tracker](consoles/global-outbreak-tracker/) | Live + snapshot | OWID (mpox), CDC (measles), disease.sh, curated WHO / Africa CDC watch |
 
 **Health-System Strain & Consequence**
@@ -100,12 +100,14 @@ for each paper's draft, code/data archive and related applications.
 |---|---|---|
 | [Human Trafficking — Get Help](consoles/human-trafficking/) | Reference | Verified hotlines + Polaris / UNODC / ILO–Walk Free / CTDC (badge-framed) |
 
-\* **EPA AirNow** (Hazards Near You) needs a free key you supply yourself. The public copy ships with the key
-blank; the air-quality panel shows a "key needed" prompt until you paste your own into `AIRNOW_KEY` at the top
-of `consoles/us-local-hazards/index.html`. **Do not commit a real key to a public repo.**
+## No visitor API keys
 
-\*\* **U.S. Grid Strain** needs a free [EIA OpenData](https://www.eia.gov/opendata/) key, which it stores in
-your browser's `localStorage` only — it is never written into the file or committed.
+All public consoles open without a visitor account or provider key. Maps use standard OpenStreetMap
+tiles with visible attribution; mapping failures leave the data panels usable. Air quality uses EPA's
+[public reporting-area observation file](https://files.airnowtech.org/airnow/today/reportingarea.dat),
+with observation time, reporting-area distance and freshness checks. U.S. Grid Strain opens on an
+embedded, dated snapshot from official EIA public downloads; its default view is explicitly **not live**.
+An optional personal EIA connection can refresh it, but never gates the existing data.
 
 ## How they work
 
@@ -133,6 +135,26 @@ Run `python3 scripts/check_catalog.py` (Python 3.12+ and Node.js required). It c
 all console entrypoints appear in both the landing page and README, that their counts agree,
 and that every inline JavaScript program parses. It does not verify external feeds or establish
 medical, legal, financial, or predictive validity. GitHub Actions runs these checks on changes.
+
+Run `python3 -m unittest discover -s tests -v` for source/credential regressions and snapshot checks.
+For browser checks, run `npm ci`, `npx playwright install --only-shell chromium`, then `npm test`.
+These exercise keyless startup, public-data fixtures and unavailable map/feed states. External requests
+are intercepted; automated tests do not download OpenStreetMap tiles. Normal interactive maps follow
+the [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/).
+
+## Refresh the embedded EIA grid snapshot
+
+Run `python3 scripts/refresh_grid_snapshot.py` to download the official keyless six-month EIA-930
+balance and interchange CSVs and replace the grid console's embedded measurements. It records source
+URLs, response modification dates, SHA-256 hashes and the actual capture time. Only raw reported
+values are used; forecasts are aligned with each authority's latest actual-demand hour, and missing
+values remain missing. The visible source links and capture date follow the embedded provenance.
+
+To replay a saved capture, put `balance.csv`, `interchange.csv` and their optional `.headers` files
+in one folder and pass `--files /path/to/capture --period 2026_Jul_Dec --captured-at ISO_TIMESTAMP`.
+Use the original retrieval timestamp only for an archived replay. Review the data diff, run the catalog,
+unit and browser checks above, and inspect the page before publishing. The public snapshot does not
+refresh itself and warns when its measurements are over 30 days old.
 
 ## Refresh the embedded FRED snapshot
 

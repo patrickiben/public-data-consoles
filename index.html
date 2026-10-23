@@ -243,8 +243,9 @@
     color:var(--ink-3);text-align:right;line-height:1.45;
     display:flex;flex-direction:column;align-items:flex-end;gap:5px;
   }
-  .livedot{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2)}
+  .livedot,.snapshotdot{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2)}
   .livedot .d{width:7px;height:7px;border-radius:50%;background:var(--accent,var(--cyan));box-shadow:0 0 0 3px rgba(255,255,255,.10)}
+  .snapshotdot .d{width:7px;height:7px;border-radius:50%;background:var(--amber)}
 
   .pills{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px}
   .pill{
@@ -257,8 +258,8 @@
   .pill .pd{width:6px;height:6px;border-radius:50%}
   .pill.live{color:#9af5d6;background:rgba(61,220,132,.10);border-color:rgba(61,220,132,.32)}
   .pill.live .pd{background:var(--green)}
-  .pill.modeled{color:#ffd99a;background:rgba(242,176,61,.10);border-color:rgba(242,176,61,.32)}
-  .pill.modeled .pd{background:var(--amber)}
+  .pill.modeled,.pill.snapshot{color:#ffd99a;background:rgba(242,176,61,.10);border-color:rgba(242,176,61,.32)}
+  .pill.modeled .pd,.pill.snapshot .pd{background:var(--amber)}
   .pill.demo{color:#d4c4ff;background:rgba(169,139,255,.12);border-color:rgba(169,139,255,.34)}
   .pill.demo .pd{background:var(--violet)}
   .pill.scope{color:var(--ink-2);background:rgba(255,255,255,.025);border-color:var(--line-2)}
@@ -594,16 +595,16 @@
               </svg>
             </span>
             <div class="src">
-              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span class="snapshotdot"><span class="d" aria-hidden="true"></span>SNAPSHOT</span>
               <span>SRC: EIA-930</span>
             </div>
           </div>
           <div class="pills">
-            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · EIA-930</span>
+            <span class="pill snapshot"><span class="pd" aria-hidden="true"></span>DATED EIA-930 SNAPSHOT</span>
             <span class="pill scope">U.S.</span>
           </div>
           <h3>U.S. Grid Strain</h3>
-          <p>Live U.S. electrical-grid strain by balancing authority from the EIA Hourly Grid Monitor (EIA-930): demand vs. recent peak, day-ahead forecast surprise, fuel mix, and the directed inter-region interchange network.</p>
+          <p>U.S. electrical-grid strain from a dated official EIA-930 snapshot: demand vs. recent peak, day-ahead forecast surprise and directed inter-region interchange. Opens without registration; an optional live connection can refresh the data.</p>
           <div class="actions">
             <a class="open" href="consoles/us-grid-strain/" aria-label="Open U.S. Grid Strain">Open console <span class="arrow" aria-hidden="true">→</span></a>
           </div>
@@ -1522,7 +1523,7 @@
 
 <footer>
   <div class="wrap">
-    <p>Single-file HTML · runs entirely in your browser · all lookups are client-side and nothing is stored. Some panels need a free public API key you supply yourself (e.g. EPA AirNow). Built by <span class="ftname">Patrick Iben</span>.</p>
+    <p>Browser-only consoles · no visitor account or API key required. Public observations, dated snapshots and demos are labeled in each console. Built by <span class="ftname">Patrick Iben</span>.</p>
     <a class="readme" href="README.md">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px"><path d="M4 4h9l5 5v11H4z"/><path d="M13 4v5h5"/></svg>
       README

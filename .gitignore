@@ -26,3 +26,4 @@ NOTES.local.*
 secrets.*
 
 __pycache__/
+node_modules/

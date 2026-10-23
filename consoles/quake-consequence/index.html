@@ -65,13 +65,26 @@ header .s{color:var(--ink2);font-size:13.5px;margin-top:6px;max-width:640px}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function(){
+// Map rendering is optional: data panels keep working if the mapping library is blocked.
+const hasMap=!!window.L;
+function noMapLayer(){const layer={};['setView','addTo','bindPopup','bindTooltip','clearLayers','on','fitBounds','getBounds','pad'].forEach(k=>layer[k]=()=>layer);return layer;}
+const L=hasMap?window.L:{map:noMapLayer,tileLayer:noMapLayer,layerGroup:noMapLayer,circleMarker:noMapLayer,geoJSON:noMapLayer,polyline:noMapLayer,marker:noMapLayer,divIcon:noMapLayer,latLngBounds:noMapLayer,control:noMapLayer,DomUtil:{create:(tag,cls)=>{const el=document.createElement(tag);el.className=cls;return el;}}};
+if(!hasMap){const el=document.getElementById('map');el.style.minHeight='100px';el.style.height='auto';el.innerHTML='<p role="status" style="padding:20px">Map unavailable. Data panels and official-source links remain available below.</p>';}
 const $=id=>document.getElementById(id);
 const DEFAULT_EVENT='us6000t7zp'; // M7.5 Venezuela, 2026-06-24 — load this first
 const PAGER_COL={green:'#34c98a',yellow:'#f0b429',orange:'#f97316',red:'#ef5350'};
 const PAGER_MEAN={green:'no/▒minimal expected',yellow:'local impact likely',orange:'significant impact likely',red:'high impact — extensive damage &amp; casualties likely'};
 const fmtT=t=>{const d=(Date.now()-t)/3600000;return d<1?Math.round(d*60)+' min ago':d<48?Math.round(d)+' h ago':Math.round(d/24)+' d ago';};
 let map=L.map('map',{zoomControl:true,worldCopyJump:true}).setView([20,0],2);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+// Standard public OSM tiles need no account or API key. Browser caching and Referer stay intact.
+// Request only the visible viewport; no offline tile download or prefetch.
+let basemapNotice;
+const basemapStatus=L.control({position:'topright'});
+basemapStatus.onAdd=function(){basemapNotice=L.DomUtil.create('div','basemap-status');basemapNotice.setAttribute('role','status');basemapNotice.style.cssText='display:none;max-width:240px;padding:8px 10px;background:#16273d;color:#eaf1f8;border:1px solid #7e93ad;border-radius:8px;font:12px/1.4 system-ui';return basemapNotice;};basemapStatus.addTo(map);
+const basemap=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,keepBuffer:1,updateWhenIdle:true,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'});
+basemap.on('loading',()=>{basemapNotice.style.display='none';});
+basemap.on('tileerror',()=>{basemapNotice.textContent='Some basemap tiles are unavailable. Data panels and overlays remain available.';basemapNotice.style.display='block';});
+if(/^https?:$/.test(location.protocol))basemap.addTo(map);else if(basemapNotice){basemapNotice.textContent='Map tiles are available over HTTP(S). Data panels and overlays remain usable in this local file.';basemapNotice.style.display='block';}
 let LY={shake:L.layerGroup().addTo(map),after:L.layerGroup().addTo(map),epi:L.layerGroup().addTo(map),life:L.layerGroup().addTo(map)};
 const lg=L.control({position:'bottomright'});lg.onAdd=function(){const d=L.DomUtil.create('div','legend');d.innerHTML='<i style="background:#ef5350"></i>epicenter<br><i style="background:#f0b429"></i>aftershocks<br><i style="background:#b46ff0"></i>hospitals / lifelines';return d;};lg.addTo(map);
 $('src').innerHTML='Sources (public): USGS Earthquake Hazards Program (ComCat events, PAGER, ShakeMap, ground-failure), GDACS, ReliefWeb/OCHA, OpenStreetMap (lifelines), ESA/NASA Sentinel-1 via ASF (radar). Geocoding/links to official agencies. Runs in your browser; nothing stored.';
