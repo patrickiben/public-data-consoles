@@ -18,6 +18,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      CHROME_CHANNEL: chrome
     permissions:
       contents: write
       pages: write
@@ -37,8 +39,8 @@ jobs:
           cache: npm
       - run: npm ci
         timeout-minutes: 5
-      - run: npx playwright install --with-deps --only-shell chromium
-        timeout-minutes: 10
+      - name: Report the installed runner browser
+        run: google-chrome --version
       - name: Refresh from public EIA downloads
         id: snapshot
         run: python scripts/refresh_grid_snapshot.py --automated --github-output "$GITHUB_OUTPUT"

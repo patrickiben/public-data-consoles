@@ -197,7 +197,7 @@ async function scenario(slug, options = {}) {
 }
 
 try {
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, ...(process.env.CHROME_CHANNEL ? { channel: process.env.CHROME_CHANNEL } : {}) });
   for (const slug of ['quake-consequence', 'river-flood-network', 'river-flood-propagation', 'us-local-hazards', 'us-grid-strain']) {
     await scenario(slug);
     await scenario(slug, { failTiles: true });
