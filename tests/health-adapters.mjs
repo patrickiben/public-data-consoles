@@ -25,6 +25,8 @@ function load(slug,globals={},doc=fixtureDocument()) {
   const context=vm.createContext({Date:Clock,URL});
   Object.defineProperties(context,Object.getOwnPropertyDescriptors(globals));
   vm.runInContext(core,context,{filename:'core.js'});
+  if(['nhs-scotland-strain','global-outbreak-tracker'].includes(slug))context.window=context;
+  if(slug==='nhs-scotland-strain')vm.runInContext(fs.readFileSync(path.join(root,'response-plans/domain-helpers.js'),'utf8'),context);
   context.document=doc;
   vm.runInContext(fs.readFileSync(path.join(root,'public-data-runtime/worldbank.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(root,'public-data-runtime/health-feeds.js'),'utf8'),context);
@@ -80,7 +82,22 @@ test('WB: selecting a new public country/indicator changes the evidence revision
   doc.ids.get('cysel').value='CCC';f.read();assert.notEqual(f.raw.context,old);assert.equal(fact(f.plan,'selected-value').value,0);
   f.context.CMPK='unavailable';f.read();assert.equal(metric(f.plan,2).status,'unknown');assert.equal(fact(f.plan,'selected-value').quality,'missing');
 });
+test('all12 WDI selection identities survive a new observation year but distinguish geography/measure/cohort',()=>{
+  for(const slug of wb){
+    const snap=sampleWB(),doc=fixtureDocument(),f=load(slug,{SNAP:snap,CMPK:'x'},doc),before=f.raw.selectionKey,context=f.raw.context;
+    assert.ok(before);snap.cty.AAA.latest.x={v:7,y:'2023'};f.read();assert.notEqual(f.raw.context,context);assert.equal(f.raw.selectionKey,before,slug+' reporting period');
+    snap.cty.AAA.latest.x=null;f.read();assert.equal(f.raw.selectionKey,before,slug+' missing measurement');
+    doc.ids.get('cysel').value='BBB';f.read();assert.notEqual(f.raw.selectionKey,before,slug+' country');
+    doc.ids.get('cysel').value='AAA';f.context.CMPK='unavailable';f.read();assert.notEqual(f.raw.selectionKey,before,slug+' indicator');
+    f.context.CMPK='x';snap.cty.BBB.income='LIC';f.read();assert.notEqual(f.raw.selectionKey,before,slug+' declared comparator cohort');
+  }
+});
 function respiratory(values,dates) {return {embedded:'2026-06-27',nssp:{flu:values.map((v,i)=>[dates?.[i]||new Date(now-7*(values.length-1-i)*86400000).toISOString().slice(0,10),v])},resp:{flu:[]},wval_nat:{flu:[]}};}
+test('respiratory selection identity survives the next source week/coverage change but changes with pathogen',()=>{
+  const snap=respiratory([1,2,3,4],['2026-09-25','2026-10-02','2026-10-09','2026-10-16']),f=load('us-respiratory-surveillance',{SNAP:snap,GLSEL:'flu'}),key=f.raw.selectionKey,context=f.raw.context;
+  snap.nssp.flu.push(['2026-10-23',5]);snap.wval_state_expected={flu:['New reporting jurisdiction']};f.read();assert.notEqual(f.raw.context,context);assert.equal(f.raw.selectionKey,key);
+  f.context.GLSEL='rsv';f.read();assert.notEqual(f.raw.selectionKey,key);
+});
 test('Respiratory: two declared four-week windows; stale dependencies still expose input-collection actions',()=>{
   const snap=respiratory([0,0,0,0,2,2,2,2]),f=load('us-respiratory-surveillance',{SNAP:snap,GLSEL:'flu'});
   assert.equal(fact(f.plan,'shape-w1').value,2);assert.equal(metric(f.plan,2).status,'triggered');assert.equal(fact(f.plan,'four-week-change').value,2);
@@ -93,6 +110,11 @@ test('Respiratory: missing weeks and invalid dates cannot supply a W1 or throw t
   snap.nssp.flu=[];f.read();assert.equal(fact(f.plan,'ed').quality,'missing');assert.equal(metric(f.plan,5).status,'unknown');
 });
 function overdose() {const periods=Array.from({length:24},(_,i)=>new Date(Date.UTC(2024,9+i,1)).toISOString().slice(0,7));return {periods,nat:{total:periods.map((_,i)=>i<18?100:120)},embedded:'2026-06-27'};}
+test('overdose selection identity survives a new ending month but changes with the chosen drug class',()=>{
+  const snap=overdose(),f=load('us-overdose-surveillance',{SNAP:snap}),key=f.raw.selectionKey,context=f.raw.context;
+  snap.periods.push('2026-10');snap.nat.total.push(110);f.read();assert.notEqual(f.raw.context,context);assert.equal(f.raw.selectionKey,key);
+  f.doc.getElementById('response-public-focus').value='syn';f.read();assert.notEqual(f.raw.selectionKey,key);
+});
 test('Overdose: rolling totals remain modeled, classes unsummed, exact month comparison and missing-month guard',()=>{
   const snap=overdose(),f=load('us-overdose-surveillance',{SNAP:snap});
   assert.equal(fact(f.plan,'selected-total').basis,'modeled');assert.equal(fact(f.plan,'shape-w1').value,20);assert.ok(Math.abs(fact(f.plan,'year-change').value-20)<1e-6);
@@ -135,3 +157,21 @@ test('Air: exact five-year annual-step excess integral; no imputation, cohort do
 test('CDC directions: exact endpoints, observed disagreement, partial coverage and stale dependencies',()=>{const s=respiratory([1,1,1,1,2,2,2,2]),start='2026-09-25',end='2026-10-23';s.wval_nat={flu:[[start,2],[end,3]]};s.wval_state_series={A:{flu:[[start,2],[end,4]]},B:{flu:[[start,4],[end,2]]},C:{flu:[[end,2]]}};s.wval_state_site_counts={A:{flu:{[start]:2,[end]:3}},B:{flu:{[start]:1,[end]:1}}};const f=load('us-respiratory-surveillance',{SNAP:s,GLSEL:'flu'});assert.equal(metric(f.plan,6).value,50);assert.equal(metric(f.plan,6).status,'triggered');assert.match(fact(f.plan,'scale-disagreement').note,/Paired 2 of 3/);s.wval_state_series.B.flu=[[start,2],[end,4]];f.read();assert.equal(metric(f.plan,6).status,'unknown');delete s.wval_state_series.C;f.read();assert.equal(metric(f.plan,6).status,'clear');s.wval_nat.flu=[['2025-09-25',2],['2025-10-23',3]];f.read();assert.equal(metric(f.plan,6).status,'unknown');});
 test('CDC categories: grouping preserves observed counts and rejects duplicates/unsafe/missing values',()=>{const f=load('us-respiratory-surveillance',{SNAP:respiratory([1,2]),GLSEL:'flu'}),H=f.context.HealthPublicData,rows=[{week_end:'2026-10-17',state_territory:'A',site_wval_category:'Low',n:'2'},{week_end:'2026-10-17',state_territory:'A',site_wval_category:'High',n:'1'}];assert.equal(H.wastewaterGroups(rows,true).A.series[0][1],8/3);assert.equal(H.wastewaterGroups(rows,true).A.counts['2026-10-17'],3);assert.throws(()=>H.wastewaterGroups([...rows,rows[0]],true));for(const n of ['bad','0',String(Number.MAX_SAFE_INTEGER)])assert.throws(()=>H.wastewaterGroups([{...rows[1],n}],true));});
 test('Overdose scale: same ending-month/year and category, source history rather than retained display values',()=>{const s=overdose(),end=s.periods.at(-1),start=String(+end.slice(0,4)-1)+end.slice(4);s.stateMonthly={NY:{total:[[start,10],[end,20]]},YC:{total:[[start,20],[end,10]]}};s.stateHistoryExpectedJurisdictions=['NY','YC','OR'];s.states={OR:{tot:999}};const f=load('us-overdose-surveillance',{SNAP:s});assert.equal(metric(f.plan,6).value,50);assert.equal(metric(f.plan,6).status,'triggered');assert.match(fact(f.plan,'scale-disagreement').note,/missing pairs: OR/);s.stateMonthly.YC.total=[[start,10],[end,20]];f.read();assert.equal(metric(f.plan,6).status,'unknown');f.doc.getElementById('response-public-focus').value='coc';f.read();assert.equal(metric(f.plan,6).status,'unknown');});
+test('reference3 selection keys distinguish the chosen condition, not revised values',()=>{
+  for(const [slug,field]of [['global-cancer','INC'],['global-ntds','BURDEN'],['antimicrobial-resistance','PATHO']]){
+    const globals=embedded(slug),f=load(slug,globals),key=f.raw.selectionKey;assert.ok(key);
+    globals[field][0][1]+=1;f.read();assert.equal(f.raw.selectionKey,key,slug+' revised value');
+    f.doc.getElementById('response-public-focus').value='1';f.read();assert.notEqual(f.raw.selectionKey,key,slug+' selected condition');
+  }
+});
+test('NHS source week/site availability stays one scope; actual scenario names are distinct',()=>{
+  const globals={...embedded('nhs-scotland-strain'),SCEN:'none'},f=load('nhs-scotland-strain',globals),key=f.raw.selectionKey,context=f.raw.context;
+  assert.ok(key);const day=String(globals.SNAP.meta.aeWeek),next=new Date(Date.parse(day.slice(0,4)+'-'+day.slice(4,6)+'-'+day.slice(6,8)+'T00:00:00Z')+7*86400000);globals.SNAP.meta.aeWeek=next.toISOString().slice(0,10).replaceAll('-','');f.read();assert.notEqual(f.raw.context,context);assert.equal(f.raw.selectionKey,key);
+  globals.SNAP.sites.pop();f.read();assert.equal(f.raw.selectionKey,key,'source coverage change is evidence, not a different selected scope');
+  f.context.SCEN='surge';f.read();const surge=f.raw.selectionKey;assert.notEqual(surge,key);f.context.SCEN='discharge';f.read();assert.notEqual(f.raw.selectionKey,surge,'two nonbaseline scenarios remain distinct');
+});
+test('outbreak source dates/rank membership update within its declared World/top-country policy',()=>{
+  const snap={embedded:'2026-06-27',mpox:{asof:'2026-04-27',worldCases:100,worldDeaths:0,countries:[{iso:'AAA',n:'Alpha',cases:100,deaths:0,asof:'2026-04-27',clade1:false}]},measles:{years:[{y:'2025',cases:1}]}};
+  const f=load('global-outbreak-tracker',{SNAP:snap}),key=f.raw.selectionKey,context=f.raw.context;assert.ok(key);
+  snap.mpox.asof='2026-04-28';snap.mpox.countries=[{iso:'BBB',n:'Beta',cases:101,deaths:0,asof:'2026-04-28',clade1:true}];f.read();assert.notEqual(f.raw.context,context);assert.equal(f.raw.selectionKey,key);
+});

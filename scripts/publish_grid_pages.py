@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Publish a validated main revision through the existing legacy Pages builder.
+"""Publish and verify a validated main revision through gated Pages checks.
 
-Uses only the workflow's built-in GITHUB_TOKEN (contents:write, pages:write).
+Uses only the workflow's built-in GITHUB_TOKEN (actions:write, contents:read).
 An unchanged data refresh still runs this check so an earlier failed deployment
 can recover. No branch, site configuration, or data is modified by this script.
 """
@@ -33,7 +33,7 @@ def read_json(request: Request) -> dict:
         body = response.read(5 * 1024 * 1024 + 1)
     if len(body) > 5 * 1024 * 1024:
         raise PublishError("JSON response exceeded the 5 MiB safety limit")
-    return json.loads(body)
+    return json.loads(body) if body else {}
 
 
 class GitHub:
@@ -41,12 +41,13 @@ class GitHub:
         self.prefix = "https://api.github.com/repos/" + repository
         self.token = token
 
-    def __call__(self, method: str, suffix: str) -> dict:
-        request = Request(self.prefix + suffix, method=method, headers={
+    def __call__(self, method: str, suffix: str, body=None) -> dict:
+        request = Request(self.prefix + suffix, method=method, data=None if body is None else json.dumps(body).encode(), headers={
             "Authorization": "Bearer " + self.token,
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2026-03-10",
             "User-Agent": "public-data-consoles-grid-publisher",
+            "Content-Type": "application/json",
         })
         return read_json(request)
 
@@ -68,6 +69,49 @@ def validate_data_path(path: str) -> str:
     if not isinstance(path, str) or not re.fullmatch(r"consoles/[a-z0-9-]+/data/[a-z0-9_-]+\.json", path):
         raise PublishError("Expected a relative console data JSON path; no URL, traversal or query is allowed")
     return path
+
+
+def publish_workflow(api, commit, expected, site_url, data_url, *, deadline, poll,
+                     fetch_public, clock, sleep, log, assert_main):
+    """Dispatch full validation; only its dependent deploy job can publish.
+
+    GITHUB_TOKEN pushes do not start push workflows. Explicit dispatch uses the
+    built-in token and requires no visitor key or additional repository secret.
+    The deployed marker proves the exact tested artifact, including unchanged data.
+    """
+    marker_url = site_url.rstrip("/") + "/build-info.json"
+
+    def matches():
+        try:
+            marker = fetch_public(marker_url)
+            return marker.get("commit") == commit and marker.get("validation") == "catalog-and-browser" and fetch_public(data_url) == expected
+        except (HTTPError, URLError, ValueError, TimeoutError, OSError):
+            return False
+
+    assert_main()
+    if matches():
+        assert_main()
+        log("Verified already-published tested artifact " + commit)
+        return data_url
+    runs_path = "/actions/workflows/catalog.yml/runs?branch=main&event=workflow_dispatch&per_page=30"
+    previous = {r["id"] for r in api("GET", runs_path).get("workflow_runs", [])}
+    assert_main()
+    api("POST", "/actions/workflows/catalog.yml/dispatches", {"ref": "main", "inputs": {"expected_sha": commit}})
+    log("Requested catalog, browser and dependent Pages deployment for " + commit)
+    while clock() < deadline:
+        assert_main()
+        runs = [r for r in api("GET", runs_path).get("workflow_runs", []) if r["id"] not in previous and r.get("head_sha") == commit]
+        if runs:
+            run = max(runs, key=lambda r: r["id"])
+            if run.get("status") == "completed":
+                if run.get("conclusion") != "success":
+                    raise PublishError("Gated Pages validation/deployment failed: " + str(run.get("conclusion")))
+                if matches():
+                    assert_main()
+                    log("Verified tested Pages artifact and public data for " + commit)
+                    return data_url
+        sleep(min(poll, max(0, deadline - clock())))
+    raise PublishError("Timed out verifying gated Pages deployment; a later run can recover without another data commit.")
 
 
 def publish(api, commit: str, expected: dict, *, timeout: float = 720,
@@ -99,13 +143,17 @@ def publish(api, commit: str, expected: dict, *, timeout: float = 720,
     if api("GET", "").get("default_branch") != "main":
         raise PublishError("The Pages build API publishes the default branch; expected main, so no build was requested")
     site = api("GET", "/pages")
-    if site.get("build_type") != "legacy" or site.get("source") != {"branch": "main", "path": "/"}:
+    if site.get("build_type") not in {"legacy", "workflow"} or (site.get("build_type") == "legacy" and site.get("source") != {"branch": "main", "path": "/"}):
         raise PublishError("Expected existing legacy Pages publishing from main/root; no settings were changed")
     site_url = site.get("html_url", "")
     parsed = urlsplit(site_url)
     if parsed.scheme != "https" or not parsed.hostname or not parsed.hostname.endswith(".github.io") or parsed.username or parsed.password:
         raise PublishError("Expected the repository's canonical HTTPS github.io Pages URL")
     data_url = site_url.rstrip("/") + "/" + data_path
+    if site.get("build_type") == "workflow":
+        return publish_workflow(api, commit, expected, site_url, data_url,
+                                deadline=deadline, poll=poll, fetch_public=fetch_public,
+                                clock=clock, sleep=sleep, log=log, assert_main=assert_main)
     assert_main()
     previous = latest()
     if previous and previous.get("status") in IN_PROGRESS and previous.get("commit") != commit:
@@ -165,8 +213,8 @@ def main() -> None:
         parser.error("--repository must be owner/repository")
     if not re.fullmatch(r"[0-9a-f]{40}", args.commit):
         parser.error("--commit must be a full lowercase Git SHA")
-    if not 0 < args.timeout_seconds <= 900 or not 0 < args.poll_seconds <= args.timeout_seconds:
-        parser.error("Require 0 < poll <= timeout <= 900 seconds")
+    if not 0 < args.timeout_seconds <= 3600 or not 0 < args.poll_seconds <= args.timeout_seconds:
+        parser.error("Require 0 < poll <= timeout <= 3600 seconds")
     token = os.environ.get("GITHUB_TOKEN")
     if not token:
         parser.error("GITHUB_TOKEN is required; use the workflow's built-in token")

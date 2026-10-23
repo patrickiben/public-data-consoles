@@ -16,12 +16,12 @@ jobs:
   refresh:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 110
     env:
       CHROME_CHANNEL: chrome
     permissions:
       contents: write
-      pages: write
+      actions: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -81,6 +81,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ steps.target.outputs.sha }}
         run: |
-          python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --data-path consoles/coastal-water-resilience/data/impact-context.json --timeout-seconds 720
-          python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --data-path consoles/coastal-water-resilience/data/public-stations.json --timeout-seconds 720
-        timeout-minutes: 25
+          python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --data-path consoles/coastal-water-resilience/data/impact-context.json --timeout-seconds 2400
+          python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --data-path consoles/coastal-water-resilience/data/public-stations.json --timeout-seconds 2400
+        timeout-minutes: 50

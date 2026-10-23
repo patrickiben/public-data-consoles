@@ -131,17 +131,23 @@
 #console-response :focus-visible,#console-response-shortcut:focus-visible{outline:3px solid #f4d57d;outline-offset:3px}
 #console-response select{font:inherit;color:#e2edf4;background:#173343;border:1px solid #6d8b9e;border-radius:4px;padding:5px;max-width:100%}
 #console-response-shortcut{position:fixed;right:14px;bottom:14px;z-index:10020;border:1px solid #87d5e0;border-radius:24px;padding:10px 15px;background:#103f50;color:#f1f8fc;font:600 13px system-ui,sans-serif;box-shadow:0 2px 12px #0007;text-decoration:none}
-@media(max-width:640px){#console-response{margin:10px 6px;padding:13px}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:19px}}
 @media print{#console-response-shortcut,#console-response .cr-toolbar{display:none!important}#console-response{background:white!important;color:#111!important;max-width:none;border:1px solid #555}#console-response *{color:#111!important;box-shadow:none!important}#console-response details{display:block!important}#console-response details>*{display:block!important}#console-response .cr-action{break-inside:avoid;background:white!important}#console-response .cr-badge{border-color:#555}}
 @media print{#console-response .cr-impact-records{max-height:none;overflow:visible}#console-response .cr-impact-item,#console-response .cr-impact-records article{break-inside:avoid;background:white!important}#console-response .cr-impact-preview button{display:none!important}}
 
 #console-response .cr-priority-preview{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;border:1px solid #5bbfcb;border-radius:9px;padding:14px;margin:12px 0;background:#133747}#console-response .cr-priority-preview>div{flex:1;min-width:180px}#console-response .cr-priority-preview span{color:#bdd9e5}#console-response .cr-priority-preview p{font-size:16px;font-weight:650;color:#f1f8fc}#console-response .cr-priority-list{list-style:none;margin:12px 0;padding:0}#console-response .cr-priority-list>li{margin:0}#console-response .cr-priority{border-left:4px solid #55beca;overflow-wrap:anywhere}#console-response .cr-priority[data-cr-priority="immediate"]{border-left-color:#f0cc87}#console-response .cr-priority-head{display:flex;gap:12px;align-items:flex-start}#console-response .cr-priority-number{display:flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#227184;color:#fff;font-weight:750}#console-response .cr-priority-head h4{margin:7px 0}#console-response .cr-timing{color:#a7f0f2}#console-response .cr-escalation{border-left:2px solid #e5b35a;padding-left:10px;margin:10px 0}#console-response .cr-priority label{min-height:44px;align-content:center}
 @media print{#console-response .cr-priority-preview button{display:none!important}#console-response .cr-priority-list>li{display:block!important}#console-response .cr-priority-head{display:flex!important}}
+#console-response{grid-column:1/-1;min-width:0;overflow-wrap:anywhere}#console-response .cr-head>div{min-width:0}#console-response .cr-action label{min-height:44px;align-content:center}#console-response summary{scroll-margin-top:16px}
+@media print{#console-response .cr-wide,#console-response .cr-context{display:revert!important}}
+
+@media(max-width:640px){#console-response{margin:10px 6px;padding:10px;max-width:calc(100% - 12px)}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:16px}#console-response .cr-head{gap:6px}#console-response .cr-context,#console-response .cr-wide{display:none}#console-response .cr-summary{padding:6px;font-size:12px}#console-response .cr-impact-preview{gap:6px;padding:0}#console-response .cr-impact-preview>span{display:none}#console-response .cr-plan-group{padding:7px;margin:6px 0 0}#console-response .cr-plan-group>summary{font-size:13px}#console-response .cr-priority-preview{padding:9px;margin:8px 0;gap:6px}#console-response .cr-priority-preview p{font-size:14px;margin:4px 0}#console-response .cr-priority-preview b{font-size:12px}#console-response .cr-priority-preview>div{min-width:0;flex-basis:100%}#console-response .cr-priority-preview button{padding:7px 10px}}
+
+#console-response .cr-preview-period{display:block;color:#b2c6d3;font-size:11px;margin-top:4px}
+@media(max-width:640px){#console-response .cr-preview-target{font-size:12px}}
 </style>
 <script>
 (function (root) {
   'use strict';
-  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set(), prioritizers = new Map();
+  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set(), prioritizers = new Map(), lastAssessment = null, changes = null;
   var priorityOrder = { immediate: 0, next: 1, planned: 2, routine: 3 };
   function registerPrioritizer(slug, derive) {
     if (typeof slug !== 'string' || !slug || typeof derive !== 'function') throw new TypeError('A console slug and priority function are required.');
@@ -182,6 +188,20 @@
     return value;
   }
   function signature(value) { return JSON.stringify(canonical(value)); }
+  // Every presentation consumes the same evidence contract. Historical reporting
+  // periods may be descriptive; a current observation needs a valid elapsed date.
+  function evidenceProblem(f, count, current) {
+    if (!f || typeof f.id !== 'string' || !f.id.trim() || count !== 1) return 'Missing or ambiguous evidence identity.';
+    if (['missing', 'stale'].includes(f.quality)) return 'Missing or stale evidence.';
+    if (!f.source) return 'Public source link is unavailable.';
+    var period = text(f.measuredAt).trim(), at = Date.parse(period);
+    if (!period) return 'Observation/reporting period is unavailable.';
+    var isoDay = /^(\d{4}-\d{2}-\d{2})(?:$|T)/.exec(period);
+    if (isoDay && (!Number.isFinite(at) || new Date(isoDay[1] + 'T00:00:00Z').toISOString().slice(0, 10) !== isoDay[1])) return 'Observation date is invalid.';
+    if (Number.isFinite(at) && at > Date.now()) return 'Observation/report date is in the future.';
+    if (current && (f.quality !== 'current' || !Number.isFinite(at))) return 'Current dated evidence is required.';
+    return '';
+  }
   function evaluateImpacts(input, facts) {
     var supplied = input.impacts || {}, byFact = new Map(), duplicates = new Set();
     facts.forEach(function (f) { if (byFact.has(f.id)) duplicates.add(f.id); byFact.set(f.id, f); });
@@ -199,13 +219,8 @@
         if (!ids.length) reasons.push('No supporting public evidence is linked.');
         ids.forEach(function (id) {
           var f = byFact.get(id);
-          if (!f || duplicates.has(id)) reasons.push('Missing or ambiguous evidence: ' + text(id) + '.');
-          else {
-            if (['missing', 'stale'].includes(f.quality)) reasons.push(f.label + ': missing or stale evidence.');
-            if (!f.source) reasons.push(f.label + ': public source link is unavailable.');
-            if (!text(f.measuredAt).trim()) reasons.push(f.label + ': observation/reporting period is unavailable.');
-            if (['observed', 'forecast'].includes(kind) && f.quality !== 'current') reasons.push(f.label + ': historical context cannot establish a current impact.');
-          }
+          var problem = evidenceProblem(f, duplicates.has(id) ? 2 : f ? 1 : 0, ['observed', 'forecast'].includes(kind));
+          if (problem) reasons.push((f ? f.label || f.id : text(id)) + ': ' + problem);
         });
         var practice = !!input.scenario || linked.some(function (f) { return f.basis === 'demo'; }) || kind === 'scenario';
         if (practice) kind = 'scenario';
@@ -237,7 +252,12 @@
       if (!['number', 'string'].includes(typeof f.value)) { f.value = null; f.quality = 'missing'; }
       f.source = url(f.source); return f;
     });
-    var byFact = new Map(facts.map(function (f) { return [f.id, f]; }));
+    var byFact = new Map(facts.map(function (f) { return [f.id, f]; })), factCounts = new Map();
+    facts.forEach(function (f) { factCounts.set(f.id, (factCounts.get(f.id) || 0) + 1); });
+    facts.forEach(function (f) {
+      var problem = evidenceProblem(f, factCounts.get(f.id), f.quality === 'current');
+      if (problem && !['missing', 'stale'].includes(f.quality)) { f.quality = 'missing'; f.note = (f.note ? f.note + ' ' : '') + 'Evidence withheld: ' + problem; }
+    });
     var diagnostics = (Array.isArray(input.diagnostics) ? input.diagnostics : []).map(function (diagnostic) {
       var d = Object.assign({}, diagnostic), ids = Array.isArray(d.evidenceIds) ? d.evidenceIds : [];
       d.evidenceIds = ids; d.status = ['triggered', 'clear', 'unknown'].includes(d.status) ? d.status : 'unknown';
@@ -247,12 +267,12 @@
       if (!ids.length) d.reasons.push('No supporting evidence is linked.');
       ids.forEach(function (id) {
         var fact = byFact.get(id);
-        if (!fact || ['missing', 'stale'].includes(fact.quality)) d.reasons.push((fact ? fact.label : id) + ': missing or stale evidence.');
-        else if (fact.quality === 'historical' && d.scope !== 'planning') d.reasons.push(fact.label + ': historical evidence cannot establish current conditions.');
+        var problem = evidenceProblem(fact, factCounts.get(id), d.scope !== 'planning');
+        if (problem) d.reasons.push((fact ? fact.label || fact.id : id) + ': ' + problem);
       });
       if (d.reasons.length) d.status = 'unknown';
       d.practice = !!input.scenario || ids.some(function (id) { return byFact.get(id) && byFact.get(id).basis === 'demo'; });
-      d.current = ids.length > 0 && ids.every(function (id) { var f = byFact.get(id); return f && f.quality === 'current' && f.basis !== 'demo'; });
+      d.current = !d.reasons.length && ids.length > 0 && ids.every(function (id) { var f = byFact.get(id); return !evidenceProblem(f, factCounts.get(id), true) && f.basis !== 'demo'; });
       return d;
     });
     diagnostics.forEach(function (d) { var n = Number(d.metricId == null ? d.dimension : d.metricId); d.metricId = Number.isInteger(n) && n >= 1 && n <= 10 ? n : null; });
@@ -270,9 +290,8 @@
     diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
     diagnostics.forEach(function (d) { if (d.status === 'unknown') d.value = null; });
     var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
-    var actionRows = (Array.isArray(input.actions) ? input.actions : []).concat(derivePriorities(input));
-    var factCounts = new Map(), actionCounts = new Map();
-    facts.forEach(function (f) { factCounts.set(f.id, (factCounts.get(f.id) || 0) + 1); });
+    var actionRows = (Array.isArray(input.actions) ? input.actions : []).concat(derivePriorities(Object.assign({}, input, { evidence: facts, diagnostics: diagnostics })));
+    var actionCounts = new Map();
     actionRows.forEach(function (a) { actionCounts.set(a.id, (actionCounts.get(a.id) || 0) + 1); });
     var actions = actionRows.map(function (action) {
       var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
@@ -290,8 +309,8 @@
       if (a.featured) {
         a.evidenceIds = Array.isArray(a.evidenceIds) ? Array.from(new Set(a.evidenceIds)) : [];
         var linked = a.evidenceIds.map(function (id) { return byFact.get(id); });
-        var supported = linked.length > 0 && linked.every(function (f) { return f && factCounts.get(f.id) === 1 && f.source && text(f.measuredAt).trim() && !['missing', 'stale'].includes(f.quality); });
-        a.current = supported && linked.every(function (f) { return f.quality === 'current' && f.basis !== 'demo' && Number.isFinite(Date.parse(f.measuredAt)) && Date.parse(f.measuredAt) <= Date.now(); });
+        var supported = linked.length > 0 && linked.every(function (f) { return !evidenceProblem(f, f && factCounts.get(f.id), false); });
+        a.current = supported && linked.every(function (f) { return !evidenceProblem(f, factCounts.get(f.id), true) && f.basis !== 'demo'; });
         a.practice = !!input.scenario || a.signal === 'scenario' || linked.some(function (f) { return f && f.basis === 'demo'; });
         a.priority = Object.prototype.hasOwnProperty.call(priorityOrder, a.priority) ? a.priority : 'planned';
         a.rank = Number.isFinite(a.rank) && a.rank > 0 ? a.rank : 100;
@@ -318,18 +337,35 @@
     ['public', 'operator'].forEach(function (audience) {
       var n = 0; actions.forEach(function (a) { if (a.featured && a.selected && a.track === audience) a.position = ++n; });
     });
-    return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
+    return { slug: text(input.slug), selectionKey: text(input.selectionKey), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
       evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null, impacts: evaluateImpacts(input, facts),
       limitations: Array.isArray(input.limitations) ? input.limitations.map(text) : [], scenario: !!input.scenario };
   }
   function badge(basis) { return '<span class="cr-badge">' + esc(basisNames[basis] || basisNames.interpretive) + '</span>'; }
   function sourceLink(source, label) { return url(source) ? '<a href="' + esc(url(source)) + '" target="_blank" rel="noopener noreferrer">' + esc(label || 'Source') + '</a>' : '<span>Source not supplied</span>'; }
+  function scrollToSection(el) {
+    el.scrollIntoView({ behavior: root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }
+  function focusKey(el) {
+    if (!el) return '';
+    if (el.id) return 'id:' + el.id;
+    if (el.tagName === 'SUMMARY') return 'summary:' + el.parentElement.dataset.crSection;
+    if (el.tagName === 'A') {
+      var owner = el.closest('[data-cr-action],[data-cr-impact],[data-cr-impact-record],[data-cr-section]');
+      var fact = el.closest('[data-cr-evidence],[data-cr-source]');
+      return signature(['link', owner && [owner.dataset.crAction, owner.dataset.crImpact, owner.dataset.crImpactRecord, owner.dataset.crSection], fact && [fact.dataset.crEvidence, fact.dataset.crSource], el.getAttribute('href'), el.textContent]);
+    }
+    return '';
+  }
   function mount() {
     if (!doc || !doc.body) return;
     var panel = doc.getElementById('console-response');
     if (!panel) return;
     if (!panel.dataset.mounted) {
       panel.dataset.mounted = 'true';
+      // Keep the console's identity and navigation before the shared plan.
+      var heading = doc.querySelector('h1'), nativeHeader = heading && heading.closest('header');
+      if (nativeHeader && !panel.contains(nativeHeader)) nativeHeader.insertAdjacentElement('afterend', panel);
       panel.addEventListener('click', function (event) {
         var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact],[data-cr-open-priorities]');
         if (!button) return;
@@ -339,12 +375,12 @@
         if (button.hasAttribute('data-cr-open-priorities')) {
           panel.querySelector('[data-cr-section="plan"]').open = true;
           var actions = panel.querySelector('[data-cr-section="actions"]');
-          if (actions) { actions.open = true; actions.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+          if (actions) { actions.open = true; scrollToSection(actions); actions.querySelector('summary').focus({ preventScroll: true }); }
         }
         if (button.hasAttribute('data-cr-open-impact')) {
           panel.querySelector('[data-cr-section="plan"]').open = true;
           var impacts = panel.querySelector('[data-cr-section="impacts"]');
-          if (impacts) { impacts.open = true; impacts.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+          if (impacts) { impacts.open = true; scrollToSection(impacts); impacts.querySelector('summary').focus({ preventScroll: true }); }
         }
       });
       panel.addEventListener('change', function (event) {
@@ -357,7 +393,7 @@
       if (shortcut) shortcut.addEventListener('click', function (event) {
         var group = panel.querySelector('[data-cr-section="plan"]'); if (group) group.open = true;
         event.preventDefault(); var checklist = panel.querySelector('[data-cr-section="actions"]'); if (checklist) checklist.open = true;
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        scrollToSection(panel);
         var heading = doc.getElementById('console-response-title'); if (heading) heading.focus();
       });
       var printSections = null;
@@ -400,19 +436,33 @@
     var plan = currentPlan(), unknown = plan.diagnostics.filter(function (d) { return d.metricId && d.status === 'unknown'; }).length;
     var selected = plan.actions.filter(function (a) { return a.track === track && a.selected; });
     var open = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
-    var focused = doc.activeElement && panel.contains(doc.activeElement) ? doc.activeElement.id : '';
+    var focused = doc.activeElement && panel.contains(doc.activeElement) ? focusKey(doc.activeElement) : '';
     panel.dataset.rendered = 'true';
-    var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
-    h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
+    var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p class="cr-context">' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
+    h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe.<span class="cr-wide"> People and responsible authorities decide.</span></p>';
     var featured = selected.filter(function (a) { return a.featured; });
-    if (featured.length) h += '<div class="cr-priority-preview"><div><b>Do next · ' + esc(track === 'operator' ? 'Professional operators' : 'Public / local decision makers') + '</b><p>' + esc(featured[0].title) + '</p><span>' + esc(featured[0].target) + ' · ' + esc(featured[0].timing) + '</span></div><button id="cr-open-priorities" data-cr-open-priorities>Open prioritized checklist (' + featured.length + ')</button></div>';
+    if (featured.length) {
+      var first = featured[0], periods = Array.from(new Set(first.sources.map(function (s) { return s.measuredAt; }).filter(Boolean)));
+      h += '<div class="cr-priority-preview"><div><b>Do next · ' + esc(track === 'operator' ? 'Operators' : 'Public / local decisions') + '</b><p>' + esc(first.title) + '</p><span class="cr-preview-target">' + esc(first.target) + '</span><span class="cr-wide"> · ' + esc(first.timing) + '</span><small class="cr-preview-period">' + (periods.length ? 'Source period: ' + esc(periods.slice(0, 2).join('; ')) + (periods.length > 2 ? ' · more in checklist' : '') : 'Source gap · verify the original report') + '</small></div><button id="cr-open-priorities" data-cr-open-priorities>View actions (' + featured.length + ')</button></div>';
+    }
     var impactRows = plan.impacts.items.concat(plan.impacts.records), availableImpacts = impactRows.filter(function (r) { return r.status === 'available'; }).length;
-    h += '<div class="cr-impact-preview"><span>' + availableImpacts + ' available impact/context ' + (availableImpacts === 1 ? 'item' : 'items') + ' · ' + impactRows.filter(function (r) { return r.status === 'unknown'; }).length + ' unavailable. Scope: ' + esc(plan.impacts.scope) + '.</span><button id="cr-open-impacts" data-cr-open-impact>Review impacts and source records</button></div>';
-    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open response plan, public-data impacts and ten-parameter detail</summary>';
+    h += '<div class="cr-impact-preview"><span>' + availableImpacts + ' available impact/context ' + (availableImpacts === 1 ? 'item' : 'items') + ' · ' + impactRows.filter(function (r) { return r.status === 'unknown'; }).length + ' unavailable.<span class="cr-wide"> Scope: ' + esc(plan.impacts.scope) + '.</span></span><button id="cr-open-impacts" data-cr-open-impact>View impacts and sources</button></div>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Response plan and ten-parameter detail</summary><p><b>Selection:</b> ' + esc(plan.context) + '</p>';
     h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
     function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
+    if (changes) {
+      var changeHTML = '<p>Compared with the previous evidence revision in this tab at ' + esc(changes.at) + '. Review notes reset when the evidence or selection changes.</p>';
+      if (changes.selectionChanged) changeHTML += '<p>Selection changed. Values from different places or scenarios are not compared.</p>';
+      else {
+        changeHTML += '<ul>' + changes.evidence.map(function (c) { return '<li><b>' + esc(c.label) + ':</b> ' + esc(c.before) + ' → ' + esc(c.after) + '</li>'; }).join('') + '</ul>';
+        var audienceChanges = changes.priorities.filter(function (a) { return a.track === track; });
+        if (audienceChanges.length) changeHTML += '<p><b>Priority changes for this audience:</b></p><ul>' + audienceChanges.map(function (a) { return '<li>' + esc(a.title) + ': ' + esc(a.change) + (a.reason ? '. ' + esc(a.reason) : '') + '</li>'; }).join('') + '</ul>';
+        if (!changes.evidence.length && !audienceChanges.length) changeHTML += '<p>Supporting calculations or applicability changed; review the updated plan below.</p>';
+      }
+      h += section('changes', 'What changed since the previous update', changeHTML, 'interpretive');
+    }
     function impactSources(row) {
-      return '<ul class="cr-impact-sources">' + row.sources.map(function (s) { return '<li>' + sourceLink(s.source, s.label || s.id) + ' · observed/reported: ' + esc(s.measuredAt || 'not supplied') + ' · ' + esc(s.quality) + (s.checkedAt ? '; checked: ' + esc(s.checkedAt) : '') + '</li>'; }).join('') + '</ul>';
+      return '<ul class="cr-impact-sources">' + row.sources.map(function (s) { return '<li data-cr-source="' + esc(s.id) + '">' + sourceLink(s.source, s.label || s.id) + ' · observed/reported: ' + esc(s.measuredAt || 'not supplied') + ' · ' + esc(s.quality) + (s.checkedAt ? '; checked: ' + esc(s.checkedAt) : '') + '</li>'; }).join('') + '</ul>';
     }
     function impactBadge(row) { return row.status === 'unknown' ? '<span class="cr-badge cr-unknown">UNKNOWN' + (row.practice ? ' · PRACTICE ONLY' : ' · inputs incomplete') + '</span>' : badge(row.basis); }
     function impactReasons(row) { return row.reasons.length ? '<details data-cr-section="impact-gaps-' + esc(row.id) + '"' + (open.has('impact-gaps-' + row.id) ? ' open' : '') + '><summary>Why this is unavailable</summary><p class="cr-unknown">' + esc(row.reasons.join(' ')) + '</p></details>' : ''; }
@@ -448,7 +498,7 @@
     actionHTML += '<p class="cr-note">Checks are temporary local planning notes, not completed operations. Context or evidence changes reset them. Nothing is transmitted or stored by this response layer.</p>';
     h += section('actions', featured.length ? '1. Prioritized response plan' : '1. Condition-dependent response plan', actionHTML, 'interpretive');
     h += impactSection;
-    var evidenceHTML = plan.evidence.length ? '<ul>' + plan.evidence.map(function (f) { return '<li><b>' + esc(f.label || f.id) + ':</b> ' + esc(f.quality === 'missing' ? 'Unavailable' : f.value) + (f.unit ? ' ' + esc(f.unit) : '') + ' ' + badge(f.basis) + ' <span class="cr-quality">' + esc(f.quality) + '</span><br>Observed / reported: ' + esc(f.measuredAt || 'not supplied') + '; checked: ' + esc(f.checkedAt || 'not supplied') + '. ' + sourceLink(f.source) + (f.note ? '<br>' + esc(f.note) : '') + '</li>'; }).join('') + '</ul>' : '<p class="cr-unknown">Evidence unavailable. No current incident status can be inferred.</p>';
+    var evidenceHTML = plan.evidence.length ? '<ul>' + plan.evidence.map(function (f) { return '<li data-cr-evidence="' + esc(f.id) + '"><b>' + esc(f.label || f.id) + ':</b> ' + esc(f.quality === 'missing' ? 'Unavailable' : f.value) + (f.unit ? ' ' + esc(f.unit) : '') + ' ' + badge(f.basis) + ' <span class="cr-quality">' + esc(f.quality) + '</span><br>Observed / reported: ' + esc(f.measuredAt || 'not supplied') + '; checked: ' + esc(f.checkedAt || 'not supplied') + '. ' + sourceLink(f.source) + (f.note ? '<br>' + esc(f.note) : '') + '</li>'; }).join('') + '</ul>' : '<p class="cr-unknown">Evidence unavailable. No current incident status can be inferred.</p>';
     h += section('evidence', '2. Evidence, dates and sources', evidenceHTML, 'interpretive');
     var diagnosticHTML = ['comparison', 'structure', 'spillover'].map(function (pillar) {
       var ds = plan.diagnostics.filter(function (d) { return d.pillar === pillar; });
@@ -470,14 +520,39 @@
     h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p><p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
     h += '</details>';
     panel.innerHTML = h;
-    if (focused) { var nextFocus = doc.getElementById(focused); if (nextFocus) nextFocus.focus({ preventScroll: true }); }
+    if (focused) {
+      var nextFocus = Array.from(panel.querySelectorAll('[id],summary,a')).find(function (el) { return focusKey(el) === focused; }) || doc.getElementById('console-response-title');
+      if (nextFocus) nextFocus.focus({ preventScroll: true });
+    }
+  }
+  function describeFact(f) {
+    if (!f) return 'not in this view';
+    return (f.quality === 'missing' ? 'unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + '; ' + text(f.measuredAt || 'period unavailable') + ']';
+  }
+  function compareAssessments(before, after) {
+    var sameSelection = before.selectionKey && after.selectionKey ? before.selectionKey === after.selectionKey : before.context === after.context;
+    var out = { at: new Date().toISOString(), selectionChanged: before.slug !== after.slug || !sameSelection || before.scenario !== after.scenario, evidence: [], priorities: [] };
+    if (out.selectionChanged) return out;
+    var previous = new Map(before.evidence.map(function (f) { return [f.id, f]; })), next = new Map(after.evidence.map(function (f) { return [f.id, f]; }));
+    function comparable(f) { return f && [f.label, f.value, f.unit, f.quality, f.basis, f.measuredAt, f.source]; }
+    new Set(Array.from(previous.keys()).concat(Array.from(next.keys()))).forEach(function (id) {
+      var a = previous.get(id), b = next.get(id);
+      if (signature(comparable(a)) !== signature(comparable(b))) out.evidence.push({ id: id, label: (b || a).label || id, before: describeFact(a), after: describeFact(b), sourceBefore: a && a.source || null, sourceAfter: b && b.source || null });
+    });
+    var oldActions = new Map(before.actions.filter(function (a) { return a.featured && a.selected; }).map(function (a) { return [a.track + ':' + a.id, a]; }));
+    var newActions = new Map(after.actions.filter(function (a) { return a.featured && a.selected; }).map(function (a) { return [a.track + ':' + a.id, a]; }));
+    new Set(Array.from(oldActions.keys()).concat(Array.from(newActions.keys()))).forEach(function (id) {
+      var a = oldActions.get(id), b = newActions.get(id), item = b || a;
+      if (!a || !b || a.position !== b.position || a.priority !== b.priority || a.reason !== b.reason) out.priorities.push({ id: item.id, track: item.track, title: item.title, change: !b ? 'no longer applicable to this evidence' : !a ? 'now priority ' + b.position : 'priority ' + a.position + ' → ' + b.position, reason: b ? b.reason : '' });
+    });
+    return out;
   }
   function set(input) {
     // A forecast can expire while its source payload is unchanged. Make that
     // transition an evidence revision on the existing visible-minute refresh.
     var impact = input && input.impacts || {};
     var clockState = (impact.items || []).concat(impact.records || []).filter(function (r) { return r && r.kind === 'forecast' && r.validAt != null; }).map(function (r) { var at = Date.parse(r.validAt); return [r.id, Number.isFinite(at) && at > Date.now()]; });
-    var priorities = evaluate(input).actions.filter(function (a) { return a.featured; });
+    var assessment = evaluate(input), priorities = assessment.actions.filter(function (a) { return a.featured; });
     var nextRevision = signature([input || {}, clockState, priorities]);
     if (nextRevision === revision) return;
     function evidenceOnly(value) {
@@ -494,7 +569,11 @@
       evidenceIds: a.evidenceIds, diagnosticIds: a.diagnosticIds
     }; });
     var nextEvidence = signature([evidenceOnly(input || {}), clockState, priorityAssessment]);
-    if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
+    if (nextEvidence !== evidenceRevision) {
+      changes = lastAssessment ? compareAssessments(lastAssessment, assessment) : null;
+      lastAssessment = assessment;
+      acknowledgments.clear(); manualReview.clear();
+    }
     evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
   }
   function connect(read, selectors) {
@@ -530,7 +609,7 @@
   function exportPlan() {
     if (payload) set(payload); // Reconcile expiry even before the next visible-minute tick.
     return { exportedAt: new Date().toISOString(), note: 'Local planning review; not a record of completed operations.',
-      track: track, plan: currentPlan(), acknowledgments: Array.from(acknowledgments) };
+      track: track, plan: currentPlan(), changesSincePreviousUpdate: changes, acknowledgments: Array.from(acknowledgments) };
   }
   function download() {
     var blob = new Blob([JSON.stringify(exportPlan(), null, 2)], { type: 'application/json' });
@@ -605,7 +684,7 @@
           authorityUrl: row.authorityUrl || spec.authorityUrl });
       }
     });
-    return { slug: spec.slug, title: spec.title, context: spec.context,
+    return { slug: spec.slug, selectionKey: spec.selectionKey, title: spec.title, context: spec.context,
       scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics, impacts: spec.impacts,
       actions: [...(spec.baseline || []), ...actions], network: spec.network,
       limitations: spec.limitations || [] };
@@ -2249,39 +2328,47 @@ function onRun(){computeOvernight();drawOvernight();}
 
 let OBI={};
 const OBI_PAIRS=[['BTCUSDT','BTC'],['ETHUSDT','ETH'],['SOLUSDT','SOL']];
-async function pollOBI(){
-  if(typeof MODE!=='undefined'&&MODE!=='live'){drawOBI();return;}
-  await Promise.all(OBI_PAIRS.map(async([pair,id])=>{
-    try{
-      const r=await fetch(`https://api.binance.us/api/v3/depth?symbol=${pair}&limit=20`);
-      const a=await r.json();
-      let bid=0,ask=0;for(const x of a.bids)bid+=parseFloat(x[1]);for(const x of a.asks)ask+=parseFloat(x[1]);
-      const obi=(bid-ask)/((bid+ask)||1);
-      const bb=parseFloat(a.bids[0][0]),ba=parseFloat(a.asks[0][0]),spread=(ba-bb)/(((ba+bb)/2)||1);
-      if(!OBI[id])OBI[id]={};OBI[id].obi=obi;OBI[id].spread=spread;OBI[id].ok=true;
-      // intentionally NOT storing a history: an imbalance trend line would read as momentum / a directional forecast.
-    }catch(e){if(!OBI[id])OBI[id]={};OBI[id].ok=false;}
-  }));
-  drawOBI();
+const OBI_POLL_MS=5000,OBI_FRESH_MS=15000; // Local receive-age screen: three nominal polls, not an exchange guarantee.
+let obiRun=null,obiGeneration=0;
+function validateOrderBook(data,prior){
+  if(!data||!Number.isSafeInteger(data.lastUpdateId)||data.lastUpdateId<0)throw Error('Invalid order-book update identity');
+  const side=(rows,bids)=>{
+    if(!Array.isArray(rows)||!rows.length||rows.length>20)throw Error('Unavailable order-book depth');
+    const levels=rows.map(row=>{if(!Array.isArray(row)||row.length!==2)throw Error('Invalid order-book level');const price=marketNumber(row[0]),size=marketNumber(row[1]);if(price<=0||size<=0)throw Error('Invalid order-book price/size');return [price,size];});
+    if(levels.some((row,i)=>i&&(bids?row[0]>=levels[i-1][0]:row[0]<=levels[i-1][0])))throw Error('Duplicate or unsorted order-book prices');
+    return levels;
+  };
+  const bids=side(data.bids,true),asks=side(data.asks,false),bid=bids.reduce((n,row)=>n+row[1],0),ask=asks.reduce((n,row)=>n+row[1],0),total=bid+ask,mid=(bids[0][0]+asks[0][0])/2;
+  if(!Number.isFinite(total)||total<=0||!Number.isFinite(mid)||mid<=0||asks[0][0]<bids[0][0])throw Error('Invalid order-book totals/spread');
+  const obi=(bid-ask)/total,spread=(asks[0][0]-bids[0][0])/mid,signature=JSON.stringify([bids,asks]);
+  if(!Number.isFinite(obi)||!Number.isFinite(spread))throw Error('Nonfinite order-book ratio');
+  if(prior&&Number.isSafeInteger(prior.lastUpdateId)&&(data.lastUpdateId<prior.lastUpdateId||data.lastUpdateId===prior.lastUpdateId&&prior.signature!==signature))throw Error('Order-book source update regressed or conflicted');
+  return {obi,spread,lastUpdateId:data.lastUpdateId,signature,receivedAt:Date.now(),ok:true,state:'received',error:null};
+}
+function cancelOrderBooks(){if(obiRun){const prior=obiRun;obiRun=null;obiGeneration++;prior.controller.abort();}for(const id of ['BTC','ETH','SOL'])if(OBI[id])OBI[id]={...OBI[id],ok:false,state:'paused'};}
+function pollOBI(options={}){
+  if(MODE!=='live'||document.hidden){cancelOrderBooks();drawOBI();return Promise.resolve(false);}
+  if(obiRun&&!options.supersede)return obiRun.promise;
+  if(obiRun)cancelOrderBooks();
+  const run={generation:++obiGeneration,controller:new AbortController(),promise:null};obiRun=run;
+  run.promise=Promise.all(OBI_PAIRS.map(async([pair,id])=>{
+    try{const data=await fetchMarketJSON(`https://api.binance.us/api/v3/depth?symbol=${pair}&limit=20`,4000,run.controller.signal);
+      const next=validateOrderBook(data,OBI[id]);if(obiRun!==run||run.controller.signal.aborted||MODE!=='live'||document.hidden)return false;OBI[id]=next;return true;
+    }catch(error){if(obiRun!==run||run.controller.signal.aborted)return false;OBI[id]={...OBI[id],ok:false,state:'unavailable',error:String(error.message||error),checkedAt:Date.now()};return false;}
+  })).then(results=>{if(obiRun===run)drawOBI();return results.some(Boolean);}).finally(()=>{if(obiRun===run)obiRun=null;});
+  return run.promise;
 }
 function drawOBI(){
   const el=$('#obi-body');if(!el)return;
-  if(typeof MODE!=='undefined'&&MODE!=='live'){el.innerHTML='<div class="caveat">A live order book exists only in <b>live mode</b> — switch the mode toggle to Live monitor. There is no historical order book to replay.</div>';return;}
+  if(MODE!=='live'){el.innerHTML='<div class="caveat">Public order-book snapshots are available only in <b>live mode</b>. There is no historical order book to replay.</div>';return;}
   let rows='';
-  for(const [pair,id] of OBI_PAIRS){
-    const o=OBI[id];
-    if(!o||!o.ok){rows+=`<div class="rank"><div class="nm" style="width:40px">${id}</div><div style="flex:1;color:var(--dim);font-size:11px">connecting…</div></div>`;continue;}
-    const word=Math.abs(o.obi)<0.05?'balanced':(o.obi>0?'bid-skewed':'ask-skewed');
-    const wpct=Math.min(50,Math.abs(o.obi)*50);
-    rows+=`<div class="rank"><div class="nm" style="width:40px">${id}</div>
-      <div style="flex:1;position:relative;height:13px;background:var(--surf2);border-radius:7px;overflow:hidden;margin:0 6px">
-        <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--bd2)"></div>
-        <div style="position:absolute;top:1px;bottom:1px;${o.obi>=0?'left:50%':'right:50%'};width:${wpct}%;background:var(--amber);opacity:.55;border-radius:3px"></div>
-      </div>
-      <div class="val" style="width:124px;text-align:right;color:var(--dim);font-size:11px">imbalance ${(o.obi>=0?'+':'')}${(o.obi*100).toFixed(0)} of ±100 · ${word}</div></div>`;
+  for(const [pair,id]of OBI_PAIRS){
+    const o=OBI[id],age=o&&Number.isFinite(o.receivedAt)?Date.now()-o.receivedAt:null,fresh=!!(o&&o.ok&&age>=0&&age<=OBI_FRESH_MS);
+    if(!fresh){const state=o?.state==='paused'?'Paused':o&&o.ok?'Stale':o?.state==='unavailable'?'Unavailable':'Checking public source';rows+=`<div class="rank"><div class="nm" style="width:40px">${id}</div><div style="flex:1;color:var(--dim);font-size:11px">${state}${age!=null?' · last successful receive '+Math.max(0,Math.floor(age/1000))+'s ago':''}; current ratio unavailable</div></div>`;continue;}
+    const word=Math.abs(o.obi)<0.05?'balanced':o.obi>0?'bid-skewed':'ask-skewed',wpct=Math.min(50,Math.abs(o.obi)*50);
+    rows+=`<div class="rank"><div class="nm" style="width:40px">${id}</div><div style="flex:1;position:relative;height:13px;background:var(--surf2);border-radius:7px;overflow:hidden;margin:0 6px"><div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--bd2)"></div><div style="position:absolute;top:1px;bottom:1px;${o.obi>=0?'left:50%':'right:50%'};width:${wpct}%;background:var(--amber);opacity:.55;border-radius:3px"></div></div><div class="val" style="width:144px;text-align:right;color:var(--dim);font-size:11px">${(o.obi>=0?'+':'')}${(o.obi*100).toFixed(0)} of ±100 · ${word}<br>received ${Math.floor(age/1000)}s ago</div></div>`;
   }
-  const b=OBI['BTC'];
-  el.innerHTML=rows+`<div class="caveat" style="margin-top:6px">${b&&b.ok?`Refreshing live every few seconds · BTC top-of-book spread ${(b.spread*1e4).toFixed(1)} bps. `:''}Imbalance = (bid − ask resting size) / (bid + ask) over the top 20 levels — a snapshot ratio, not a strength-of-signal score. A skewed book is liquidity resting <i>right now</i>: <b>not</b> a prediction of the next move (smaller than the spread, gone in seconds), <b>not</b> directional alpha, <b>not</b> tradable through a browser.</div>`;
+  el.innerHTML=rows+`<div class="caveat" style="margin-top:6px">Public snapshots requested every ${OBI_POLL_MS/1000}s while visible. Ratios are withheld after a failed check or more than ${OBI_FRESH_MS/1000}s since local receipt. The endpoint supplies an update ID, not an exchange observation timestamp; receive age is not a guarantee of current exchange state. Imbalance = (bid − ask resting size) / (bid + ask) for the returned top20 levels. Descriptive liquidity only, not direction, alpha or a trading instruction.</div>`;
 }
 
 let PREMIA=null;
@@ -2696,8 +2783,9 @@ function drawBallast(){const el=$('#rc-ballast');if(!el)return;const A=STORE['SP
 /* ===================== orchestration ===================== */
 function renderAll(){computeNetwork();computeSystemic();computeTurbulence();computeHawkes();drawNetwork();drawHeat();drawNetBars();drawSystemic();drawTurbulence();drawManifold();drawAnticipation();drawHawkes();drawThermo();drawIndic();drawSurprise();drawFeeds();if(MODE==='backtest')drawBaseRate();escalate();drawBriefing();computeNetStruct();drawPerspectives();drawBackdrop();drawForwardMacro();drawOBI();cascRun();drawNetStruct();computeGameLens();drawGameLens();if(PAGE==='risk'&&typeof drawRiskCockpit==='function')drawRiskCockpit();}
 function drawFeeds(){drawMacroRefresh();const el=$('#feeds');const map={Snapshot:'embedded real history',Binance:'crypto (Binance.US)',Frankfurter:'FX (ECB/Frankfurter)',YahooProxy:'equities & ETFs (Yahoo via proxy)'};
-  let h='';for(const k in feedStatus){const s=feedStatus[k];const c=s==='live'?'var(--green)':s==='loaded'?'var(--teal)':s==='loading'||s==='gap'?'var(--amber)':s==='unavailable'?'var(--red)':'var(--dim)';
-    h+=`<div class="f"><span class="dot" style="background:${c}"></span>${map[k]} <span style="opacity:.7">${s==='gap'?'gap — snapshot too old to bridge':s}</span></div>`;}
+  let h='';for(const k in feedStatus){const s=feedStatus[k];const c=s==='live'?'var(--green)':s==='loaded'?'var(--teal)':s==='loading'||s==='gap'||s==='partial'||s==='empty'?'var(--amber)':s==='unavailable'?'var(--red)':'var(--dim)';
+    h+=`<div class="f"><span class="dot" style="background:${c}"></span>${map[k]} <span style="opacity:.7">${s==='gap'?'gap — last-good history retained':s==='live'?'validated download (dated history)':s==='partial'?'partial download; missing series retained':s==='empty'?'empty response; last-good history retained':s}</span></div>`;}
+  h+='<div class="f">A validated download keeps its own observation dates; it is not a real-time full-market snapshot. Same-day daily bars may still be provisional.</div>';
   // vintages: the oldest series end bounds every cross-asset panel
   const A=asOfInfo(),mlo=msToDateStr(dayToMs(Math.min(...MACRO_LAST))).slice(0,7),mhi=msToDateStr(dayToMs(Math.max(...MACRO_LAST)));
   const capeAsOf=(typeof VAL!=='undefined'&&VAL&&VAL.cur)?`${Math.floor(VAL.cur.date)}-${String(Math.round((VAL.cur.date%1)*100)).padStart(2,'0')}`:'—';
@@ -2714,33 +2802,142 @@ window.setSel=setSel;
 // >>> PASTE YOUR CLOUDFLARE WORKER URL HERE to make equities fully live (see rt_equity_proxy_worker.js).
 //     Leave "" to fall back to the public allorigins proxy (flaky) then the embedded snapshot.
 const EQUITY_PROXY = "";
-function fetchT(url,ms){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms||8000);return fetch(url,{signal:c.signal}).finally(()=>clearTimeout(t));}
+const MARKET_MAX_BYTES=2*1024*1024,MARKET_MAX_ROWS=10000;
+const MARKET_STATE={mode:'idle',generation:0,checkedAt:null,lastSuccessAt:null,results:{}};
+let marketRun=null,LIVE_CHANGES=0;
+function marketNumber(value){
+  if(typeof value==='string'&&/^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(value.trim()))value=Number(value);
+  if(typeof value!=='number'||!Number.isFinite(value))throw Error('Invalid market numeric field');
+  return value;
+}
+async function readMarketJSON(response){
+  if(!response.ok)throw Error('Market HTTP '+response.status);
+  const declared=Number(response.headers.get('content-length'));
+  if(Number.isFinite(declared)&&declared>MARKET_MAX_BYTES)throw Error('Market response exceeded size limit');
+  let text='';
+  if(response.body&&response.body.getReader){
+    const reader=response.body.getReader(),decoder=new TextDecoder();let size=0;
+    try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>MARKET_MAX_BYTES){await reader.cancel();throw Error('Market response exceeded size limit');}text+=decoder.decode(value,{stream:true});}text+=decoder.decode();}
+    finally{reader.releaseLock();}
+  }else{text=await response.text();if(new TextEncoder().encode(text).length>MARKET_MAX_BYTES)throw Error('Market response exceeded size limit');}
+  if(!text.trim())throw Error('Empty market response');
+  return JSON.parse(text);
+}
+async function fetchMarketJSON(url,ms=8000,parentSignal){
+  const controller=new AbortController();let timer,rejectDeadline;
+  const deadline=new Promise((_,reject)=>{rejectDeadline=reject;timer=setTimeout(()=>{controller.abort();reject(Error('Market request timed out'));},ms);});
+  const cancel=()=>{controller.abort();rejectDeadline(Error('Market request superseded'));};
+  if(parentSignal){if(parentSignal.aborted)cancel();else parentSignal.addEventListener('abort',cancel,{once:true});}
+  try{return await Promise.race([(async()=>{if(controller.signal.aborted)throw Error('Market request superseded');return await readMarketJSON(await fetch(url,{signal:controller.signal,cache:'no-store'}));})(),deadline]);}
+  finally{clearTimeout(timer);controller.abort();if(parentSignal)parentSignal.removeEventListener('abort',cancel);}
+}
 function dayKeyFromMs(ms){return Math.floor((ms-EPOCH0)/86400000);}
-let LIVE_CHANGES=0;
-// a live tail may only extend a series whose snapshot ends within 7 days of the tail's first new bar; otherwise the first live
-// bar would carry the whole gap as one "daily" return and corrupt every cross-asset panel. Returns 'live' | 'gap'.
-function mergeSeries(id,pairs,src){const A=STORE[id],last=A.dayk[A.dayk.length-1];
-  const pts=pairs.filter(([ms,c])=>c!=null&&!isNaN(c)).map(([ms,c])=>[dayKeyFromMs(ms),+c]).sort((a,b)=>a[0]-b[0]);
-  const fresh=pts.filter(([k])=>k>last);if(fresh.length&&fresh[0][0]-last>7){console.warn('live tail does not reach the snapshot end',id,fresh[0][0]-last,'days');return 'gap';}
-  const m=new Map();for(let i=0;i<A.dayk.length;i++)m.set(A.dayk[i],A.close[i]);for(const [k,c] of pts){if(m.get(k)!==c)LIVE_CHANGES++;m.set(k,c);}const keys=[...m.keys()].sort((a,b)=>a-b);A.dayk=keys;A.close=keys.map(k=>m.get(k));A.ret=[0];for(let i=1;i<A.close.length;i++)A.ret.push(Math.log(A.close[i]/A.close[i-1]));A.vintage=keys[keys.length-1];A.src=src;return 'live';}
-// several series share one feed: the best outcome wins (live > gap > unavailable), so a late failure can't mask a success
-function feedSet(k,st){const rank={loading:0,unavailable:1,gap:2,live:3};if(feedStatus[k]==='loading'||rank[st]>rank[feedStatus[k]])feedStatus[k]=st;}
-const sinceDay=id=>STORE[id].vintage-7; // request from a week before each series' end, so the live tail overlaps it
-async function loadBinance(pair,id){try{const r=await fetchT(`https://api.binance.us/api/v3/klines?symbol=${pair}&interval=1d&startTime=${dayToMs(sinceDay(id))}&limit=1000`);const a=await r.json();feedSet('Binance',mergeSeries(id,a.map(k=>[k[0],parseFloat(k[4])]),'Binance.US live'));}catch(e){feedSet('Binance','unavailable');console.warn('Binance',pair,e);}}
-async function loadFX(){try{const start=msToDateStr(dayToMs(Math.min(...['USDEUR','USDJPY','USDCHF','USDAUD'].map(sinceDay))));const r=await fetchT(`https://api.frankfurter.dev/v1/${start}..?base=USD&symbols=EUR,JPY,CHF,AUD`);const j=await r.json();const rows=Object.entries(j.rates).sort();for(const [code,id] of [['EUR','USDEUR'],['JPY','USDJPY'],['CHF','USDCHF'],['AUD','USDAUD']])feedSet('Frankfurter',mergeSeries(id,rows.filter(([d,o])=>code in o).map(([d,o])=>[Date.parse(d),o[code]]),'Frankfurter live'));}catch(e){feedSet('Frankfurter','unavailable');console.warn('FX',e);}}
-async function fetchYahoo(sym,id){const p1=Math.floor(dayToMs(sinceDay(id))/1000),p2=Math.floor(Date.now()/1000);
-  if(EQUITY_PROXY){const base=EQUITY_PROXY.replace(/\/+$/,'');const r=await fetchT(`${base}/?symbol=${encodeURIComponent(sym)}&period1=${p1}&period2=${p2}&range=1mo&interval=1d`,9000);return await r.json();}
-  const t=`https://query1.finance.yahoo.com/v8/finance/chart/${sym}?period1=${p1}&period2=${p2}&interval=1d`;const r=await fetchT(`https://api.allorigins.win/get?url=${encodeURIComponent(t)}`,9000);const env=await r.json();return JSON.parse(env.contents);}
-async function loadEquity(sym,id){id=id||sym;try{const obj=await fetchYahoo(sym,id);const res=obj.chart.result[0];const ts=res.timestamp,cl=res.indicators.quote[0].close;const pts=[];for(let i=0;i<ts.length;i++)if(cl[i]!=null)pts.push([ts[i]*1000,cl[i]]);feedSet('YahooProxy',mergeSeries(id,pts,EQUITY_PROXY?'Yahoo live (worker)':'Yahoo live (proxy)'));}catch(e){feedSet('YahooProxy','unavailable');console.warn('equity',sym,e);}}
-async function liveRefresh(){for(const k of ['Binance','Frankfurter','YahooProxy'])feedStatus[k]='loading';drawFeeds();LIVE_CHANGES=0;
-  // every US-listed series, not a subset: cross-asset panels align on shared dates, so one snapshot-only ETF pins them all to the snapshot
-  const eq=ASSET_IDS.filter(id=>!['crypto','fx','vol'].includes(STORE[id].cls));
-  const tasks=[loadBinance('BTCUSDT','BTC'),loadBinance('ETHUSDT','ETH'),loadBinance('SOLUSDT','SOL'),loadFX(),loadEquity('^VIX','VIX')];
-  for(const s of eq)tasks.push(loadEquity(s,s));
-  await Promise.allSettled(tasks);
-  for(const k of ['Binance','Frankfurter','YahooProxy'])if(feedStatus[k]==='loading')feedStatus[k]='unavailable';
-  if(!LIVE_CHANGES){drawFeeds();return;}
-  computeAll();computeManifold();computeAnticipation();computeMeta();renderAll();if(PAGE==='pred')drawMeta();}
+function marketCandidate(id,pairs,src){
+  const A=STORE[id];
+  if(!A||!Array.isArray(pairs)||pairs.length>MARKET_MAX_ROWS)throw Error('Invalid market series/response shape');
+  if(!pairs.length)return {status:'empty',changes:0};
+  const first=A.dayk[0],last=A.dayk.at(-1),days=new Set(),now=Date.now(),pts=[];
+  for(const row of pairs){
+    if(!Array.isArray(row)||row.length!==2)throw Error('Invalid daily market row');
+    const [ms,close]=row;
+    if(typeof ms!=='number'||!Number.isSafeInteger(ms)||ms<EPOCH0||ms>now||typeof close!=='number'||!Number.isFinite(close)||close<=0)throw Error('Daily prices require finite positive closes and valid nonfuture timestamps');
+    const day=dayKeyFromMs(ms);
+    if(day<first||days.has(day))throw Error('Duplicate or out-of-window daily market date');
+    days.add(day);pts.push([day,close]);
+  }
+  pts.sort((a,b)=>a[0]-b[0]);
+  if(pts.at(-1)[0]<last)throw Error('Market response ends before the last retained observation');
+  const fresh=pts.filter(([day])=>day>last);
+  if(fresh.length&&fresh[0][0]-last>7)return {status:'gap',changes:0};
+  const merged=new Map(A.dayk.map((day,i)=>[day,A.close[i]]));let changes=0;
+  for(const [day,close]of pts){if(merged.get(day)!==close)changes++;merged.set(day,close);}
+  const dayk=[...merged.keys()].sort((a,b)=>a-b),close=dayk.map(day=>merged.get(day)),ret=[0];
+  // Subtract logarithms to avoid overflow/underflow in an otherwise finite ratio.
+  for(let i=1;i<close.length;i++){const ratio=close[i]/close[i-1];ret.push(Number.isFinite(ratio)&&ratio>0?Math.log(ratio):Math.log(close[i])-Math.log(close[i-1]));}
+  if(dayk[0]!==first||dayk.at(-1)<last||close.some(value=>!Number.isFinite(value)||value<=0)||ret.some(value=>!Number.isFinite(value)))throw Error('Invalid candidate market history');
+  return {status:'live',changes,candidate:{...A,dayk,close,ret,vintage:dayk.at(-1),src,retrievedAt:new Date(now).toISOString()}};
+}
+// Commit only a completely validated candidate; malformed/empty/gapped updates
+// cannot change the prior history, its source or its observation date.
+function mergeSeries(id,pairs,src){const result=marketCandidate(id,pairs,src);if(result.candidate){STORE[id]=result.candidate;LIVE_CHANGES+=result.changes;}return result.status;}
+const sinceDay=id=>STORE[id].vintage-7;
+const marketCurrent=run=>!run||marketRun===run&&!run.controller.signal.aborted;
+function acceptMarketSeries(id,pairs,src,run){
+  if(!marketCurrent(run))return 'superseded';
+  const result=marketCandidate(id,pairs,src);
+  if(run)run.results.set(id,result);else if(result.candidate){STORE[id]=result.candidate;LIVE_CHANGES+=result.changes;}
+  return result.status;
+}
+function marketResult(feed,id,status,error,run){
+  if(!marketCurrent(run))return;
+  const record={feed,id,status,checkedAt:new Date().toISOString(),error:error?String(error.message||error):null};
+  if(run)run.status.set(id,record);else{MARKET_STATE.results[id]=record;updateMarketFeedStatus(Object.values(MARKET_STATE.results),feed);drawFeeds();}
+}
+function updateMarketFeedStatus(records,only){
+  let accepted=0;
+  for(const feed of only?[only]:['Binance','Frankfurter','YahooProxy']){const rows=records.filter(r=>r.feed===feed),good=rows.filter(r=>r.status==='live').length;accepted+=good;feedStatus[feed]=good===rows.length&&good?'live':good?'partial':rows.some(r=>r.status==='gap')?'gap':rows.length&&rows.every(r=>r.status==='empty')?'empty':'unavailable';}
+  return accepted;
+}
+async function loadBinance(pair,id,run){try{
+  const data=await fetchMarketJSON(`https://api.binance.us/api/v3/klines?symbol=${pair}&interval=1d&startTime=${dayToMs(sinceDay(id))}&limit=1000`,8000,run?.controller.signal);
+  if(!Array.isArray(data)||data.length>1000)throw Error('Invalid Binance daily response');
+  const pairs=data.map(row=>{if(!Array.isArray(row)||row.length<7)throw Error('Invalid Binance candle');return [marketNumber(row[0]),marketNumber(row[4])];});
+  marketResult('Binance',id,acceptMarketSeries(id,pairs,'Binance.US download',run),null,run);
+}catch(error){marketResult('Binance',id,'unavailable',error,run);}}
+async function loadFX(run){try{
+  const start=msToDateStr(dayToMs(Math.min(...['USDEUR','USDJPY','USDCHF','USDAUD'].map(sinceDay))));
+  const data=await fetchMarketJSON(`https://api.frankfurter.dev/v1/${start}..?base=USD&symbols=EUR,JPY,CHF,AUD`,8000,run?.controller.signal);
+  if(!data||data.base!=='USD'||!data.rates||typeof data.rates!=='object'||Array.isArray(data.rates))throw Error('Invalid Frankfurter response');
+  const rows=Object.entries(data.rates);if(rows.length>MARKET_MAX_ROWS)throw Error('Excessive FX date count');
+  // Validate all four legs before accepting any, so one malformed field does
+  // not leave a partially revised currency response in the retained histories.
+  const candidates=[];
+  for(const [code,id]of [['EUR','USDEUR'],['JPY','USDJPY'],['CHF','USDCHF'],['AUD','USDAUD']]){
+    const pairs=rows.map(([day,row])=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Number.isFinite(Date.parse(day))||new Date(day).toISOString().slice(0,10)!==day||!row||typeof row!=='object'||!(code in row))throw Error('Incomplete or invalid FX date/currency coverage');return [Date.parse(day),marketNumber(row[code])];});
+    candidates.push({id,result:marketCandidate(id,pairs,'Frankfurter download')});
+  }
+  if(!marketCurrent(run))return;
+  for(const {id,result}of candidates){if(run)run.results.set(id,result);else if(result.candidate){STORE[id]=result.candidate;LIVE_CHANGES+=result.changes;}marketResult('Frankfurter',id,result.status,null,run);}
+}catch(error){for(const id of ['USDEUR','USDJPY','USDCHF','USDAUD'])marketResult('Frankfurter',id,'unavailable',error,run);}}
+async function fetchYahoo(sym,id,run){
+  const p1=Math.floor(dayToMs(sinceDay(id))/1000),p2=Math.floor(Date.now()/1000);
+  if(EQUITY_PROXY){const base=EQUITY_PROXY.replace(/\/+$/,'');return await fetchMarketJSON(`${base}/?symbol=${encodeURIComponent(sym)}&period1=${p1}&period2=${p2}&range=1mo&interval=1d`,9000,run?.controller.signal);}
+  const target=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?period1=${p1}&period2=${p2}&interval=1d`,envelope=await fetchMarketJSON(`https://api.allorigins.win/get?url=${encodeURIComponent(target)}`,9000,run?.controller.signal);
+  if(!envelope||typeof envelope.contents!=='string'||new TextEncoder().encode(envelope.contents).length>MARKET_MAX_BYTES)throw Error('Invalid equity proxy envelope');
+  return JSON.parse(envelope.contents);
+}
+async function loadEquity(sym,id=sym,run){try{
+  const data=await fetchYahoo(sym,id,run),results=data?.chart?.result;
+  if(data?.chart?.error||!Array.isArray(results)||results.length!==1)throw Error('Invalid Yahoo result');
+  const row=results[0],ts=row.timestamp,quotes=row.indicators?.quote;
+  if(row.meta?.symbol!==sym||!Array.isArray(ts)||!Array.isArray(quotes)||quotes.length!==1||!Array.isArray(quotes[0].close)||quotes[0].close.length!==ts.length||ts.length>MARKET_MAX_ROWS)throw Error('Wrong equity identity or daily arrays');
+  const pairs=[],seen=new Set();for(let i=0;i<ts.length;i++){const ms=marketNumber(ts[i])*1000,day=dayKeyFromMs(ms);if(!Number.isSafeInteger(ms)||ms<EPOCH0||ms>Date.now()||seen.has(day))throw Error('Invalid or duplicate equity timestamp');seen.add(day);if(quotes[0].close[i]!==null)pairs.push([ms,marketNumber(quotes[0].close[i])]);}
+  marketResult('YahooProxy',id,acceptMarketSeries(id,pairs,EQUITY_PROXY?'Yahoo download (worker)':'Yahoo download (proxy)',run),null,run);
+}catch(error){marketResult('YahooProxy',id,'unavailable',error,run);}}
+function cancelMarketRefresh(){
+  if(!marketRun)return;
+  const prior=marketRun;marketRun=null;MARKET_STATE.generation++;prior.controller.abort();MARKET_STATE.mode='superseded';
+  for(const feed of ['Binance','Frankfurter','YahooProxy'])if(feedStatus[feed]==='loading')feedStatus[feed]='unavailable';
+  drawFeeds();
+}
+function liveRefresh(options={}){
+  if(MODE!=='live')return Promise.resolve(false);
+  if(marketRun&&!options.supersede)return marketRun.promise;
+  if(marketRun)cancelMarketRefresh();
+  const run={generation:++MARKET_STATE.generation,controller:new AbortController(),results:new Map(),status:new Map(),promise:null};marketRun=run;MARKET_STATE.mode='checking';MARKET_STATE.checkedAt=new Date().toISOString();
+  for(const feed of ['Binance','Frankfurter','YahooProxy'])feedStatus[feed]='loading';drawFeeds();
+  run.promise=(async()=>{
+    const equity=ASSET_IDS.filter(id=>!['crypto','fx','vol'].includes(STORE[id].cls));
+    const tasks=[loadBinance('BTCUSDT','BTC',run),loadBinance('ETHUSDT','ETH',run),loadBinance('SOLUSDT','SOL',run),loadFX(run),loadEquity('^VIX','VIX',run),...equity.map(id=>loadEquity(id,id,run))];
+    await Promise.allSettled(tasks);if(!marketCurrent(run)||MODE!=='live')return false;
+    LIVE_CHANGES=0;for(const [id,result]of run.results)if(result.candidate){STORE[id]=result.candidate;LIVE_CHANGES+=result.changes;}
+    MARKET_STATE.results=Object.fromEntries(run.status);const accepted=updateMarketFeedStatus([...run.status.values()]);
+    MARKET_STATE.mode=accepted?'downloaded':'unavailable';if(accepted)MARKET_STATE.lastSuccessAt=new Date().toISOString();
+    if(LIVE_CHANGES){computeAll();computeManifold();computeAnticipation();computeMeta();renderAll();if(PAGE==='pred')drawMeta();}else drawFeeds();return accepted>0;
+  })().finally(()=>{if(marketRun===run)marketRun=null;});
+  return run.promise;
+}
+window.ResilienceMarket={refresh:liveRefresh,cancel:cancelMarketRefresh,state:MARKET_STATE};
 
 /* ===================== controls ===================== */
 // picker labels: the console's short name plus (main picker) the fund's official name; single stocks, crypto and FX are already clear
@@ -2753,7 +2950,7 @@ function initControls(){
   document.querySelectorAll('#pagetabs button').forEach(b=>b.onclick=()=>setPage(b.dataset.pg));
   {const cs=$('#casc-src');if(cs){cs.innerHTML=(BASKET_ORDER.length?BASKET_ORDER.map(bl=>`<optgroup label="${bl}">`+BASKET_MEMBERS[bl].map(id=>`<option value="${id}">${escAttr(optLabel(id,false))}</option>`).join('')+`</optgroup>`).join(''):ASSET_IDS.map(id=>`<option value="${id}">${escAttr(optLabel(id,false))}</option>`).join(''));cs.value=(ANTIC&&ANTIC.ok?ANTIC.transmitter:ASSET_IDS[0]);cs.onchange=cascRun;}if($('#casc-th'))$('#casc-th').oninput=cascRun;}
   document.querySelectorAll('#modeseg button').forEach(b=>b.onclick=()=>{MODE=b.dataset.mode;document.querySelectorAll('#modeseg button').forEach(x=>x.classList.toggle('on',x===b));$('#btcard').style.display=MODE==='backtest'?'block':'none';
-    if(MODE==='backtest'){setupScrub();}else{CURSOR=null;pollOBI();}renderAll();});
+    if(MODE==='backtest'){cancelMarketRefresh();cancelOrderBooks();setupScrub();}else{CURSOR=null;pollOBI();liveRefresh();}renderAll();});
   $('#thsort').onclick=()=>{SORTKEY=SORTKEY==='frag'?'order':'frag';$('#thsort').textContent=SORTKEY==='frag'?'sort: fragility ▾':'sort: basket ▾';drawThermo();};
   $('#scrub').oninput=e=>{const idx=COMP[SEL].idx;if(!idx.length)return;const p=Math.round(e.target.value/100*(idx.length-1));CURSOR=idx[p];$('#cursorlab').textContent='as of '+msToDateStr(dayToMs(CURSOR));};
   $('#scrub').onchange=()=>renderAll();
@@ -2788,10 +2985,10 @@ async function boot(){const stage=async(msg,fn)=>{$('#splashmsg').textContent=ms
   await stage('3/4 · directed network permutation gate…',()=>{initControls();renderAll();});
   await stage('4/4 · labs, valuation & risk cards…',()=>{computeAlphaData();alRun();computeVolLab();drawVolLab();computeMeta();computeValuation();drawValuation();computeFactorPremia();drawFactorPremia();crRun();onRun();drawRiskCockpit();setPage('diag');prRun();
     drawPerspectives();drawNetStruct();watchDefs();}); // these read the labs/valuation computed just above; then mark every ticker/abbreviation
-  pollOBI();setInterval(pollOBI,5000);$('#splash').style.display='none';clockTick();setInterval(clockTick,1000);
+  pollOBI();setInterval(pollOBI,OBI_POLL_MS);$('#splash').style.display='none';clockTick();setInterval(()=>{clockTick();drawOBI();},1000);
   liveRefresh();refreshPublishedMacro();document.getElementById('refresh-macro').onclick=refreshPublishedMacro;
   setInterval(()=>{if(!document.hidden)refreshPublishedMacro();},FRED_REFRESH_MS);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshPublishedMacro();});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelOrderBooks();else{refreshPublishedMacro();pollOBI();}});
   setInterval(()=>{if(MODE==='live')liveRefresh();},10*60*1000);}
 setTimeout(boot,30);
 </script>
@@ -2994,7 +3191,7 @@ setTimeout(boot,30);
       macroRecords.push({id:'series-'+id,label:id+' · '+(row.name||'published series'),kind:'context',evidenceIds:[fid],summary:valid?value+' '+unit+' for '+at+'; retrieved '+(meta.retrieved_on||'unavailable')+'. '+(model?'Smoothed nowcast; not forward-looking.':'Natural series frequency and revision policy apply.'):'A finite dated observation is unavailable.'});
     }
     const impacts={title:'Published economic records and model scope',scope:'Public FRED reference series, each at its own date; market scenario '+SCEN,summary:'Review actual dated economic references beside the descriptive return-network model. Annual, quarterly, monthly and daily records are not silently aligned or converted into a portfolio forecast.',items:macroItems,records:macroRecords,limitations:['FRED retrieval is distinct from observation vintage; recent retrieval does not make annual/quarterly releases current daily measures.','The recession-probability series is a lagged smoothed nowcast; no new forward projection is supplied.','No private holdings, expected investment return, crash probability, household loss, trade or causal funding channel is inferred.']};
-    return H.build({slug:'resilience-telemetry',title:'Ten-parameter research and risk-review plan',context:SEL+' versus '+reference+' · network through '+(date||'unavailable')+' · '+MODE+' · scenario '+SCEN,scenario,rows,evidence,impacts,authorityUrl:authority,
+    return H.build({slug:'resilience-telemetry',selectionKey:JSON.stringify(['resilience-telemetry',SEL,MODE,SCEN,!!SURR,MODE==='backtest'&&typeof CURSOR==='number'&&Number.isFinite(CURSOR)?CURSOR:null]),title:'Ten-parameter research and risk-review plan',context:SEL+' versus '+reference+' · network through '+(date||'unavailable')+' · '+MODE+' · scenario '+SCEN,scenario,rows,evidence,impacts,authorityUrl:authority,
       overrides:{2:mark('shape',distance,'Review a nonzero return-distribution gap.','Exact empirical W1 on common-calendar daily log returns; not a directional forecast.'),3:mark('density',density?.value??null,'Review any nonzero binned probability-mass difference; no validated trading or risk cutoff is supplied.','Total variation = half the sum of absolute empirical bin-probability differences. Shared pooled bins and calendar; this is a density-symmetry adaptation, not an original CRT spatial estimator.'),4:mark('components',comps==null?null:comps-1,'Review more than one high-fragility graph component.','Declared component-count proxy on estimated gated links.'),5:mark('margin',margin,'Review readings within five points of existing descriptive 60/85 bands.','Interpretive classification-sensitivity band, not a confidence interval.'),6:mark('scale',sensitivity,'Review component-count changes when the gate doubles.','Estimated graph-scale sensitivity; no geographic spatial-mixing estimator is fitted.'),8:mark('auc',auc,'Review positive source reachability across the declared threshold ladder.','AUC of a hypothetical reachability screen, not a measured contagion effect or loss probability.'),9:mark('frontier',frontier,'Review model reach across the high/other boundary within 1–3 hops.','Graph-depth exposure AUC proxy, with no timing or causal claim.'),10:mark('leakage',leakage,'Review estimated association strength crossing the declared partition.','Cross-group association proxy; no physical flow or portfolio transmission is measured.')},
       network:{label:'Estimated links supporting the ten-parameter review',basis:'modeled',semantics:'Positive antisymmetric lead-lag association, gated using the existing pairwise circular-shift reference; not money flow or causal contagion.',period:date,coverage:(S?.n||0)+' common return observations; '+links.length+' selected directed links',roles,limitations:['Pairwise gates do not by themselves establish family-wise significance.','Sources and sinks describe model asymmetry, not interventions or physical transmission.']},
       escalateWhen:'Escalate data/model discrepancies to the responsible analyst and use your own approved risk policy and current sources. This checklist never issues a trade or position change.',

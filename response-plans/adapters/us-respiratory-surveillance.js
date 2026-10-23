@@ -167,6 +167,7 @@
       records.push({id:state,label:state+' · '+label,kind:'context',evidenceIds:[id],summary:known?wwEnd+' · derived category mean '+round(point[1])+' across '+n+' reporting sites; not infection prevalence.':'No applicable report for '+(wwEnd||'the selected week')+'; reporting coverage is unknown.'});
     });
     var output=plan('United States · '+label+' selected in “At a glance” · ED week '+(last?last[0]:'unavailable')+' · national surveillance planning',evidence,ov);
+    output.selectionKey=JSON.stringify([cfg.slug,'United States',key,'national ED share; RESP-NET Overall; NWSS ordinal site categories']);
     output.impacts={title:'Reported respiratory activity and surveillance coverage',scope:label+' · each signal retains its own week and reporting population',summary:'Public surveillance supplies reported rates and valid-site coverage. It does not supply a calibrated patient-impact forecast.',items:items,records:records,limitations:['ED, hospitalization and wastewater populations, weeks and units differ; they are not added or averaged.','State records use the exact national wastewater week; missing/older reports stay unknown.','No national patient count, personal risk, intervention benefit or future clinical outcome is inferred.']};return output;
   }
   ConsoleResponse.connect(read,['#glsel','#glchart','#glv','#gls','#hosps','#wwstats','#srcchip']);

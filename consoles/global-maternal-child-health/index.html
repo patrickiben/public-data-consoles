@@ -247,17 +247,23 @@ footer b{color:var(--ink2)}
 #console-response :focus-visible,#console-response-shortcut:focus-visible{outline:3px solid #f4d57d;outline-offset:3px}
 #console-response select{font:inherit;color:#e2edf4;background:#173343;border:1px solid #6d8b9e;border-radius:4px;padding:5px;max-width:100%}
 #console-response-shortcut{position:fixed;right:14px;bottom:14px;z-index:10020;border:1px solid #87d5e0;border-radius:24px;padding:10px 15px;background:#103f50;color:#f1f8fc;font:600 13px system-ui,sans-serif;box-shadow:0 2px 12px #0007;text-decoration:none}
-@media(max-width:640px){#console-response{margin:10px 6px;padding:13px}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:19px}}
 @media print{#console-response-shortcut,#console-response .cr-toolbar{display:none!important}#console-response{background:white!important;color:#111!important;max-width:none;border:1px solid #555}#console-response *{color:#111!important;box-shadow:none!important}#console-response details{display:block!important}#console-response details>*{display:block!important}#console-response .cr-action{break-inside:avoid;background:white!important}#console-response .cr-badge{border-color:#555}}
 @media print{#console-response .cr-impact-records{max-height:none;overflow:visible}#console-response .cr-impact-item,#console-response .cr-impact-records article{break-inside:avoid;background:white!important}#console-response .cr-impact-preview button{display:none!important}}
 
 #console-response .cr-priority-preview{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;border:1px solid #5bbfcb;border-radius:9px;padding:14px;margin:12px 0;background:#133747}#console-response .cr-priority-preview>div{flex:1;min-width:180px}#console-response .cr-priority-preview span{color:#bdd9e5}#console-response .cr-priority-preview p{font-size:16px;font-weight:650;color:#f1f8fc}#console-response .cr-priority-list{list-style:none;margin:12px 0;padding:0}#console-response .cr-priority-list>li{margin:0}#console-response .cr-priority{border-left:4px solid #55beca;overflow-wrap:anywhere}#console-response .cr-priority[data-cr-priority="immediate"]{border-left-color:#f0cc87}#console-response .cr-priority-head{display:flex;gap:12px;align-items:flex-start}#console-response .cr-priority-number{display:flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#227184;color:#fff;font-weight:750}#console-response .cr-priority-head h4{margin:7px 0}#console-response .cr-timing{color:#a7f0f2}#console-response .cr-escalation{border-left:2px solid #e5b35a;padding-left:10px;margin:10px 0}#console-response .cr-priority label{min-height:44px;align-content:center}
 @media print{#console-response .cr-priority-preview button{display:none!important}#console-response .cr-priority-list>li{display:block!important}#console-response .cr-priority-head{display:flex!important}}
+#console-response{grid-column:1/-1;min-width:0;overflow-wrap:anywhere}#console-response .cr-head>div{min-width:0}#console-response .cr-action label{min-height:44px;align-content:center}#console-response summary{scroll-margin-top:16px}
+@media print{#console-response .cr-wide,#console-response .cr-context{display:revert!important}}
+
+@media(max-width:640px){#console-response{margin:10px 6px;padding:10px;max-width:calc(100% - 12px)}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:16px}#console-response .cr-head{gap:6px}#console-response .cr-context,#console-response .cr-wide{display:none}#console-response .cr-summary{padding:6px;font-size:12px}#console-response .cr-impact-preview{gap:6px;padding:0}#console-response .cr-impact-preview>span{display:none}#console-response .cr-plan-group{padding:7px;margin:6px 0 0}#console-response .cr-plan-group>summary{font-size:13px}#console-response .cr-priority-preview{padding:9px;margin:8px 0;gap:6px}#console-response .cr-priority-preview p{font-size:14px;margin:4px 0}#console-response .cr-priority-preview b{font-size:12px}#console-response .cr-priority-preview>div{min-width:0;flex-basis:100%}#console-response .cr-priority-preview button{padding:7px 10px}}
+
+#console-response .cr-preview-period{display:block;color:#b2c6d3;font-size:11px;margin-top:4px}
+@media(max-width:640px){#console-response .cr-preview-target{font-size:12px}}
 </style>
 <script>
 (function (root) {
   'use strict';
-  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set(), prioritizers = new Map();
+  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set(), prioritizers = new Map(), lastAssessment = null, changes = null;
   var priorityOrder = { immediate: 0, next: 1, planned: 2, routine: 3 };
   function registerPrioritizer(slug, derive) {
     if (typeof slug !== 'string' || !slug || typeof derive !== 'function') throw new TypeError('A console slug and priority function are required.');
@@ -298,6 +304,20 @@ footer b{color:var(--ink2)}
     return value;
   }
   function signature(value) { return JSON.stringify(canonical(value)); }
+  // Every presentation consumes the same evidence contract. Historical reporting
+  // periods may be descriptive; a current observation needs a valid elapsed date.
+  function evidenceProblem(f, count, current) {
+    if (!f || typeof f.id !== 'string' || !f.id.trim() || count !== 1) return 'Missing or ambiguous evidence identity.';
+    if (['missing', 'stale'].includes(f.quality)) return 'Missing or stale evidence.';
+    if (!f.source) return 'Public source link is unavailable.';
+    var period = text(f.measuredAt).trim(), at = Date.parse(period);
+    if (!period) return 'Observation/reporting period is unavailable.';
+    var isoDay = /^(\d{4}-\d{2}-\d{2})(?:$|T)/.exec(period);
+    if (isoDay && (!Number.isFinite(at) || new Date(isoDay[1] + 'T00:00:00Z').toISOString().slice(0, 10) !== isoDay[1])) return 'Observation date is invalid.';
+    if (Number.isFinite(at) && at > Date.now()) return 'Observation/report date is in the future.';
+    if (current && (f.quality !== 'current' || !Number.isFinite(at))) return 'Current dated evidence is required.';
+    return '';
+  }
   function evaluateImpacts(input, facts) {
     var supplied = input.impacts || {}, byFact = new Map(), duplicates = new Set();
     facts.forEach(function (f) { if (byFact.has(f.id)) duplicates.add(f.id); byFact.set(f.id, f); });
@@ -315,13 +335,8 @@ footer b{color:var(--ink2)}
         if (!ids.length) reasons.push('No supporting public evidence is linked.');
         ids.forEach(function (id) {
           var f = byFact.get(id);
-          if (!f || duplicates.has(id)) reasons.push('Missing or ambiguous evidence: ' + text(id) + '.');
-          else {
-            if (['missing', 'stale'].includes(f.quality)) reasons.push(f.label + ': missing or stale evidence.');
-            if (!f.source) reasons.push(f.label + ': public source link is unavailable.');
-            if (!text(f.measuredAt).trim()) reasons.push(f.label + ': observation/reporting period is unavailable.');
-            if (['observed', 'forecast'].includes(kind) && f.quality !== 'current') reasons.push(f.label + ': historical context cannot establish a current impact.');
-          }
+          var problem = evidenceProblem(f, duplicates.has(id) ? 2 : f ? 1 : 0, ['observed', 'forecast'].includes(kind));
+          if (problem) reasons.push((f ? f.label || f.id : text(id)) + ': ' + problem);
         });
         var practice = !!input.scenario || linked.some(function (f) { return f.basis === 'demo'; }) || kind === 'scenario';
         if (practice) kind = 'scenario';
@@ -353,7 +368,12 @@ footer b{color:var(--ink2)}
       if (!['number', 'string'].includes(typeof f.value)) { f.value = null; f.quality = 'missing'; }
       f.source = url(f.source); return f;
     });
-    var byFact = new Map(facts.map(function (f) { return [f.id, f]; }));
+    var byFact = new Map(facts.map(function (f) { return [f.id, f]; })), factCounts = new Map();
+    facts.forEach(function (f) { factCounts.set(f.id, (factCounts.get(f.id) || 0) + 1); });
+    facts.forEach(function (f) {
+      var problem = evidenceProblem(f, factCounts.get(f.id), f.quality === 'current');
+      if (problem && !['missing', 'stale'].includes(f.quality)) { f.quality = 'missing'; f.note = (f.note ? f.note + ' ' : '') + 'Evidence withheld: ' + problem; }
+    });
     var diagnostics = (Array.isArray(input.diagnostics) ? input.diagnostics : []).map(function (diagnostic) {
       var d = Object.assign({}, diagnostic), ids = Array.isArray(d.evidenceIds) ? d.evidenceIds : [];
       d.evidenceIds = ids; d.status = ['triggered', 'clear', 'unknown'].includes(d.status) ? d.status : 'unknown';
@@ -363,12 +383,12 @@ footer b{color:var(--ink2)}
       if (!ids.length) d.reasons.push('No supporting evidence is linked.');
       ids.forEach(function (id) {
         var fact = byFact.get(id);
-        if (!fact || ['missing', 'stale'].includes(fact.quality)) d.reasons.push((fact ? fact.label : id) + ': missing or stale evidence.');
-        else if (fact.quality === 'historical' && d.scope !== 'planning') d.reasons.push(fact.label + ': historical evidence cannot establish current conditions.');
+        var problem = evidenceProblem(fact, factCounts.get(id), d.scope !== 'planning');
+        if (problem) d.reasons.push((fact ? fact.label || fact.id : id) + ': ' + problem);
       });
       if (d.reasons.length) d.status = 'unknown';
       d.practice = !!input.scenario || ids.some(function (id) { return byFact.get(id) && byFact.get(id).basis === 'demo'; });
-      d.current = ids.length > 0 && ids.every(function (id) { var f = byFact.get(id); return f && f.quality === 'current' && f.basis !== 'demo'; });
+      d.current = !d.reasons.length && ids.length > 0 && ids.every(function (id) { var f = byFact.get(id); return !evidenceProblem(f, factCounts.get(id), true) && f.basis !== 'demo'; });
       return d;
     });
     diagnostics.forEach(function (d) { var n = Number(d.metricId == null ? d.dimension : d.metricId); d.metricId = Number.isInteger(n) && n >= 1 && n <= 10 ? n : null; });
@@ -386,9 +406,8 @@ footer b{color:var(--ink2)}
     diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
     diagnostics.forEach(function (d) { if (d.status === 'unknown') d.value = null; });
     var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
-    var actionRows = (Array.isArray(input.actions) ? input.actions : []).concat(derivePriorities(input));
-    var factCounts = new Map(), actionCounts = new Map();
-    facts.forEach(function (f) { factCounts.set(f.id, (factCounts.get(f.id) || 0) + 1); });
+    var actionRows = (Array.isArray(input.actions) ? input.actions : []).concat(derivePriorities(Object.assign({}, input, { evidence: facts, diagnostics: diagnostics })));
+    var actionCounts = new Map();
     actionRows.forEach(function (a) { actionCounts.set(a.id, (actionCounts.get(a.id) || 0) + 1); });
     var actions = actionRows.map(function (action) {
       var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
@@ -406,8 +425,8 @@ footer b{color:var(--ink2)}
       if (a.featured) {
         a.evidenceIds = Array.isArray(a.evidenceIds) ? Array.from(new Set(a.evidenceIds)) : [];
         var linked = a.evidenceIds.map(function (id) { return byFact.get(id); });
-        var supported = linked.length > 0 && linked.every(function (f) { return f && factCounts.get(f.id) === 1 && f.source && text(f.measuredAt).trim() && !['missing', 'stale'].includes(f.quality); });
-        a.current = supported && linked.every(function (f) { return f.quality === 'current' && f.basis !== 'demo' && Number.isFinite(Date.parse(f.measuredAt)) && Date.parse(f.measuredAt) <= Date.now(); });
+        var supported = linked.length > 0 && linked.every(function (f) { return !evidenceProblem(f, f && factCounts.get(f.id), false); });
+        a.current = supported && linked.every(function (f) { return !evidenceProblem(f, factCounts.get(f.id), true) && f.basis !== 'demo'; });
         a.practice = !!input.scenario || a.signal === 'scenario' || linked.some(function (f) { return f && f.basis === 'demo'; });
         a.priority = Object.prototype.hasOwnProperty.call(priorityOrder, a.priority) ? a.priority : 'planned';
         a.rank = Number.isFinite(a.rank) && a.rank > 0 ? a.rank : 100;
@@ -434,18 +453,35 @@ footer b{color:var(--ink2)}
     ['public', 'operator'].forEach(function (audience) {
       var n = 0; actions.forEach(function (a) { if (a.featured && a.selected && a.track === audience) a.position = ++n; });
     });
-    return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
+    return { slug: text(input.slug), selectionKey: text(input.selectionKey), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
       evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null, impacts: evaluateImpacts(input, facts),
       limitations: Array.isArray(input.limitations) ? input.limitations.map(text) : [], scenario: !!input.scenario };
   }
   function badge(basis) { return '<span class="cr-badge">' + esc(basisNames[basis] || basisNames.interpretive) + '</span>'; }
   function sourceLink(source, label) { return url(source) ? '<a href="' + esc(url(source)) + '" target="_blank" rel="noopener noreferrer">' + esc(label || 'Source') + '</a>' : '<span>Source not supplied</span>'; }
+  function scrollToSection(el) {
+    el.scrollIntoView({ behavior: root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }
+  function focusKey(el) {
+    if (!el) return '';
+    if (el.id) return 'id:' + el.id;
+    if (el.tagName === 'SUMMARY') return 'summary:' + el.parentElement.dataset.crSection;
+    if (el.tagName === 'A') {
+      var owner = el.closest('[data-cr-action],[data-cr-impact],[data-cr-impact-record],[data-cr-section]');
+      var fact = el.closest('[data-cr-evidence],[data-cr-source]');
+      return signature(['link', owner && [owner.dataset.crAction, owner.dataset.crImpact, owner.dataset.crImpactRecord, owner.dataset.crSection], fact && [fact.dataset.crEvidence, fact.dataset.crSource], el.getAttribute('href'), el.textContent]);
+    }
+    return '';
+  }
   function mount() {
     if (!doc || !doc.body) return;
     var panel = doc.getElementById('console-response');
     if (!panel) return;
     if (!panel.dataset.mounted) {
       panel.dataset.mounted = 'true';
+      // Keep the console's identity and navigation before the shared plan.
+      var heading = doc.querySelector('h1'), nativeHeader = heading && heading.closest('header');
+      if (nativeHeader && !panel.contains(nativeHeader)) nativeHeader.insertAdjacentElement('afterend', panel);
       panel.addEventListener('click', function (event) {
         var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact],[data-cr-open-priorities]');
         if (!button) return;
@@ -455,12 +491,12 @@ footer b{color:var(--ink2)}
         if (button.hasAttribute('data-cr-open-priorities')) {
           panel.querySelector('[data-cr-section="plan"]').open = true;
           var actions = panel.querySelector('[data-cr-section="actions"]');
-          if (actions) { actions.open = true; actions.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+          if (actions) { actions.open = true; scrollToSection(actions); actions.querySelector('summary').focus({ preventScroll: true }); }
         }
         if (button.hasAttribute('data-cr-open-impact')) {
           panel.querySelector('[data-cr-section="plan"]').open = true;
           var impacts = panel.querySelector('[data-cr-section="impacts"]');
-          if (impacts) { impacts.open = true; impacts.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+          if (impacts) { impacts.open = true; scrollToSection(impacts); impacts.querySelector('summary').focus({ preventScroll: true }); }
         }
       });
       panel.addEventListener('change', function (event) {
@@ -473,7 +509,7 @@ footer b{color:var(--ink2)}
       if (shortcut) shortcut.addEventListener('click', function (event) {
         var group = panel.querySelector('[data-cr-section="plan"]'); if (group) group.open = true;
         event.preventDefault(); var checklist = panel.querySelector('[data-cr-section="actions"]'); if (checklist) checklist.open = true;
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        scrollToSection(panel);
         var heading = doc.getElementById('console-response-title'); if (heading) heading.focus();
       });
       var printSections = null;
@@ -516,19 +552,33 @@ footer b{color:var(--ink2)}
     var plan = currentPlan(), unknown = plan.diagnostics.filter(function (d) { return d.metricId && d.status === 'unknown'; }).length;
     var selected = plan.actions.filter(function (a) { return a.track === track && a.selected; });
     var open = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
-    var focused = doc.activeElement && panel.contains(doc.activeElement) ? doc.activeElement.id : '';
+    var focused = doc.activeElement && panel.contains(doc.activeElement) ? focusKey(doc.activeElement) : '';
     panel.dataset.rendered = 'true';
-    var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
-    h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
+    var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p class="cr-context">' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
+    h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe.<span class="cr-wide"> People and responsible authorities decide.</span></p>';
     var featured = selected.filter(function (a) { return a.featured; });
-    if (featured.length) h += '<div class="cr-priority-preview"><div><b>Do next · ' + esc(track === 'operator' ? 'Professional operators' : 'Public / local decision makers') + '</b><p>' + esc(featured[0].title) + '</p><span>' + esc(featured[0].target) + ' · ' + esc(featured[0].timing) + '</span></div><button id="cr-open-priorities" data-cr-open-priorities>Open prioritized checklist (' + featured.length + ')</button></div>';
+    if (featured.length) {
+      var first = featured[0], periods = Array.from(new Set(first.sources.map(function (s) { return s.measuredAt; }).filter(Boolean)));
+      h += '<div class="cr-priority-preview"><div><b>Do next · ' + esc(track === 'operator' ? 'Operators' : 'Public / local decisions') + '</b><p>' + esc(first.title) + '</p><span class="cr-preview-target">' + esc(first.target) + '</span><span class="cr-wide"> · ' + esc(first.timing) + '</span><small class="cr-preview-period">' + (periods.length ? 'Source period: ' + esc(periods.slice(0, 2).join('; ')) + (periods.length > 2 ? ' · more in checklist' : '') : 'Source gap · verify the original report') + '</small></div><button id="cr-open-priorities" data-cr-open-priorities>View actions (' + featured.length + ')</button></div>';
+    }
     var impactRows = plan.impacts.items.concat(plan.impacts.records), availableImpacts = impactRows.filter(function (r) { return r.status === 'available'; }).length;
-    h += '<div class="cr-impact-preview"><span>' + availableImpacts + ' available impact/context ' + (availableImpacts === 1 ? 'item' : 'items') + ' · ' + impactRows.filter(function (r) { return r.status === 'unknown'; }).length + ' unavailable. Scope: ' + esc(plan.impacts.scope) + '.</span><button id="cr-open-impacts" data-cr-open-impact>Review impacts and source records</button></div>';
-    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open response plan, public-data impacts and ten-parameter detail</summary>';
+    h += '<div class="cr-impact-preview"><span>' + availableImpacts + ' available impact/context ' + (availableImpacts === 1 ? 'item' : 'items') + ' · ' + impactRows.filter(function (r) { return r.status === 'unknown'; }).length + ' unavailable.<span class="cr-wide"> Scope: ' + esc(plan.impacts.scope) + '.</span></span><button id="cr-open-impacts" data-cr-open-impact>View impacts and sources</button></div>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Response plan and ten-parameter detail</summary><p><b>Selection:</b> ' + esc(plan.context) + '</p>';
     h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
     function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
+    if (changes) {
+      var changeHTML = '<p>Compared with the previous evidence revision in this tab at ' + esc(changes.at) + '. Review notes reset when the evidence or selection changes.</p>';
+      if (changes.selectionChanged) changeHTML += '<p>Selection changed. Values from different places or scenarios are not compared.</p>';
+      else {
+        changeHTML += '<ul>' + changes.evidence.map(function (c) { return '<li><b>' + esc(c.label) + ':</b> ' + esc(c.before) + ' → ' + esc(c.after) + '</li>'; }).join('') + '</ul>';
+        var audienceChanges = changes.priorities.filter(function (a) { return a.track === track; });
+        if (audienceChanges.length) changeHTML += '<p><b>Priority changes for this audience:</b></p><ul>' + audienceChanges.map(function (a) { return '<li>' + esc(a.title) + ': ' + esc(a.change) + (a.reason ? '. ' + esc(a.reason) : '') + '</li>'; }).join('') + '</ul>';
+        if (!changes.evidence.length && !audienceChanges.length) changeHTML += '<p>Supporting calculations or applicability changed; review the updated plan below.</p>';
+      }
+      h += section('changes', 'What changed since the previous update', changeHTML, 'interpretive');
+    }
     function impactSources(row) {
-      return '<ul class="cr-impact-sources">' + row.sources.map(function (s) { return '<li>' + sourceLink(s.source, s.label || s.id) + ' · observed/reported: ' + esc(s.measuredAt || 'not supplied') + ' · ' + esc(s.quality) + (s.checkedAt ? '; checked: ' + esc(s.checkedAt) : '') + '</li>'; }).join('') + '</ul>';
+      return '<ul class="cr-impact-sources">' + row.sources.map(function (s) { return '<li data-cr-source="' + esc(s.id) + '">' + sourceLink(s.source, s.label || s.id) + ' · observed/reported: ' + esc(s.measuredAt || 'not supplied') + ' · ' + esc(s.quality) + (s.checkedAt ? '; checked: ' + esc(s.checkedAt) : '') + '</li>'; }).join('') + '</ul>';
     }
     function impactBadge(row) { return row.status === 'unknown' ? '<span class="cr-badge cr-unknown">UNKNOWN' + (row.practice ? ' · PRACTICE ONLY' : ' · inputs incomplete') + '</span>' : badge(row.basis); }
     function impactReasons(row) { return row.reasons.length ? '<details data-cr-section="impact-gaps-' + esc(row.id) + '"' + (open.has('impact-gaps-' + row.id) ? ' open' : '') + '><summary>Why this is unavailable</summary><p class="cr-unknown">' + esc(row.reasons.join(' ')) + '</p></details>' : ''; }
@@ -564,7 +614,7 @@ footer b{color:var(--ink2)}
     actionHTML += '<p class="cr-note">Checks are temporary local planning notes, not completed operations. Context or evidence changes reset them. Nothing is transmitted or stored by this response layer.</p>';
     h += section('actions', featured.length ? '1. Prioritized response plan' : '1. Condition-dependent response plan', actionHTML, 'interpretive');
     h += impactSection;
-    var evidenceHTML = plan.evidence.length ? '<ul>' + plan.evidence.map(function (f) { return '<li><b>' + esc(f.label || f.id) + ':</b> ' + esc(f.quality === 'missing' ? 'Unavailable' : f.value) + (f.unit ? ' ' + esc(f.unit) : '') + ' ' + badge(f.basis) + ' <span class="cr-quality">' + esc(f.quality) + '</span><br>Observed / reported: ' + esc(f.measuredAt || 'not supplied') + '; checked: ' + esc(f.checkedAt || 'not supplied') + '. ' + sourceLink(f.source) + (f.note ? '<br>' + esc(f.note) : '') + '</li>'; }).join('') + '</ul>' : '<p class="cr-unknown">Evidence unavailable. No current incident status can be inferred.</p>';
+    var evidenceHTML = plan.evidence.length ? '<ul>' + plan.evidence.map(function (f) { return '<li data-cr-evidence="' + esc(f.id) + '"><b>' + esc(f.label || f.id) + ':</b> ' + esc(f.quality === 'missing' ? 'Unavailable' : f.value) + (f.unit ? ' ' + esc(f.unit) : '') + ' ' + badge(f.basis) + ' <span class="cr-quality">' + esc(f.quality) + '</span><br>Observed / reported: ' + esc(f.measuredAt || 'not supplied') + '; checked: ' + esc(f.checkedAt || 'not supplied') + '. ' + sourceLink(f.source) + (f.note ? '<br>' + esc(f.note) : '') + '</li>'; }).join('') + '</ul>' : '<p class="cr-unknown">Evidence unavailable. No current incident status can be inferred.</p>';
     h += section('evidence', '2. Evidence, dates and sources', evidenceHTML, 'interpretive');
     var diagnosticHTML = ['comparison', 'structure', 'spillover'].map(function (pillar) {
       var ds = plan.diagnostics.filter(function (d) { return d.pillar === pillar; });
@@ -586,14 +636,39 @@ footer b{color:var(--ink2)}
     h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p><p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
     h += '</details>';
     panel.innerHTML = h;
-    if (focused) { var nextFocus = doc.getElementById(focused); if (nextFocus) nextFocus.focus({ preventScroll: true }); }
+    if (focused) {
+      var nextFocus = Array.from(panel.querySelectorAll('[id],summary,a')).find(function (el) { return focusKey(el) === focused; }) || doc.getElementById('console-response-title');
+      if (nextFocus) nextFocus.focus({ preventScroll: true });
+    }
+  }
+  function describeFact(f) {
+    if (!f) return 'not in this view';
+    return (f.quality === 'missing' ? 'unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + '; ' + text(f.measuredAt || 'period unavailable') + ']';
+  }
+  function compareAssessments(before, after) {
+    var sameSelection = before.selectionKey && after.selectionKey ? before.selectionKey === after.selectionKey : before.context === after.context;
+    var out = { at: new Date().toISOString(), selectionChanged: before.slug !== after.slug || !sameSelection || before.scenario !== after.scenario, evidence: [], priorities: [] };
+    if (out.selectionChanged) return out;
+    var previous = new Map(before.evidence.map(function (f) { return [f.id, f]; })), next = new Map(after.evidence.map(function (f) { return [f.id, f]; }));
+    function comparable(f) { return f && [f.label, f.value, f.unit, f.quality, f.basis, f.measuredAt, f.source]; }
+    new Set(Array.from(previous.keys()).concat(Array.from(next.keys()))).forEach(function (id) {
+      var a = previous.get(id), b = next.get(id);
+      if (signature(comparable(a)) !== signature(comparable(b))) out.evidence.push({ id: id, label: (b || a).label || id, before: describeFact(a), after: describeFact(b), sourceBefore: a && a.source || null, sourceAfter: b && b.source || null });
+    });
+    var oldActions = new Map(before.actions.filter(function (a) { return a.featured && a.selected; }).map(function (a) { return [a.track + ':' + a.id, a]; }));
+    var newActions = new Map(after.actions.filter(function (a) { return a.featured && a.selected; }).map(function (a) { return [a.track + ':' + a.id, a]; }));
+    new Set(Array.from(oldActions.keys()).concat(Array.from(newActions.keys()))).forEach(function (id) {
+      var a = oldActions.get(id), b = newActions.get(id), item = b || a;
+      if (!a || !b || a.position !== b.position || a.priority !== b.priority || a.reason !== b.reason) out.priorities.push({ id: item.id, track: item.track, title: item.title, change: !b ? 'no longer applicable to this evidence' : !a ? 'now priority ' + b.position : 'priority ' + a.position + ' → ' + b.position, reason: b ? b.reason : '' });
+    });
+    return out;
   }
   function set(input) {
     // A forecast can expire while its source payload is unchanged. Make that
     // transition an evidence revision on the existing visible-minute refresh.
     var impact = input && input.impacts || {};
     var clockState = (impact.items || []).concat(impact.records || []).filter(function (r) { return r && r.kind === 'forecast' && r.validAt != null; }).map(function (r) { var at = Date.parse(r.validAt); return [r.id, Number.isFinite(at) && at > Date.now()]; });
-    var priorities = evaluate(input).actions.filter(function (a) { return a.featured; });
+    var assessment = evaluate(input), priorities = assessment.actions.filter(function (a) { return a.featured; });
     var nextRevision = signature([input || {}, clockState, priorities]);
     if (nextRevision === revision) return;
     function evidenceOnly(value) {
@@ -610,7 +685,11 @@ footer b{color:var(--ink2)}
       evidenceIds: a.evidenceIds, diagnosticIds: a.diagnosticIds
     }; });
     var nextEvidence = signature([evidenceOnly(input || {}), clockState, priorityAssessment]);
-    if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
+    if (nextEvidence !== evidenceRevision) {
+      changes = lastAssessment ? compareAssessments(lastAssessment, assessment) : null;
+      lastAssessment = assessment;
+      acknowledgments.clear(); manualReview.clear();
+    }
     evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
   }
   function connect(read, selectors) {
@@ -646,7 +725,7 @@ footer b{color:var(--ink2)}
   function exportPlan() {
     if (payload) set(payload); // Reconcile expiry even before the next visible-minute tick.
     return { exportedAt: new Date().toISOString(), note: 'Local planning review; not a record of completed operations.',
-      track: track, plan: currentPlan(), acknowledgments: Array.from(acknowledgments) };
+      track: track, plan: currentPlan(), changesSincePreviousUpdate: changes, acknowledgments: Array.from(acknowledgments) };
   }
   function download() {
     var blob = new Blob([JSON.stringify(exportPlan(), null, 2)], { type: 'application/json' });
@@ -721,7 +800,7 @@ footer b{color:var(--ink2)}
           authorityUrl: row.authorityUrl || spec.authorityUrl });
       }
     });
-    return { slug: spec.slug, title: spec.title, context: spec.context,
+    return { slug: spec.slug, selectionKey: spec.selectionKey, title: spec.title, context: spec.context,
       scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics, impacts: spec.impacts,
       actions: [...(spec.baseline || []), ...actions], network: spec.network,
       limitations: spec.limitations || [] };
@@ -1049,10 +1128,14 @@ function renderLead(){
 // ---- (c) COVERAGE / DRIVERS (income / region)
 let INEQMODE='inc';
 function regionStuntMean(regCode){
- // stunting has no WB aggregate -> compute unweighted mean across atlas countries in region
- let sum=0,n=0,maxY='';
- COUNTRIES.forEach(iso=>{const c=SNAP.cty[iso];if(!c||c.region!==regCode)return;const d=c.latest&&c.latest.stnt;if(!d)return;sum+=d.v;n++;if(d.y>maxY)maxY=d.y;});
- return n?{v:sum/n,y:maxY,n}:null;
+ // A mixed-survey-vintage selected-country mean is not a regional annual estimate.
+ let sum=0,eligible=0;const years=[];
+ COUNTRIES.forEach(iso=>{const c=SNAP.cty[iso];if(!c||c.region!==regCode)return;eligible++;const d=c.latest&&c.latest.stnt;
+  if(!d||!Number.isFinite(d.v)||d.v<0||d.v>100||!/^\d{4}$/.test(String(d.y))||+d.y>new Date().getUTCFullYear())return;
+  sum+=d.v;years.push(String(d.y));});
+ if(!years.length)return null;
+ years.sort();const start=years[0],end=years[years.length-1];
+ return {v:sum/years.length,y:start===end?start:start+'–'+end,n:years.length,eligible,yearStart:start,yearEnd:end,mixedVintage:start!==end};
 }
 function fillIneqSelect(){
  const sel=$('ineqind');sel.innerHTML='';
@@ -1066,14 +1149,14 @@ function renderIneq(){
  const stuntByRegion=(k==='stnt');
  let descExtra='';
  if(stuntByRegion){
-   descExtra=' <span class="badge b-mod">computed</span> Child stunting has no World Bank world/income/region aggregate; the value shown'+(INEQMODE==='inc'?' for income groups is unavailable':' is an unweighted mean across this atlas’s countries in each region')+'.';
+   descExtra=' <span class="badge b-int">interpretive</span> Child stunting has no World Bank world/income/region aggregate; the value shown'+(INEQMODE==='inc'?' for income groups is unavailable':' is an unweighted mean of available latest surveys in this atlas’s selected countries. Survey years can differ; each row shows the full year range and n of eligible countries')+'.';
  }
  $('ineqdesc').innerHTML=nameOf(k)+' — <b>'+m.unit+'</b>, by World Bank '+(INEQMODE==='inc'?'income group':'region')+'. '+badgeFor(k)+descExtra;
  const recs=groups.map(([code,label])=>{
   if(stuntByRegion){
     if(INEQMODE==='inc')return {code,label,arr:[],v:null,yi:-1,yr:null,computed:true};
     const sm=regionStuntMean(code);
-    return {code,label,arr:[],v:sm?sm.v:null,yi:-1,yr:sm?sm.y:null,n:sm?sm.n:0,computed:true};
+    return {code,label,arr:[],v:sm?sm.v:null,yi:-1,yr:sm?sm.y:null,n:sm?sm.n:0,eligible:sm?sm.eligible:0,mixedVintage:sm?sm.mixedVintage:false,computed:true};
   }
   const a=SNAP.agg[code];const s=a&&a.s&&a.s[k]?a.s[k]:[];
   const l=lastNonNull(s);
@@ -1081,8 +1164,8 @@ function renderIneq(){
  });
  $('ineqlist').innerHTML=recs.map(r=>{
   const col=valColor(r.v,k);
-  const valHtml=r.v==null?'—':fmtVal(r.v,k)+(r.computed&&r.n?' <span class="note">(n='+r.n+')</span>':'');
-  return '<div class="ineq"><div class="nm"><div class="t">'+r.label+'</div><div class="c">'+(r.computed?'unweighted mean':'World Bank aggregate')+'</div></div>'+
+   const valHtml=r.v==null?'—':fmtVal(r.v,k)+(r.computed&&r.n?' <span class="note">(n='+r.n+'/'+r.eligible+')</span>':'');
+   return '<div class="ineq"><div class="nm"><div class="t">'+r.label+'</div><div class="c">'+(r.computed?'selected-country mean'+(r.mixedVintage?' · mixed survey years':''):'World Bank aggregate')+'</div></div>'+
    '<div class="sp">'+(r.arr&&r.arr.length?spark(r.arr,96,26,col,false):'<span class="muted small">—</span>')+'</div>'+
    '<div class="val">'+valHtml+'</div>'+
    '<div class="yy">'+(r.yr||'—')+'</div>'+
@@ -1097,7 +1180,7 @@ function renderIneq(){
    return;
   }
  }
- $('ineqcaveat').innerHTML='World Bank aggregate series (population-weighted estimates). Income groups (high / upper-middle / lower-middle / low) and regions are the Bank’s classifications. The spark line traces 2000→latest; "change" is latest vs. 2000. Coverage and stunting come from periodic surveys, so latest years are older and some aggregates are unavailable (shown as "—").';
+ $('ineqcaveat').innerHTML=stuntByRegion?'Selected-country descriptive context: n counts valid country surveys out of this atlas’s countries in the region. The full survey-year range is displayed; mixed years are not a contemporaneous regional prevalence estimate. Missing or invalid surveys are excluded, never filled with zero.':'World Bank aggregate series (population-weighted estimates). Income groups (high / upper-middle / lower-middle / low) and regions are the Bank’s classifications. The spark line traces 2000→latest; "change" is latest vs. 2000. Coverage comes from periodic surveys, so latest years are older and some aggregates are unavailable (shown as "—").';
 }
 $('ineqind').onchange=renderIneq;
 [...document.querySelectorAll('#ineqmode button')].forEach(b=>b.onclick=()=>{INEQMODE=b.dataset.m;[...document.querySelectorAll('#ineqmode button')].forEach(x=>x.classList.toggle('on',x===b));renderIneq();});
@@ -1640,6 +1723,7 @@ WorldBankPublicData.installContext({countries:COUNTRIES,getSnapshot:()=>SNAP,set
     evidence.push(fact('density-symmetry','Coarse resident-density symmetry of comparison strata',density?round(density.score):null,'0–1; 1 means equal pooled densities',year,areaSource,'historical','interpretive','2 × min(Da, Db) / (Da + Db), with Da=Pa/Aa and Db=Pb/Ab. This describes coarse geography, not local spatial point density, service access, travel times or equity. Missing same-year positive land areas: '+(geography && geography.missingLand.join(', ')||'none / context unavailable')+'. '+comparisonNote,contextChecked));
     ov[3]=Object.assign(assess(3,'Coarse pooled resident-density symmetry (geographic context proxy)',density?(density.score<1-1e-10?'triggered':'clear'):'unknown',['population-a','population-b','land-a','land-b','density-a','density-b','density-symmetry'],'Different pooled resident densities prompt geographic-comparability review. Equal density only describes the supplied country totals and areas; it cannot establish equal access or service coverage.','Population and land use exactly the indicator year and identical comparator country membership. No local catchment, adjacency, facility network or density field is invented.'),{value:density?round(density.score):null,unit:'0–1 coarse density symmetry'});
     var output=plan((country?country.name:'No country selected')+' · '+(meta?meta.name:'No indicator selected')+' · '+(valid?year:'measurement unavailable')+' · annual structural planning',evidence,ov);
+    output.selectionKey=JSON.stringify([cfg.slug,iso||null,key,meta&&meta.ind||null,group||null,Object.keys(snap.cty||{}).sort().map(function(code){return [code,snap.cty[code].income||null];})]);
     if(typeof WorldBankPublicData==='object' && WorldBankPublicData.countryImpacts){var publicContext=WorldBankPublicData.countryImpacts(snap,iso);output.evidence.push.apply(output.evidence,publicContext.evidence);output.impacts=publicContext.impacts;}
     return output;
   }

@@ -202,6 +202,12 @@ The World Bank and CDC public-data helpers are also embedded into the single-fil
 after editing a helper to regenerate its pages. Browser checks include dated/partial source data,
 automatic refresh, source failures and location-selection races.
 
+Pages publication runs only after **both** catalog/Python checks and the complete browser suite pass.
+The dependent deploy job packages the exact tested commit, rejects a superseded main revision, and
+publishes a `build-info.json` commit marker. Scheduled source publishers explicitly dispatch this same
+workflow using the built-in token, then verify both the marker and their exact public JSON payloads.
+A failed validation leaves the previous site published; a later unchanged refresh can retry deployment.
+
 ## Automatic EIA grid updates
 
 The [grid update workflow](https://github.com/patrickiben/public-data-consoles/actions/workflows/update-grid.yml)
@@ -212,7 +218,7 @@ personal access token or additional repository secret is needed.
 The refresh discovers published balance and interchange files from EIA's manifest, including prior
 reporting periods when needed. It validates schemas, coverage and timestamps, runs the catalog,
 Python and browser checks, and commits only changed grid data. It explicitly requests and verifies a
-Pages build because commits made with GitHub's built-in token do not start Pages builds themselves.
+gated validation/deployment workflow because commits made with GitHub's built-in token do not start push workflows themselves.
 An unchanged run still checks deployment so a previous publishing failure can recover.
 
 The same validated payload is embedded in the HTML and published at

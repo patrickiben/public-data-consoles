@@ -1,5 +1,13 @@
 name: Catalog checks
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact main revision requested by a validated data publisher
+        required: false
+        type: string
 permissions:
   contents: read
 jobs:
@@ -7,6 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Verify a dispatched publisher's revision
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          if [ -n "$EXPECTED_SHA" ] && [ "$EXPECTED_SHA" != "$GITHUB_SHA" ]; then
+            echo 'Main changed before validation started; rerun the source publisher.' >&2
+            exit 1
+          fi
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
@@ -39,3 +55,38 @@ jobs:
       - run: google-chrome --version
       - run: npm test
         timeout-minutes: 20
+  deploy:
+    needs: [catalog, keyless-browser]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/configure-pages@v5
+      - name: Package the exact tested commit
+        run: |
+          mkdir -p "$RUNNER_TEMP/validated-site"
+          git archive "$GITHUB_SHA" | tar -x -C "$RUNNER_TEMP/validated-site"
+          python -c 'import json,os,pathlib; pathlib.Path(os.environ["RUNNER_TEMP"],"validated-site","build-info.json").write_text(json.dumps({"commit":os.environ["GITHUB_SHA"],"validation":"catalog-and-browser"})+"\n")'
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/validated-site
+      - name: Refuse a superseded main revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
+          test "$current" = "$GITHUB_SHA"
+      - name: Deploy the tested artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

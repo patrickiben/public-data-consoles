@@ -36,7 +36,7 @@ check('unsupported clear override cannot bypass missing-evidence safeguards',()=
   assert.ok(plan.actions.some(a=>a.metricIds?.includes(1)&&a.when==='unknown'&&a.selected));
 });
 check('numeric zero and explicit planning values survive canonical construction',()=>{
-  const p=H.build({slug:'fixture',rows:[],evidence:[{id:'zero',label:'Observed zero',value:0,basis:'measured',quality:'historical'}],
+  const p=H.build({slug:'fixture',rows:[],evidence:[{id:'zero',label:'Observed zero',value:0,basis:'measured',quality:'historical',source:'https://www.eia.gov/',measuredAt:'2025Q4'}],
     overrides:{2:{value:0,unit:'MW',status:'clear',evidenceIds:['zero'],scope:'planning'}}});
   const d=R.evaluate(p).diagnostics.find(d=>d.metricId===2);
   assert.equal(d.value,0);assert.equal(d.status,'clear');assert.equal(d.scope,'planning');

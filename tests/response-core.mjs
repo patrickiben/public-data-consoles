@@ -80,4 +80,25 @@ check('exact empirical W1 handles unequal cohorts, ties, units and missing input
   assert.equal(response.math.wasserstein1([], [1]),null);
   assert.equal(response.math.wasserstein1([NaN],[1]),null);
 });
+check('all derived views reject ambiguous, unsafe, invalid-date and future current evidence',()=>{
+  for(const mode of ['undated','unsafe','duplicate','future','invalid','freeform']){
+    const p=payload();p.actions[0].phase='respond';
+    p.impacts={items:[{id:'impact',kind:'observed',value:80,unit:'MW',evidenceIds:['demand']}]};
+    if(mode==='undated')p.evidence[0].measuredAt='';
+    if(mode==='unsafe')p.evidence[0].source='javascript:alert(1)';
+    if(mode==='duplicate')p.evidence.push({...p.evidence[0],value:90});
+    if(mode==='future')p.evidence[0].measuredAt='2099-01-01';
+    if(mode==='invalid')p.evidence[0].measuredAt='2026-02-31';
+    if(mode==='freeform')p.evidence[0].measuredAt='recently';
+    const out=response.evaluate(p);
+    assert.equal(out.diagnostics[0].status,'unknown',mode);
+    assert.equal(out.diagnostics[0].current,false,mode);
+    assert.equal(out.actions[0].selected,false,mode);
+    assert.equal(out.impacts.items[0].status,'unknown',mode);
+  }
+});
+check('historical named periods remain useful context without becoming current evidence',()=>{
+  const p=payload();Object.assign(p.evidence[0],{quality:'historical',measuredAt:'2025Q4'});p.diagnostics[0].scope='planning';
+  const out=response.evaluate(p);assert.equal(out.diagnostics[0].status,'triggered');assert.equal(out.diagnostics[0].current,false);
+});
 console.log('PASS '+count+' response core regressions');

@@ -47,7 +47,7 @@
           authorityUrl: row.authorityUrl || spec.authorityUrl });
       }
     });
-    return { slug: spec.slug, title: spec.title, context: spec.context,
+    return { slug: spec.slug, selectionKey: spec.selectionKey, title: spec.title, context: spec.context,
       scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics, impacts: spec.impacts,
       actions: [...(spec.baseline || []), ...actions], network: spec.network,
       limitations: spec.limitations || [] };

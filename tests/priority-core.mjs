@@ -17,6 +17,11 @@ test('demo or explicit scenario cannot create urgent actual response',()=>{rows=
 test('expiry invalidity and duplicated action identity withhold the action',()=>{for(const validUntil of ['2026-10-23T19:59:00Z','not-a-date']){rows=[action('x',{validUntil})];assert.equal(get()[0].selected,false);}rows=[action('x'),action('x')];assert.ok(get().every(a=>!a.selected));});
 test('incomplete steps are withheld and cannot be silently elevated',()=>{rows=[action('a',{escalateTo:''})];assert.equal(get()[0].selected,false);assert.match(get()[0].withheldReasons.join(' '),/escalateTo/);});
 test('specific metric links survive and untriggered conditions are not selected',()=>{rows=[action('a',{when:'triggered',metricIds:[1]}),action('b',{when:'triggered',metricIds:[2]})];const a=get();assert.deepEqual(a[0].diagnosticIds,['one']);assert.equal(a[0].selected,true);assert.equal(a[1].selected,false);});
+test('priority readers receive normalized evidence so rejected dates cannot appear as supported planning reasons',()=>{
+ const p=input();p.evidence[0].measuredAt='2099-01-01';
+ R.registerPrioritizer(p.slug,x=>[action('normalized',{requiresCurrent:false,signal:'planning',reason:x.evidence[0].quality==='missing'?'Verify the missing report.':'Reported '+x.evidence[0].value+' at '+x.evidence[0].measuredAt})]);
+ const a=get(p)[0];assert.equal(a.reason,'Verify the missing report.');
+});
 test('priority reader cannot mutate provider input and failures fall back to source verification',()=>{const p=input(),before=JSON.stringify(p);R.registerPrioritizer(p.slug,x=>{x.evidence[0].value=999;return [action('isolated')];});R.evaluate(p);assert.equal(JSON.stringify(p),before);R.registerPrioritizer(p.slug,()=>{throw Error('unavailable');});const a=get();assert.equal(a.length,2);assert.ok(a.every(x=>x.selected&&x.signal==='data-gap'));assert.ok(a.every(x=>x.priority==='next'));});
 console.log('PASS '+count+' priority core groups');
 }finally{Date.now=realNow;}

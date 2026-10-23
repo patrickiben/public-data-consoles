@@ -118,7 +118,8 @@ try{
     const p=plan();p.scenario=true;p.title='<img src=x onerror=alert(1)>';p.evidence[0].source='javascript:alert(1)';
     await page.evaluate(input=>ConsoleResponse.set(input),p);
     assert.equal(await page.locator('#console-response img').count(),0);
-    assert.match(await page.locator('[data-cr-action="watch"]').textContent(),/PRACTICE ONLY/);
+    assert.equal(await page.locator('[data-cr-action="watch"]').count(),0,'Unsafe evidence cannot support a conditional action, even in practice');
+    assert.match(await page.locator('[data-cr-action="unknown"]').textContent(),/PRACTICE ONLY/);
     assert.match(await page.locator('details[data-cr-section="network"]').textContent(),/network information is unavailable.*No source\/sink/s);
     assert.equal(await page.locator('#console-response a[href^="javascript:"]').count(),0);
   });
@@ -154,6 +155,12 @@ try{
             for(const a of list){for(const field of ['target','reason','timing','nextStep','escalateWhen','escalateTo','reviewAfter'])assert.ok(a[field],entry.slug+' '+field);}
           }
           assert.ok(prioritized.every(a=>!a.id.startsWith('priority-reader-')),entry.slug+' must use its domain priorities');
+          await page.setViewportSize({width:390,height:844});
+          const layout=await page.evaluate(()=>{const h=document.querySelector('h1'),p=document.querySelector('#console-response');return {heading:h.getBoundingClientRect().top,panel:p.getBoundingClientRect().top,height:p.getBoundingClientRect().height,right:p.getBoundingClientRect().right,width:innerWidth};});
+          assert.ok(layout.heading<layout.panel,entry.slug+' keeps its native heading before the response plan');
+          assert.ok(layout.height<600,entry.slug+' compact mobile summary: '+layout.height);
+          assert.ok(layout.right<=layout.width+1,entry.slug+' response panel fits mobile');
+          await page.setViewportSize({width:1280,height:900});
           await page.locator('#cr-open-priorities').click();
           assert.ok(await page.locator('[data-cr-priority]').count()>=2);
           if(process.env.PRIORITY_PROOF&&['nhs-scotland-strain','river-flood-propagation','us-grid-strain','global-wash'].includes(entry.slug))await page.screenshot({path:process.env.PRIORITY_PROOF+'/'+entry.slug+'-offline-priorities.png'});
@@ -173,6 +180,11 @@ try{
           await page.locator('#cr-track-operator').click({timeout:60000});
           assert.equal(await page.locator('#cr-track-operator').getAttribute('aria-pressed'),'true');
           assert.equal(await page.locator('#cr-export').count(),1);
+        }
+        for(const width of [320,390]){
+          await page.setViewportSize({width,height:844});
+          const extent=await page.evaluate(()=>({viewport:innerWidth,document:document.documentElement.scrollWidth}));
+          assert.ok(extent.document<=extent.viewport+1,entry.slug+' full page reflows at '+width+'px: '+JSON.stringify(extent));
         }
         assert.deepEqual(errors,[],entry.slug+' offline runtime errors');
         console.log('PASS response offline: '+entry.slug);passed++;

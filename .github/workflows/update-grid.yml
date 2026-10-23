@@ -17,12 +17,12 @@ jobs:
     # A manual run selected on another branch must never publish to main.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 100
     env:
       CHROME_CHANNEL: chrome
     permissions:
       contents: write
-      pages: write
+      actions: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -78,9 +78,9 @@ jobs:
             echo 'Measurements and provenance are unchanged; no data commit.'
           fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Publish or recover the legacy Pages build and verify public data
+      - name: Publish or recover the gated Pages build and verify public data
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ steps.target.outputs.sha }}
-        run: python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --timeout-seconds 720
-        timeout-minutes: 15
+        run: python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --timeout-seconds 2400
+        timeout-minutes: 45

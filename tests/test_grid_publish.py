@@ -166,5 +166,57 @@ class PublishTests(unittest.TestCase):
         self.assertNotIn(("POST", "/pages/builds"), api.calls)
 
 
+class WorkflowPublishTests(unittest.TestCase):
+    def publish(self, *, failure=False, marker=SHA, payload=PAYLOAD, heads=None, already=False):
+        calls, tick = [], [0]
+        heads = list(heads or [SHA])
+        dispatched = [False]
+        def api(method, path, body=None):
+            calls.append((method, path, body))
+            if path == "": return {"default_branch": "main"}
+            if path == "/pages": return {"build_type": "workflow", "html_url": "https://example.github.io/public-data-consoles/"}
+            if path == "/git/ref/heads/main": return {"object": {"sha": FakeGitHub.next(heads)}}
+            if method == "POST":
+                self.assertEqual(path, "/actions/workflows/catalog.yml/dispatches")
+                self.assertEqual(body, {"ref": "main", "inputs": {"expected_sha": SHA}})
+                dispatched[0] = True
+                return {}
+            if path.startswith("/actions/workflows/catalog.yml/runs"):
+                old = {"id": 1, "head_sha": SHA, "status": "completed", "conclusion": "success"}
+                new = {"id": 2, "head_sha": SHA, "status": "completed", "conclusion": "failure" if failure else "success"}
+                return {"workflow_runs": [old, new] if dispatched[0] else [old]}
+            self.fail("Unexpected API: " + path)
+        def public(url):
+            if url.endswith("build-info.json"):
+                return {"commit": marker if already or dispatched[0] else OTHER, "validation": "catalog-and-browser"}
+            return payload
+        def sleep(n): tick[0] += n
+        result = grid.publish(api, SHA, PAYLOAD, timeout=3, poll=1, fetch_public=public, clock=lambda: tick[0], sleep=sleep, log=lambda _: None)
+        return result, calls
+
+    def test_dispatches_gated_validation_and_verifies_exact_artifact_and_data(self):
+        url, calls = self.publish()
+        self.assertTrue(url.endswith(grid.DATA_PATH))
+        self.assertEqual(sum(method == "POST" for method, _, _ in calls), 1)
+        self.assertFalse(any(path == "/pages/builds" for _, path, _ in calls))
+
+    def test_unchanged_tested_artifact_is_reused_without_dispatch(self):
+        _, calls = self.publish(already=True)
+        self.assertFalse(any(method == "POST" for method, _, _ in calls))
+
+    def test_failed_validation_never_reports_published_even_if_payload_matches(self):
+        with self.assertRaisesRegex(grid.PublishError, "validation/deployment failed"):
+            self.publish(failure=True)
+
+    def test_old_marker_or_wrong_payload_never_reports_success(self):
+        for kwargs in ({"marker": OTHER}, {"payload": {"old": True}}):
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(grid.PublishError, "Timed out verifying gated"):
+                self.publish(**kwargs)
+
+    def test_moving_main_aborts_workflow_publisher(self):
+        with self.assertRaisesRegex(grid.PublishError, "Main advanced"):
+            self.publish(heads=[SHA, OTHER])
+
+
 if __name__ == "__main__":
     unittest.main()

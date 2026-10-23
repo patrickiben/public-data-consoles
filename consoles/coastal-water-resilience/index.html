@@ -743,7 +743,7 @@ function fmtSpan(m){return m<1?'under a minute':m<90?Math.round(m)+' min':m<48*6
 function ymd(d){return d.toISOString().slice(0,10).replace(/-/g,'');}
 function f2(v){return v==null||!isFinite(v)?'n/a':v.toFixed(2);}
 function sgn(v){return (v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(2);}
-function parseCO(t){return Date.parse(String(t).replace(' ','T')+':00Z');}
+function parseCO(t){if(typeof t!=='string'||!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?$/.test(t))return NaN;var iso=t.replace(' ','T')+(t.length===16?':00':'')+'Z',ms=Date.parse(iso);return isFinite(ms)&&new Date(ms).toISOString().slice(0,t.length)===iso.slice(0,t.length)?ms:NaN;}
 function coRows(j){var a=(j&&(j.data||j.predictions))||[];if(!a.length&&j)for(var k in j){if(Array.isArray(j[k])&&j[k].length&&j[k][0]&&'t' in j[k][0]){a=j[k];break;}}
  return a.map(function(r){return {t:parseCO(r.t),v:((typeof r.v!=='string'&&typeof r.v!=='number')||String(r.v).trim()===''||!isFinite(+r.v)||+r.v===-9999)?null:+r.v};}).filter(function(r){return isFinite(r.t);});}
 function planeOf(ft){return Math.round((ft-MLLW_TO_NAVD)*100)/100;}
@@ -762,9 +762,17 @@ function getJSON(url,headers){var c=new AbortController(),to=setTimeout(function
 
 /* ---------- feed state + status strip ---------- */
 var FEEDS={wl:{label:'Water level'},pred:{label:'Tide predictions'},ofs:{label:'OFS forecast'},nhc:{label:'NHC'},nws:{label:'NWS alerts'}};
-Object.keys(FEEDS).forEach(function(k){FEEDS[k].state='loading';});
-function setFeed(k,state,dataTime,note){var f=FEEDS[k],prev=f.state;f.state=state;f.dataTime=dataTime||null;f.checked=Date.now();f.note=note||'';if(state!=='unavailable')f.err=null;
- if(f.seen&&prev!==state)announce(f.label,state==='stale'&&k==='ofs'?'stale (nowcast)':state);f.seen=true;renderStrip();}
+Object.keys(FEEDS).forEach(function(k){FEEDS[k].state='loading';FEEDS[k].request=0;});
+function startFeed(k){return ++FEEDS[k].request;}
+function latestFeed(k,id){return FEEDS[k].request===id;}
+function failedFeed(k,error,retained){var f=FEEDS[k];f.err=error.message||'Public feed unavailable';f.retained=!!retained;setFeed(k,retained?'stale':'unavailable',f.dataTime,retained?'Refresh failed; last successful source retained with its original times':'');}
+function acceptedFeed(k,state,time,note){var f=FEEDS[k];f.err=null;f.retained=false;f.acceptedAt=Date.now();setFeed(k,state,time,note);}
+function sourceRows(j,key){if(!j||!Array.isArray(j[key]))throw new Error('Missing '+key+' collection');var rows=coRows(j);if(rows.length!==j[key].length)throw new Error('Invalid source timestamp');var seen=new Map();rows.forEach(function(row){if(seen.has(row.t)&&seen.get(row.t).v!==row.v)throw new Error('Conflicting source timestamps');seen.set(row.t,row);});return Array.from(seen.values()).sort(function(a,b){return a.t-b.t;});}
+function retainedNote(k){var f=FEEDS[k];return f.retained?'<p class="muted warn">Refresh unavailable ('+esc(f.err)+'); retained source accepted '+esc(fmtUTC(f.acceptedAt))+'. Original source times still apply. Retained data does not establish current conditions.</p>':'';}
+function validCollection(j,label){if(!j||!Array.isArray(j.features)||j.exceededTransferLimit)throw new Error(label+' collection missing or incomplete');return j;}
+
+function setFeed(k,state,dataTime,note){var f=FEEDS[k],prev=f.state;f.state=state;f.dataTime=dataTime||null;f.checked=Date.now();f.note=note||'';if(state==='live')f.err=null;
+ if(f.seen&&prev!==state)announce(f.label,state==='stale'&&k==='ofs'?(f.retained?'stale (retained)':'stale (nowcast)'):state);f.seen=true;renderStrip();}
 /* Screen-reader announcements: state changes within one refresh are grouped into a single sentence. */
 var ANN={},annT=null;function announce(label,state){(ANN[state]=ANN[state]||[]).push(label);clearTimeout(annT);annT=setTimeout(function(){$('live').textContent=Object.keys(ANN).map(function(st){return 'Now '+st+': '+ANN[st].join(', ')+'.';}).join(' ');ANN={};},400);}
 function fmtStamp(t){var d=new Date(t),n=new Date();return (d.getUTCFullYear()===n.getUTCFullYear()&&d.getUTCMonth()===n.getUTCMonth()&&d.getUTCDate()===n.getUTCDate()&&Math.abs(t-n)<=12*3600e3?'':MON[d.getUTCMonth()]+' '+d.getUTCDate()+' ')+fmtHM(t);}
@@ -772,9 +780,9 @@ var stripHTML='';
 function renderStrip(){var h=Object.keys(FEEDS).map(function(k){var f=FEEDS[k],t;
   if(f.state==='loading')t='loading';
   else if(f.state==='unavailable')t='unavailable · checked '+fmtStamp(f.checked);
-  else t=(f.state==='stale'?(k==='ofs'?'stale (nowcast)':'stale'):'live')+(f.dataTime?' · '+fmtStamp(f.dataTime):'')+(f.note?' · '+f.note:'');
+  else t=(f.state==='stale'?(f.retained?'stale (retained)':k==='ofs'?'stale (nowcast)':'stale'):'live')+(f.dataTime?' · '+fmtStamp(f.dataTime):'')+(f.note?' · '+f.note:'');
   return '<span class="chip '+f.state+'" title="'+esc(f.label+': '+t+(f.err?' ('+f.err+')':''))+'"><span class="dot" aria-hidden="true"></span>'+esc(f.label)+' <small>'+esc(t)+'</small></span>';}).join('');if(h!==stripHTML){stripHTML=h;$('strip').innerHTML=h;}}
-function stateTag(k){var f=FEEDS[k];var lab=f.state==='stale'&&k==='ofs'?'stale (nowcast)':f.state;return '<span class="state '+f.state+'">'+esc(lab)+'</span>';}
+function stateTag(k){var f=FEEDS[k];var lab=f.state==='stale'?(f.retained?'stale (retained)':k==='ofs'?'stale (nowcast)':'stale'):f.state;return '<span class="state '+f.state+'">'+esc(lab)+'</span>';}
 function unavailable(el,k,what){var f=FEEDS[k];el.innerHTML='<div class="big warn">unavailable</div><div class="muted" style="margin-top:4px">'+esc(what)+' could not be loaded'+(f.err?' ('+esc(f.err)+')':'')+'. Checked '+esc(fmtUTC(f.checked))+'. The console keeps trying every 6 minutes; see <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8726520" target="_blank" rel="noopener">NOAA</a>, <a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">NHC</a> or <a href="https://www.weather.gov/tbw/" target="_blank" rel="noopener">NWS Tampa Bay</a> directly.</div>';}
 
 /* ---------- line chart (inline SVG, crosshair tooltip, table twin) ---------- */
@@ -815,18 +823,18 @@ function lineChart(host,cfg){
 
 /* ===================== GAUGE NOW ===================== */
 var WL=null,PRED=null;
-function loadWL(){return getJSON(CO+'?range=48&station=8726520&product=water_level&datum=MLLW&units=english&time_zone=gmt&format=json').then(function(j){
-  var rows=coRows(j),valid=rows.filter(function(r){return r.v!=null;});if(!valid.length)throw new Error('no valid readings in the last 48 h');
-  var last=valid[valid.length-1];WL={rows:rows,last:last};var age=(Date.now()-last.t)/60000;
-  setFeed('wl',age>WL_STALE_MIN?'stale':'live',last.t);}).catch(function(e){WL=null;FEEDS.wl.err=e.message;setFeed('wl','unavailable');});}
-function loadPred(){var now=new Date();var url=CO+'?station=8726520&product=predictions&interval=6&datum=MLLW&units=english&time_zone=gmt&format=json&begin_date='+ymd(new Date(now-48*3600e3))+'&end_date='+ymd(new Date(now.getTime()+24*3600e3));
- return getJSON(url).then(function(j){var rows=coRows(j).filter(function(r){return r.v!=null;});if(!rows.length)throw new Error('no predictions returned');
-  var lastT=rows[rows.length-1].t,firstT=rows[0].t,nowT=Date.now();PRED={rows:rows,last:lastT,first:firstT};var covers=firstT<=nowT&&lastT>=nowT;
-  setFeed('pred',covers?'live':'stale',covers?null:(firstT>nowT?firstT:lastT),covers?'covers now':(firstT>nowT?'starts after now':'ends before now'));})
-  .catch(function(e){PRED=null;FEEDS.pred.err=e.message;setFeed('pred','unavailable');});}
+function loadWL(){var request=startFeed('wl');return getJSON(CO+'?range=48&station=8726520&product=water_level&datum=MLLW&units=english&time_zone=gmt&format=json').then(function(j){
+  if(!latestFeed('wl',request))return;var rows=sourceRows(j,'data'),valid=rows.filter(function(r){return r.v!=null;});if(!valid.length)throw new Error('No valid observed readings');
+  var last=valid[valid.length-1];if(last.t>Date.now()||last.t<Date.now()-48*3600e3)throw new Error('Observed timestamp is future or outside the requested window');if(WL&&last.t<WL.last.t)throw new Error('Observed source time regressed; retaining last good');WL={rows:rows,last:last};
+  acceptedFeed('wl',Date.now()-last.t>WL_STALE_MIN*60000?'stale':'live',last.t);}).catch(function(e){if(latestFeed('wl',request))failedFeed('wl',e,!!WL);});}
+function loadPred(){var request=startFeed('pred'),now=new Date();var url=CO+'?station=8726520&product=predictions&interval=6&datum=MLLW&units=english&time_zone=gmt&format=json&begin_date='+ymd(new Date(now-48*3600e3))+'&end_date='+ymd(new Date(now.getTime()+24*3600e3));
+ return getJSON(url).then(function(j){if(!latestFeed('pred',request))return;var rows=sourceRows(j,'predictions').filter(function(r){return r.v!=null;});if(!rows.length)throw new Error('No valid predictions returned');
+  var lastT=rows[rows.length-1].t,firstT=rows[0].t,nowT=Date.now();if(lastT>nowT+3*864e5)throw new Error('Prediction outside requested date range');if(PRED&&lastT<PRED.last)throw new Error('Prediction horizon regressed; retaining last good');PRED={rows:rows,last:lastT,first:firstT};var covers=firstT<=nowT&&lastT>=nowT;
+  acceptedFeed('pred',covers?'live':'stale',covers?null:(firstT>nowT?firstT:lastT),covers?'covers now':(firstT>nowT?'starts after now':'ends before now'));})
+  .catch(function(e){if(latestFeed('pred',request))failedFeed('pred',e,!!PRED);});}
 function predAt(t){if(!PRED)return null;var b=null,bd=Infinity;PRED.rows.forEach(function(r){var d=Math.abs(r.t-t);if(d<bd){bd=d;b=r;}});return bd<=6*60e3?b.v:null;}
 function predCell(pv){var f=FEEDS.pred;if(pv!=null)return pv.toFixed(2)+' ft MLLW';if(f.state==='loading')return 'loading';if(f.state==='stale'&&PRED)return PRED.first>Date.now()?'stale: predictions start '+esc(fmtUTC(PRED.first)):'stale: predictions end '+esc(fmtUTC(PRED.last));return 'unavailable';}
-function predNote(){var f=FEEDS.pred;return f.state==='unavailable'?'<div class="muted">Tide predictions could not be loaded'+(f.err?' ('+esc(f.err)+')':'')+'. Checked '+esc(fmtUTC(f.checked))+'.</div>':'';}
+function predNote(){var f=FEEDS.pred;if(f.retained)return retainedNote('pred');return f.state==='unavailable'?'<div class="muted">Tide predictions could not be loaded'+(f.err?' ('+esc(f.err)+')':'')+'. Checked '+esc(fmtUTC(f.checked))+'.</div>':'';}
 function renderGauge(){keepFocus(function(){var d=$('gauge').querySelector('details.dt'),o=d&&d.open;renderGauge_();d=$('gauge').querySelector('details.dt');if(o&&d)d.open=true;});}
 function renderGauge_(){var el=$('gauge');
  if(!WL&&FEEDS.wl.state==='loading')return;
@@ -835,8 +843,8 @@ function renderGauge_(){var el=$('gauge');
   else el.innerHTML+='<div class="row" style="margin-top:8px"><span class="l">Predicted tide '+stateTag('pred')+'</span><span class="v">'+predCell(null)+'</span></div>'+predNote();
   return;}
  var o=WL.last,pv=predAt(o.t),an=pv!=null?o.v-pv:null,plane=planeOf(o.v),n=countAt(plane),step=o.v<2.5?null:nearestStep(o.v);
- var h='<div class="big">'+o.v.toFixed(2)+' <span style="font-size:15px;color:var(--ink2);font-weight:600">ft MLLW observed</span></div>'+
-  '<div class="muted">'+stateTag('wl')+' '+esc(fmtUTC(o.t))+' ('+esc(fmtAgo(o.t))+')'+(FEEDS.wl.state==='stale'?'. The latest reading is older than '+WL_STALE_MIN+' minutes.':'')+'</div>'+
+ var h=retainedNote('wl')+'<div class="big">'+o.v.toFixed(2)+' <span style="font-size:15px;color:var(--ink2);font-weight:600">ft MLLW observed</span></div>'+
+  '<div class="muted">'+stateTag('wl')+' '+esc(fmtUTC(o.t))+' ('+esc(fmtAgo(o.t))+')'+(Date.now()-o.t>WL_STALE_MIN*60000?'. The latest reading is older than '+WL_STALE_MIN+' minutes.':'')+'</div>'+
   '<div class="row" style="margin-top:8px"><span class="l">Predicted tide '+stateTag('pred')+'</span><span class="v">'+predCell(pv)+'</span></div>'+predNote()+
   '<div class="row"><span class="l">Surge anomaly (observed minus predicted)</span><span class="v">'+(an!=null?sgn(an)+' ft':'unavailable')+'</span></div>'+
   '<div class="row"><span class="l">Plane now (ft NAVD88)</span><span class="v">'+plane.toFixed(2)+'</span></div>'+
@@ -858,7 +866,7 @@ function drawGaugeChart(){var host=$('g-chart');if(!host||!WL||!host.offsetParen
 /* ===================== OFS FORECAST ===================== */
 var OFS=null;
 function usableOFSWindow(at){
- var now=at==null?Date.now():at;if(!OFS||!Array.isArray(OFS.rows))return null;
+ var now=at==null?Date.now():at;if(!OFS||!Array.isArray(OFS.rows)||FEEDS.ofs.retained)return null;
  var rows=OFS.rows.filter(function(row){return typeof row.t==='number'&&isFinite(row.t)&&typeof row.v==='number'&&isFinite(row.v)&&row.t>now&&row.t<=now+48*3600e3;}).slice().sort(function(a,b){return a.t-b.t;});
  if(!rows.length)return null;var peak=rows.reduce(function(a,b){return b.v>a.v?b:a;}),start=rows[0].t,end=rows[rows.length-1].t,gap=0;
  for(var i=1;i<rows.length;i++)gap=Math.max(gap,(rows[i].t-rows[i-1].t)/3600e3);
@@ -866,12 +874,12 @@ function usableOFSWindow(at){
 }
 function refreshOFSClock(){if(!OFS)return null;var window=usableOFSWindow(),valid=OFS.rows.filter(function(row){return typeof row.v==='number'&&isFinite(row.v)&&isFinite(row.t);});if(!valid.length)return null;
  OFS.fresh=!!window;OFS.peak=window?window.peak:valid.reduce(function(a,b){return b.v>a.v?b:a;});OFS.last=Math.max.apply(null,valid.map(function(row){return row.t;}));
- var feed=FEEDS.ofs;if(feed.state==='live'||feed.state==='stale'){feed.state=window?'live':'stale';feed.dataTime=window?null:OFS.last;feed.note=window?'peak '+fmtStamp(window.peak.t)+' · runs to '+fmtStamp(OFS.last):'forecast window expired; last value';}return window;
+ var feed=FEEDS.ofs;if(feed.retained){feed.state='stale';feed.note='Refresh failed; retained forecast withheld from automatic planning';feed.dataTime=OFS.last;}else if(feed.state==='live'||feed.state==='stale'){feed.state=window?'live':'stale';feed.dataTime=window?null:OFS.last;feed.note=window?'peak '+fmtStamp(window.peak.t)+' · runs to '+fmtStamp(OFS.last):'forecast window expired; last value';}return window;
 }
-function loadOFS(){var now=new Date();var url=CO+'?station=8726520&product=ofs_water_level&datum=MLLW&units=english&time_zone=gmt&format=json&begin_date='+ymd(now)+'&end_date='+ymd(new Date(now.getTime()+2*864e5));
- return getJSON(url).then(function(j){var rows=coRows(j).filter(function(r){return r.v!=null;}).sort(function(a,b){return a.t-b.t;});if(!rows.length)throw new Error('no forecast values returned');
-  OFS={rows:rows};var window=refreshOFSClock();if(window)setFeed('ofs','live',null,'peak '+fmtStamp(window.peak.t)+' · runs to '+fmtStamp(OFS.last));else setFeed('ofs','stale',OFS.last,'no remaining next48hforecast samples');})
-  .catch(function(e){OFS=null;FEEDS.ofs.err=e.message;setFeed('ofs','unavailable');}).then(applyDefaultSurge);}
+function loadOFS(){var request=startFeed('ofs'),now=new Date();var url=CO+'?station=8726520&product=ofs_water_level&datum=MLLW&units=english&time_zone=gmt&format=json&begin_date='+ymd(now)+'&end_date='+ymd(new Date(now.getTime()+2*864e5));
+ return getJSON(url).then(function(j){if(!latestFeed('ofs',request))return;var rows=sourceRows(j,'data').filter(function(r){return r.v!=null;});if(!rows.length)throw new Error('No valid forecast values returned');var last=rows[rows.length-1].t;if(last>Date.now()+4*864e5)throw new Error('Forecast outside requested date range');if(OFS&&last<OFS.last)throw new Error('Forecast horizon regressed; retaining last good');
+  FEEDS.ofs.retained=false;OFS={rows:rows};var window=refreshOFSClock();if(window)acceptedFeed('ofs','live',null,'peak '+fmtStamp(window.peak.t)+' · runs to '+fmtStamp(OFS.last));else acceptedFeed('ofs','stale',OFS.last,'no remaining next48hforecast samples');})
+  .catch(function(e){if(latestFeed('ofs',request))failedFeed('ofs',e,!!OFS);}).then(function(){if(latestFeed('ofs',request))applyDefaultSurge();});}
 function renderOFS(){keepFocus(function(){var d=$('ofs').querySelector('details.dt'),o=d&&d.open;renderOFS_();d=$('ofs').querySelector('details.dt');if(o&&d)d.open=true;});}
 function renderOFS_(){refreshOFSClock();renderStrip();var el=$('ofs');if(FEEDS.ofs.state==='loading')return;
  if(!OFS){unavailable(el,'ofs','The OFS water-level forecast');el.innerHTML+='<div class="muted" style="margin-top:6px">With no fresh forecast, the surge ladder defaults to 6 ft.</div>';return;}
@@ -879,86 +887,76 @@ function renderOFS_(){refreshOFSClock();renderStrip();var el=$('ofs');if(FEEDS.o
  if(OFS.fresh){var hrs=Math.round((pk.t-Date.now())/3600e3);
   h='<div class="big">'+pk.v.toFixed(2)+' <span style="font-size:15px;color:var(--ink2);font-weight:600">ft MLLW, 48 h peak</span></div>'+
    '<div class="muted">'+stateTag('ofs')+' peak at '+esc(fmtUTC(pk.t))+' (in about '+hrs+' h). The forecast runs to '+esc(fmtUTC(OFS.last))+'.</div>';}
+ else if(FEEDS.ofs.retained)h=retainedNote('ofs')+'<div class="big warn">Retained forecast context</div><p class="muted">This failed refresh does not supply a current automatic planning level. Original source window '+esc(fmtUTC(OFS.rows[0].t))+' to '+esc(fmtUTC(OFS.last))+'.</p>';
  else h='<div class="big" style="color:#f3d27a">stale (nowcast)</div><div class="muted">'+stateTag('ofs')+' The latest value returned is '+esc(fmtUTC(OFS.last))+', which is not in the future, so this is a hindcast or nowcast rather than a forecast. It does not set the ladder and screens no stations.</div>'+
   '<div class="row" style="margin-top:8px"><span class="l">Hindcast maximum (not a forecast)</span><span class="v">'+pk.v.toFixed(2)+' ft MLLW at '+esc(fmtUTC(pk.t))+'</span></div><div class="row"><span class="l">Window returned</span><span class="v">'+esc(fmtUTC(OFS.rows[0].t))+' to '+esc(fmtUTC(OFS.last))+'</span></div>';
  if(OFS.fresh)h+='<div class="row" style="margin-top:8px"><span class="l">Peak plane (ft NAVD88)</span><span class="v">'+plane.toFixed(2)+'</span></div>'+
   '<div class="row"><span class="l">Synthetic stations it screens <span class="hb md" style="margin-left:4px">MODELED</span></span><span class="v">'+countAt(plane)+' of '+stations.length+'</span></div>'+
   '<div class="row"><span class="l">Nearest ladder step</span><span class="v">'+step+' ft ('+countAt(planeOf(step))+' stations)</span></div>';
  var hrs2=OFS.rows.filter(function(r){return r.t%3600e3===0&&(!OFS.fresh||(r.t>Date.now()&&r.t<=Date.now()+48*3600e3));});
- h+='<div class="chart" id="o-chart"></div><details class="dt"><summary>Hourly data table</summary><div class="tblw"><table class="tbl"><thead><tr><th>Time (UTC)</th><th>'+(OFS.fresh?'OFS forecast':'OFS (nowcast)')+' (ft MLLW)</th></tr></thead><tbody>'+hrs2.map(function(r){return '<tr><td>'+esc(fmtUTC(r.t))+'</td><td>'+f2(r.v)+'</td></tr>';}).join('')+'</tbody></table></div></details>';el.innerHTML=h;drawOFSChart();}
+ h+='<div class="chart" id="o-chart"></div><details class="dt"><summary>Hourly data table</summary><div class="tblw"><table class="tbl"><thead><tr><th>Time (UTC)</th><th>'+(OFS.fresh?'OFS forecast':FEEDS.ofs.retained?'Retained OFS context':'OFS (nowcast)')+' (ft MLLW)</th></tr></thead><tbody>'+hrs2.map(function(r){return '<tr><td>'+esc(fmtUTC(r.t))+'</td><td>'+f2(r.v)+'</td></tr>';}).join('')+'</tbody></table></div></details>';el.innerHTML=h;drawOFSChart();}
 function drawOFSChart(){var host=$('o-chart');if(!host||!OFS||!host.offsetParent)return;var x0=OFS.fresh?Date.now():OFS.rows[0].t,x1=OFS.fresh?Date.now()+48*3600e3:OFS.last;
  var pts=OFS.rows.filter(function(r){return r.t>=x0&&r.t<=x1;});if(pts.length<2)pts=OFS.rows;
- lineChart(host,{label:'OFS total water level forecast at gauge 8726520, ft MLLW',series:[{name:OFS.fresh?'OFS forecast':'OFS (nowcast)',color:'var(--obs)',pts:pts}],x0:pts[0].t,x1:pts[pts.length-1].t,height:120,snapMs:40*60e3,
+ lineChart(host,{label:'OFS total water level forecast at gauge 8726520, ft MLLW',series:[{name:OFS.fresh?'OFS forecast':FEEDS.ofs.retained?'Retained OFS context':'OFS (nowcast)',color:'var(--obs)',pts:pts}],x0:pts[0].t,x1:pts[pts.length-1].t,height:120,snapMs:40*60e3,
   marks:OFS.fresh?[{t:OFS.peak.t,v:OFS.peak.v,color:'var(--obs)',label:'peak '+OFS.peak.v.toFixed(2)}]:[],refs:[{v:3,label:'3 ft step',color:'var(--ring)'}]});}
 
 /* ===================== DEFAULT SURGE ===================== */
 var surgeUser=false,surgeNote='Defaults to 6 ft while the OFS forecast loads.';
 function applyDefaultSurge(){refreshOFSClock();renderOFS();if(surgeUser)return;var was=surgeSel,wasNote=surgeNote;
  if(OFS&&OFS.fresh){surgeSel=nearestStep(OFS.peak.v);surgeNote='Default '+surgeSel+' ft: the live OFS 48 h peak of '+OFS.peak.v.toFixed(2)+' ft MLLW, rounded to the nearest ladder step.';}
- else{surgeSel=6;surgeNote='Default 6 ft: the OFS forecast is '+(OFS?'stale (nowcast)':'unavailable')+', so the ladder falls back to 6 ft.';}
+ else{surgeSel=6;surgeNote='Default 6 ft: the OFS forecast is '+(OFS?(FEEDS.ofs.retained?'stale (retained context)':'stale (nowcast)'):'unavailable')+', so the ladder falls back to 6 ft.';}
  if(surgeSel!==was||!TM)renderSurge();else if(surgeNote!==wasNote)$('ladder-note').textContent=surgeNote;}
 function setSurge(l,byUser){if(SURGE_LEVELS.indexOf(l)<0)return;surgeSel=l;if(byUser){surgeUser=true;surgeNote='Set by you. Reload the page to return to the forecast default.';}renderSurge();}
 
 /* ===================== NHC ===================== */
-var NHCS=null,NHC_PART={};
-function toLatLon(a,g,sr){var lat=+a.LAT,lon=+a.LON;if(isFinite(lat)&&isFinite(lon)&&a.LAT!==null&&a.LON!==null)return {lat:lat,lng:lon};
- if(g&&isFinite(g.x)&&isFinite(g.y)){var w=sr&&(sr.latestWkid||sr.wkid);if(w===102100||w===3857){return {lng:g.x/6378137*180/Math.PI,lat:(2*Math.atan(Math.exp(g.y/6378137))-Math.PI/2)*180/Math.PI};}return {lat:g.y,lng:g.x};}return null;}
-function ymdh(s){var y=+s.slice(0,4),mo=+s.slice(4,6),d=+s.slice(6,8),h=+s.slice(8,10);return y>=1990&&y<=2100&&mo>=1&&mo<=12&&d>=1&&d<=31&&h<=23?Date.UTC(y,mo-1,d,h):null;}
-/* DTG may arrive as epoch ms (Esri date), as a YYYYMMDDHH number or string (NHC convention), or as a date string. Times more than 2 days ahead are rejected. */
-function parseDTG(v){if(v==null||v==='')return null;var t=null;
- if(typeof v==='number'){var a=/^\d{10}$/.test(String(v))?ymdh(String(v)):null;t=a!=null?a:(v>1e11?v:(v>1e9?v*1000:null));}
- else{var s=String(v).trim();t=/^\d{10}$/.test(s)?ymdh(s):Date.parse(s);}
- return t!=null&&isFinite(t)&&t<Date.now()+2*864e5?t:null;}
-/* Closest approach of a forecast track to the gauge: checks each forecast point and the straight segment between consecutive points (TAU interpolated). */
-function closestApproach(fc){var pts=fc.filter(function(p){return isFinite(p.tau);}).sort(function(a,b){return a.tau-b.tau;});if(!pts.length)pts=fc.slice();var best=null;
- pts.forEach(function(p){var d=hav(p,GAUGE);if(!best||d<best.km)best={km:d,tau:p.tau,wind:p.wind,dvl:p.dvl,lbl:p.lbl,between:false};});
- var k=Math.cos(GAUGE.lat*Math.PI/180),P=function(p){return {x:(p.lng-GAUGE.lng)*111.32*k,y:(p.lat-GAUGE.lat)*110.57};};
- for(var i=0;i<pts.length-1;i++){var A=pts[i],B=pts[i+1];if(!isFinite(A.tau)||!isFinite(B.tau)||Math.abs(B.lng-A.lng)>30)continue;var a=P(A),b=P(B),dx=b.x-a.x,dy=b.y-a.y,L2=dx*dx+dy*dy;if(!L2)continue;
-  var t=-(a.x*dx+a.y*dy)/L2;if(t<=0||t>=1)continue;var q={lat:A.lat+t*(B.lat-A.lat),lng:A.lng+t*(B.lng-A.lng)},d=hav(q,GAUGE);
-  if(d<best.km)best={km:d,tau:Math.round(A.tau+t*(B.tau-A.tau)),wind:A.wind,dvl:A.dvl,lbl:'',between:true};}
- return best;}
+var NHCS=null,NHC_PART={},NHC_LAST={fc:null,ob:null},NHC_MAX_AGE=12*3600e3;
+function publicNumber(v){return (typeof v==='number'||typeof v==='string'&&v.trim())&&isFinite(+v)?+v:null;}
+function toLatLon(a,g,sr){var lat=publicNumber(a.LAT),lon=publicNumber(a.LON);if(lat!=null&&lon!=null&&Math.abs(lat)<=90&&Math.abs(lon)<=180)return {lat:lat,lng:lon};
+ if(g&&typeof g.x==='number'&&typeof g.y==='number'&&isFinite(g.x)&&isFinite(g.y)){var w=sr&&(sr.latestWkid||sr.wkid);if(w===102100||w===3857)return {lng:g.x/6378137*180/Math.PI,lat:(2*Math.atan(Math.exp(g.y/6378137))-Math.PI/2)*180/Math.PI};if(Math.abs(g.y)<=90&&Math.abs(g.x)<=180)return {lat:g.y,lng:g.x};}return null;}
+function ymdh(s){var y=+s.slice(0,4),mo=+s.slice(4,6),d=+s.slice(6,8),h=+s.slice(8,10),t=Date.UTC(y,mo-1,d,h),x=new Date(t);return y>=1990&&y<=2100&&x.getUTCFullYear()===y&&x.getUTCMonth()===mo-1&&x.getUTCDate()===d&&x.getUTCHours()===h?t:null;}
+function parseDTG(v){if(v==null||typeof v==='boolean'||String(v).trim()==='')return null;var s=String(v).trim(),t=null;if(/^\d{10}$/.test(s))t=ymdh(s);if(t==null&&/^\d{10,13}$/.test(s)){var n=+s;t=n>1e11?n:n>1e9?n*1000:null;}if(t==null&&/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:?\d{2})$/i.test(s))t=Date.parse(s);return t!=null&&isFinite(t)?t:null;}
+// VALIDTIME is DD/HHMM UTC in this source, independent of its local display
+// TIMEZONE field. Resolve its month against the declared advisory
+// and TAU, including month/year rollover. It is not assumed equal to release+TAU:
+// regular advisories are often released after the nominal initial valid time.
+// Global service providers can also report TAU=0 for multiple future positions;
+// explicit VALIDTIME within the bounded advisory window remains authoritative.
+function forecastValid(v,issued,tau,zone){if(typeof v!=='string'||!v.trim())return null;var direct=parseDTG(v);if(direct!=null)return direct;var m=v.trim().match(/^(\d{1,2})\/(\d{2})(\d{2})$/);if(!m)return null;var day=+m[1],h=+m[2],minute=+m[3];if(h>23||minute>59)return null;var expected=issued+tau*3600e3,anchor=new Date(expected),choices=[];for(var offset=-1;offset<=1;offset++){var first=new Date(Date.UTC(anchor.getUTCFullYear(),anchor.getUTCMonth()+offset,1)),t=Date.UTC(first.getUTCFullYear(),first.getUTCMonth(),day,h,minute),d=new Date(t);if(d.getUTCMonth()===first.getUTCMonth()&&d.getUTCDate()===day)choices.push(t);}choices=choices.filter(function(t){return t>=issued-24*3600e3&&t<=issued+11*864e5;});choices.sort(function(a,b){return Math.abs(a-expected)-Math.abs(b-expected);});return choices.length?choices[0]:null;}
 function basinNorm(b,id){var x=String(b||'').trim().toLowerCase();if(!x&&id)x=String(id).slice(0,2).toLowerCase();return x;}
 var BASIN_LABEL={al:'Atlantic',ep:'East Pacific',cp:'Central Pacific',wp:'West Pacific',io:'North Indian',sh:'Southern Hemisphere'};
-function loadNHC(){var q='/query?where=1%3D1&outFields=*&returnGeometry=true&f=json';
- function layer(n){return getJSON(NHC+n+q).catch(function(e){return {__err:e.message};});}
- return Promise.all([layer(0),layer(1)]).then(function(r){var fc=r[0],ob=r[1],S={};
-  if(fc.__err&&ob.__err)throw new Error(fc.__err===ob.__err?fc.__err:'forecast: '+fc.__err+'; observed: '+ob.__err);
-  NHC_PART={fcErr:fc.__err||null,obErr:ob.__err||null};if(fc.__err)fc={features:[]};if(ob.__err)ob={features:[]};
-  function key(n){return String(n||'unnamed').trim().toUpperCase();}
-  (ob.features||[]).forEach(function(f){var a=f.attributes||{},k=key(a.STORMNAME),p=toLatLon(a,f.geometry,ob.spatialReference);if(!p)return;var s=S[k]=S[k]||{name:a.STORMNAME||'Unnamed',fc:[],obs:[]};
-   s.id=s.id||a.STORMID;s.basin=s.basin||basinNorm(a.BASIN,a.STORMID);s.obs.push({lat:p.lat,lng:p.lng,t:parseDTG(a.DTG),int:a.INTENSITY,ss:a.SS});});
-  (fc.features||[]).forEach(function(f){var a=f.attributes||{},k=key(a.STORMNAME),p=toLatLon(a,f.geometry,fc.spatialReference);if(!p)return;var s=S[k]=S[k]||{name:a.STORMNAME||'Unnamed',fc:[],obs:[]};
-   s.basin=basinNorm(a.BASIN)||s.basin;s.fc.push({lat:p.lat,lng:p.lng,tau:+a.TAU,wind:a.MAXWIND,dvl:a.TCDVLP,lbl:a.FLDATELBL});});
-  var list=Object.keys(S).map(function(k){var s=S[k];s.obs.sort(function(a,b){return (a.t||0)-(b.t||0);});s.latest=s.obs.length?s.obs[s.obs.length-1]:null;
-   s.close=s.fc.length?closestApproach(s.fc):null;
-   s.nowKm=s.latest?hav(s.latest,GAUGE):null;s.pri=(s.basin==='al'||s.basin==='ep')?0:1;return s;});
-  list.sort(function(a,b){return a.pri-b.pri||((a.close?a.close.km:1e9)-(b.close?b.close.km:1e9));});
-  NHCS=list;var newest=null;list.forEach(function(s){if(s.latest&&s.latest.t&&(!newest||s.latest.t>newest))newest=s.latest.t;});
-  setFeed('nhc','live',newest,list.length+' system'+(list.length===1?'':'s')+(NHC_PART.fcErr?' · forecast layer unavailable':NHC_PART.obErr?' · observed layer unavailable':''));})
-  .catch(function(e){NHCS=null;NHC_PART={};FEEDS.nhc.err=e.message;setFeed('nhc','unavailable');}).then(function(){renderNHC();renderPhase();});}
-function renderNHC(){var el=$('nhc');if(FEEDS.nhc.state==='loading')return;
- if(!NHCS){unavailable(el,'nhc','The NHC active-storm feed');return;}
- var part=NHC_PART.fcErr?'<div class="muted warn" style="margin-bottom:6px">Forecast positions unavailable ('+esc(NHC_PART.fcErr)+'); closest approach and the phase suggestion need them.</div>':NHC_PART.obErr?'<div class="muted warn" style="margin-bottom:6px">Observed positions unavailable ('+esc(NHC_PART.obErr)+'); forecast positions shown.</div>':'';
- if(!NHCS.length&&!NHC_PART.fcErr&&!NHC_PART.obErr){el.innerHTML='<div class="big" style="color:#86e3bb">No active systems</div><div class="muted" style="margin-top:4px">'+stateTag('nhc')+' The NHC feed lists no active tropical systems anywhere. That is the normal state for much of the year, including outside the June 1 to November 30 Atlantic season. Checked '+esc(fmtUTC(FEEDS.nhc.checked))+'.</div>';return;}
- el.innerHTML=part+'<div class="muted" style="margin-bottom:8px">'+stateTag('nhc')+' '+NHCS.length+' active system'+(NHCS.length===1?'':'s')+'. Checked '+esc(fmtUTC(FEEDS.nhc.checked))+'.</div>'+NHCS.map(function(s){
-  var near=s.pri===0&&s.close&&s.close.km<=300,L=s.latest;
-  return '<div class="sys'+(near?' near':'')+'"><div class="t">'+esc(s.name)+' <span class="muted">'+esc(BASIN_LABEL[s.basin]||(s.basin?s.basin.toUpperCase():'basin unknown'))+(s.id?' · '+esc(s.id):'')+'</span></div>'+
-   '<div class="m">Latest position: '+(L?L.lat.toFixed(1)+', '+L.lng.toFixed(1)+(L.int!=null&&L.int!==''?' · '+esc(L.int)+' kt':'')+(L.t?' · '+esc(fmtUTC(L.t)):'')+' · '+Math.round(s.nowKm).toLocaleString()+' km from the gauge':'not reported')+'</div>'+
-   '<div class="m">Closest forecast approach: '+(s.close?Math.round(s.close.km).toLocaleString()+' km at '+(s.close.between?'about ':'')+'TAU '+(isFinite(s.close.tau)?s.close.tau:'?')+' h'+(s.close.between?' (between forecast points)':'')+(s.close.wind!=null&&s.close.wind!==''?' · '+esc(s.close.wind)+' kt':'')+(s.close.lbl?' · '+esc(s.close.lbl):''):'no forecast points')+(near?' · <b style="color:#f3d27a">within 300 km</b>':'')+'</div></div>';}).join('');}
+function nhcIdentity(a,t){var basin=basinNorm(a.BASIN,a.STORMID),id=String(a.STORMID||'').toLowerCase(),number=publicNumber(a.STORMNUM);if(!/^(al|ep|cp|wp|io|sh)\d{2}\d{4}$/.test(id)){if(!BASIN_LABEL[basin]||number==null||!Number.isInteger(number)||number<1||number>99)throw new Error('Missing storm identity');id=basin+p2(number)+new Date(t).getUTCFullYear();}return {id:id,basin:basin||id.slice(0,2)};}
+function parseNHCLayer(j,kind,previous){validCollection(j,'NHC '+kind);var groups={};j.features.forEach(function(f){if(!f||!f.attributes||typeof f.attributes!=='object')throw new Error('Missing NHC attributes');var a=f.attributes,p=toLatLon(a,f.geometry,j.spatialReference),issued=parseDTG(kind==='fc'?a.ADVDATE:a.DTG);if(!p||issued==null||issued>Date.now()+5*60e3)throw new Error('Invalid NHC coordinates/source time');var identity=nhcIdentity(a,issued),s=groups[identity.id]||(groups[identity.id]={id:identity.id,basin:identity.basin,name:a.STORMNAME||identity.id,rows:[],latest:null});
+ var row={lat:p.lat,lng:p.lng,t:issued,int:a.INTENSITY,ss:a.SS};if(kind==='fc'){var tau=publicNumber(a.TAU),valid=tau==null?null:forecastValid(a.VALIDTIME,issued,tau,a.TIMEZONE);if(tau==null||tau<0||tau>240||valid==null||valid<issued-24*3600e3||valid>issued+11*864e5)throw new Error('Invalid or undated NHC forecast position');row={lat:p.lat,lng:p.lng,issuedAt:issued,validAt:valid,tau:tau,wind:a.MAXWIND,dvl:a.TCDVLP,lbl:a.FLDATELBL||'',advisory:String(a.ADVISNUM||'').trim()};}
+ s.rows.push(row);s.latest=Math.max(s.latest||0,issued);});
+ Object.keys(groups).forEach(function(id){var g=groups[id];if(previous&&previous[id]&&g.latest<previous[id].latest)throw new Error('NHC '+kind+' source time regressed');if(kind==='fc'){g.rows=g.rows.filter(function(row){return row.issuedAt===g.latest;});var advisory=new Set(g.rows.map(function(row){return row.advisory;}));if(advisory.size>1)throw new Error('Mixed forecast advisory identities');var seen=new Map();g.rows.forEach(function(row){if(seen.has(row.validAt)){var prior=seen.get(row.validAt);if(prior.lat!==row.lat||prior.lng!==row.lng||prior.tau!==row.tau)throw new Error('Conflicting forecast positions');}seen.set(row.validAt,row);});g.rows=Array.from(seen.values()).sort(function(a,b){return a.validAt-b.validAt;});}else g.rows.sort(function(a,b){return a.t-b.t;});});return groups;}
+// Forecast points lack STORMID; the observed layer provides authoritative seasonal
+// identifiers. Join only an unambiguous basin/number/name match, never proximity.
+function joinNHCIdentities(forecast,observed,previous){var joined={};Object.keys(forecast).forEach(function(id){var g=forecast[id],name=String(g.name).trim().toLowerCase(),matches=Object.keys(observed||{}).filter(function(key){var o=observed[key];return o.basin===g.basin&&key.slice(2,4)===id.slice(2,4)&&String(o.name).trim().toLowerCase()===name;}),resolved=matches.length===1?matches[0]:id;if(joined[resolved])throw new Error('Ambiguous NHC storm identity');if(previous&&previous[resolved]&&g.latest<previous[resolved].latest)throw new Error('NHC fc source time regressed');joined[resolved]=Object.assign({},g,{id:resolved});});return joined;}
+function closestApproach(fc,at){var now=at==null?Date.now():at,pts=fc.slice().sort(function(a,b){return a.validAt-b.validAt;}),best=null;function consider(p,between){if(p.validAt<now)return;var d=hav(p,GAUGE);if(!best||d<best.km)best={km:d,tau:p.tau,validAt:p.validAt,wind:p.wind,dvl:p.dvl,lbl:p.lbl,between:!!between};}pts.forEach(function(p){consider(p,false);});
+ var k=Math.cos(GAUGE.lat*Math.PI/180),P=function(p){return {x:(p.lng-GAUGE.lng)*111.32*k,y:(p.lat-GAUGE.lat)*110.57};};
+ for(var i=0;i<pts.length-1;i++){var A=pts[i],B=pts[i+1];if(B.validAt<=now||B.validAt<=A.validAt||Math.abs(B.lng-A.lng)>30)continue;if(A.validAt<now){var q=(now-A.validAt)/(B.validAt-A.validAt);A={lat:A.lat+q*(B.lat-A.lat),lng:A.lng+q*(B.lng-A.lng),validAt:now,tau:A.tau+q*(B.tau-A.tau),wind:A.wind};}var a=P(A),b=P(B),dx=b.x-a.x,dy=b.y-a.y,L2=dx*dx+dy*dy;if(!L2)continue;var t=-(a.x*dx+a.y*dy)/L2;if(t<=0||t>=1)continue;consider({lat:A.lat+t*(B.lat-A.lat),lng:A.lng+t*(B.lng-A.lng),validAt:A.validAt+t*(B.validAt-A.validAt),tau:A.tau+t*(B.tau-A.tau),wind:A.wind,lbl:''},true);}return best;}
+function refreshNHCClock(){if(!NHCS)return;var now=Date.now(),stale=false;NHCS.forEach(function(s){s.forecastCurrent=!!(s.fc.length&&s.issuedAt<=now+5*60e3&&now-s.issuedAt<=NHC_MAX_AGE&&s.fc.some(function(row){return row.validAt>now;}));s.close=s.forecastCurrent?closestApproach(s.fc,now):null;if((s.fc.length&&!s.forecastCurrent)||s.latest&&now-s.latest.t>NHC_MAX_AGE||!s.fc.length&&!s.latest)stale=true;});var f=FEEDS.nhc;if(f.state!=='loading'&&!f.retained)f.state=stale||now-f.acceptedAt>30*60e3?'stale':'live';}
+function loadNHC(){var request=startFeed('nhc'),q='/query?where=1%3D1&outFields=*&returnGeometry=true&f=json';
+ function layer(n,kind){return getJSON(NHC+n+q).then(function(j){return parseNHCLayer(j,kind,NHC_LAST[kind]);}).catch(function(e){return {__err:e.message};});}
+ return Promise.all([layer(0,'fc'),layer(1,'ob')]).then(function(r){if(!latestFeed('nhc',request))return;var fc=r[0],ob=r[1],S={};NHC_PART={fcErr:fc.__err||null,obErr:ob.__err||null};if(!fc.__err)fc=joinNHCIdentities(fc,ob.__err?NHC_LAST.ob:ob,NHC_LAST.fc);if(!fc.__err)NHC_LAST.fc=fc;if(!ob.__err)NHC_LAST.ob=ob;fc=fc.__err?NHC_LAST.fc:fc;ob=ob.__err?NHC_LAST.ob:ob;if(!fc&&!ob)throw new Error('Both NHC collections unavailable');
+ Object.keys(ob||{}).forEach(function(id){var g=ob[id],latest=g.rows[g.rows.length-1];S[id]={id:id,basin:g.basin,name:g.name,obs:g.rows,latest:latest,fc:[],nowKm:latest?hav(latest,GAUGE):null};});
+ Object.keys(fc||{}).forEach(function(id){var g=fc[id],s=S[id]||(S[id]={id:id,basin:g.basin,name:g.name,obs:[],latest:null,nowKm:null});s.fc=g.rows;s.issuedAt=g.latest;});
+ var list=Object.keys(S).map(function(id){var s=S[id];s.pri=s.basin==='al'||s.basin==='ep'?0:1;return s;});list.sort(function(a,b){return a.pri-b.pri||a.id.localeCompare(b.id);});NHCS=list;var newest=null;list.forEach(function(s){var t=Math.max(s.latest?s.latest.t:0,s.issuedAt||0);if(t>0&&(!newest||t>newest))newest=t;});
+ if(NHC_PART.fcErr||NHC_PART.obErr){FEEDS.nhc.retained=true;FEEDS.nhc.err=[NHC_PART.fcErr,NHC_PART.obErr].filter(Boolean).join('; ');setFeed('nhc','stale',newest,'Partial/retained source; automated phase unavailable');}else acceptedFeed('nhc','live',newest,list.length+' source-listed systems');refreshNHCClock();})
+ .catch(function(e){if(latestFeed('nhc',request)){NHC_PART={fcErr:e.message,obErr:e.message};failedFeed('nhc',e,!!NHCS);}}).then(function(){if(latestFeed('nhc',request)){renderNHC();renderPhase();}});}
+function renderNHC(){var el=$('nhc');if(FEEDS.nhc.state==='loading')return;refreshNHCClock();if(!NHCS){unavailable(el,'nhc','The NHC active-storm feed');return;}
+ var partial=NHC_PART.fcErr||NHC_PART.obErr,head=retainedNote('nhc')+(partial?'<p class="muted warn">'+esc(NHC_PART.fcErr?'Forecast collection unavailable: '+NHC_PART.fcErr:'Observed collection unavailable: '+NHC_PART.obErr)+'. Automated phase suggestions require complete current collections.</p>':'');
+ if(!NHCS.length){el.innerHTML=head+'<div class="big">'+(partial?'System coverage unavailable':'No systems listed in the retrieved source')+'</div><p>'+stateTag('nhc')+' Source checked '+esc(fmtUTC(FEEDS.nhc.checked))+'. A complete empty collection is distinct from a failed collection; neither is a local all-clear.</p>';return;}
+ el.innerHTML=head+'<p>'+stateTag('nhc')+' '+NHCS.length+' source-listed systems; checked '+esc(fmtUTC(FEEDS.nhc.checked))+'. A 12-hour advisory-age display guard is used, not an official activation threshold.</p>'+NHCS.map(function(s){var L=s.latest,near=s.pri===0&&s.close&&s.close.km<=300;return '<div class="sys'+(near?' near':'')+'"><div class="t">'+esc(s.name)+' <span class="muted">'+esc(BASIN_LABEL[s.basin]||s.basin)+' · '+esc(s.id)+'</span></div><div class="m">Latest observed position: '+(L?L.lat.toFixed(1)+', '+L.lng.toFixed(1)+' · '+esc(fmtUTC(L.t))+' · '+Math.round(s.nowKm)+' km from gauge':'not available')+'</div><div class="m">Advisory issued '+esc(fmtUTC(s.issuedAt))+'; '+(s.close?'closest future center-track position '+Math.round(s.close.km)+' km at '+esc(fmtUTC(s.close.validAt))+' ('+Math.max(0,(s.close.validAt-Date.now())/3600e3).toFixed(1)+' h from now; TAU '+s.close.tau.toFixed(1)+' as reported by source'+(s.close.between?', interpolated segment':'')+')':'no current future position available')+'.</div></div>';}).join('');}
 
 /* ===================== NWS ===================== */
 var NWSA=null;
-function loadNWS(){return getJSON('https://api.weather.gov/alerts/active?point='+NWS_POINT,{'Accept':'application/geo+json'}).then(function(j){
-  NWSA={list:(j.features||[]).map(function(f){return f.properties||{};}),updated:Date.parse(j.updated)||null};setFeed('nws','live',NWSA.updated,NWSA.list.length+' active');})
-  .catch(function(e){NWSA=null;FEEDS.nws.err=e.message;setFeed('nws','unavailable');}).then(renderNWS);}
-function renderNWS(){var el=$('nws');if(FEEDS.nws.state==='loading')return;
- if(!NWSA){unavailable(el,'nws','The NWS alert feed');return;}
- var rank={Extreme:0,Severe:1,Moderate:2,Minor:3,Unknown:4},rk=function(v){return Object.prototype.hasOwnProperty.call(rank,v)?rank[v]:4;},
-  L=NWSA.list.slice().sort(function(a,b){return rk(a.severity)-rk(b.severity);}),shown=L.filter(function(p,i){return i<8||rk(p.severity)<=1;});
- var head='<div class="muted" style="margin-bottom:8px">'+stateTag('nws')+' '+(NWSA.updated?'updated '+esc(fmtUTC(NWSA.updated)):'checked '+esc(fmtUTC(FEEDS.nws.checked)))+'</div>';
- el.innerHTML=head+(L.length?shown.map(function(p){var sev=p.severity==='Extreme'||p.severity==='Severe';
-  return '<div class="al'+(sev?' sev':'')+'"><div class="t">'+esc(p.event||'Alert')+'</div><div class="m">'+esc(p.headline||'')+'</div><div class="m">'+esc(p.severity||'')+(p.expires?' · expires '+esc(fmtUTC(Date.parse(p.expires))):'')+'</div></div>';}).join('')+(L.length>shown.length?'<div class="muted">and '+(L.length-shown.length)+' more at weather.gov</div>':'')
-  :'<div class="big" style="color:#86e3bb">No active alerts</div><div class="muted" style="margin-top:4px">No NWS watches, warnings or advisories are in effect at the gauge point.</div>');}
+function loadNWS(){var request=startFeed('nws');return getJSON('https://api.weather.gov/alerts/active?point='+NWS_POINT,{'Accept':'application/geo+json'}).then(function(j){if(!latestFeed('nws',request))return;validCollection(j,'NWS');var updated=j.updated==null?null:parseDTG(j.updated);if(j.updated!=null&&(updated==null||updated>Date.now()+5*60e3))throw new Error('Invalid NWS collection time');if(NWSA&&updated!=null&&NWSA.updated!=null&&updated<NWSA.updated)throw new Error('NWS collection time regressed');var list=[],ignored=0,seen=new Set();j.features.forEach(function(f){var p=f&&f.properties;if(!p||typeof p!=='object')throw new Error('Missing NWS notice properties');if(p.status&&p.status!=='Actual'||p.messageType==='Cancel'){ignored++;return;}var id=p.id||f.id,sent=parseDTG(p.sent||p.effective),expires=parseDTG(p.expires);if(p.status!=='Actual'||!['Alert','Update'].includes(p.messageType)||typeof id!=='string'||!id||seen.has(id)||typeof p.event!=='string'||!p.event.trim()||sent==null||expires==null||sent>Date.now()+5*60e3||expires<=sent)throw new Error('Invalid or ambiguous actual NWS notice');seen.add(id);if(updated!=null&&sent>updated+5*60e3)throw new Error('Notice issue exceeds collection update');if(NWSA){var old=NWSA.list.find(function(row){return (row.id||row.sourceId)===id;});if(old&&sent<old.sentAt)throw new Error('NWS notice issue time regressed');}list.push(Object.assign({},p,{sourceId:id,sentAt:sent,expiresAt:expires}));});NWSA={list:list,updated:updated,checkedAt:Date.now(),ignored:ignored};acceptedFeed('nws',list.length&&list.every(function(p){return p.expiresAt<=Date.now();})?'stale':'live',updated,list.filter(function(p){return p.expiresAt>Date.now();}).length+' unexpired actual notices');})
+ .catch(function(e){if(latestFeed('nws',request))failedFeed('nws',e,!!NWSA);}).then(function(){if(latestFeed('nws',request))renderNWS();});}
+function renderNWS(){var el=$('nws');if(FEEDS.nws.state==='loading')return;if(!NWSA){unavailable(el,'nws','The NWS alert feed');return;}var now=Date.now();if(!FEEDS.nws.retained&&(now-NWSA.checkedAt>30*60e3||NWSA.list.length&&NWSA.list.every(function(p){return p.expiresAt<=now;})))FEEDS.nws.state='stale';
+ var rank={Extreme:0,Severe:1,Moderate:2,Minor:3,Unknown:4},rk=function(v){return Object.prototype.hasOwnProperty.call(rank,v)?rank[v]:4;},L=NWSA.list.filter(function(p){return p.expiresAt>now;}).sort(function(a,b){return rk(a.severity)-rk(b.severity);}),shown=L.filter(function(p,i){return i<8||rk(p.severity)<=1;}),expired=NWSA.list.length-L.length;
+ var head=retainedNote('nws')+'<p>'+stateTag('nws')+' Collection checked '+esc(fmtUTC(NWSA.checkedAt))+(NWSA.updated?'; source updated '+esc(fmtUTC(NWSA.updated)):'; source update time not supplied')+'. '+expired+' expired notices and '+NWSA.ignored+' non-actual/cancel messages excluded. This is not an all-hazard clearance.</p>';
+ el.innerHTML=head+(L.length?shown.map(function(p){var sev=p.severity==='Extreme'||p.severity==='Severe';return '<div class="al'+(sev?' sev':'')+'"><div class="t">'+esc(p.event)+'</div><div class="m">'+esc(p.headline||'')+'</div><div class="m">Notice '+esc(p.id||p.sourceId)+' · issued '+esc(fmtUTC(p.sentAt))+' · expires '+esc(fmtUTC(p.expiresAt))+'</div>'+(p.instruction?'<p>'+esc(p.instruction)+'</p>':'')+'</div>';}).join('')+(L.length>shown.length?'<p>Additional source notices: '+(L.length-shown.length)+'. Open weather.gov.</p>':''):'<div class="big">No unexpired actual notices in this retrieved collection</div><p>Check current NWS/local instructions; absence from this collection does not establish that no warning or other hazard exists.</p>');}
 
 /* ===================== SURGE-DEPENDENT VIEWS ===================== */
 var TM=null;
@@ -1115,16 +1113,17 @@ var PUBLIC_ACTIONS=[
 var PUBLIC_PHASES={pre:'Review official household/community preparedness resources and contact channels before a storm',t120:'Review current official forecasts and confirm how local alerts reach your household or community',t72:'Compare current official instructions with your local plan; the selected surge level is a scenario assumption',t48:'Recheck official updates and local arrangements; the scenario ring does not establish real facility protection',t24:'Follow current local authority instructions and access information',land:'Use official alerts and local emergency channels; this console does not establish field-work or evacuation permission',post:'Follow official re-entry and utility service notices; report verified service problems',rec:'Review verified impacts with the utility and responsible authority for recovery planning'};
 var REAL_OPERATOR_PHASES={pre:'Review inventory identities, raster acquisition dates, zone classifications and the public basin crosswalk; reconcile locally held equipment heights and operating contacts',t120:'Check the issue and valid times of official forecasts and confirm responsible utility and emergency-management coordination',t72:'Review the listed real stations against the selected plane and sensitivity bands; compare surveyed equipment elevations and approved local procedures',t48:'Recheck stations near the plane and newly included by the +2 ft sensitivity screen; use approved access and resource plans',t24:'Confirm current utility telemetry and authority instructions before authorizing field activity; historical terrain alone cannot establish access or operability',land:'Use authorized operating systems and official emergency procedures; report verified conditions through established channels',post:'Reconcile field observations with this dated screen; establish actual service interruption, safe access and restoration status from authorized records',rec:'Document verified damage, restoration, service impacts and costs separately from planning geometry; update source discrepancies'};
 function phaseDecision(p){return planTrack==='public'?PUBLIC_PHASES[p.id]:planDataset()==='synthetic'?'Practice operator concept for SOP review: '+p.dec:REAL_OPERATOR_PHASES[p.id];}
-function nativePlan(){var real=planDataset()!=='synthetic',analysis=real?publicPlanAnalysis():null,water=real?sharedWaterContext():{waterSource:'selected',levelFtMLLW:surgeSel,planeFtNAVD88:planeOf(surgeSel)},records=real?publicScopeRecords(planDataset()):stations,terrainKnown=real?records.filter(validPublicTerrain).length:stations.length;
+function nativePlan(){renderFeedClock();var real=planDataset()!=='synthetic',analysis=real?publicPlanAnalysis():null,water=real?sharedWaterContext():{waterSource:'selected',levelFtMLLW:surgeSel,planeFtNAVD88:planeOf(surgeSel)},records=real?publicScopeRecords(planDataset()):stations,terrainKnown=real?records.filter(validPublicTerrain).length:stations.length;
  return {scenario:true,track:planTrack,dataset:planDataset(),waterSource:water.waterSource,levelFtMLLW:water.levelFtMLLW,planeFtNAVD88:water.planeFtNAVD88,forecastValidAt:water.forecastValidAt||null,assetsInScope:records.length,terrainKnown:terrainKnown,terrainUnknown:records.length-terrainKnown,stationIds:records.map(function(s){return s.id||s.fid;}),stationResults:analysis?analysis.stationRows:[],coverage:analysis?analysis.coverage:null,forecastExposure:analysis?analysis.forecastExposure:null,projectedImpact:computeProjectedImpact(impactOptions()),publicContextReports:Object.keys(CONTEXT_STATE).map(function(id){var state=CONTEXT_STATE[id];return {sourceId:id,status:state.status,checkedAt:state.checkedAt,dataRetrievedAt:state.dataRetrievedAt,recordCount:state.features?state.features.length:null,note:state.note,error:state.error};}),publicInventoryContext:{capturedAt:PUBLIC_INVENTORY.capturedAt,inventoryFingerprint:IMPACT_CONTEXT.inventoryFingerprint||null,stationCount:PUBLIC_INVENTORY.stations.length,completeness:PUBLIC_INVENTORY.completeness,sources:PUBLIC_INVENTORY.sources,limitations:PUBLIC_INVENTORY.limitations,note:real?'Real agency-published stations; terrain and geographic diagnostics are planning screens, not operating telemetry.':'Separate fictional calibration exercise.'},zoneModel:real?realZoneContext(planDataset()):zoneSummary(),surgeFtMLLW:water.levelFtMLLW,phase:phaseSel,suggestedPhase:phaseSugg,metrics:getPlanMetrics().map(function(r){return {metricId:r.n,name:r.name,value:r.value,display:r.display,unit:r.unit||null,requiredInputs:r.requiredInputs||null,status:real?metricStatus(r):r.bad==null?'unknown':r.bad?'triggered':'clear',condition:r.cond,analyticalMitigation:r.anal,operationalAction:planTrack==='public'?PUBLIC_ACTIONS[r.n-1]:r.oper,threshold:metricCriterion(r),method:r.method||r.anal,evidenceIds:r.evidenceIds||[],phases:PHASES.filter(function(p){return p.dims.indexOf(r.n)>=0;}).map(function(p){return p.label;}),escalateWhen:'Verified local observations and the responsible authority’s procedure determine operational escalation.',authorityUrl:'https://www.weather.gov/tbw/'};}),evidence:Object.keys(FEEDS).map(function(k){return {feed:k,state:FEEDS[k].state,dataTime:FEEDS[k].dataTime};}),acknowledgments:Object.keys(CHECKED).filter(function(k){return CHECKED[k];}),note:real?'Planning screen from real public station records and explicitly named geographic/terrain proxies; not an outage, damage or hydraulic forecast. Acknowledgments record review, not completed operations.':'Fictional calibration exercise, not real station failure diagnostics.'};}
 
 function planItem(r,id){return '<label class="chk" for="'+id+'"><input type="checkbox" id="'+id+'"'+(CHECKED[id]?' checked':'')+'><span><b>#'+r.n+' '+esc(r.name)+'.</b> '+esc(planTrack==='public'?PUBLIC_ACTIONS[r.n-1]:'Operator SOP review: '+r.oper)+'<br><small>Trigger: '+esc(r.display)+'; '+esc(metricCriterion(r))+'. Analytical review: '+esc(r.anal)+' Escalate only when verified local telemetry and the procedure of the responsible authority justify action. <a href="https://www.weather.gov/tbw/" target="_blank" rel="noopener">Official NWS information</a>. This check acknowledges local planning review.</small></span></label>';}
-function suggestPhase(){if(!NHCS)return {id:null,why:FEEDS.nhc.state==='loading'?'Waiting for the NHC feed.':'Suggestion unavailable: the NHC feed is unavailable (checked '+esc(fmtUTC(FEEDS.nhc.checked))+'). Pick a phase manually.'};
- if(NHC_PART.fcErr)return {id:null,why:'Suggestion unavailable: NHC forecast positions are unavailable (checked '+esc(fmtUTC(FEEDS.nhc.checked))+'). Pick a phase manually.'};
- var c=NHCS.filter(function(s){return s.pri===0&&s.close&&s.close.km<=300&&isFinite(s.close.tau);}).sort(function(a,b){return a.close.tau-b.close.tau;});
- if(!c.length)return {id:'pre',why:'No Atlantic or East Pacific system has a forecast track within 300 km of the gauge'+(NHCS.length?' ('+NHCS.length+' active system'+(NHCS.length===1?'':'s')+' elsewhere)':' (no active systems)')+', so the rule suggests Pre-season.'};
- var s=c[0],tau=s.close.tau,id=tau<=24?'t24':tau<=48?'t48':tau<=72?'t72':'t120';
- return {id:id,why:esc(s.name)+'\'s forecast passes '+Math.round(s.close.km)+' km from the gauge at '+(s.close.between?'about ':'')+'TAU '+tau+' h, which suggests '+PHASES.filter(function(p){return p.id===id;})[0].label+'.'};}
+function suggestPhase(){refreshNHCClock();if(!NHCS)return {id:null,why:FEEDS.nhc.state==='loading'?'Waiting for the NHC feed.':'Suggestion unavailable: the NHC feed is unavailable. Pick a phase manually.'};
+ if(NHC_PART.fcErr||FEEDS.nhc.retained||Date.now()-FEEDS.nhc.acceptedAt>30*60e3)return {id:null,why:'Suggestion unavailable: current, complete NHC forecast positions are not available. Retained context is not a new advisory; pick a phase manually.'};
+ var relevant=NHCS.filter(function(s){return s.pri===0;});if(relevant.some(function(s){return !s.forecastCurrent;}))return {id:null,why:'Suggestion unavailable: a listed Atlantic/East Pacific system has stale, expired or undated forecast coverage. Check NHC and pick a phase manually.'};
+ var c=relevant.filter(function(s){return s.close&&s.close.km<=300;}).sort(function(a,b){return a.close.validAt-b.close.validAt;});
+ if(!c.length)return {id:'pre',why:'The current complete source lists no Atlantic/East Pacific future center-track position within 300 km of the gauge. This bounded track screen is not an all-clear, landfall forecast or local instruction.'};
+ var s=c[0],hours=Math.max(0,(s.close.validAt-Date.now())/3600e3),id=hours<=24?'t24':hours<=48?'t48':hours<=72?'t72':'t120';
+ return {id:id,why:esc(s.name)+' has an approximate closest future center-track position '+Math.round(s.close.km)+' km away at '+esc(fmtUTC(s.close.validAt))+' ('+hours.toFixed(1)+' h from now; advisory '+esc(fmtUTC(s.issuedAt))+'). This suggests the planning phase '+PHASES.filter(function(p){return p.id===id;})[0].label+'; it is not landfall timing, wind arrival, an evacuation deadline or an operational instruction.'};}
 function renderPhase(){keepFocus(renderPhase_);}
 function renderPhase_(){var sg=suggestPhase();phaseSugg=sg.id;phaseWhy=sg.why;if(!phaseUser)phaseSel=phaseSugg||'pre';
  $('phase-sugg').innerHTML='<div class="row"><span class="l">Suggested phase '+stateTag('nhc')+'</span><span class="v">'+(phaseSugg?PHASES.filter(function(p){return p.id===phaseSugg;})[0].label:'none')+'</span></div><div class="muted" style="margin:4px 0 6px">'+sg.why+'</div>';
@@ -1442,9 +1441,12 @@ document.addEventListener('change',function(e){var t=e.target;if(t&&t.id&&t.id.i
 $('stn-table-d').addEventListener('toggle',function(){if(this.open){$('stn-table').innerHTML='';renderStationTable();}});
 var rz=null;window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){drawGaugeChart();drawOFSChart();renderLadderChart();},150);});
 
-function refreshAll(){$('refreshed').textContent='Refreshing feeds...';
+var feedRefreshRun=0,lastFeedRefresh=0;
+function refreshAll(){var run=++feedRefreshRun;lastFeedRefresh=Date.now();$('refreshed').textContent='Refreshing feeds...';
  var a=Promise.all([loadWL().then(renderGauge),loadPred().then(renderGauge)]);
- return Promise.all([a,loadOFS(),loadNHC(),loadNWS()]).then(function(){renderProjectedImpact();renderCheck();renderTimeline();renderPublicInventory();$('refreshed').textContent='Last refresh '+fmtUTC(Date.now())+'. Feeds refresh every 6 minutes.';});}
+ return Promise.all([a,loadOFS(),loadNHC(),loadNWS()]).then(function(){if(run!==feedRefreshRun)return;refreshFeedClocks();renderProjectedImpact();renderCheck();renderTimeline();renderPublicInventory();$('refreshed').textContent='Last check '+fmtUTC(Date.now())+'. Each feed retains its own source time/status; refresh every 6 minutes while visible.';});}
+function refreshFeedClocks(){var now=Date.now();if(WL&&!FEEDS.wl.retained)FEEDS.wl.state=now-WL.last.t>WL_STALE_MIN*60000?'stale':'live';if(PRED&&!FEEDS.pred.retained)FEEDS.pred.state=PRED.first<=now&&PRED.last>=now?'live':'stale';refreshOFSClock();refreshNHCClock();if(NWSA&&!FEEDS.nws.retained&&now-NWSA.checkedAt>30*60e3)FEEDS.nws.state='stale';}
+function renderFeedClock(){refreshFeedClocks();renderStrip();renderGauge();renderOFS();renderNHC();renderNWS();renderPhase();renderProjectedImpact();renderCheck();renderTimeline();}
 $('refresh').addEventListener('click',refreshAll);
 function syncPlanningScope(value){$('impact-scope').value=value;$('plan-data-scope').value=value;renderProjectedImpact();renderCheck();renderTimeline();}
 function syncPlanningWater(value){$('impact-water-source').value=value;$('plan-water-source').value=value;renderProjectedImpact();renderCheck();renderTimeline();}
@@ -1463,7 +1465,7 @@ $('cwr-export-plan').onclick=function(){var blob=new Blob([JSON.stringify({expor
 window.addEventListener('hashchange',function(){setPage((location.hash||'').slice(1));});
 function padTop(){document.documentElement.style.scrollPaddingTop=($('disc').offsetHeight+8)+'px';}padTop();window.addEventListener('resize',padTop);
 renderContextCatalog();renderProjectedImpact();renderPublicInventory();buildMap();renderStrip();setPage((location.hash||'').slice(1));renderSurge();renderPhase();renderBacktest();renderCalib();
-refreshAll();setInterval(refreshAll,REFRESH_MS);
+refreshAll();setInterval(function(){if(!document.hidden)refreshAll();},REFRESH_MS);setInterval(function(){if(!document.hidden)renderFeedClock();},60000);document.addEventListener('visibilitychange',function(){if(!document.hidden){renderFeedClock();if(Date.now()-lastFeedRefresh>=REFRESH_MS)refreshAll();}});
 
 /* exposed for inspection and tests */
 window.CWR={validateImpactContext:validateImpactContext,refreshImpactContext:refreshImpactContext,impactRefresh:IMPACT_REFRESH,impactContext:IMPACT_CONTEXT,forecastWindow:usableOFSWindow,contextSources:CONTEXT_SOURCES,contextState:CONTEXT_STATE,loadContext:loadContext,computeProjectedImpact:computeProjectedImpact,impactOptions:impactOptions,renderProjectedImpact:renderProjectedImpact,publicInventory:PUBLIC_INVENTORY,renderPublicInventory:renderPublicInventory,exportPlan:nativePlan,renderPlan:renderCheck,stations:stations,TOPO:TOPO,FEEDS:FEEDS,setSurge:setSurge,setPage:setPage,tenMetrics:tenMetrics,surgeAt:surgeAt,countAt:countAt,refreshAll:refreshAll,

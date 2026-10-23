@@ -19,7 +19,7 @@ Payload (plain JSON-compatible objects; `value` may be finite number or explanat
 
 ```js
 {
-  slug, title, context, // public context only; no patient, debt, wearable or other private inputs
+  slug, selectionKey, title, context, // public context only; no patient, debt, wearable or other private inputs
   evidence: [{id, label, value, unit, measuredAt, checkedAt,
     basis: 'measured|modeled|interpretive|demo',
     quality: 'current|historical|stale|missing', source, note}],
@@ -146,7 +146,7 @@ impacts: {
   Unknown diagnostic values and unsupported impact conclusions are withheld from the displayed
   estimate. Original source evidence remains inspectable with its quality label.
 
-The compact panel includes a visible **Review impacts and source records** button. Integration
+The compact panel includes a visible **View impacts and sources** button. Integration
 selectors: `#cr-open-impacts`, `[data-cr-section="impacts"]`, `[data-cr-impact="<id>"]`, and
 `[data-cr-impact-record="<id>"]`. Source publication and observation periods must survive refresh,
 selection changes, print and export. Impacts, method or scope changes reset local review notes;
@@ -155,7 +155,7 @@ checking the same evidence again (`checkedAt` only) does not.
 ## Prioritized response actions
 
 Each shared console registers a pure `ConsoleResponse.registerPrioritizer(slug, derive)` function
-from its manifest `prioritySource`. It receives a cloned public adapter payload. It must not read
+from its manifest `prioritySource`. It receives a cloned public adapter payload with core-normalized evidence. It must not read
 native/private inputs, mutate provider evidence, fetch data or persist state. It returns a short
 list for each audience; all ten existing diagnostic chains remain available as detailed follow-up.
 
@@ -186,8 +186,34 @@ Different gauges, years, reporting hours, case definitions, or overlapping cohor
 into one urgency score. Public notices retain identity, actual/test status, message type, location
 scope, issue time, instructions and expiry; canceled, test and expired notices are not current warnings.
 
-The compact **Do next** preview and **Open prioritized checklist** button lead to ranked cards with
+The compact **Do next** preview and **View actions** button lead to ranked cards with
 place/record, why, timing, next step, escalation trigger/recipient, recheck condition and source dates.
 Detailed dimension actions remain below in a disclosure. Public/operator views, print and local JSON
 export retain the same ordering and evidence. Selectors: `#cr-open-priorities`, `[data-cr-priority]`,
 `.cr-priority-preview`, and `[data-cr-section="followup"]`.
+
+
+## Refresh consistency and local change summaries
+
+The same source/date/identity guard applies to diagnostics, conditional actions and impact records.
+Current observations require a parseable, calendar-valid elapsed date; named historical reporting
+periods remain acceptable planning context. Neither a future observation nor a duplicate evidence ID
+can make a detailed response applicable when the featured list withholds it.
+
+The shared panel follows the native console heading. On narrow screens its collapsed preview keeps
+the first action and a short evidence-gap summary; full place/timing/source information remains in
+the opened plan. Refresh preserves focused disclosures, links and controls by identity. Navigation
+respects reduced-motion preferences.
+
+`changesSincePreviousUpdate` in the local JSON export compares the previous evidence revision in this
+tab, without persistent storage. The matching disclosure names changed values/periods/quality and
+reordered or removed actions, retaining the current action's stated reason. A context/scenario switch
+is reported as a selection change, never a numerical comparison across populations. Check-time-only
+refreshes preserve the previous meaningful change summary and local review notes. This is a descriptive
+change log, not evidence that the checklist improves outcomes; that requires a separate study.
+
+`selectionKey` identifies the public geography, indicator, cohort definition or explicit scenario,
+independently of the observation/report date and source availability. Keep it stable across new
+reports and lost coverage so those changes remain visible as evidence changes. Change it when the
+user selects another public location/condition or a genuinely different comparison. Never include
+private form fields. Adapters without a key conservatively fall back to context equality.

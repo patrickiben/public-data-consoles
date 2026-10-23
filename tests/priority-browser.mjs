@@ -13,5 +13,46 @@ await test('operator steps, export, mobile and print retain priority timing and 
 await test('expiry while payload is unchanged removes stale action and clears its review note',async page=>{await page.locator('#cr-open-priorities').click();await page.locator('[data-cr-ack="public-A"]').check();await page.evaluate(n=>{Date.now=()=>n;document.dispatchEvent(new Event('visibilitychange'));},now+7200000);assert.equal(await page.locator('[data-cr-action="public-A"]').count(),0);assert.match(await page.locator('.cr-priority-preview').textContent(),/Verify gauge B/);assert.deepEqual((await page.evaluate(()=>ConsoleResponse.exportPlan())).acknowledgments,[]);});
 await test('printing reconciles expiry even before a visibility or minute tick',async page=>{await page.locator('#cr-open-priorities').click();await page.locator('[data-cr-ack="public-A"]').check();await page.evaluate(n=>{Date.now=()=>n;},now+7200000);await page.emulateMedia({media:'print'});await page.waitForFunction(()=>!document.querySelector('[data-cr-action="public-A"]'));assert.deepEqual((await page.evaluate(()=>ConsoleResponse.exportPlan())).acknowledgments,[]);await page.locator('[data-cr-metric="10"]').waitFor({state:'visible'});});
 await test('unsafe action descriptions render as inert text',async page=>{await page.evaluate(()=>{window.priorityFixture.evidence[0].label='<img src=x onerror=alert(1)>';document.dispatchEvent(new Event('visibilitychange'));});await page.locator('#cr-open-priorities').click();assert.equal(await page.locator('#console-response img').count(),0);assert.match(await page.locator('[data-cr-priority]').first().textContent(),/<img src=x/);});
+await test('check-only refresh preserves summary and source-link keyboard focus',async page=>{
+ await page.locator('[data-cr-section="plan"]>summary').focus();
+ await page.evaluate(()=>{priorityFixture.evidence[0].checkedAt=new Date(Date.now()+1000).toISOString();ConsoleResponse.set(priorityFixture);});
+ assert.equal(await page.evaluate(()=>document.activeElement.parentElement.dataset.crSection),'plan');
+ await page.locator('#cr-open-priorities').click();
+ const link=page.locator('[data-cr-action="public-A"] .cr-impact-sources a').first();await link.focus();const href=await link.getAttribute('href');
+ await page.evaluate(()=>{priorityFixture.evidence[0].checkedAt=new Date(Date.now()+2000).toISOString();ConsoleResponse.set(priorityFixture);});
+ assert.equal(await page.evaluate(()=>document.activeElement.getAttribute('href')),href);
+});
+await test('change summary explains readings and reordered actions without treating check-only refresh as new evidence',async page=>{
+ await page.evaluate(()=>{priorityFixture.evidence[1].value=15;ConsoleResponse.set(priorityFixture);});
+ let changes=(await page.evaluate(()=>ConsoleResponse.exportPlan())).changesSincePreviousUpdate;
+ assert.equal(changes.evidence.length,1);assert.equal(changes.evidence[0].id,'B');assert.match(changes.evidence[0].after,/15 ft/);
+ assert.ok(changes.priorities.some(a=>a.id==='public-B'&&a.change==='priority 2 → 1'&&a.reason.includes('15 ft')));
+ await page.evaluate(()=>{priorityFixture.evidence[1].checkedAt=new Date(Date.now()+3000).toISOString();ConsoleResponse.set(priorityFixture);});
+ assert.deepEqual((await page.evaluate(()=>ConsoleResponse.exportPlan())).changesSincePreviousUpdate,changes);
+ await page.evaluate(()=>{priorityFixture.context='Different corridor';ConsoleResponse.set(priorityFixture);});
+ changes=(await page.evaluate(()=>ConsoleResponse.exportPlan())).changesSincePreviousUpdate;
+ assert.equal(changes.selectionChanged,true);assert.deepEqual(changes.evidence,[]);
+});
+await test('reduced-motion preference uses immediate navigation and focuses the opened section',async page=>{
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await page.evaluate(()=>{Element.prototype.scrollIntoView=function(options){window.scrollOptions=options;};});
+ await page.locator('#cr-open-priorities').click();
+ assert.equal(await page.evaluate(()=>scrollOptions.behavior),'auto');
+ assert.equal(await page.evaluate(()=>document.activeElement.parentElement.dataset.crSection),'actions');
+});
+await test('identical source URLs retain the focused fact identity after refresh',async page=>{
+ await page.evaluate(()=>{priorityFixture.evidence.forEach(f=>f.source='https://water.noaa.gov/');ConsoleResponse.set(priorityFixture);});
+ await page.locator('[data-cr-section="plan"]>summary').click();await page.locator('[data-cr-section="evidence"]>summary').click();
+ await page.locator('[data-cr-evidence="B"] a').focus();
+ await page.evaluate(()=>{priorityFixture.evidence[0].checkedAt=new Date(Date.now()+5000).toISOString();ConsoleResponse.set(priorityFixture);});
+ assert.equal(await page.evaluate(()=>document.activeElement.closest('[data-cr-evidence]')?.dataset.crEvidence),'B');
+});
+await test('new reporting period for the same selection produces a data change, while a new location resets comparison',async page=>{
+ await page.evaluate(()=>{priorityFixture.selectionKey='corridor-A';priorityFixture.context='Corridor A · report one';ConsoleResponse.set(priorityFixture);priorityFixture.context='Corridor A · report two';priorityFixture.evidence[0].measuredAt=new Date(Date.now()-30000).toISOString();ConsoleResponse.set(priorityFixture);});
+ let changes=(await page.evaluate(()=>ConsoleResponse.exportPlan())).changesSincePreviousUpdate;
+ assert.equal(changes.selectionChanged,false);assert.equal(changes.evidence[0].id,'A');
+ await page.evaluate(()=>{priorityFixture.selectionKey='corridor-B';ConsoleResponse.set(priorityFixture);});
+ changes=(await page.evaluate(()=>ConsoleResponse.exportPlan())).changesSincePreviousUpdate;assert.equal(changes.selectionChanged,true);assert.deepEqual(changes.evidence,[]);
+});
 console.log('PASS '+count+' priority browser groups');
 }finally{await browser.close();}

@@ -221,6 +221,8 @@ const coverage=[];
 for(const slug of all){
   const {context,raw}=await adapterFixture(slug),p=context.ConsoleResponse.evaluate(raw),actions=p.actions.filter(a=>a.featured&&a.selected);
   check(slug+' maintained public payload has 2–5 complete applicable priorities per audience',()=>{
+    assert.ok(typeof raw.selectionKey==='string'&&raw.selectionKey.trim(),slug+' explicit stable public selection');
+    assert.equal(p.selectionKey,raw.selectionKey,slug+' core preserves public selection identity');
     assert.ok(!actions.some(a=>a.id.startsWith('priority-reader-')),'selector must not fail into core fallback');
     for(const track of ['public','operator']){
       const rows=actions.filter(a=>a.track===track);assert.ok(rows.length>=2&&rows.length<=5,slug+' '+track+' '+rows.length);

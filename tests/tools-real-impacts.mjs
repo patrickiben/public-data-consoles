@@ -56,6 +56,15 @@ for(const slug of ['prescription-savings','medical-cost-abroad','medical-debt-as
  pass(slug+' public reference works without reading any private form or result');
 }
 {
+ const f=fixture('usaid-consequence',{DATA:structuredClone(agency),budgetPublicRecords:[],budgetPublicStatus:null,feedStatus:{USAspending:'unavailable'}});
+ const p=f.plan,window=p.evidence.find(e=>e.id==='budget-window');
+ assert.equal(window.measuredAt,'FY'+agency.status.fy+' Q'+agency.status.q);assert.equal(window.quality,'historical');assert.match(window.source,/references\/toptier_agencies/);assert.match(window.note,/not an exact observation date/);
+ assert.equal(metric(p,5).status,'triggered');assert.equal(metric(p,5).current,false);assert.ok(p.actions.filter(a=>a.diagnosticIds.includes('metric-5')&&a.selected).every(a=>a.phase==='review'));
+ for(const status of [{fy:2026},{fy:2026,q:0},{fy:2026,q:5},{fy:2099,q:1},{fy:2026,q:true}]){f.ctx.DATA.status=status;assert.equal(metric(f.plan,5).status,'unknown');assert.equal(f.plan.evidence.find(e=>e.id==='budget-window').measuredAt,null);}
+ f.ctx.DATA.status={fy:'2026',q:'3'};assert.equal(f.plan.evidence.find(e=>e.id==='budget-window').measuredAt,'FY2026 Q3');assert.equal(metric(f.plan,5).status,'triggered');
+ pass('USAID reported fiscal quarter supports historical comparability review without invented observation/retrieval dates');
+}
+{
  const f=fixture('prescription-savings',{NADAC_DS:'dataset',NADAC_RELEASE:{dataset:'dataset',day:new Date(now).toISOString().slice(0,10),checked:now}});
  assert.equal(item(f.plan,'release-age').value,0);f.ctx.NADAC_RELEASE.day='2099-01-01';assert.equal(item(f.plan,'release-age').status,'unknown');f.ctx.NADAC_RELEASE={dataset:'other',day:'2026-10-01'};assert.equal(item(f.plan,'release-age').status,'unknown');
  pass('NADAC release age requires valid universal metadata, not a query result or future date');
@@ -89,6 +98,7 @@ try{
   for(const row of [...p.impacts.items,...p.impacts.records].filter(x=>x.status==='available')){assert.ok(row.sources.every(s=>s.source?.startsWith('https://')&&s.measuredAt));if(typeof row.value==='number')assert.ok(Number.isFinite(row.value)&&row.unit);}
   assert.ok(p.impacts.items.every(x=>x.kind!=='forecast'),'No future forecast is supplied by these reference records');
   if(['medical-cost-abroad','medical-debt-assistant','human-trafficking','prescription-savings'].includes(slug))assert.ok(p.diagnostics.every(x=>x.status==='unknown'));
+  if(slug==='usaid-consequence')assert.equal(metric(p,5).status,'triggered','Actual supported fiscal-period review must survive shared evidence validation');
   await page.locator('#cr-open-impacts').click();assert.equal(await page.locator('[data-cr-metric]').count(),10);
   await page.setViewportSize({width:390,height:844});assert.equal(await page.locator('#console-response').evaluate(e=>e.scrollWidth<=e.clientWidth),true,'response panel fits mobile');
  });
