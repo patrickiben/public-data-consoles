@@ -316,7 +316,7 @@ def build_snapshot(balance, interchange, captured_at: str, sources: list[dict], 
     if not edges:
         raise ValueError("No measured EIA interchange: refusing to replace the existing snapshot")
     data = {
-        "schemaVersion": 1, "capturedAt": captured_at, "demandThrough": hour(through),
+        "schemaVersion": 1, "refreshEveryHours": 6, "capturedAt": captured_at, "demandThrough": hour(through),
         "interchangeThrough": max(e[3] for e in edges.values()),
         "historyStart": hour(cutoff + dt.timedelta(hours=1)),
         "generatedBy": "scripts/refresh_grid_snapshot.py", "sources": sources,
@@ -324,8 +324,6 @@ def build_snapshot(balance, interchange, captured_at: str, sources: list[dict], 
         "history": dict(sorted(history.items())), "fuel": dict(sorted(fuel.items())),
         "interchange": sorted(edges.values(), key=lambda r: (r[3], r[0], r[1]), reverse=True),
     }
-    if automated:
-        data["refreshEveryHours"] = 6
     return data
 
 
@@ -490,7 +488,7 @@ def main() -> None:
     parser.add_argument("--captured-at", default=now.isoformat(timespec="seconds"), help="Original capture time when replaying an archive")
     parser.add_argument("--output", type=Path, default=ROOT / "consoles/us-grid-strain/index.html")
     parser.add_argument("--json-output", type=Path, help="Default: data/latest.json beside output HTML")
-    parser.add_argument("--automated", action="store_true", help="Enforce complete historical window and advertise scheduled six-hour refresh")
+    parser.add_argument("--automated", action="store_true", help="Enforce strict completeness and freshness validation")
     parser.add_argument("--github-output", type=Path, help="Append changed/measurement timestamps for GitHub Actions")
     args = parser.parse_args()
     captured = capture_time(args.captured_at)

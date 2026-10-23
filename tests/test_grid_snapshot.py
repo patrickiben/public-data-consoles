@@ -127,6 +127,17 @@ class AutomationTests(unittest.TestCase):
         first = grid.refresh(self.directory, grid.source_urls("2026_Jul_Dec"), self.CAPTURE, output, automated=True)
         return output, first
 
+    def test_manual_refresh_keeps_the_public_payload_contract(self):
+        self.complete_files()
+        output = self.output()
+        data = grid.refresh(self.directory, grid.source_urls("2026_Jul_Dec"), self.CAPTURE, output)
+        self.assertEqual(data["schemaVersion"], 1)
+        self.assertEqual(data["refreshEveryHours"], 6)
+        embedded = json.loads(grid.SNAPSHOT_PATTERN.search(output.read_text())[2])
+        published = json.loads((self.directory / "data/latest.json").read_text())
+        self.assertEqual(embedded, data)
+        self.assertEqual(published, data)
+
     def test_noop_preserves_bytes_capture_and_mtime(self):
         output, first = self.seeded()
         latest = self.directory / "data/latest.json"
