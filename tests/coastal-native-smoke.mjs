@@ -21,6 +21,7 @@ async function scenario(slug,options,verify){
   await context.route('**/*',async route=>{
    const u=new URL(route.request().url()),json=data=>route.fulfill({contentType:'application/json',body:JSON.stringify(data)});
    if(u.href===origin)return route.fulfill({contentType:'text/html',body:html});
+   if(u.hostname==='tile.openstreetmap.org')return options.mapTiles?route.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5f8AAAAASUVORK5CYII=','base64')}):route.abort();
    if(u.pathname.endsWith('/data/impact-context.json'))return route.fulfill({status:404,body:'fixture published update not present'});
    if(options.contextFixtures&&u.hostname==='ornl.opendatasoft.com')return json({results:[]});
    if(options.contextFixtures&&u.pathname.includes('/HAB_Current_Web_Layer/'))return json({features:[{attributes:{SampleDate_t:'2026-10-22',LOCATION:'Offline public sample',Abundance:'Not Present'},geometry:{x:-82.64,y:27.77}}]});
@@ -34,6 +35,26 @@ async function scenario(slug,options,verify){
  }finally{await context.close();}
 }
 try{
+ await scenario('coastal-water-resilience',{publicMap:true},async page=>{
+  assert.equal(await page.evaluate(()=>location.hash),'#inventory');assert.equal(await page.locator('#plan-data-scope').inputValue(),'city');
+  assert.ok(await page.locator('#public-coastline path').count()>0);assert.equal(await page.locator('#public-station-map circle').count(),82);
+  await page.waitForFunction(()=>document.querySelector('#public-map-status').textContent.includes('unavailable'));
+  assert.equal(await page.locator('#public-station-map image').count(),0,'failed map images removed, coastline retained');
+  assert.ok(await page.locator('#public-coastline path').count()>0);
+  const point=page.locator('#public-station-map circle').nth(10),id=await point.getAttribute('data-city-id');await point.press('Enter');assert.equal(await page.locator('#public-station-pick').inputValue(),id);
+  await page.locator('#public-map-in').click();const center=await page.locator('#public-station-map circle').last().evaluate(el=>[Number(el.getAttribute('cx')),Number(el.getAttribute('cy'))]);assert.deepEqual(center,[360,260]);assert.equal(await page.locator('#public-station-map circle').evaluateAll(points=>points.filter(p=>p.getAttribute('tabindex')==='0').every(p=>+p.getAttribute('cx')>=0&&+p.getAttribute('cx')<=720&&+p.getAttribute('cy')>=0&&+p.getAttribute('cy')<=520)),true);
+  await page.locator('#public-map-reset').click();assert.equal(await page.locator('#public-map-out').isDisabled(),true);
+  await page.locator('#public-station-search').fill('no-such-station');assert.equal(await page.locator('#public-station-map circle').count(),0);await page.locator('#public-station-search').fill('');
+  await page.locator('#tab-monitor').click();assert.equal(await page.locator('#c-net').isVisible(),false);await page.locator('#tab-exercise').click();assert.equal(await page.locator('#c-net').isVisible(),true);assert.match(await page.locator('#c-net').textContent(),/synthetic, no real locations/);
+  await page.locator('#tab-inventory').click();await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  if(process.env.DIMENSION_QA){await page.locator('#public-station-map').screenshot({path:process.env.DIMENSION_QA+'/coastal-offline-map.png'});}
+ });
+ await scenario('coastal-water-resilience',{mapTiles:true},async page=>{
+  await page.waitForFunction(()=>document.querySelector('#public-map-status').textContent.includes('Street map loaded'));
+  assert.equal(await page.locator('#public-map-place-labels').isVisible(),false);assert.ok(await page.locator('#public-station-map image').count()>0);const urls=await page.locator('#public-station-map image').evaluateAll(images=>images.map(img=>img.getAttribute('href')));assert.ok(urls.every(url=>/^https:\/\/tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png$/.test(url)));
+  const expected=JSON.parse(await readFile(new URL('consoles/coastal-water-resilience/data/basemap-land.json',root),'utf8'));assert.deepEqual(await page.locator('#coastal-basemap-land').evaluate(el=>JSON.parse(el.textContent)),expected);
+ });
+ await scenario('coastal-water-resilience',{file:true},async page=>{assert.equal(await page.locator('#public-station-map image').count(),0);assert.ok(await page.locator('#public-coastline path').count()>0);assert.match(await page.locator('#public-map-status').textContent(),/Embedded regional coastline/);});
  await scenario('coastal-water-resilience',{},async page=>{
   await page.evaluate(()=>CWR.setPage('plan'));assert.equal(await page.locator('#console-response').count(),0);
   const zone=await page.evaluate(()=>CWR.exportPlan().zoneModel);assert.deepEqual(zone.counts,{A:72,B:10,C:2,D:4,E:4,M:1,unassigned:37});assert.equal(zone.officialAddressLookup,'https://pinellas.gov/services/find-your-evacuation-zone');
