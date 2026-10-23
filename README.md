@@ -127,3 +127,26 @@ Run `python3 scripts/check_catalog.py` (Python 3.12+ and Node.js required). It c
 all console entrypoints appear in both the landing page and README, that their counts agree,
 and that every inline JavaScript program parses. It does not verify external feeds or establish
 medical, legal, financial, or predictive validity. GitHub Actions runs these checks on changes.
+
+## Refresh the embedded FRED snapshot
+
+The Resilience Telemetry macro data has a portable
+[snapshot and source manifest](consoles/resilience-telemetry/data/fred_snapshot.json),
+including official URLs, actual retrieval date and SHA-256 of each input CSV. Market prices and
+CAPE are separate snapshots. To update FRED, download all 19 official CSVs named by
+`python3 scripts/refresh_fred.py --list-series` from
+`https://fred.stlouisfed.org/graph/fredgraph.csv?id=SERIES` into one folder as `SERIES.csv`, then run:
+
+```bash
+python3 scripts/refresh_fred.py --csv-dir /path/to/fred-csv --retrieved YYYY-MM-DD
+python3 scripts/refresh_fred.py --check
+python3 scripts/check_catalog.py
+python3 -m unittest discover -s tests -v
+```
+
+Use the date the CSVs were actually retrieved. The refresh is offline, validates every file before
+writing, preserves pinned starts and the four daily series' every-fifth-observation stride, retains
+older ICE spread history when the source window is truncated, and keeps claims in thousands.
+Missing files, invalid numbers, shifted sampling, stale tails and interior deletions stop the refresh
+without changing packaged outputs. Review the diff and browser rendering before publishing; the
+script updates the FRED data/vintage labels and portable provenance, never market data or algorithms.

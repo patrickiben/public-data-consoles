@@ -24,3 +24,5 @@ NOTES.local.*
 .env
 .env.*
 secrets.*
+
+__pycache__/
