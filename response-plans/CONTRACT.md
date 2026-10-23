@@ -107,3 +107,47 @@ remain reachable, including on mobile. The floating shortcut opens the planner a
 checklist. Print mode temporarily opens every response section and restores the user's view.
 connect observes scoped mutations, relevant controls, visible-minute ticks and visibility changes;
 it ignores its own writes and does not require a page reload to mark evidence stale.
+
+## Public-data impacts
+
+Every shared adapter supplies `impacts` for the current selection, even when the only supported
+content is dated public reference material and named unknown inputs:
+
+```js
+impacts: {
+  title, scope, summary,
+  items: [{id, label, value, unit, kind: 'observed|forecast|context|scenario',
+    evidenceIds: [], method, note, validAt}],
+  records: [{id, label, summary, kind, evidenceIds: [], validAt}],
+  limitations: []
+}
+```
+
+- Link every item/record to unique evidence IDs with a public HTTP(S) source and observation or
+  reporting period. Checking/download time alone is not a measurement period. Preserve source
+  identities, scope, units, definitions and dates in the local JSON export.
+- Numeric items require a finite value and unit. Missing is `null`, never zero. A derived item links
+  every required input; one missing, stale, undated or ambiguous dependency withholds the item.
+- `observed` and `forecast` require applicable current evidence. Historical reports are `context`;
+  a same-hour day-ahead forecast benchmark for an elapsed hour is context, not a future forecast.
+  Optional `validAt` is a forecast validity endpoint. An invalid or elapsed endpoint withholds it,
+  even if the report is otherwise fresh. Visible-minute/visibility refresh and export reconcile
+  expiry; a validity transition resets local review notes without a new source response.
+- A demo source or explicit scenario forces a practice label. Official model estimates retain a
+  modeled basis. An agency estimate of exposure is not a measured loss. Context can include rates,
+  counts and inventories, but must not become a future outcome or intervention-benefit estimate.
+- Compute population-based counts only when the definition, denominator population and year match.
+  Do not multiply age-standardized rates, cohort-specific risks or censored percentages by total
+  population. Avoid aggregating overlapping units, nested bands, different report hours or periods.
+- Unsupported personal, hydraulic, electrical, operational or causal inputs remain named gaps.
+  Do not import personal queries/records into the shared evidence or export.
+- The UI displays `triggered` as REVIEW and `clear` as CONTEXT · condition not met. These internal
+  compatibility states select checklist actions; neither is an all-clear or a safety certificate.
+  Unknown diagnostic values and unsupported impact conclusions are withheld from the displayed
+  estimate. Original source evidence remains inspectable with its quality label.
+
+The compact panel includes a visible **Review impacts and source records** button. Integration
+selectors: `#cr-open-impacts`, `[data-cr-section="impacts"]`, `[data-cr-impact="<id>"]`, and
+`[data-cr-impact-record="<id>"]`. Source publication and observation periods must survive refresh,
+selection changes, print and export. Impacts, method or scope changes reset local review notes;
+checking the same evidence again (`checkedAt` only) does not.

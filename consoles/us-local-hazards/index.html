@@ -71,13 +71,16 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
 #console-response button{font:inherit;font-size:13px;padding:8px 12px;border:1px solid #6d8b9e;border-radius:6px;background:#173343;color:#f1f8fc;cursor:pointer}#console-response button[aria-pressed=true]{background:#165e6b;border-color:#6de3e7}
 #console-response details{margin:9px 0;border:1px solid #3e596b;border-radius:7px;padding:10px}#console-response summary{cursor:pointer;font-weight:650;list-style:revert}#console-response details>p,#console-response details>ul{padding:2px 7px}
 #console-response .cr-action{margin:10px 0;padding:13px;border:1px solid #3f6475;border-radius:7px;background:#142b39}#console-response .cr-action label{display:block;color:#c7dce7;font-size:12px;margin-top:10px}#console-response input[type=checkbox]{margin-right:6px;width:16px;height:16px;vertical-align:middle}
-#console-response .cr-diagnostic{padding:10px;border-left:3px solid #698396;background:#162d3b}#console-response .cr-triggered{border-color:#e5b35a}#console-response .cr-clear{border-color:#55bda0}#console-response .cr-unknown,#console-response .cr-quality{color:#f0cc87}
+#console-response .cr-diagnostic{padding:10px;border-left:3px solid #698396;background:#162d3b}#console-response .cr-triggered{border-color:#e5b35a}#console-response .cr-clear{border-color:#80b4cf}#console-response .cr-unknown,#console-response .cr-quality{color:#f0cc87}
+#console-response .cr-impact-preview{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:10px 0}#console-response .cr-impact-preview span{flex:1;min-width:180px}#console-response button,#console-response summary,#console-response select{min-height:44px}#console-response summary{align-content:center}
+#console-response .cr-impact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;margin:12px 0}#console-response .cr-impact-item,#console-response .cr-impact-records article{padding:14px;border:1px solid #486377;border-radius:9px;background:#142b39;min-width:0;overflow-wrap:anywhere}#console-response .cr-impact-value{font-size:20px;font-weight:650;color:#b1edf0}#console-response .cr-impact-sources{padding-left:18px;font-size:12px;color:#b2c6d3}#console-response .cr-impact-sources li{margin:7px 0}#console-response .cr-impact-records{display:grid;gap:10px;max-height:38rem;overflow:auto;padding:2px}
 #console-response .cr-table{overflow-x:auto}#console-response table{width:100%;border-collapse:collapse;color:inherit;font-size:12px}#console-response th,#console-response td{text-align:left;padding:8px;border-bottom:1px solid #3e596b}
 #console-response :focus-visible,#console-response-shortcut:focus-visible{outline:3px solid #f4d57d;outline-offset:3px}
 #console-response select{font:inherit;color:#e2edf4;background:#173343;border:1px solid #6d8b9e;border-radius:4px;padding:5px;max-width:100%}
 #console-response-shortcut{position:fixed;right:14px;bottom:14px;z-index:10020;border:1px solid #87d5e0;border-radius:24px;padding:10px 15px;background:#103f50;color:#f1f8fc;font:600 13px system-ui,sans-serif;box-shadow:0 2px 12px #0007;text-decoration:none}
 @media(max-width:640px){#console-response{margin:10px 6px;padding:13px}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:19px}}
 @media print{#console-response-shortcut,#console-response .cr-toolbar{display:none!important}#console-response{background:white!important;color:#111!important;max-width:none;border:1px solid #555}#console-response *{color:#111!important;box-shadow:none!important}#console-response details{display:block!important}#console-response details>*{display:block!important}#console-response .cr-action{break-inside:avoid;background:white!important}#console-response .cr-badge{border-color:#555}}
+@media print{#console-response .cr-impact-records{max-height:none;overflow:visible}#console-response .cr-impact-item,#console-response .cr-impact-records article{break-inside:avoid;background:white!important}#console-response .cr-impact-preview button{display:none!important}}
 </style>
 <script>
 (function (root) {
@@ -107,6 +110,51 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
     return value;
   }
   function signature(value) { return JSON.stringify(canonical(value)); }
+  function evaluateImpacts(input, facts) {
+    var supplied = input.impacts || {}, byFact = new Map(), duplicates = new Set();
+    facts.forEach(function (f) { if (byFact.has(f.id)) duplicates.add(f.id); byFact.set(f.id, f); });
+    function normalize(rows, records) {
+      if (!Array.isArray(rows)) return [];
+      var seen = new Set(), duplicateRows = new Set();
+      rows.forEach(function (r) { if (r && seen.has(r.id)) duplicateRows.add(r.id); if (r) seen.add(r.id); });
+      return rows.map(function (row) {
+        row = row || {};
+        var ids = Array.isArray(row.evidenceIds) ? Array.from(new Set(row.evidenceIds)) : [];
+        var reasons = [], linked = ids.map(function (id) { return byFact.get(id); }).filter(Boolean);
+        var kind = ['observed', 'forecast', 'context', 'scenario'].includes(row.kind) ? row.kind : 'context';
+        if (!['observed', 'forecast', 'context', 'scenario'].includes(row.kind)) reasons.push('The impact basis is not declared.');
+        if (typeof row.id !== 'string' || !row.id.trim() || duplicateRows.has(row.id)) reasons.push('A unique public record identity is required.');
+        if (!ids.length) reasons.push('No supporting public evidence is linked.');
+        ids.forEach(function (id) {
+          var f = byFact.get(id);
+          if (!f || duplicates.has(id)) reasons.push('Missing or ambiguous evidence: ' + text(id) + '.');
+          else {
+            if (['missing', 'stale'].includes(f.quality)) reasons.push(f.label + ': missing or stale evidence.');
+            if (!f.source) reasons.push(f.label + ': public source link is unavailable.');
+            if (!text(f.measuredAt).trim()) reasons.push(f.label + ': observation/reporting period is unavailable.');
+            if (['observed', 'forecast'].includes(kind) && f.quality !== 'current') reasons.push(f.label + ': historical context cannot establish a current impact.');
+          }
+        });
+        var practice = !!input.scenario || linked.some(function (f) { return f.basis === 'demo'; }) || kind === 'scenario';
+        if (practice) kind = 'scenario';
+        if (!records && !(typeof row.value === 'number' && Number.isFinite(row.value) || typeof row.value === 'string' && row.value.trim())) reasons.push('A supported finite value or documented description is unavailable.');
+        if (!records && typeof row.value === 'number' && !text(row.unit).trim()) reasons.push('The numeric unit is unavailable.');
+        if (records && !text(row.summary).trim()) reasons.push('A documented record description is unavailable.');
+        if (kind === 'forecast' && row.validAt != null && (!Number.isFinite(Date.parse(row.validAt)) || Date.parse(row.validAt) <= Date.now())) reasons.push('The forecast validity time is missing, invalid or elapsed.');
+        var quality = linked.some(function (f) { return f.quality === 'missing'; }) || !linked.length ? 'missing' : linked.some(function (f) { return f.quality === 'stale'; }) ? 'stale' : linked.some(function (f) { return f.quality === 'historical'; }) ? 'historical' : 'current';
+        var basis = practice ? 'demo' : kind === 'forecast' || linked.some(function (f) { return f.basis === 'modeled'; }) ? 'modeled' : linked.some(function (f) { return f.basis === 'interpretive'; }) ? 'interpretive' : 'measured';
+        return { id: text(row.id), label: text(row.label || row.id), value: records ? undefined : reasons.length ? null : row.value,
+          unit: text(row.unit), kind: kind, status: reasons.length ? 'unknown' : 'available', quality: quality, basis: basis, practice: practice,
+          summary: reasons.length ? '' : text(row.summary), method: text(row.method), note: text(row.note), validAt: row.validAt == null ? null : text(row.validAt),
+          evidenceIds: ids, reasons: reasons, sources: linked.map(function (f) { return { id: f.id, label: f.label, source: f.source, measuredAt: f.measuredAt || null, checkedAt: f.checkedAt || null, quality: f.quality, basis: f.basis }; }) };
+      });
+    }
+    return { title: text(supplied.title || 'Public-data impacts and context'), scope: text(supplied.scope || input.context || 'Current console selection'),
+      summary: text(supplied.summary || 'Quantified impacts require applicable public evidence. Review the supported records and explicit input gaps.'),
+      items: normalize(supplied.items, false), records: normalize(supplied.records, true),
+      limitations: Array.isArray(supplied.limitations) ? supplied.limitations.map(text) : ['No source-backed impact estimate is supplied for this selection.'] };
+  }
+  function diagnosticAssessment(d) { return d.status === 'unknown' ? 'UNKNOWN' : d.status === 'triggered' ? 'REVIEW' : 'CONTEXT · condition not met'; }
   function evaluate(input) {
     input = input || {};
     var facts = (Array.isArray(input.evidence) ? input.evidence : []).map(function (fact) {
@@ -148,6 +196,7 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
       return d;
     });
     diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
+    diagnostics.forEach(function (d) { if (d.status === 'unknown') d.value = null; });
     var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
     var actions = (Array.isArray(input.actions) ? input.actions : []).map(function (action) {
       var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
@@ -164,7 +213,7 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
       a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl); return a;
     });
     return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
-      evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null,
+      evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null, impacts: evaluateImpacts(input, facts),
       limitations: Array.isArray(input.limitations) ? input.limitations.map(text) : [], scenario: !!input.scenario };
   }
   function badge(basis) { return '<span class="cr-badge">' + esc(basisNames[basis] || basisNames.interpretive) + '</span>'; }
@@ -176,11 +225,16 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
     if (!panel.dataset.mounted) {
       panel.dataset.mounted = 'true';
       panel.addEventListener('click', function (event) {
-        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print]');
+        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact]');
         if (!button) return;
         if (button.dataset.crTrack) { track = button.dataset.crTrack; render(); }
         if (button.hasAttribute('data-cr-print')) root.print();
         if (button.hasAttribute('data-cr-export')) download();
+        if (button.hasAttribute('data-cr-open-impact')) {
+          panel.querySelector('[data-cr-section="plan"]').open = true;
+          var impacts = panel.querySelector('[data-cr-section="impacts"]');
+          if (impacts) { impacts.open = true; impacts.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }
       });
       panel.addEventListener('change', function (event) {
         var metric = Number(event.target.dataset.crAssess);
@@ -238,16 +292,32 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
     panel.dataset.rendered = 'true';
     var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
     h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
-    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open ten-parameter checklist and evidence</summary>';
+    var impactRows = plan.impacts.items.concat(plan.impacts.records), availableImpacts = impactRows.filter(function (r) { return r.status === 'available'; }).length;
+    h += '<div class="cr-impact-preview"><span>' + availableImpacts + ' available impact/context ' + (availableImpacts === 1 ? 'item' : 'items') + ' · ' + impactRows.filter(function (r) { return r.status === 'unknown'; }).length + ' unavailable. Scope: ' + esc(plan.impacts.scope) + '.</span><button id="cr-open-impacts" data-cr-open-impact>Review impacts and source records</button></div>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open public-data impacts, ten-parameter checklist and evidence</summary>';
     h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
     function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
+    function impactSources(row) {
+      return '<ul class="cr-impact-sources">' + row.sources.map(function (s) { return '<li>' + sourceLink(s.source, s.label || s.id) + ' · observed/reported: ' + esc(s.measuredAt || 'not supplied') + ' · ' + esc(s.quality) + (s.checkedAt ? '; checked: ' + esc(s.checkedAt) : '') + '</li>'; }).join('') + '</ul>';
+    }
+    function impactBadge(row) { return row.status === 'unknown' ? '<span class="cr-badge cr-unknown">UNKNOWN' + (row.practice ? ' · PRACTICE ONLY' : ' · inputs incomplete') + '</span>' : badge(row.basis); }
+    function impactReasons(row) { return row.reasons.length ? '<details data-cr-section="impact-gaps-' + esc(row.id) + '"' + (open.has('impact-gaps-' + row.id) ? ' open' : '') + '><summary>Why this is unavailable</summary><p class="cr-unknown">' + esc(row.reasons.join(' ')) + '</p></details>' : ''; }
+    var impactHTML = '<h3>' + esc(plan.impacts.title) + '</h3><p><b>Current scope:</b> ' + esc(plan.impacts.scope) + '</p><p>' + esc(plan.impacts.summary) + '</p><p class="cr-note">Observations, official forecasts and historical context retain their own dates and meanings. A public-data screen alone does not establish an outage, individual harm or completed response.</p><div class="cr-impact-grid">';
+    plan.impacts.items.forEach(function (r) {
+      impactHTML += '<article class="cr-impact-item" data-cr-impact="' + esc(r.id) + '"><h4>' + esc(r.label) + '</h4>' + impactBadge(r) + ' <span class="cr-badge">' + esc(r.kind.toUpperCase()) + '</span><p class="cr-impact-value">' + (r.status === 'unknown' ? 'Not assessable' : esc(typeof r.value === 'number' ? r.value.toLocaleString(undefined, { maximumSignificantDigits: 6 }) : r.value) + (r.unit ? ' ' + esc(r.unit) : '')) + '</p>' + (r.validAt ? '<p>' + (r.kind === 'forecast' ? 'Forecast valid: ' : 'Record / valid time: ') + esc(r.validAt) + '</p>' : '') + (r.method ? '<p><b>Method:</b> ' + esc(r.method) + '</p>' : '') + (r.note ? '<p>' + esc(r.note) + '</p>' : '') + impactReasons(r) + impactSources(r) + '</article>';
+    });
+    impactHTML += '</div>';
+    if (plan.impacts.records.length) impactHTML += '<h3>Public records behind this view</h3><div class="cr-impact-records">' + plan.impacts.records.map(function (r) { return '<article data-cr-impact-record="' + esc(r.id) + '"><h4>' + esc(r.label) + '</h4><p class="cr-note">Record ID: ' + esc(r.id) + '</p>' + impactBadge(r) + ' <span class="cr-badge">' + esc(r.kind.toUpperCase()) + '</span><p>' + (r.status === 'unknown' ? '<b>Not assessable.</b> ' : '') + esc(r.status === 'unknown' ? 'This record cannot support the selected impact with the available evidence.' : r.summary) + '</p>' + (r.validAt ? '<p>' + (r.kind === 'forecast' ? 'Forecast valid: ' : 'Record / valid time: ') + esc(r.validAt) + '</p>' : '') + impactReasons(r) + impactSources(r) + '</article>'; }).join('') + '</div>';
+    if (!impactRows.length) impactHTML += '<p class="cr-unknown">No applicable public impact records or quantified projection are available for this selection.</p>';
+    impactHTML += '<ul>' + plan.impacts.limitations.map(function (limit) { return '<li>' + esc(limit) + '</li>'; }).join('') + '</ul>';
+    h += section('impacts', 'Projected impacts and public-data context', impactHTML, 'interpretive');
     var actionHTML = '<p>These are planning prompts, not instructions to dispatch, switch equipment, prescribe, trade or evacuate. ' + (track === 'operator' ? 'Use your organization’s verified telemetry, SOP and decision authority.' : 'Follow current official instructions for your location.') + '</p>';
     ['verify', 'prepare', 'respond', 'review'].forEach(function (phase) {
       var list = selected.filter(function (a) { return a.phase === phase; }); if (!list.length) return;
       actionHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
       list.forEach(function (a) {
         var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
-        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + d.status + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
       });
     });
     if (!selected.length) actionHTML += '<p class="cr-unknown">No supported conditional action is available for this track. Verify missing evidence and consult the responsible authority; this is not an all-clear.</p>';
@@ -260,7 +330,7 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
       return '<h3>' + ({ comparison: 'Comparison and balance', structure: 'Structure and coverage', spillover: 'Spillover and dependence' })[pillar] + '</h3>' + (ds.length ? ds.map(function (d) {
         var related = plan.actions.filter(function (a) { return a.track === track && a.diagnosticIds.includes(d.id); });
         var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
-        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + (d.metricId ? '#' + d.metricId + ' ' + esc(d.canonicalLabel) : esc(d.label)) + ' — ' + esc(d.status.toUpperCase()) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc((typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + (d.metricId ? '#' + d.metricId + ' ' + esc(d.canonicalLabel) : esc(d.label)) + ' — ' + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
       }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
     }).join('');
     h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');
@@ -278,14 +348,18 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
     if (focused) { var nextFocus = doc.getElementById(focused); if (nextFocus) nextFocus.focus({ preventScroll: true }); }
   }
   function set(input) {
-    var nextRevision = signature(input || {});
+    // A forecast can expire while its source payload is unchanged. Make that
+    // transition an evidence revision on the existing visible-minute refresh.
+    var impact = input && input.impacts || {};
+    var clockState = (impact.items || []).concat(impact.records || []).filter(function (r) { return r && r.kind === 'forecast' && r.validAt != null; }).map(function (r) { var at = Date.parse(r.validAt); return [r.id, Number.isFinite(at) && at > Date.now()]; });
+    var nextRevision = signature([input || {}, clockState]);
     if (nextRevision === revision) return;
     function evidenceOnly(value) {
       if (Array.isArray(value)) return value.map(evidenceOnly);
       if (value && typeof value === 'object') { var out = {}; Object.keys(value).forEach(function (key) { if (key !== 'checkedAt') out[key] = evidenceOnly(value[key]); }); return out; }
       return value;
     }
-    var nextEvidence = signature(evidenceOnly(input || {}));
+    var nextEvidence = signature([evidenceOnly(input || {}), clockState]);
     if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
     evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
   }
@@ -320,6 +394,7 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
     return function () { stopped = true; root.clearTimeout(timer); root.clearInterval(interval); if (observer) observer.disconnect(); if (doc) { doc.removeEventListener('visibilitychange', visible); doc.removeEventListener('change', changed); doc.removeEventListener('input', changed); } };
   }
   function exportPlan() {
+    if (payload) set(payload); // Reconcile expiry even before the next visible-minute tick.
     return { exportedAt: new Date().toISOString(), note: 'Local planning review; not a record of completed operations.',
       track: track, plan: currentPlan(), acknowledgments: Array.from(acknowledgments) };
   }
@@ -397,7 +472,7 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
       }
     });
     return { slug: spec.slug, title: spec.title, context: spec.context,
-      scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics,
+      scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics, impacts: spec.impacts,
       actions: [...(spec.baseline || []), ...actions], network: spec.network,
       limitations: spec.limitations || [] };
   }
@@ -624,7 +699,7 @@ async function loadAlerts(lat,lon,runId){const el=$('alerts'),checkedAt=new Date
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);let j;
  try{const r=await fetch('https://api.weather.gov/alerts/active?point='+lat+','+lon,{headers:UA,signal:controller.signal});if(!r.ok)throw new Error('NWS HTTP '+r.status);j=await r.json();}finally{clearTimeout(timer);}
  if(!sameLocation(lat,lon,runId))return;if(!Array.isArray(j.features))throw new Error('Missing alert collection');
- const fs=j.features.filter(f=>f&&f.properties&&(!f.properties.expires||Date.parse(f.properties.expires)>Date.now()));
+ const fs=j.features.filter(f=>f&&f.properties&&(!f.properties.status||f.properties.status==='Actual')&&f.properties.messageType!=='Cancel'&&(!f.properties.expires||Date.parse(f.properties.expires)>Date.now()));
  responseState.alerts={features:fs,checkedAt,updated:j.updated||null};
  const sev={Extreme:'alert',Severe:'alert',Moderate:'watch',Minor:'watch'};
  fs.forEach(f=>{if(f.geometry)L.geoJSON(f.geometry,{style:{color:C.alert,weight:1,fillColor:C.alert,fillOpacity:.1}}).addTo(G.poly);});
@@ -707,7 +782,7 @@ async function loadWater(lat,lon,runId){const el=$('water');let flood=null,tide=
  try{if(!coops){const j=await sourceJSON('https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=waterlevels');if(!Array.isArray(j.stations))throw new Error('Missing stations');coops=j.stations;}if(!sameLocation(lat,lon,runId))return;
   let best=null,bd=55;for(const station of coops){const distance=airMiles(lat,lon,station.lat,station.lng);if(distance<bd){best=station;bd=distance;}}
   if(best){const j=await sourceJSON('https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=latest&station='+best.id+'&product=water_level&datum=MLLW&units=english&time_zone=gmt&format=json&application=hazards_near_you');if(!sameLocation(lat,lon,runId))return;
-   const row=j.data?.[0],stamp=row?.t?row.t.replace(' ','T')+'Z':null,value=number(row?.v);tide={name:best.name,value:recent(stamp,2)?value:null,observedAt:stamp,mi:Math.round(bd),datum:'MLLW',units:'ft'};
+   const row=j.data?.[0],stamp=row?.t?row.t.replace(' ','T')+'Z':null,value=number(row?.v);tide={id:String(best.id),name:best.name,value:recent(stamp,2)?value:null,observedAt:stamp,mi:Math.round(bd),datum:'MLLW',units:'ft'};
   }success++;
  }catch(e){failures.push('NOAA coastal water level unavailable');}
  try{const d=0.4,j=await sourceJSON('https://api.water.noaa.gov/nwps/v1/gauges?srid=EPSG_4326&bbox.xmin='+(lon-d)+'&bbox.xmax='+(lon+d)+'&bbox.ymin='+(lat-d)+'&bbox.ymax='+(lat+d));if(!sameLocation(lat,lon,runId))return;if(!Array.isArray(j.gauges))throw new Error('Missing gauge list');gauges=j.gauges;success++;
@@ -735,8 +810,8 @@ async function loadFire(lat,lon,runId){const el=$('fire');try{const d=1.2;
  const j=await sourceJSON('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/0/query?geometry='+(lon-d)+','+(lat-d)+','+(lon+d)+','+(lat+d)+'&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=IncidentName,DailyAcres,PercentContained,ICS209ReportDateTime,ModifiedOnDateTime&returnGeometry=true&outSR=4326&f=geojson');if(!sameLocation(lat,lon,runId))return;
  const fs=j.features.filter(f=>f.geometry?.type==='Point'&&airMiles(lat,lon,f.geometry.coordinates[1],f.geometry.coordinates[0])<=80).sort((a,b)=>(number(b.properties.DailyAcres)||0)-(number(a.properties.DailyAcres)||0));
  for(const f of fs){const c=f.geometry.coordinates,p=f.properties;L.circleMarker([c[1],c[0]],{radius:5,fillColor:C.high,color:'#fff',weight:.6,fillOpacity:.75}).bindPopup('Source-reported fire '+airEscape(p.IncidentName||'unnamed')+'; containment '+(number(p.PercentContained)!=null?number(p.PercentContained)+'%':'unavailable')).addTo(G.pt);}
- const times=fs.map(f=>f.properties.ICS209ReportDateTime||f.properties.ModifiedOnDateTime).filter(v=>typeof v==='number'&&Number.isFinite(v)),stamp=times.length?new Date(Math.max(...times)).toISOString():null;
  const current=fs.filter(f=>{const t=f.properties.ICS209ReportDateTime||f.properties.ModifiedOnDateTime;return typeof t==='number'&&Number.isFinite(t)&&recent(new Date(t).toISOString(),72);});
+ const times=current.map(f=>f.properties.ICS209ReportDateTime||f.properties.ModifiedOnDateTime),stamp=times.length?new Date(Math.max(...times)).toISOString():null;
  responseState.fire={count:current.length,inventoryCount:fs.length,excludedOldOrUndatedCount:fs.length-current.length,checkedAt:new Date().toISOString(),observedAt:stamp,quality:fs.length&&!current.length?'stale':'current',names:current.slice(0,3).map(f=>f.properties.IncidentName)};
  lvl('fire',fs.length?fs.length+' reported points':'no points returned',fs.length?C.watch:C.dim);
  el.innerHTML='<p>'+fs.length+' source-reported fire incident locations within 80 miles; '+current.length+' have a report/update within 72 hours. '+(fs.length-current.length)+' old/undated locations are excluded from current response counts. Point proximity is not a fire perimeter, threatened property or evacuation instruction.</p>'+fs.slice(0,3).map(f=>{const p=f.properties,acres=number(p.DailyAcres),contained=number(p.PercentContained),time=p.ICS209ReportDateTime||p.ModifiedOnDateTime,when=typeof time==='number'&&Number.isFinite(time)?new Date(time).toISOString():null;return '<p><b>'+airEscape(p.IncidentName||'Unnamed incident')+'</b> · '+(acres!=null?acres.toLocaleString()+'ac':'area unavailable')+' · '+(contained!=null?contained+'% contained':'containment unavailable')+' · reported/updated '+airEscape(when||'unavailable')+(!recent(when,72)?' (old/undated; not a current response count)':'')+'</p>';}).join('')+sourceNote('NIFC/Esri source report; verify current incident instructions',stamp);
@@ -792,7 +867,7 @@ function chips(){const items=[
   ['alerts','Warnings'],['air','Air'],['water','Flood'],['fire','Fire'],['spc','Storms'],['quake','Quakes'],['drought','Drought'],['tropics','Tropics']];
  $('chips').innerHTML=items.map(([id,lab])=>{const e=$('lvl-'+id);const t=e&&e.style.display!=='none'?e.textContent:'…';const col=e?e.style.color:C.dim;
   return `<span class="chip"><span class="dot" style="background:${col||C.dim}"></span>${lab} <small>${t}</small></span>`;}).join('');}
-async function loadLocation(loc){const same=mode==='local'&&here?.lat===loc.lat&&here?.lon===loc.lon;mode='local';here={name:loc.name,lat:loc.lat,lon:loc.lon,runId:++localRun};const runId=here.runId;feedFailures.clear();if(!same){Object.keys(lastGood).forEach(k=>delete lastGood[k]);Object.assign(responseState,{alerts:null,air:null,water:null,spc:null,fire:null,drought:null,volcano:null,tropics:null});}Object.assign(responseState,{context:loc.name,loading:true});
+async function loadLocation(loc){const same=mode==='local'&&here?.lat===loc.lat&&here?.lon===loc.lon;mode='local';here={name:loc.name,lat:loc.lat,lon:loc.lon,runId:++localRun};const runId=here.runId;feedFailures.clear();if(!same){Object.keys(lastGood).forEach(k=>delete lastGood[k]);Object.assign(responseState,{alerts:null,air:null,water:null,spc:null,fire:null,drought:null,volcano:null,tropics:null});}Object.assign(responseState,{context:loc.name,location:{lat:loc.lat,lon:loc.lon},loading:true});
  G.nat.clearLayers();G.pt.clearLayers();G.flood.clearLayers();G.poly.clearLayers();
  $('place').innerHTML='<i class="ti ti-map-pin"></i> Showing hazards near <b>'+loc.name+'</b>';
  if(!same)buildCards();
@@ -820,11 +895,11 @@ loadNational();
 (function(){
  'use strict';
  function read(){
-  const s=window.LocalHazardsResponse||{},rawAlerts=s.alerts,a=rawAlerts?{...rawAlerts,features:(rawAlerts.features||[]).filter(f=>!f.properties?.expires||Date.parse(f.properties.expires)>Date.now())}:null,air=s.air,w=s.water,evidence=[],diagnostics=[],actions=[];
+  const s=window.LocalHazardsResponse||{},rawAlerts=s.alerts,a=rawAlerts?{...rawAlerts,features:(rawAlerts.features||[]).filter(f=>f?.properties&&(!f.properties.status||f.properties.status==='Actual')&&f.properties.messageType!=='Cancel'&&(!f.properties.expires||Date.parse(f.properties.expires)>Date.now()))}:null,air=s.air,w=s.water,evidence=[],diagnostics=[],actions=[];
   const fresh=(stamp,hours)=>Number.isFinite(Date.parse(stamp))&&Date.now()-Date.parse(stamp)>=-3600000&&Date.now()-Date.parse(stamp)<=hours*3600000;
   const recent=stamp=>fresh(stamp,0.5);
   const alertsKnown=!!a&&recent(a.checkedAt),airKnown=air&&air.quality==='current'&&Number.isFinite(air.aqi)&&fresh(air.observedAt,6);
-  evidence.push({id:'alerts',label:'Active official NWS alerts at selected point',value:a?a.features.length:'Unavailable',unit:'alerts',measuredAt:a?.updated||null,checkedAt:a?.checkedAt,basis:'measured',quality:alertsKnown?'current':a?'stale':'missing',source:'https://api.weather.gov/alerts/active',note:'Query result for this point; checked time is not an alert issue time. Official alert instructions take precedence.'});
+  evidence.push({id:'alerts',label:'Active official NWS alerts at selected point',value:a?a.features.length:'Unavailable',unit:'alerts',measuredAt:a?.updated||a?.checkedAt||null,checkedAt:a?.checkedAt,basis:'measured',quality:alertsKnown?'current':a?'stale':'missing',source:'https://api.weather.gov/alerts/active',note:'Query result as of its collection update/check time at this point; that time is not an individual alert issue time. Official alert instructions take precedence.'});
   evidence.push({id:'air',label:air?.name?'AirNow reporting area: '+air.name:'AirNow reporting-area observation',value:air?.aqi??'Unavailable',unit:'AQI',measuredAt:air?.observedAt,checkedAt:air?.checkedAt,basis:'measured',quality:airKnown?'current':air?.quality||'missing',source:'https://files.airnowtech.org/airnow/today/reportingarea.dat',note:air?'Preliminary '+air.pollutant+' observation; reporting-area centroid approximately '+Math.round(air.distance)+' miles away. This is not an address-level monitor.':'No current AQI substituted.'});
   evidence.push({id:'fema',label:'FEMA flood-zone planning context',value:w?.zone||'Unavailable',checkedAt:w?.checkedAt,basis:'measured',quality:w?.zone?'historical':'missing',source:'https://msc.fema.gov/portal/home',note:'Mapped susceptibility, not a current flood or evacuation trigger.'});
   diagnostics.push({id:'warnings',pillar:'comparison',label:'Official alerts need local review',status:alertsKnown?(a.features.length?'triggered':'clear'):'unknown',evidenceIds:['alerts'],rule:'Any unexpired NWS alert returned for the point; use its severity, urgency, certainty and instructions.',explanation:'Different official hazards retain their own scales; the console does not add unlike risk scores.'});
@@ -849,6 +924,26 @@ loadNational();
   for(const item of additions){evidence.push({id:item.id,label:item.label,value:item.value??'Unavailable',unit:item.unit,measuredAt:item.time,checkedAt:item.data?.checkedAt,basis:item.id==='spc'?'modeled':'measured',quality:item.known?(item.scope?'historical':'current'):item.data?'stale':'missing',source:item.source,note:item.rule});diagnostics.push({id:item.id,pillar:'spillover',label:item.label+' needs review',scope:item.scope,status:item.known?(item.trigger?'triggered':'clear'):'unknown',evidenceIds:[item.id],rule:item.rule,explanation:'Source-native context; it is not added to a pooled hazard score or a causal dependency graph.'});for(const track of ['public','operator'])actions.push({id:item.id+'-'+track,track,phase:item.scope?'prepare':'verify',when:'triggered',diagnosticIds:[item.id],title:'Review '+item.label.toLowerCase(),nextStep:item.step+(track==='operator'?' Apply your approved local SOP and decision authority before operational changes.':''),escalateWhen:'Current official instructions, verified local conditions or the responsible authority\'s actual activation rule apply.',authorityUrl:item.source});}
   for(const [id,title,url]of [['volcano','USGS elevated volcano notices (national context)','https://volcanoes.usgs.gov/'],['tropics','Official tropical-system advisories','https://www.nhc.noaa.gov/']]){const data=s[id];evidence.push({id,label:title,value:data?.count??'Unavailable',checkedAt:data?.checkedAt,measuredAt:data?.observedAt,basis:'measured',quality:data?.quality||'missing',source:url,note:id==='volcano'?'National current notice list; coordinates/proximity are not supplied by this endpoint.':'Worldwide recent advisory count; no local threat or all-clear is inferred.'});if(data)for(const track of ['public','operator'])actions.push({id:id+'-'+track,track,phase:'verify',when:'always',title:'Check '+title,nextStep:'Open the source for its actual advisory area, issue time and current instructions. This national/worldwide count does not establish applicability to your selected location.',escalateWhen:'An official instruction applies to your location or your approved local plan.',authorityUrl:url});}
 
+
+  const impactItems=[],impactRecords=[],alertSource=s.location&&Number.isFinite(s.location.lat)&&Number.isFinite(s.location.lon)?'https://api.weather.gov/alerts/active?point='+s.location.lat+','+s.location.lon:'https://api.weather.gov/alerts/active';
+  evidence.find(e=>e.id==='alerts').source=alertSource;
+  impactItems.push({id:'active-alerts',label:'Active actual NWS notices returned at the selected point',value:alertsKnown?a.features.length:null,unit:'official notices',kind:'observed',evidenceIds:['alerts'],method:'Count unexpired actual-status notices in the point query; explicit test/exercise/cancellation messages are excluded.',note:'A zero query result is not an all-clear from every hazard. Collection time is not an individual issue/onset time.'});
+  if(a)for(const [i,f]of a.features.entries()){const p=f.properties,id='notice-'+i,source=/^https:\/\/api\.weather\.gov\/alerts\//.test(f.id||'')?f.id:alertSource;
+   evidence.push({id,label:p.event||'Official NWS notice',value:p.headline||p.event||'Notice returned',measuredAt:p.sent||p.effective||a.updated||a.checkedAt,checkedAt:a.checkedAt,basis:'measured',quality:alertsKnown?'current':'stale',source,note:'Notice identifier '+(p.id||f.id||'not supplied')+'. Issued '+(p.sent||'unavailable')+'; onset '+(p.onset||p.effective||'unavailable')+'; expires '+(p.expires||'unavailable')+'. No local impact is inferred from a notice alone.'});
+   impactRecords.push({id:p.id||f.id||id,label:p.event||'Official NWS notice',summary:(p.headline||'')+' Severity '+(p.severity||'unavailable')+'; urgency '+(p.urgency||'unavailable')+'; certainty '+(p.certainty||'unavailable')+'. '+(p.instruction||'Open the official notice for its current instructions.')+' Onset '+(p.onset||p.effective||'unavailable')+'; expires '+(p.expires||'unavailable')+'.',kind:'observed',evidenceIds:[id],validAt:p.onset||p.effective||p.sent});
+  }
+  impactItems.push({id:'airnow-value',label:air?.name?'AirNow '+air.name+' · '+(air.pollutant||'pollutant unavailable'):'Nearby AirNow reporting-area observation',value:airKnown?air.aqi:null,unit:'AQI',kind:'observed',evidenceIds:['air'],method:'Nearest usable reporting area within60miles, latest source observed hour and worst reported pollutant at that hour.',note:'Preliminary reporting-area context, not address-level exposure or personal medical guidance.',validAt:air?.observedAt});
+  if(air)impactRecords.push({id:'AIRNOW-'+(air.name||'reporting-area')+'-'+(air.pollutant||'unknown'),label:air.name||'AirNow reporting area',summary:(air.pollutant||'Unspecified pollutant')+'; '+(air.category||'category unavailable')+'; approximately '+(Number.isFinite(air.distance)?Math.round(air.distance):'unknown')+'miles from the selected point. Source observation '+(air.observedAt||'unavailable')+'.',kind:'context',evidenceIds:['air'],validAt:air.observedAt});
+  impactItems.push({id:'river-primary',label:river?.lid?'NOAA '+river.lid+' · '+river.name:'Nearest NOAA river value',value:riverKnown?river.stage:null,unit:river?.unit||'source unit unavailable',kind:'observed',evidenceIds:['river'],method:'The nearest returned NOAA gauge’s own observed primary value, with its own datum and units.',note:'Not the river level at the selected address or a routed impact estimate.',validAt:river?.observedAt});
+  if(river){impactRecords.push({id:river.lid,label:'NOAA '+river.lid+' · '+river.name,summary:(river.category||'category unavailable')+'; observed '+(river.observedAt||'unavailable')+'; action threshold '+(river.actionThreshold??'unavailable')+' '+(river.unit||'unit unavailable')+'. Gauge-specific datum; not address flood depth.',kind:'context',evidenceIds:['river'],validAt:river.observedAt});for(const [i,p]of (river.impacts||[]).entries())impactRecords.push({id:river.lid+'-conditional-'+i,label:'NOAA '+river.lid+' conditional stage impact',summary:p.statement+'; published threshold '+p.threshold+' '+river.unit+'. This conditional description is not confirmed damage.',kind:'context',evidenceIds:['river'],validAt:river.observedAt});}
+  const tide=w?.tide,tideKnown=Number.isFinite(tide?.value)&&tide.units==='ft'&&tide.datum==='MLLW'&&fresh(tide.observedAt,2);
+  evidence.push({id:'coastal-water',label:tide?'NOAA '+(tide.id||'coastal gauge')+' · '+tide.name:'Nearby coastal gauge',value:tideKnown?tide.value:null,unit:'ft MLLW',measuredAt:tide?.observedAt,checkedAt:w?.checkedAt,basis:'measured',quality:tideKnown?'current':tide?'stale':'missing',source:tide?.id?'https://tidesandcurrents.noaa.gov/stationhome.html?id='+encodeURIComponent(tide.id):'https://tidesandcurrents.noaa.gov/',note:'Gauge water-level datum is MLLW; it cannot be compared directly with NAVD88 terrain or FEMA susceptibility zones.'});
+  impactItems.push({id:'coastal-water-level',label:tide?'NOAA '+(tide.id||'coastal gauge')+' water level':'Nearby NOAA coastal water level',value:tideKnown?tide.value:null,unit:'ft MLLW',kind:'observed',evidenceIds:['coastal-water'],method:'Latest usable source water-level observation within2hours at a nearby NOAA station.',note:'Gauge level, not land inundation depth, safe access or property flooding.',validAt:tide?.observedAt});
+  if(tide)impactRecords.push({id:tide.id||'NOAA-coastal-gauge',label:tide.name||'Nearby NOAA coastal gauge',summary:'Approximate distance '+(tide.mi??'unavailable')+'miles; observed '+(tide.observedAt||'unavailable')+'; MLLW datum. No local flood-depth conversion is applied.',kind:'context',evidenceIds:['coastal-water'],validAt:tide.observedAt});
+  const fireEvidence=evidence.find(e=>e.id==='fire');if(fireEvidence&&!fireEvidence.measuredAt&&s.fire?.count===0)fireEvidence.measuredAt=s.fire.checkedAt;
+  impactItems.push({id:'recent-fire-reports',label:'Nearby incident points with a usable report/update',value:s.fire?.quality==='current'&&recent(s.fire.checkedAt)?s.fire.count:null,unit:'source-reported incident points within80miles',kind:'context',evidenceIds:['fire'],method:'Count source incident points with an update/report within72hours; exclude old/undated inventory records.',note:'A point is not a perimeter, property threat, spread model or evacuation order. Zero refers only to the queried source inventory.'});
+  const impacts={title:'Official local reports and applicable notice context',scope:s.context||'Choose a location',summary:'Actual public notice/gauge/reporting-area records for the selected location, with independent source dates and units. These feeds do not estimate combined losses or people affected.',items:impactItems,records:impactRecords,limitations:['NWS alerts, AQI, MLLW water levels, river stages and FEMA susceptibility retain separate scales and meanings.','Nearby station/reporting-area observations are not address-level exposure or a confirmed impact report.','Mapped FEMA susceptibility and weekly drought are planning context; national/worldwide counts do not establish a local emergency.','Missing, stale or unqueried sources remain unknown, never zero impact.']};
+
   const specs=[
    [1,'comparison','Warnings do not supply population balance','unknown',[],'Point alerts and reporting-area AQI lack affected population/facility weights.','Identify affected groups and service populations with local records before comparing burden or allocating resources.','Affected-area population, vulnerable-group and facility/service denominators'],
    [2,'comparison','Heterogeneous hazard distributions are not comparable','unknown',[],'AQI, storm categories and flood zones have different units and meanings.','Keep hazard scales separate; obtain a validated common outcome before a Wasserstein comparison.','Comparable exposure/outcome distributions on an agreed common scale'],
@@ -863,7 +958,7 @@ loadNational();
   ];
   for(const [metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs,scope]of specs){const id='metric-'+metricId;diagnostics.push({id,metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs,scope,explanation:'Domain proxy/applicability screen; the ten Coastal numerical thresholds are not transferred.'});for(const track of ['public','operator'])actions.push({id:id+'-'+track,track,phase:status==='unknown'?'verify':'prepare',when:status==='unknown'?'unknown':'triggered',diagnosticIds:[id],title:'#'+metricId+' '+label,nextStep:analyticalMitigation+(track==='operator'?' Required inputs: '+requiredInputs+'. Confirm locally under the applicable SOP.':' Follow current official instructions for your location and ask local officials for unavailable exposure context.'),escalateWhen:'A current official instruction or verified local activation rule applies; an unknown parameter is not an all-clear.',authorityUrl:'https://www.weather.gov/'});}
 
-  return {slug:'us-local-hazards',title:'Local multi-hazard response plan',context:s.context||'Choose a location',evidence,diagnostics,actions,network:{label:'Directed dependency information unavailable',basis:'interpretive',semantics:'These heterogeneous feeds do not provide measured hazard-to-hazard dependency edges.',coverage:'Point warnings, a nearby reporting area and mapped flood context',roles:[],limitations:['No causal source/sink graph or compound-risk probability is invented.']},limitations:['CRT comparison and coverage principles are adapted; unlike hazard scales are not pooled into a validated score.','Actions are interpretive and defer to current official instructions. Professional decisions require local telemetry, authority and SOP.','Fire proximity, drought designation and FEMA zones alone do not activate emergency response.']};
+  return {slug:'us-local-hazards',title:'Local multi-hazard response plan',context:s.context||'Choose a location',evidence,diagnostics,actions,impacts,network:{label:'Directed dependency information unavailable',basis:'interpretive',semantics:'These heterogeneous feeds do not provide measured hazard-to-hazard dependency edges.',coverage:'Point warnings, a nearby reporting area and mapped flood context',roles:[],limitations:['No causal source/sink graph or compound-risk probability is invented.']},limitations:['CRT comparison and coverage principles are adapted; unlike hazard scales are not pooled into a validated score.','Actions are interpretive and defer to current official instructions. Professional decisions require local telemetry, authority and SOP.','Fire proximity, drought designation and FEMA zones alone do not activate emergency response.']};
  }
  window.ConsoleResponse.connect(read,['#grid','#place','#chips']);
 })();

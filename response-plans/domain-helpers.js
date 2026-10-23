@@ -48,7 +48,7 @@
       }
     });
     return { slug: spec.slug, title: spec.title, context: spec.context,
-      scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics,
+      scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics, impacts: spec.impacts,
       actions: [...(spec.baseline || []), ...actions], network: spec.network,
       limitations: spec.limitations || [] };
   }

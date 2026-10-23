@@ -89,5 +89,58 @@
  function sourceChip(snapshot){const downloaded=snapshot.responseDownloadedAt,date=downloaded||snapshot.embedded,age=(Date.now()-Date.parse(date))/864e5;return '<span class="badge '+(downloaded?'b-meas':'b-mod')+'">'+(downloaded?'downloaded':'snapshot')+'</span> World Bank annual data'+(date?' · '+escape(downloaded?'retrieved '+date:'embedded '+date):'')+(snapshot.responseError?' · refresh unavailable; last good retained':'')+(snapshot.responseRetainedSeries?.length?' · partial refresh; '+snapshot.responseRetainedSeries.length+' prior series retained (latest source observation missing/older)':'')+(snapshot.responseAnnualContext?' · population/land '+(snapshot.responseContextEmbedded?'snapshot ':'retrieved ')+escape(snapshot.responseAnnualContext.capturedAt):'')+(snapshot.responseContextError?' · population/land refresh unavailable; last good retained':'')+(snapshot.responseAnnualContext&&(Date.now()-Date.parse(snapshot.responseAnnualContext.capturedAt))/864e5>=30?' · population/land snapshot '+Math.floor((Date.now()-Date.parse(snapshot.responseAnnualContext.capturedAt))/864e5)+' days old':'')+(age>=30?' · snapshot '+Math.floor(age)+' days old':'');}
  function vintageText(snapshot){return 'Latest reported year '+snapshot.vintage+(snapshot.responseDownloadedAt?' · downloaded '+snapshot.responseDownloadedAt:' · embedded '+snapshot.embedded)+'. Individual observation years differ.';}
  function installRefresh(run,options={}){const cadence=options.cadenceMs??6*3600e3;let inflight=null,checked=0;function refresh(){if(inflight)return inflight;checked=Date.now();inflight=Promise.resolve().then(run).finally(()=>{inflight=null;});return inflight;}setInterval(()=>{if(!document.hidden)refresh();},cadence);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-checked>=cadence)refresh();});return refresh;}
- root.WorldBankPublicData={fetchRows,refreshSnapshot,sourceChip,vintageText,installRefresh,validateContext,refreshContext,comparisonContext,airExposureContext,installContext};
+ // Definitions were checked against the official indicator metadata. Only
+ // total-resident denominators can use SP.POP.TOTL; age-standardized rates,
+ // birth/cohort rates and multiyear/censored percentages are not converted.
+ const IMPACT_RULES={
+  'SH.TBS.INCD':{scale:1e5,label:'Approximate new and relapse TB episodes',unit:'episodes/year',note:'Estimated new and relapse episodes, all forms; not unique people or observed notifications.'},
+  'SH.STA.TRAF.P5':{scale:1e5,label:'Approximate road-traffic injury deaths',unit:'deaths/year',note:'Population-scaled annual fatal-injury estimate; not a future accident forecast.'},
+  'SH.STA.SUIC.P5':{scale:1e5,label:'Approximate suicide deaths',unit:'deaths/year',note:'The source defines this overall rate as crude, not age adjusted. No individual risk is inferred.'},
+  'SP.POP.65UP.TO.ZS':{scale:100,label:'Approximate residents aged 65+',unit:'people',percent:true},
+  'SP.POP.0014.TO.ZS':{scale:100,label:'Approximate residents aged 0–14',unit:'people',percent:true},
+  'SH.H2O.SMDW.ZS':{scale:100,label:'Approximate residents without safely managed drinking water',unit:'people',percent:true,complement:true},
+  'SH.H2O.BASW.ZS':{scale:100,label:'Approximate residents without at least basic drinking water',unit:'people',percent:true,complement:true},
+  'SH.STA.SMSS.ZS':{scale:100,label:'Approximate residents without safely managed sanitation',unit:'people',percent:true,complement:true},
+  'SH.STA.BASS.ZS':{scale:100,label:'Approximate residents without at least basic sanitation',unit:'people',percent:true,complement:true},
+  'SH.STA.HYGN.ZS':{scale:100,label:'Approximate residents without basic handwashing facilities',unit:'people',percent:true,complement:true},
+  'SH.STA.ODFC.ZS':{scale:100,label:'Approximate residents practicing open defecation',unit:'people',percent:true},
+  'EG.CFT.ACCS.ZS':{scale:100,label:'Approximate residents without clean cooking fuels/technologies',unit:'people',percent:true,complement:true},
+  'EN.ATM.PM25.MC.ZS':{scale:100,label:'Approximate residents above the indicator’s 10 µg/m³ PM2.5 reference',unit:'people',percent:true,note:'The source indicator uses 10 µg/m³, not the WHO 2021 annual 5 µg/m³ guideline. Not personal dose or attributable deaths.'},
+  'SH.MED.PHYS.ZS':{scale:1000,label:'Approximate source-defined physician inventory',unit:'physicians',note:'Rate-derived inventory, not available staff, full-time equivalents or spare capacity; reporting definitions vary.'},
+  'SH.MED.NUMW.P3':{scale:1000,label:'Approximate source-defined nursing/midwifery inventory',unit:'personnel',note:'Includes the source’s professional/auxiliary/enrolled categories; not available staff or full-time equivalents.'},
+  'SH.MED.BEDS.ZS':{scale:1000,label:'Approximate source-defined inpatient bed inventory',unit:'beds',note:'Includes reported public/private/general/specialist inpatient beds; not occupied, staffed, functional or available beds.'},
+  'SH.XPD.CHEX.PC.CD':{scale:1,label:'Population-scaled current health expenditure',unit:'current US$/year',note:'Reported per-capita expenditure scaled by same-year residents; not a budget, available funds or future cost forecast.'},
+  'SH.HIV.INCD':{direct:true,label:'Published estimated new HIV infections, ages 15–49',unit:'people/year'},
+  'SH.HIV.0014':{direct:true,label:'Published estimated children aged 0–14 living with HIV',unit:'people'}
+ };
+ const IMPACT_LIMITS={
+  'SH.STA.AIRP.P5':'Age-standardized mortality cannot be multiplied by a crude resident population to recover deaths.',
+  'SN.ITK.DEFC.ZS':'No count is recovered: 2.5 may mean below 2.5%; reported prevalence/averaging definitions are retained.',
+  'SN.ITK.SVFI.ZS':'No annual count is recovered without the exact source reporting/averaging population.',
+  'SH.DYN.NCOM.ZS':'The 30–70 lifetime probability is not an annual mortality rate or annual deaths.',
+  'SH.DYN.AIDS.ZS':'A matched ages 15–49population is not supplied; total residents are not substituted.',
+  'SH.MLR.INCD.P3':'The population-at-risk denominator is not supplied; total residents are not substituted.'
+ };
+ function countryImpacts(snapshot,iso){
+  const country=snapshot.cty?.[iso],annual=snapshot.responseAnnualContext,facts=[],items=[],records=[],seen=new Set(),checked=snapshot.responseCheckedAt||snapshot.embedded||null;
+  function fact(id,label,value,unit,year,source,note,at=checked){if(seen.has(id))return;seen.add(id);facts.push({id,label,value,unit,measuredAt:year||null,checkedAt:at,basis:'modeled',quality:value==null?'missing':'historical',source,note});}
+  if(!country)return {evidence:[],impacts:{title:'Public annual health context',scope:'No country selected',summary:'Select a country to inspect source-backed annual quantities.',items:[],records:[],limitations:['No population or patient outcome is invented for missing records.']}};
+  for(const [key,meta]of Object.entries(snapshot.indMeta||{})){
+   const point=country.latest?.[key],year=String(point?.y||''),validYear=/^\d{4}$/.test(year)&&+year<=new Date().getUTCFullYear(),good=finite(point?.v)&&point.v>=0&&(!/^%/.test(meta.unit||'')||point.v<=100)&&validYear,value=good?point.v:null,source='https://data.worldbank.org/indicator/'+encodeURIComponent(meta.ind||''),id='impact-source-'+key,rule=IMPACT_RULES[meta.ind],definition=IMPACT_LIMITS[meta.ind]||'Keep the published source population/period. No patient outcome, eligible-cohort count or intervention effect is inferred.';
+   fact(id,country.name+' · '+meta.name,value,meta.unit||'',good?year:null,source,definition+' Source edition: '+(snapshot.responseSourceUpdatedAt?.[meta.ind]||'embedded source vintage; see observation year')+'.');
+   let quantity=value,unit=meta.unit||'source-defined units',label=meta.name,note=definition,method='Published country-level indicator; no count conversion.',ids=[id];
+   if(rule){label=rule.label;unit=rule.unit;note=(rule.note||'A total-resident population-scaled planning estimate; not an independently reported headcount.')+' Rounded source indicators and population-source revisions limit precision.';
+    if(rule.direct){if(!finite(quantity)||quantity>Number.MAX_SAFE_INTEGER)quantity=null;method='Use the source’s published count directly; no population multiplier.';}
+    else{const pop=annual?.countries?.[iso]?.population?.[year],popGood=finite(pop)&&Number.isSafeInteger(pop)&&pop>0,popId='impact-population-'+year,rateGood=value!=null&&(!rule.percent||value<=100),rate=rateGood?(rule.complement?100-value:value):null,raw=popGood&&rate!=null?pop*rate/rule.scale:null;
+     quantity=finite(raw)&&raw>=0&&raw<=Number.MAX_SAFE_INTEGER?Math.round(raw):null;
+     fact(popId,country.name+' · same-year resident denominator',popGood?pop:null,'residents',validYear?year:null,'https://data.worldbank.org/indicator/SP.POP.TOTL','Midyear total residents for the exact indicator year; not an eligible age cohort, live births, people at risk or service users.',annual?.capturedAt);
+     ids.push(popId);method=(rule.complement?'(100 − source percentage)':'Source value')+' × same-year resident population / '+rule.scale+'. '+(quantity==null?'Missing/invalid exact-year denominator or source value; no nearest-year substitution.':'Inputs: '+value+'; residents '+pop+'; year '+year+'.');
+    }
+   }
+   items.push({id:'quantity-'+key,label,value:quantity,unit,kind:'context',evidenceIds:ids,method,note});
+   records.push({id:iso+'-'+key,label:country.name+' · '+meta.name,kind:'context',evidenceIds:[id],summary:good?year+' · '+value+' '+(meta.unit||'')+'. '+definition:'Published observation unavailable; no prior/neighboring-year value is invented.'});
+  }
+  return {evidence:facts,impacts:{title:'Source-backed annual burden and capacity context',scope:country.name+' · each record retains its own observation year',summary:'Official annual indicators and compatible same-year population estimates populate this view. These are dated planning quantities, not forecasts of health losses or benefits.',items,records,limitations:['Different indicator years remain separate; do not sum overlapping conditions, service gaps or age groups.','Population-scaled counts use only indicators defined over total residents. Birth, child, at-risk, age-standardized and lifetime-risk measures retain their original units.','Annual model estimates are not present incidence, service availability, individual prognosis, causal effects or an intervention-benefit forecast.']}};
+ }
+ root.WorldBankPublicData={fetchRows,refreshSnapshot,sourceChip,vintageText,installRefresh,validateContext,refreshContext,comparisonContext,airExposureContext,installContext,countryImpacts};
 })(globalThis);

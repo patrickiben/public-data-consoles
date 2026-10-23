@@ -94,7 +94,60 @@
  function sourceChip(snapshot){const downloaded=snapshot.responseDownloadedAt,date=downloaded||snapshot.embedded,age=(Date.now()-Date.parse(date))/864e5;return '<span class="badge '+(downloaded?'b-meas':'b-mod')+'">'+(downloaded?'downloaded':'snapshot')+'</span> World Bank annual data'+(date?' · '+escape(downloaded?'retrieved '+date:'embedded '+date):'')+(snapshot.responseError?' · refresh unavailable; last good retained':'')+(snapshot.responseRetainedSeries?.length?' · partial refresh; '+snapshot.responseRetainedSeries.length+' prior series retained (latest source observation missing/older)':'')+(snapshot.responseAnnualContext?' · population/land '+(snapshot.responseContextEmbedded?'snapshot ':'retrieved ')+escape(snapshot.responseAnnualContext.capturedAt):'')+(snapshot.responseContextError?' · population/land refresh unavailable; last good retained':'')+(snapshot.responseAnnualContext&&(Date.now()-Date.parse(snapshot.responseAnnualContext.capturedAt))/864e5>=30?' · population/land snapshot '+Math.floor((Date.now()-Date.parse(snapshot.responseAnnualContext.capturedAt))/864e5)+' days old':'')+(age>=30?' · snapshot '+Math.floor(age)+' days old':'');}
  function vintageText(snapshot){return 'Latest reported year '+snapshot.vintage+(snapshot.responseDownloadedAt?' · downloaded '+snapshot.responseDownloadedAt:' · embedded '+snapshot.embedded)+'. Individual observation years differ.';}
  function installRefresh(run,options={}){const cadence=options.cadenceMs??6*3600e3;let inflight=null,checked=0;function refresh(){if(inflight)return inflight;checked=Date.now();inflight=Promise.resolve().then(run).finally(()=>{inflight=null;});return inflight;}setInterval(()=>{if(!document.hidden)refresh();},cadence);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-checked>=cadence)refresh();});return refresh;}
- root.WorldBankPublicData={fetchRows,refreshSnapshot,sourceChip,vintageText,installRefresh,validateContext,refreshContext,comparisonContext,airExposureContext,installContext};
+ // Definitions were checked against the official indicator metadata. Only
+ // total-resident denominators can use SP.POP.TOTL; age-standardized rates,
+ // birth/cohort rates and multiyear/censored percentages are not converted.
+ const IMPACT_RULES={
+  'SH.TBS.INCD':{scale:1e5,label:'Approximate new and relapse TB episodes',unit:'episodes/year',note:'Estimated new and relapse episodes, all forms; not unique people or observed notifications.'},
+  'SH.STA.TRAF.P5':{scale:1e5,label:'Approximate road-traffic injury deaths',unit:'deaths/year',note:'Population-scaled annual fatal-injury estimate; not a future accident forecast.'},
+  'SH.STA.SUIC.P5':{scale:1e5,label:'Approximate suicide deaths',unit:'deaths/year',note:'The source defines this overall rate as crude, not age adjusted. No individual risk is inferred.'},
+  'SP.POP.65UP.TO.ZS':{scale:100,label:'Approximate residents aged 65+',unit:'people',percent:true},
+  'SP.POP.0014.TO.ZS':{scale:100,label:'Approximate residents aged 0–14',unit:'people',percent:true},
+  'SH.H2O.SMDW.ZS':{scale:100,label:'Approximate residents without safely managed drinking water',unit:'people',percent:true,complement:true},
+  'SH.H2O.BASW.ZS':{scale:100,label:'Approximate residents without at least basic drinking water',unit:'people',percent:true,complement:true},
+  'SH.STA.SMSS.ZS':{scale:100,label:'Approximate residents without safely managed sanitation',unit:'people',percent:true,complement:true},
+  'SH.STA.BASS.ZS':{scale:100,label:'Approximate residents without at least basic sanitation',unit:'people',percent:true,complement:true},
+  'SH.STA.HYGN.ZS':{scale:100,label:'Approximate residents without basic handwashing facilities',unit:'people',percent:true,complement:true},
+  'SH.STA.ODFC.ZS':{scale:100,label:'Approximate residents practicing open defecation',unit:'people',percent:true},
+  'EG.CFT.ACCS.ZS':{scale:100,label:'Approximate residents without clean cooking fuels/technologies',unit:'people',percent:true,complement:true},
+  'EN.ATM.PM25.MC.ZS':{scale:100,label:'Approximate residents above the indicator’s 10 µg/m³ PM2.5 reference',unit:'people',percent:true,note:'The source indicator uses 10 µg/m³, not the WHO 2021 annual 5 µg/m³ guideline. Not personal dose or attributable deaths.'},
+  'SH.MED.PHYS.ZS':{scale:1000,label:'Approximate source-defined physician inventory',unit:'physicians',note:'Rate-derived inventory, not available staff, full-time equivalents or spare capacity; reporting definitions vary.'},
+  'SH.MED.NUMW.P3':{scale:1000,label:'Approximate source-defined nursing/midwifery inventory',unit:'personnel',note:'Includes the source’s professional/auxiliary/enrolled categories; not available staff or full-time equivalents.'},
+  'SH.MED.BEDS.ZS':{scale:1000,label:'Approximate source-defined inpatient bed inventory',unit:'beds',note:'Includes reported public/private/general/specialist inpatient beds; not occupied, staffed, functional or available beds.'},
+  'SH.XPD.CHEX.PC.CD':{scale:1,label:'Population-scaled current health expenditure',unit:'current US$/year',note:'Reported per-capita expenditure scaled by same-year residents; not a budget, available funds or future cost forecast.'},
+  'SH.HIV.INCD':{direct:true,label:'Published estimated new HIV infections, ages 15–49',unit:'people/year'},
+  'SH.HIV.0014':{direct:true,label:'Published estimated children aged 0–14 living with HIV',unit:'people'}
+ };
+ const IMPACT_LIMITS={
+  'SH.STA.AIRP.P5':'Age-standardized mortality cannot be multiplied by a crude resident population to recover deaths.',
+  'SN.ITK.DEFC.ZS':'No count is recovered: 2.5 may mean below 2.5%; reported prevalence/averaging definitions are retained.',
+  'SN.ITK.SVFI.ZS':'No annual count is recovered without the exact source reporting/averaging population.',
+  'SH.DYN.NCOM.ZS':'The 30–70 lifetime probability is not an annual mortality rate or annual deaths.',
+  'SH.DYN.AIDS.ZS':'A matched ages 15–49population is not supplied; total residents are not substituted.',
+  'SH.MLR.INCD.P3':'The population-at-risk denominator is not supplied; total residents are not substituted.'
+ };
+ function countryImpacts(snapshot,iso){
+  const country=snapshot.cty?.[iso],annual=snapshot.responseAnnualContext,facts=[],items=[],records=[],seen=new Set(),checked=snapshot.responseCheckedAt||snapshot.embedded||null;
+  function fact(id,label,value,unit,year,source,note,at=checked){if(seen.has(id))return;seen.add(id);facts.push({id,label,value,unit,measuredAt:year||null,checkedAt:at,basis:'modeled',quality:value==null?'missing':'historical',source,note});}
+  if(!country)return {evidence:[],impacts:{title:'Public annual health context',scope:'No country selected',summary:'Select a country to inspect source-backed annual quantities.',items:[],records:[],limitations:['No population or patient outcome is invented for missing records.']}};
+  for(const [key,meta]of Object.entries(snapshot.indMeta||{})){
+   const point=country.latest?.[key],year=String(point?.y||''),validYear=/^\d{4}$/.test(year)&&+year<=new Date().getUTCFullYear(),good=finite(point?.v)&&point.v>=0&&(!/^%/.test(meta.unit||'')||point.v<=100)&&validYear,value=good?point.v:null,source='https://data.worldbank.org/indicator/'+encodeURIComponent(meta.ind||''),id='impact-source-'+key,rule=IMPACT_RULES[meta.ind],definition=IMPACT_LIMITS[meta.ind]||'Keep the published source population/period. No patient outcome, eligible-cohort count or intervention effect is inferred.';
+   fact(id,country.name+' · '+meta.name,value,meta.unit||'',good?year:null,source,definition+' Source edition: '+(snapshot.responseSourceUpdatedAt?.[meta.ind]||'embedded source vintage; see observation year')+'.');
+   let quantity=value,unit=meta.unit||'source-defined units',label=meta.name,note=definition,method='Published country-level indicator; no count conversion.',ids=[id];
+   if(rule){label=rule.label;unit=rule.unit;note=(rule.note||'A total-resident population-scaled planning estimate; not an independently reported headcount.')+' Rounded source indicators and population-source revisions limit precision.';
+    if(rule.direct){if(!finite(quantity)||quantity>Number.MAX_SAFE_INTEGER)quantity=null;method='Use the source’s published count directly; no population multiplier.';}
+    else{const pop=annual?.countries?.[iso]?.population?.[year],popGood=finite(pop)&&Number.isSafeInteger(pop)&&pop>0,popId='impact-population-'+year,rateGood=value!=null&&(!rule.percent||value<=100),rate=rateGood?(rule.complement?100-value:value):null,raw=popGood&&rate!=null?pop*rate/rule.scale:null;
+     quantity=finite(raw)&&raw>=0&&raw<=Number.MAX_SAFE_INTEGER?Math.round(raw):null;
+     fact(popId,country.name+' · same-year resident denominator',popGood?pop:null,'residents',validYear?year:null,'https://data.worldbank.org/indicator/SP.POP.TOTL','Midyear total residents for the exact indicator year; not an eligible age cohort, live births, people at risk or service users.',annual?.capturedAt);
+     ids.push(popId);method=(rule.complement?'(100 − source percentage)':'Source value')+' × same-year resident population / '+rule.scale+'. '+(quantity==null?'Missing/invalid exact-year denominator or source value; no nearest-year substitution.':'Inputs: '+value+'; residents '+pop+'; year '+year+'.');
+    }
+   }
+   items.push({id:'quantity-'+key,label,value:quantity,unit,kind:'context',evidenceIds:ids,method,note});
+   records.push({id:iso+'-'+key,label:country.name+' · '+meta.name,kind:'context',evidenceIds:[id],summary:good?year+' · '+value+' '+(meta.unit||'')+'. '+definition:'Published observation unavailable; no prior/neighboring-year value is invented.'});
+  }
+  return {evidence:facts,impacts:{title:'Source-backed annual burden and capacity context',scope:country.name+' · each record retains its own observation year',summary:'Official annual indicators and compatible same-year population estimates populate this view. These are dated planning quantities, not forecasts of health losses or benefits.',items,records,limitations:['Different indicator years remain separate; do not sum overlapping conditions, service gaps or age groups.','Population-scaled counts use only indicators defined over total residents. Birth, child, at-risk, age-standardized and lifetime-risk measures retain their original units.','Annual model estimates are not present incidence, service availability, individual prognosis, causal effects or an intervention-benefit forecast.']}};
+ }
+ root.WorldBankPublicData={fetchRows,refreshSnapshot,sourceChip,vintageText,installRefresh,validateContext,refreshContext,comparisonContext,airExposureContext,installContext,countryImpacts};
 })(globalThis);
 
 </script>
@@ -186,13 +239,16 @@ footer b{color:var(--ink2)}
 #console-response button{font:inherit;font-size:13px;padding:8px 12px;border:1px solid #6d8b9e;border-radius:6px;background:#173343;color:#f1f8fc;cursor:pointer}#console-response button[aria-pressed=true]{background:#165e6b;border-color:#6de3e7}
 #console-response details{margin:9px 0;border:1px solid #3e596b;border-radius:7px;padding:10px}#console-response summary{cursor:pointer;font-weight:650;list-style:revert}#console-response details>p,#console-response details>ul{padding:2px 7px}
 #console-response .cr-action{margin:10px 0;padding:13px;border:1px solid #3f6475;border-radius:7px;background:#142b39}#console-response .cr-action label{display:block;color:#c7dce7;font-size:12px;margin-top:10px}#console-response input[type=checkbox]{margin-right:6px;width:16px;height:16px;vertical-align:middle}
-#console-response .cr-diagnostic{padding:10px;border-left:3px solid #698396;background:#162d3b}#console-response .cr-triggered{border-color:#e5b35a}#console-response .cr-clear{border-color:#55bda0}#console-response .cr-unknown,#console-response .cr-quality{color:#f0cc87}
+#console-response .cr-diagnostic{padding:10px;border-left:3px solid #698396;background:#162d3b}#console-response .cr-triggered{border-color:#e5b35a}#console-response .cr-clear{border-color:#80b4cf}#console-response .cr-unknown,#console-response .cr-quality{color:#f0cc87}
+#console-response .cr-impact-preview{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:10px 0}#console-response .cr-impact-preview span{flex:1;min-width:180px}#console-response button,#console-response summary,#console-response select{min-height:44px}#console-response summary{align-content:center}
+#console-response .cr-impact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;margin:12px 0}#console-response .cr-impact-item,#console-response .cr-impact-records article{padding:14px;border:1px solid #486377;border-radius:9px;background:#142b39;min-width:0;overflow-wrap:anywhere}#console-response .cr-impact-value{font-size:20px;font-weight:650;color:#b1edf0}#console-response .cr-impact-sources{padding-left:18px;font-size:12px;color:#b2c6d3}#console-response .cr-impact-sources li{margin:7px 0}#console-response .cr-impact-records{display:grid;gap:10px;max-height:38rem;overflow:auto;padding:2px}
 #console-response .cr-table{overflow-x:auto}#console-response table{width:100%;border-collapse:collapse;color:inherit;font-size:12px}#console-response th,#console-response td{text-align:left;padding:8px;border-bottom:1px solid #3e596b}
 #console-response :focus-visible,#console-response-shortcut:focus-visible{outline:3px solid #f4d57d;outline-offset:3px}
 #console-response select{font:inherit;color:#e2edf4;background:#173343;border:1px solid #6d8b9e;border-radius:4px;padding:5px;max-width:100%}
 #console-response-shortcut{position:fixed;right:14px;bottom:14px;z-index:10020;border:1px solid #87d5e0;border-radius:24px;padding:10px 15px;background:#103f50;color:#f1f8fc;font:600 13px system-ui,sans-serif;box-shadow:0 2px 12px #0007;text-decoration:none}
 @media(max-width:640px){#console-response{margin:10px 6px;padding:13px}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:19px}}
 @media print{#console-response-shortcut,#console-response .cr-toolbar{display:none!important}#console-response{background:white!important;color:#111!important;max-width:none;border:1px solid #555}#console-response *{color:#111!important;box-shadow:none!important}#console-response details{display:block!important}#console-response details>*{display:block!important}#console-response .cr-action{break-inside:avoid;background:white!important}#console-response .cr-badge{border-color:#555}}
+@media print{#console-response .cr-impact-records{max-height:none;overflow:visible}#console-response .cr-impact-item,#console-response .cr-impact-records article{break-inside:avoid;background:white!important}#console-response .cr-impact-preview button{display:none!important}}
 </style>
 <script>
 (function (root) {
@@ -222,6 +278,51 @@ footer b{color:var(--ink2)}
     return value;
   }
   function signature(value) { return JSON.stringify(canonical(value)); }
+  function evaluateImpacts(input, facts) {
+    var supplied = input.impacts || {}, byFact = new Map(), duplicates = new Set();
+    facts.forEach(function (f) { if (byFact.has(f.id)) duplicates.add(f.id); byFact.set(f.id, f); });
+    function normalize(rows, records) {
+      if (!Array.isArray(rows)) return [];
+      var seen = new Set(), duplicateRows = new Set();
+      rows.forEach(function (r) { if (r && seen.has(r.id)) duplicateRows.add(r.id); if (r) seen.add(r.id); });
+      return rows.map(function (row) {
+        row = row || {};
+        var ids = Array.isArray(row.evidenceIds) ? Array.from(new Set(row.evidenceIds)) : [];
+        var reasons = [], linked = ids.map(function (id) { return byFact.get(id); }).filter(Boolean);
+        var kind = ['observed', 'forecast', 'context', 'scenario'].includes(row.kind) ? row.kind : 'context';
+        if (!['observed', 'forecast', 'context', 'scenario'].includes(row.kind)) reasons.push('The impact basis is not declared.');
+        if (typeof row.id !== 'string' || !row.id.trim() || duplicateRows.has(row.id)) reasons.push('A unique public record identity is required.');
+        if (!ids.length) reasons.push('No supporting public evidence is linked.');
+        ids.forEach(function (id) {
+          var f = byFact.get(id);
+          if (!f || duplicates.has(id)) reasons.push('Missing or ambiguous evidence: ' + text(id) + '.');
+          else {
+            if (['missing', 'stale'].includes(f.quality)) reasons.push(f.label + ': missing or stale evidence.');
+            if (!f.source) reasons.push(f.label + ': public source link is unavailable.');
+            if (!text(f.measuredAt).trim()) reasons.push(f.label + ': observation/reporting period is unavailable.');
+            if (['observed', 'forecast'].includes(kind) && f.quality !== 'current') reasons.push(f.label + ': historical context cannot establish a current impact.');
+          }
+        });
+        var practice = !!input.scenario || linked.some(function (f) { return f.basis === 'demo'; }) || kind === 'scenario';
+        if (practice) kind = 'scenario';
+        if (!records && !(typeof row.value === 'number' && Number.isFinite(row.value) || typeof row.value === 'string' && row.value.trim())) reasons.push('A supported finite value or documented description is unavailable.');
+        if (!records && typeof row.value === 'number' && !text(row.unit).trim()) reasons.push('The numeric unit is unavailable.');
+        if (records && !text(row.summary).trim()) reasons.push('A documented record description is unavailable.');
+        if (kind === 'forecast' && row.validAt != null && (!Number.isFinite(Date.parse(row.validAt)) || Date.parse(row.validAt) <= Date.now())) reasons.push('The forecast validity time is missing, invalid or elapsed.');
+        var quality = linked.some(function (f) { return f.quality === 'missing'; }) || !linked.length ? 'missing' : linked.some(function (f) { return f.quality === 'stale'; }) ? 'stale' : linked.some(function (f) { return f.quality === 'historical'; }) ? 'historical' : 'current';
+        var basis = practice ? 'demo' : kind === 'forecast' || linked.some(function (f) { return f.basis === 'modeled'; }) ? 'modeled' : linked.some(function (f) { return f.basis === 'interpretive'; }) ? 'interpretive' : 'measured';
+        return { id: text(row.id), label: text(row.label || row.id), value: records ? undefined : reasons.length ? null : row.value,
+          unit: text(row.unit), kind: kind, status: reasons.length ? 'unknown' : 'available', quality: quality, basis: basis, practice: practice,
+          summary: reasons.length ? '' : text(row.summary), method: text(row.method), note: text(row.note), validAt: row.validAt == null ? null : text(row.validAt),
+          evidenceIds: ids, reasons: reasons, sources: linked.map(function (f) { return { id: f.id, label: f.label, source: f.source, measuredAt: f.measuredAt || null, checkedAt: f.checkedAt || null, quality: f.quality, basis: f.basis }; }) };
+      });
+    }
+    return { title: text(supplied.title || 'Public-data impacts and context'), scope: text(supplied.scope || input.context || 'Current console selection'),
+      summary: text(supplied.summary || 'Quantified impacts require applicable public evidence. Review the supported records and explicit input gaps.'),
+      items: normalize(supplied.items, false), records: normalize(supplied.records, true),
+      limitations: Array.isArray(supplied.limitations) ? supplied.limitations.map(text) : ['No source-backed impact estimate is supplied for this selection.'] };
+  }
+  function diagnosticAssessment(d) { return d.status === 'unknown' ? 'UNKNOWN' : d.status === 'triggered' ? 'REVIEW' : 'CONTEXT · condition not met'; }
   function evaluate(input) {
     input = input || {};
     var facts = (Array.isArray(input.evidence) ? input.evidence : []).map(function (fact) {
@@ -263,6 +364,7 @@ footer b{color:var(--ink2)}
       return d;
     });
     diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
+    diagnostics.forEach(function (d) { if (d.status === 'unknown') d.value = null; });
     var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
     var actions = (Array.isArray(input.actions) ? input.actions : []).map(function (action) {
       var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
@@ -279,7 +381,7 @@ footer b{color:var(--ink2)}
       a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl); return a;
     });
     return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
-      evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null,
+      evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null, impacts: evaluateImpacts(input, facts),
       limitations: Array.isArray(input.limitations) ? input.limitations.map(text) : [], scenario: !!input.scenario };
   }
   function badge(basis) { return '<span class="cr-badge">' + esc(basisNames[basis] || basisNames.interpretive) + '</span>'; }
@@ -291,11 +393,16 @@ footer b{color:var(--ink2)}
     if (!panel.dataset.mounted) {
       panel.dataset.mounted = 'true';
       panel.addEventListener('click', function (event) {
-        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print]');
+        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact]');
         if (!button) return;
         if (button.dataset.crTrack) { track = button.dataset.crTrack; render(); }
         if (button.hasAttribute('data-cr-print')) root.print();
         if (button.hasAttribute('data-cr-export')) download();
+        if (button.hasAttribute('data-cr-open-impact')) {
+          panel.querySelector('[data-cr-section="plan"]').open = true;
+          var impacts = panel.querySelector('[data-cr-section="impacts"]');
+          if (impacts) { impacts.open = true; impacts.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }
       });
       panel.addEventListener('change', function (event) {
         var metric = Number(event.target.dataset.crAssess);
@@ -353,16 +460,32 @@ footer b{color:var(--ink2)}
     panel.dataset.rendered = 'true';
     var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
     h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
-    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open ten-parameter checklist and evidence</summary>';
+    var impactRows = plan.impacts.items.concat(plan.impacts.records), availableImpacts = impactRows.filter(function (r) { return r.status === 'available'; }).length;
+    h += '<div class="cr-impact-preview"><span>' + availableImpacts + ' available impact/context ' + (availableImpacts === 1 ? 'item' : 'items') + ' · ' + impactRows.filter(function (r) { return r.status === 'unknown'; }).length + ' unavailable. Scope: ' + esc(plan.impacts.scope) + '.</span><button id="cr-open-impacts" data-cr-open-impact>Review impacts and source records</button></div>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open public-data impacts, ten-parameter checklist and evidence</summary>';
     h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
     function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
+    function impactSources(row) {
+      return '<ul class="cr-impact-sources">' + row.sources.map(function (s) { return '<li>' + sourceLink(s.source, s.label || s.id) + ' · observed/reported: ' + esc(s.measuredAt || 'not supplied') + ' · ' + esc(s.quality) + (s.checkedAt ? '; checked: ' + esc(s.checkedAt) : '') + '</li>'; }).join('') + '</ul>';
+    }
+    function impactBadge(row) { return row.status === 'unknown' ? '<span class="cr-badge cr-unknown">UNKNOWN' + (row.practice ? ' · PRACTICE ONLY' : ' · inputs incomplete') + '</span>' : badge(row.basis); }
+    function impactReasons(row) { return row.reasons.length ? '<details data-cr-section="impact-gaps-' + esc(row.id) + '"' + (open.has('impact-gaps-' + row.id) ? ' open' : '') + '><summary>Why this is unavailable</summary><p class="cr-unknown">' + esc(row.reasons.join(' ')) + '</p></details>' : ''; }
+    var impactHTML = '<h3>' + esc(plan.impacts.title) + '</h3><p><b>Current scope:</b> ' + esc(plan.impacts.scope) + '</p><p>' + esc(plan.impacts.summary) + '</p><p class="cr-note">Observations, official forecasts and historical context retain their own dates and meanings. A public-data screen alone does not establish an outage, individual harm or completed response.</p><div class="cr-impact-grid">';
+    plan.impacts.items.forEach(function (r) {
+      impactHTML += '<article class="cr-impact-item" data-cr-impact="' + esc(r.id) + '"><h4>' + esc(r.label) + '</h4>' + impactBadge(r) + ' <span class="cr-badge">' + esc(r.kind.toUpperCase()) + '</span><p class="cr-impact-value">' + (r.status === 'unknown' ? 'Not assessable' : esc(typeof r.value === 'number' ? r.value.toLocaleString(undefined, { maximumSignificantDigits: 6 }) : r.value) + (r.unit ? ' ' + esc(r.unit) : '')) + '</p>' + (r.validAt ? '<p>' + (r.kind === 'forecast' ? 'Forecast valid: ' : 'Record / valid time: ') + esc(r.validAt) + '</p>' : '') + (r.method ? '<p><b>Method:</b> ' + esc(r.method) + '</p>' : '') + (r.note ? '<p>' + esc(r.note) + '</p>' : '') + impactReasons(r) + impactSources(r) + '</article>';
+    });
+    impactHTML += '</div>';
+    if (plan.impacts.records.length) impactHTML += '<h3>Public records behind this view</h3><div class="cr-impact-records">' + plan.impacts.records.map(function (r) { return '<article data-cr-impact-record="' + esc(r.id) + '"><h4>' + esc(r.label) + '</h4><p class="cr-note">Record ID: ' + esc(r.id) + '</p>' + impactBadge(r) + ' <span class="cr-badge">' + esc(r.kind.toUpperCase()) + '</span><p>' + (r.status === 'unknown' ? '<b>Not assessable.</b> ' : '') + esc(r.status === 'unknown' ? 'This record cannot support the selected impact with the available evidence.' : r.summary) + '</p>' + (r.validAt ? '<p>' + (r.kind === 'forecast' ? 'Forecast valid: ' : 'Record / valid time: ') + esc(r.validAt) + '</p>' : '') + impactReasons(r) + impactSources(r) + '</article>'; }).join('') + '</div>';
+    if (!impactRows.length) impactHTML += '<p class="cr-unknown">No applicable public impact records or quantified projection are available for this selection.</p>';
+    impactHTML += '<ul>' + plan.impacts.limitations.map(function (limit) { return '<li>' + esc(limit) + '</li>'; }).join('') + '</ul>';
+    h += section('impacts', 'Projected impacts and public-data context', impactHTML, 'interpretive');
     var actionHTML = '<p>These are planning prompts, not instructions to dispatch, switch equipment, prescribe, trade or evacuate. ' + (track === 'operator' ? 'Use your organization’s verified telemetry, SOP and decision authority.' : 'Follow current official instructions for your location.') + '</p>';
     ['verify', 'prepare', 'respond', 'review'].forEach(function (phase) {
       var list = selected.filter(function (a) { return a.phase === phase; }); if (!list.length) return;
       actionHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
       list.forEach(function (a) {
         var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
-        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + d.status + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
       });
     });
     if (!selected.length) actionHTML += '<p class="cr-unknown">No supported conditional action is available for this track. Verify missing evidence and consult the responsible authority; this is not an all-clear.</p>';
@@ -375,7 +498,7 @@ footer b{color:var(--ink2)}
       return '<h3>' + ({ comparison: 'Comparison and balance', structure: 'Structure and coverage', spillover: 'Spillover and dependence' })[pillar] + '</h3>' + (ds.length ? ds.map(function (d) {
         var related = plan.actions.filter(function (a) { return a.track === track && a.diagnosticIds.includes(d.id); });
         var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
-        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + (d.metricId ? '#' + d.metricId + ' ' + esc(d.canonicalLabel) : esc(d.label)) + ' — ' + esc(d.status.toUpperCase()) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc((typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + (d.metricId ? '#' + d.metricId + ' ' + esc(d.canonicalLabel) : esc(d.label)) + ' — ' + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
       }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
     }).join('');
     h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');
@@ -393,14 +516,18 @@ footer b{color:var(--ink2)}
     if (focused) { var nextFocus = doc.getElementById(focused); if (nextFocus) nextFocus.focus({ preventScroll: true }); }
   }
   function set(input) {
-    var nextRevision = signature(input || {});
+    // A forecast can expire while its source payload is unchanged. Make that
+    // transition an evidence revision on the existing visible-minute refresh.
+    var impact = input && input.impacts || {};
+    var clockState = (impact.items || []).concat(impact.records || []).filter(function (r) { return r && r.kind === 'forecast' && r.validAt != null; }).map(function (r) { var at = Date.parse(r.validAt); return [r.id, Number.isFinite(at) && at > Date.now()]; });
+    var nextRevision = signature([input || {}, clockState]);
     if (nextRevision === revision) return;
     function evidenceOnly(value) {
       if (Array.isArray(value)) return value.map(evidenceOnly);
       if (value && typeof value === 'object') { var out = {}; Object.keys(value).forEach(function (key) { if (key !== 'checkedAt') out[key] = evidenceOnly(value[key]); }); return out; }
       return value;
     }
-    var nextEvidence = signature(evidenceOnly(input || {}));
+    var nextEvidence = signature([evidenceOnly(input || {}), clockState]);
     if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
     evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
   }
@@ -435,6 +562,7 @@ footer b{color:var(--ink2)}
     return function () { stopped = true; root.clearTimeout(timer); root.clearInterval(interval); if (observer) observer.disconnect(); if (doc) { doc.removeEventListener('visibilitychange', visible); doc.removeEventListener('change', changed); doc.removeEventListener('input', changed); } };
   }
   function exportPlan() {
+    if (payload) set(payload); // Reconcile expiry even before the next visible-minute tick.
     return { exportedAt: new Date().toISOString(), note: 'Local planning review; not a record of completed operations.',
       track: track, plan: currentPlan(), acknowledgments: Array.from(acknowledgments) };
   }
@@ -512,7 +640,7 @@ footer b{color:var(--ink2)}
       }
     });
     return { slug: spec.slug, title: spec.title, context: spec.context,
-      scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics,
+      scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics, impacts: spec.impacts,
       actions: [...(spec.baseline || []), ...actions], network: spec.network,
       limitations: spec.limitations || [] };
   }
@@ -1101,7 +1229,9 @@ WorldBankPublicData.installContext({countries:COUNTRIES,getSnapshot:()=>SNAP,set
     evidence.push(fact('density-b','Pooled resident density · other comparison countries',density?round(density.b):null,'people/km²',year,popSource,'historical','interpretive','Pb / pooled land km². '+comparisonNote,contextChecked));
     evidence.push(fact('density-symmetry','Coarse resident-density symmetry of comparison strata',density?round(density.score):null,'0–1; 1 means equal pooled densities',year,areaSource,'historical','interpretive','2 × min(Da, Db) / (Da + Db), with Da=Pa/Aa and Db=Pb/Ab. This describes coarse geography, not local spatial point density, service access, travel times or equity. Missing same-year positive land areas: '+(geography && geography.missingLand.join(', ')||'none / context unavailable')+'. '+comparisonNote,contextChecked));
     ov[3]=Object.assign(assess(3,'Coarse pooled resident-density symmetry (geographic context proxy)',density?(density.score<1-1e-10?'triggered':'clear'):'unknown',['population-a','population-b','land-a','land-b','density-a','density-b','density-symmetry'],'Different pooled resident densities prompt geographic-comparability review. Equal density only describes the supplied country totals and areas; it cannot establish equal access or service coverage.','Population and land use exactly the indicator year and identical comparator country membership. No local catchment, adjacency, facility network or density field is invented.'),{value:density?round(density.score):null,unit:'0–1 coarse density symmetry'});
-    return plan((country?country.name:'No country selected')+' · '+(meta?meta.name:'No indicator selected')+' · '+(valid?year:'measurement unavailable')+' · annual structural planning',evidence,ov);
+    var output=plan((country?country.name:'No country selected')+' · '+(meta?meta.name:'No indicator selected')+' · '+(valid?year:'measurement unavailable')+' · annual structural planning',evidence,ov);
+    if(typeof WorldBankPublicData==='object' && WorldBankPublicData.countryImpacts){var publicContext=WorldBankPublicData.countryImpacts(snap,iso);output.evidence.push.apply(output.evidence,publicContext.evidence);output.impacts=publicContext.impacts;}
+    return output;
   }
   ConsoleResponse.connect(read,['#profcards','#profmeta','#cmpbars','#cysel','#cmpind','#srcchip','#vintchip']);
 

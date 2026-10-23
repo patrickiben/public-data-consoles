@@ -38,7 +38,7 @@ try{
  });
  await scenario('nhs-scotland-strain','unpublished cells cannot establish disconnected service pathways',setupNHS,async page=>{
   await page.evaluate(()=>{const f=SNAP.careUse;f.cells=f.cells.filter(r=>r.residence===r.treatment);f.totalStays=f.cells.reduce((s,r)=>s+r.stays,0);f.outsideBoardStays=0;f.cohortCellCount=f.publishedCellCount=f.cells.length;f.unreportedCohortCells=f.residenceBoards.length*f.providerCodes.length-f.cells.length;refreshResponse();});
-  const p=await plan(page);assert.equal(metric(p,4).value,14);assert.equal(metric(p,4).status,'unknown');assert.match(p.network.coverage,/unreported cells remain unknown/);
+  const p=await plan(page);assert.equal(metric(p,4).value,null,'Unsupported derived component estimate is withheld');assert.equal(metric(p,4).status,'unknown');assert.equal(p.evidence.find(e=>e.id==='care-components').value,14,'Raw partial-graph computation retains its historical provenance');assert.match(p.network.coverage,/unreported cells remain unknown/);
   const absent=p.network.roles.filter(r=>!nhs.careUse.residenceBoards.includes(r.id));assert.ok(absent.length);assert.ok(absent.every(r=>r.inbound===null&&r.outbound===null));
   await page.evaluate(()=>{const f=SNAP.careUse;f.cells.push({residence:f.residenceBoards[0],treatment:f.providerCodes.find(id=>!f.residenceBoards.includes(id)),stays:0,episodes:0,crossBoundary:true,sourceBoundaryFlag:1});refreshResponse();});
   const reportedZero=(await plan(page)).network.roles.find(r=>absent[0].id===r.id);assert.equal(reportedZero.inbound,0);assert.equal(reportedZero.outbound,null);

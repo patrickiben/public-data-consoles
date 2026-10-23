@@ -25,6 +25,51 @@
     return value;
   }
   function signature(value) { return JSON.stringify(canonical(value)); }
+  function evaluateImpacts(input, facts) {
+    var supplied = input.impacts || {}, byFact = new Map(), duplicates = new Set();
+    facts.forEach(function (f) { if (byFact.has(f.id)) duplicates.add(f.id); byFact.set(f.id, f); });
+    function normalize(rows, records) {
+      if (!Array.isArray(rows)) return [];
+      var seen = new Set(), duplicateRows = new Set();
+      rows.forEach(function (r) { if (r && seen.has(r.id)) duplicateRows.add(r.id); if (r) seen.add(r.id); });
+      return rows.map(function (row) {
+        row = row || {};
+        var ids = Array.isArray(row.evidenceIds) ? Array.from(new Set(row.evidenceIds)) : [];
+        var reasons = [], linked = ids.map(function (id) { return byFact.get(id); }).filter(Boolean);
+        var kind = ['observed', 'forecast', 'context', 'scenario'].includes(row.kind) ? row.kind : 'context';
+        if (!['observed', 'forecast', 'context', 'scenario'].includes(row.kind)) reasons.push('The impact basis is not declared.');
+        if (typeof row.id !== 'string' || !row.id.trim() || duplicateRows.has(row.id)) reasons.push('A unique public record identity is required.');
+        if (!ids.length) reasons.push('No supporting public evidence is linked.');
+        ids.forEach(function (id) {
+          var f = byFact.get(id);
+          if (!f || duplicates.has(id)) reasons.push('Missing or ambiguous evidence: ' + text(id) + '.');
+          else {
+            if (['missing', 'stale'].includes(f.quality)) reasons.push(f.label + ': missing or stale evidence.');
+            if (!f.source) reasons.push(f.label + ': public source link is unavailable.');
+            if (!text(f.measuredAt).trim()) reasons.push(f.label + ': observation/reporting period is unavailable.');
+            if (['observed', 'forecast'].includes(kind) && f.quality !== 'current') reasons.push(f.label + ': historical context cannot establish a current impact.');
+          }
+        });
+        var practice = !!input.scenario || linked.some(function (f) { return f.basis === 'demo'; }) || kind === 'scenario';
+        if (practice) kind = 'scenario';
+        if (!records && !(typeof row.value === 'number' && Number.isFinite(row.value) || typeof row.value === 'string' && row.value.trim())) reasons.push('A supported finite value or documented description is unavailable.');
+        if (!records && typeof row.value === 'number' && !text(row.unit).trim()) reasons.push('The numeric unit is unavailable.');
+        if (records && !text(row.summary).trim()) reasons.push('A documented record description is unavailable.');
+        if (kind === 'forecast' && row.validAt != null && (!Number.isFinite(Date.parse(row.validAt)) || Date.parse(row.validAt) <= Date.now())) reasons.push('The forecast validity time is missing, invalid or elapsed.');
+        var quality = linked.some(function (f) { return f.quality === 'missing'; }) || !linked.length ? 'missing' : linked.some(function (f) { return f.quality === 'stale'; }) ? 'stale' : linked.some(function (f) { return f.quality === 'historical'; }) ? 'historical' : 'current';
+        var basis = practice ? 'demo' : kind === 'forecast' || linked.some(function (f) { return f.basis === 'modeled'; }) ? 'modeled' : linked.some(function (f) { return f.basis === 'interpretive'; }) ? 'interpretive' : 'measured';
+        return { id: text(row.id), label: text(row.label || row.id), value: records ? undefined : reasons.length ? null : row.value,
+          unit: text(row.unit), kind: kind, status: reasons.length ? 'unknown' : 'available', quality: quality, basis: basis, practice: practice,
+          summary: reasons.length ? '' : text(row.summary), method: text(row.method), note: text(row.note), validAt: row.validAt == null ? null : text(row.validAt),
+          evidenceIds: ids, reasons: reasons, sources: linked.map(function (f) { return { id: f.id, label: f.label, source: f.source, measuredAt: f.measuredAt || null, checkedAt: f.checkedAt || null, quality: f.quality, basis: f.basis }; }) };
+      });
+    }
+    return { title: text(supplied.title || 'Public-data impacts and context'), scope: text(supplied.scope || input.context || 'Current console selection'),
+      summary: text(supplied.summary || 'Quantified impacts require applicable public evidence. Review the supported records and explicit input gaps.'),
+      items: normalize(supplied.items, false), records: normalize(supplied.records, true),
+      limitations: Array.isArray(supplied.limitations) ? supplied.limitations.map(text) : ['No source-backed impact estimate is supplied for this selection.'] };
+  }
+  function diagnosticAssessment(d) { return d.status === 'unknown' ? 'UNKNOWN' : d.status === 'triggered' ? 'REVIEW' : 'CONTEXT · condition not met'; }
   function evaluate(input) {
     input = input || {};
     var facts = (Array.isArray(input.evidence) ? input.evidence : []).map(function (fact) {
@@ -66,6 +111,7 @@
       return d;
     });
     diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
+    diagnostics.forEach(function (d) { if (d.status === 'unknown') d.value = null; });
     var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
     var actions = (Array.isArray(input.actions) ? input.actions : []).map(function (action) {
       var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
@@ -82,7 +128,7 @@
       a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl); return a;
     });
     return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
-      evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null,
+      evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null, impacts: evaluateImpacts(input, facts),
       limitations: Array.isArray(input.limitations) ? input.limitations.map(text) : [], scenario: !!input.scenario };
   }
   function badge(basis) { return '<span class="cr-badge">' + esc(basisNames[basis] || basisNames.interpretive) + '</span>'; }
@@ -94,11 +140,16 @@
     if (!panel.dataset.mounted) {
       panel.dataset.mounted = 'true';
       panel.addEventListener('click', function (event) {
-        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print]');
+        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact]');
         if (!button) return;
         if (button.dataset.crTrack) { track = button.dataset.crTrack; render(); }
         if (button.hasAttribute('data-cr-print')) root.print();
         if (button.hasAttribute('data-cr-export')) download();
+        if (button.hasAttribute('data-cr-open-impact')) {
+          panel.querySelector('[data-cr-section="plan"]').open = true;
+          var impacts = panel.querySelector('[data-cr-section="impacts"]');
+          if (impacts) { impacts.open = true; impacts.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }
       });
       panel.addEventListener('change', function (event) {
         var metric = Number(event.target.dataset.crAssess);
@@ -156,16 +207,32 @@
     panel.dataset.rendered = 'true';
     var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
     h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
-    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open ten-parameter checklist and evidence</summary>';
+    var impactRows = plan.impacts.items.concat(plan.impacts.records), availableImpacts = impactRows.filter(function (r) { return r.status === 'available'; }).length;
+    h += '<div class="cr-impact-preview"><span>' + availableImpacts + ' available impact/context ' + (availableImpacts === 1 ? 'item' : 'items') + ' · ' + impactRows.filter(function (r) { return r.status === 'unknown'; }).length + ' unavailable. Scope: ' + esc(plan.impacts.scope) + '.</span><button id="cr-open-impacts" data-cr-open-impact>Review impacts and source records</button></div>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open public-data impacts, ten-parameter checklist and evidence</summary>';
     h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
     function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
+    function impactSources(row) {
+      return '<ul class="cr-impact-sources">' + row.sources.map(function (s) { return '<li>' + sourceLink(s.source, s.label || s.id) + ' · observed/reported: ' + esc(s.measuredAt || 'not supplied') + ' · ' + esc(s.quality) + (s.checkedAt ? '; checked: ' + esc(s.checkedAt) : '') + '</li>'; }).join('') + '</ul>';
+    }
+    function impactBadge(row) { return row.status === 'unknown' ? '<span class="cr-badge cr-unknown">UNKNOWN' + (row.practice ? ' · PRACTICE ONLY' : ' · inputs incomplete') + '</span>' : badge(row.basis); }
+    function impactReasons(row) { return row.reasons.length ? '<details data-cr-section="impact-gaps-' + esc(row.id) + '"' + (open.has('impact-gaps-' + row.id) ? ' open' : '') + '><summary>Why this is unavailable</summary><p class="cr-unknown">' + esc(row.reasons.join(' ')) + '</p></details>' : ''; }
+    var impactHTML = '<h3>' + esc(plan.impacts.title) + '</h3><p><b>Current scope:</b> ' + esc(plan.impacts.scope) + '</p><p>' + esc(plan.impacts.summary) + '</p><p class="cr-note">Observations, official forecasts and historical context retain their own dates and meanings. A public-data screen alone does not establish an outage, individual harm or completed response.</p><div class="cr-impact-grid">';
+    plan.impacts.items.forEach(function (r) {
+      impactHTML += '<article class="cr-impact-item" data-cr-impact="' + esc(r.id) + '"><h4>' + esc(r.label) + '</h4>' + impactBadge(r) + ' <span class="cr-badge">' + esc(r.kind.toUpperCase()) + '</span><p class="cr-impact-value">' + (r.status === 'unknown' ? 'Not assessable' : esc(typeof r.value === 'number' ? r.value.toLocaleString(undefined, { maximumSignificantDigits: 6 }) : r.value) + (r.unit ? ' ' + esc(r.unit) : '')) + '</p>' + (r.validAt ? '<p>' + (r.kind === 'forecast' ? 'Forecast valid: ' : 'Record / valid time: ') + esc(r.validAt) + '</p>' : '') + (r.method ? '<p><b>Method:</b> ' + esc(r.method) + '</p>' : '') + (r.note ? '<p>' + esc(r.note) + '</p>' : '') + impactReasons(r) + impactSources(r) + '</article>';
+    });
+    impactHTML += '</div>';
+    if (plan.impacts.records.length) impactHTML += '<h3>Public records behind this view</h3><div class="cr-impact-records">' + plan.impacts.records.map(function (r) { return '<article data-cr-impact-record="' + esc(r.id) + '"><h4>' + esc(r.label) + '</h4><p class="cr-note">Record ID: ' + esc(r.id) + '</p>' + impactBadge(r) + ' <span class="cr-badge">' + esc(r.kind.toUpperCase()) + '</span><p>' + (r.status === 'unknown' ? '<b>Not assessable.</b> ' : '') + esc(r.status === 'unknown' ? 'This record cannot support the selected impact with the available evidence.' : r.summary) + '</p>' + (r.validAt ? '<p>' + (r.kind === 'forecast' ? 'Forecast valid: ' : 'Record / valid time: ') + esc(r.validAt) + '</p>' : '') + impactReasons(r) + impactSources(r) + '</article>'; }).join('') + '</div>';
+    if (!impactRows.length) impactHTML += '<p class="cr-unknown">No applicable public impact records or quantified projection are available for this selection.</p>';
+    impactHTML += '<ul>' + plan.impacts.limitations.map(function (limit) { return '<li>' + esc(limit) + '</li>'; }).join('') + '</ul>';
+    h += section('impacts', 'Projected impacts and public-data context', impactHTML, 'interpretive');
     var actionHTML = '<p>These are planning prompts, not instructions to dispatch, switch equipment, prescribe, trade or evacuate. ' + (track === 'operator' ? 'Use your organization’s verified telemetry, SOP and decision authority.' : 'Follow current official instructions for your location.') + '</p>';
     ['verify', 'prepare', 'respond', 'review'].forEach(function (phase) {
       var list = selected.filter(function (a) { return a.phase === phase; }); if (!list.length) return;
       actionHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
       list.forEach(function (a) {
         var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
-        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + d.status + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
       });
     });
     if (!selected.length) actionHTML += '<p class="cr-unknown">No supported conditional action is available for this track. Verify missing evidence and consult the responsible authority; this is not an all-clear.</p>';
@@ -178,7 +245,7 @@
       return '<h3>' + ({ comparison: 'Comparison and balance', structure: 'Structure and coverage', spillover: 'Spillover and dependence' })[pillar] + '</h3>' + (ds.length ? ds.map(function (d) {
         var related = plan.actions.filter(function (a) { return a.track === track && a.diagnosticIds.includes(d.id); });
         var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
-        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + (d.metricId ? '#' + d.metricId + ' ' + esc(d.canonicalLabel) : esc(d.label)) + ' — ' + esc(d.status.toUpperCase()) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc((typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + (d.metricId ? '#' + d.metricId + ' ' + esc(d.canonicalLabel) : esc(d.label)) + ' — ' + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
       }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
     }).join('');
     h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');
@@ -196,14 +263,18 @@
     if (focused) { var nextFocus = doc.getElementById(focused); if (nextFocus) nextFocus.focus({ preventScroll: true }); }
   }
   function set(input) {
-    var nextRevision = signature(input || {});
+    // A forecast can expire while its source payload is unchanged. Make that
+    // transition an evidence revision on the existing visible-minute refresh.
+    var impact = input && input.impacts || {};
+    var clockState = (impact.items || []).concat(impact.records || []).filter(function (r) { return r && r.kind === 'forecast' && r.validAt != null; }).map(function (r) { var at = Date.parse(r.validAt); return [r.id, Number.isFinite(at) && at > Date.now()]; });
+    var nextRevision = signature([input || {}, clockState]);
     if (nextRevision === revision) return;
     function evidenceOnly(value) {
       if (Array.isArray(value)) return value.map(evidenceOnly);
       if (value && typeof value === 'object') { var out = {}; Object.keys(value).forEach(function (key) { if (key !== 'checkedAt') out[key] = evidenceOnly(value[key]); }); return out; }
       return value;
     }
-    var nextEvidence = signature(evidenceOnly(input || {}));
+    var nextEvidence = signature([evidenceOnly(input || {}), clockState]);
     if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
     evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
   }
@@ -238,6 +309,7 @@
     return function () { stopped = true; root.clearTimeout(timer); root.clearInterval(interval); if (observer) observer.disconnect(); if (doc) { doc.removeEventListener('visibilitychange', visible); doc.removeEventListener('change', changed); doc.removeEventListener('input', changed); } };
   }
   function exportPlan() {
+    if (payload) set(payload); // Reconcile expiry even before the next visible-minute tick.
     return { exportedAt: new Date().toISOString(), note: 'Local planning review; not a record of completed operations.',
       track: track, plan: currentPlan(), acknowledgments: Array.from(acknowledgments) };
   }

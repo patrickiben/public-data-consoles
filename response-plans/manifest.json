@@ -4,7 +4,8 @@
     {
       "slug": "antimicrobial-resistance",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "coastal-water-resilience",
@@ -14,152 +15,182 @@
     {
       "slug": "global-air-pollution",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-cancer",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-demographic-transition",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-health-atlas",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-health-systems",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-hiv-tb-malaria",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-immunization",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-maternal-child-health",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-mental-health",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-ncd-burden",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-ntds",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-nutrition",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-outbreak-tracker",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-road-safety",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "global-wash",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "human-trafficking",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "medical-cost-abroad",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "medical-debt-assistant",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "nhs-scotland-strain",
       "native": false,
-      "method": "Historical service comparisons plus published residence-to-treatment care-use connectivity and outside-board stay shares; missing cells remain unknown, and stays do not establish unique people, transfers or current capacity."
+      "method": "Historical service comparisons plus published residence-to-treatment care-use connectivity and outside-board stay shares; missing cells remain unknown, and stays do not establish unique people, transfers or current capacity.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "prescription-savings",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "quake-consequence",
       "native": false,
-      "method": "Model or association graph supports labeled scenarios, not verified causal transmission or intervention benefit."
+      "method": "Model or association graph supports labeled scenarios, not verified causal transmission or intervention benefit.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "resilience-telemetry",
       "native": false,
-      "method": "Model or association graph supports labeled scenarios, not verified causal transmission or intervention benefit."
+      "method": "Model or association graph supports labeled scenarios, not verified causal transmission or intervention benefit.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "river-flood-network",
       "native": false,
-      "method": "Domain-specific directed observations require time/unit/boundary alignment; diagnostics and actions remain interpretive."
+      "method": "Domain-specific directed observations require time/unit/boundary alignment; diagnostics and actions remain interpretive.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "river-flood-propagation",
       "native": false,
-      "method": "Domain-specific directed observations require time/unit/boundary alignment; diagnostics and actions remain interpretive."
+      "method": "Domain-specific directed observations require time/unit/boundary alignment; diagnostics and actions remain interpretive.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "us-grid-strain",
       "native": false,
-      "method": "Domain-specific directed observations require time/unit/boundary alignment; diagnostics and actions remain interpretive."
+      "method": "Domain-specific directed observations require time/unit/boundary alignment; diagnostics and actions remain interpretive.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "us-local-hazards",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "us-overdose-surveillance",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "us-respiratory-surveillance",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "usaid-consequence",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     },
     {
       "slug": "va-strain",
       "native": false,
-      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",
+      "impactMethod": "Public records retain observation periods and units; quantities require linked applicable evidence. Missing operational or personal inputs remain explicit. Historical reports support context only."
     }
   ]
 }

@@ -33,7 +33,7 @@ try{
   assert.equal(metric(p,2).value,80,'W1 uses entire empirical distributions');
   assert.equal(metric(p,5).value,2);assert.equal(metric(p,6).value,1);
   assert.equal(metric(p,8).value,10.53,'normalized trapezoidal historical gap');
-  assert.ok(p.evidence.every(e=>e.quality==='historical'));
+  assert.ok(p.evidence.every(e=>['historical','missing'].includes(e.quality)));
   assert.ok(p.actions.filter(a=>a.selected).every(a=>a.phase!=='respond'));
   await page.evaluate(()=>{SNAP.sites=[];SNAP.national=[];refreshResponse();});
   p=await plan(page);assert.ok(p.diagnostics.every(d=>d.status==='unknown'),'empty cohorts cannot become healthy zeros');
@@ -43,9 +43,9 @@ try{
   window.deepUnits=()=>({u:[{cap:100,census:95,rnAct:4,rnTgt:5},{cap:100,census:70,rnAct:5,rnTgt:5}]});
  },async page=>{
   let p=await plan(page);ten(p);assert.equal(metric(p,5).value,1);assert.equal(metric(p,6).value,1);
-  assert.ok(p.evidence.every(e=>e.basis==='demo'));assert.ok(p.actions.every(a=>a.practice));
+  assert.ok(p.evidence.filter(e=>e.id!=='va-official-guidance').every(e=>e.basis==='demo'));assert.equal(p.evidence.find(e=>e.id==='va-official-guidance').quality,'historical');assert.ok(p.actions.every(a=>a.practice));
   await page.evaluate(()=>{STATUS_OVERRIDE={secret:{census:987654321}};refreshResponse();});
-  p=await plan(page);assert.ok(p.evidence.every(e=>e.value===null));assert.doesNotMatch(JSON.stringify(p),/987654321/);
+  p=await plan(page);assert.ok(p.evidence.filter(e=>e.id!=='va-official-guidance').every(e=>e.value===null));assert.doesNotMatch(JSON.stringify(p),/987654321/);
   await page.evaluate(()=>{STATUS_OVERRIDE={};deepUnits=()=>({u:[]});refreshResponse();});
   p=await plan(page);assert.ok(p.diagnostics.every(d=>d.status==='unknown'));
  });
@@ -54,8 +54,8 @@ try{
   window.QuakeResponse={read:()=>structuredClone(fixture)};
  },async page=>{
   let p=await plan(page);ten(p);assert.equal(metric(p,2).value,1.2);
-  assert.ok(p.evidence.every(e=>e.basis==='modeled'));assert.match(p.network.semantics,/not observed utility connections/);
-  assert.equal(metric(p,9).status,'triggered');
+  assert.ok(p.evidence.filter(e=>e.id!=='event').every(e=>e.basis==='modeled'));assert.equal(p.evidence.find(e=>e.id==='event').basis,'measured');assert.match(p.network.semantics,/not observed utility connections/);
+  for(const n of [4,9,10])assert.equal(metric(p,n).status,'unknown','Assumed links cannot establish real network dimension '+n);
   await page.evaluate(()=>{fixture.graph.hasShakeMap=false;refreshResponse();});
   p=await plan(page);assert.ok(p.diagnostics.every(d=>d.status==='unknown'),'distance fallback cannot become an authoritative shaking contour');
   await page.evaluate(()=>{fixture.graph.hasShakeMap=true;fixture.event.properties.time=Date.now()+86400000;refreshResponse();});

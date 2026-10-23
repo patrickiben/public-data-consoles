@@ -145,6 +145,18 @@ try{
           assert.ok(exported.plan.limitations.length>0,'Domain limits must be supplied: '+entry.slug);
           assert.ok(exported.plan.actions.some(a=>a.track==='public'),'Public actions: '+entry.slug);
           assert.ok(exported.plan.actions.some(a=>a.track==='operator'),'Operator actions: '+entry.slug);
+          const impacts=exported.plan.impacts;
+          assert.ok(impacts.items.length+impacts.records.length>0,'Explicit public-data impact/reference coverage: '+entry.slug);
+          assert.ok(impacts.limitations.length>0,'Impact limits: '+entry.slug);
+          for(const item of impacts.items.concat(impacts.records).filter(item=>item.status==='available')){
+            assert.ok(item.sources.length>0,entry.slug+' impact must retain its public evidence');
+            for(const source of item.sources){assert.match(source.source,/^https?:\/\//);assert.ok(source.measuredAt);}
+            assert.ok(['observed','forecast','context','scenario'].includes(item.kind));
+            if(item.kind==='observed'||item.kind==='forecast')assert.equal(item.quality,'current');
+            if(item.practice)assert.equal(item.kind,'scenario');
+          }
+          await page.locator('#cr-open-impacts').click();
+          assert.equal(await page.locator('[data-cr-section="impacts"]').getAttribute('open'),'');
           await page.locator('#console-response-shortcut').click();
           await page.locator('#cr-track-operator').click({timeout:60000});
           assert.equal(await page.locator('#cr-track-operator').getAttribute('aria-pressed'),'true');

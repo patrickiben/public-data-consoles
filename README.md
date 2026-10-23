@@ -7,7 +7,8 @@ automatic updates; embedded measurements remain available offline. See the
 [dashboard update guide](https://patrickiben.github.io/public-data-consoles/data-updates.html)
 for what each console can populate automatically and which inputs remain personal or modeled.
 
-These are **descriptive decision-support** tools, not predictions. Each console labels its data as
+These are **descriptive decision-support** tools. Official forecasts retain their source scope and validity;
+no unsupported outcome forecast is inferred. Each console labels its data as
 *measured* (public observations, with timestamps), *modeled* (published estimates, cited), or *demo* (clearly-labeled
 placeholder data). Nothing in this repository contains protected health information or proprietary data.
 
@@ -53,12 +54,21 @@ Each dimension shows the domain condition or numerical proxy, required inputs, a
 and practical next steps. Public and professional-operator tracks use the same evidence with different
 responsibilities, escalation routes and verify/prepare/respond/review phases.
 
+The **Review impacts and source records** button opens the public quantities behind the plan:
+source gauge observations and forecasts, official modeled exposure, reported grid demand,
+NHS/CDC service and surveillance counts, annual health indicators, and dated agency/reference records.
+Each item retains its source, reporting period, scope and method. Counts derived from rates require
+an exact-year population with the right definition; missing inputs remain unestimated. Historical
+reports and elapsed forecast benchmarks are context, not future impact forecasts.
+
 Unsupported dimensions are **unknown**, with the inputs needed to assess them. Historical reports
 support planning; synthetic exercises remain practice. A proxy is labeled with its units and limits,
 and does not establish the original CRT estimand or a validated cross-domain metric. Acknowledgments
 are local planning notes, reset when evidence changes; exports and printing are local browser actions.
+The checklist labels conditions as **Review**, **Context · condition not met**, or **Unknown**; none is an all-clear.
 See the [field guide](https://patrickiben.github.io/public-data-consoles/response-plans/guide.html) for interpretation and the
-[maintainer contract](response-plans/CONTRACT.md) for adaptation rules.
+[maintainer contract](response-plans/CONTRACT.md) for adaptation rules. The
+[public-data coverage matrix](response-plans/PUBLIC_DATA_COVERAGE.md) lists what each dashboard can support.
 
 ## Consoles
 
