@@ -52,8 +52,358 @@
   .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
   @media(max-width:900px){main{flex-direction:column}#side{width:100%}}
 </style>
+<!-- CONSOLE_RESPONSE_HEAD_START -->
+<style>
+#console-response{box-sizing:border-box;position:relative;z-index:1;margin:16px auto;padding:18px;max-width:1440px;border:1px solid #486377;border-top:4px solid #26c6da;border-radius:12px;background:#10212d;color:#e2edf4;font:14px/1.55 system-ui,sans-serif;text-align:left}
+#console-response *{box-sizing:border-box}#console-response h2{font-size:22px;margin:0 0 4px;color:#f1f8fc}#console-response h3{font-size:16px;margin:16px 0 8px;color:#e2edf4}#console-response h4{font-size:15px;margin:0 0 6px;color:#f1f8fc}
+#console-response p{margin:7px 0}#console-response a{color:#86e1ee;text-decoration:underline}#console-response li{margin:12px 0}#console-response .cr-head{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+#console-response .cr-head p,#console-response .cr-note{color:#b2c6d3}#console-response .cr-note{font-size:12px}#console-response .cr-badge{display:inline-block;border:1px solid #648093;border-radius:5px;padding:1px 5px;font-size:10px;color:#d2e6f0;vertical-align:middle}
+#console-response .cr-head{padding:0;margin:0;border:0;background:transparent}
+#console-response .cr-plan-group>summary{color:#a7f0f2;font-size:15px}
+#console-response .cr-summary{padding:10px;border-left:3px solid #e5b35a;background:#24303b}#console-response .cr-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+#console-response button{font:inherit;font-size:13px;padding:8px 12px;border:1px solid #6d8b9e;border-radius:6px;background:#173343;color:#f1f8fc;cursor:pointer}#console-response button[aria-pressed=true]{background:#165e6b;border-color:#6de3e7}
+#console-response details{margin:9px 0;border:1px solid #3e596b;border-radius:7px;padding:10px}#console-response summary{cursor:pointer;font-weight:650;list-style:revert}#console-response details>p,#console-response details>ul{padding:2px 7px}
+#console-response .cr-action{margin:10px 0;padding:13px;border:1px solid #3f6475;border-radius:7px;background:#142b39}#console-response .cr-action label{display:block;color:#c7dce7;font-size:12px;margin-top:10px}#console-response input[type=checkbox]{margin-right:6px;width:16px;height:16px;vertical-align:middle}
+#console-response .cr-diagnostic{padding:10px;border-left:3px solid #698396;background:#162d3b}#console-response .cr-triggered{border-color:#e5b35a}#console-response .cr-clear{border-color:#55bda0}#console-response .cr-unknown,#console-response .cr-quality{color:#f0cc87}
+#console-response .cr-table{overflow-x:auto}#console-response table{width:100%;border-collapse:collapse;color:inherit;font-size:12px}#console-response th,#console-response td{text-align:left;padding:8px;border-bottom:1px solid #3e596b}
+#console-response :focus-visible,#console-response-shortcut:focus-visible{outline:3px solid #f4d57d;outline-offset:3px}
+#console-response select{font:inherit;color:#e2edf4;background:#173343;border:1px solid #6d8b9e;border-radius:4px;padding:5px;max-width:100%}
+#console-response-shortcut{position:fixed;right:14px;bottom:14px;z-index:10020;border:1px solid #87d5e0;border-radius:24px;padding:10px 15px;background:#103f50;color:#f1f8fc;font:600 13px system-ui,sans-serif;box-shadow:0 2px 12px #0007;text-decoration:none}
+@media(max-width:640px){#console-response{margin:10px 6px;padding:13px}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:19px}}
+@media print{#console-response-shortcut,#console-response .cr-toolbar{display:none!important}#console-response{background:white!important;color:#111!important;max-width:none;border:1px solid #555}#console-response *{color:#111!important;box-shadow:none!important}#console-response details{display:block!important}#console-response details>*{display:block!important}#console-response .cr-action{break-inside:avoid;background:white!important}#console-response .cr-badge{border-color:#555}}
+</style>
+<script>
+(function (root) {
+  'use strict';
+  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set();
+  var metrics = [
+    ['Population Balance', 'comparison', 'Defined comparison groups, workload/population denominators and aligned periods.'],
+    ['Wasserstein Distance / Shape Imbalance', 'comparison', 'Comparable distributions in the same unit and period; group membership.'],
+    ['Density Symmetry', 'comparison', 'Observed locations or defined comparable density denominators.'],
+    ['Euler Characteristic / Contiguity', 'structure', 'A justified adjacency/topology definition and observed coverage.'],
+    ['Persistence Gap', 'structure', 'Repeated or threshold-adjacent measurements and an explicit reference margin.'],
+    ['Spatial Mixing / Scale Stability', 'structure', 'Comparable measurements across specified spatial or aggregation scales.'],
+    ['Variational Free Energy', 'structure', 'A specified probabilistic model/objective and dependence structure; not an invented score.'],
+    ['Contamination AUC', 'spillover', 'Exposure/response across a justified range of distances, doses or thresholds.'],
+    ['Frontier Risk / Buffer Depth AUC', 'spillover', 'Defined exposed/unexposed boundary, distance/depth and comparable weights.'],
+    ['Mobility Network Leakage', 'spillover', 'Observed directed links or a labeled scenario, transfer semantics and boundary coverage.']
+  ];
+  var basisNames = { measured: 'MEASURED', modeled: 'MODELED', interpretive: 'INTERPRETIVE', demo: 'DEMO · practice only' };
+  function text(value) { return value == null ? '' : String(value); }
+  function esc(value) { return text(value).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function url(value) { return /^https?:\/\/[^\s]+$/i.test(text(value)) ? text(value) : ''; }
+  function canonical(value) {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === 'object') {
+      var out = {}; Object.keys(value).sort().forEach(function (key) { out[key] = canonical(value[key]); }); return out;
+    }
+    return value;
+  }
+  function signature(value) { return JSON.stringify(canonical(value)); }
+  function evaluate(input) {
+    input = input || {};
+    var facts = (Array.isArray(input.evidence) ? input.evidence : []).map(function (fact) {
+      var f = Object.assign({}, fact);
+      if (!basisNames[f.basis]) f.basis = 'interpretive';
+      if (!['current', 'historical', 'stale', 'missing'].includes(f.quality)) f.quality = 'missing';
+      if (f.value == null || f.value === '' || (typeof f.value === 'number' && !Number.isFinite(f.value))) f.quality = 'missing';
+      if (!['number', 'string'].includes(typeof f.value)) { f.value = null; f.quality = 'missing'; }
+      f.source = url(f.source); return f;
+    });
+    var byFact = new Map(facts.map(function (f) { return [f.id, f]; }));
+    var diagnostics = (Array.isArray(input.diagnostics) ? input.diagnostics : []).map(function (diagnostic) {
+      var d = Object.assign({}, diagnostic), ids = Array.isArray(d.evidenceIds) ? d.evidenceIds : [];
+      d.evidenceIds = ids; d.status = ['triggered', 'clear', 'unknown'].includes(d.status) ? d.status : 'unknown';
+      d.scope = d.scope === 'planning' ? 'planning' : 'current';
+      d.reasons = [];
+      if (typeof d.value === 'number' && !Number.isFinite(d.value)) d.reasons.push('The numeric metric is not finite.');
+      if (!ids.length) d.reasons.push('No supporting evidence is linked.');
+      ids.forEach(function (id) {
+        var fact = byFact.get(id);
+        if (!fact || ['missing', 'stale'].includes(fact.quality)) d.reasons.push((fact ? fact.label : id) + ': missing or stale evidence.');
+        else if (fact.quality === 'historical' && d.scope !== 'planning') d.reasons.push(fact.label + ': historical evidence cannot establish current conditions.');
+      });
+      if (d.reasons.length) d.status = 'unknown';
+      d.practice = !!input.scenario || ids.some(function (id) { return byFact.get(id) && byFact.get(id).basis === 'demo'; });
+      d.current = ids.length > 0 && ids.every(function (id) { var f = byFact.get(id); return f && f.quality === 'current' && f.basis !== 'demo'; });
+      return d;
+    });
+    diagnostics.forEach(function (d) { var n = Number(d.metricId == null ? d.dimension : d.metricId); d.metricId = Number.isInteger(n) && n >= 1 && n <= 10 ? n : null; });
+    var canonicalDiagnostics = metrics.map(function (metric, index) {
+      var matches = diagnostics.filter(function (d) { return d.metricId === index + 1; });
+      var d = matches.length === 1 ? matches[0] : { id: 'dimension-' + (index + 1), metricId: index + 1, status: 'unknown', evidenceIds: [], reasons: [], scope: 'planning', current: false };
+      d = Object.assign({}, d, { canonicalLabel: metric[0], pillar: metric[1] });
+      if (matches.length > 1) { d.status = 'unknown'; d.reasons = ['Conflicting duplicate canonical dimension definitions.']; }
+      d.label = d.label || metric[0];
+      d.requiredInputs = d.requiredInputs && (!Array.isArray(d.requiredInputs) || d.requiredInputs.length) ? d.requiredInputs : metric[2];
+      d.analyticalMitigation = d.analyticalMitigation || 'Acquire and validate the required inputs; assess applicability before choosing an analysis.';
+      if (!matches.length) { d.rule = 'Not assessable from the supplied data.'; d.explanation = 'No validated metric or justified domain proxy has been supplied.'; }
+      return d;
+    });
+    diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
+    var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
+    var actions = (Array.isArray(input.actions) ? input.actions : []).map(function (action) {
+      var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
+      (Array.isArray(a.metricIds) ? a.metricIds : []).forEach(function (n) { var d = diagnostics.find(function (item) { return item.metricId === Number(n); }); if (d && !ids.includes(d.id)) ids.push(d.id); });
+      var relevant = ids.length ? ids.map(function (id) { return byDiagnostic.get(id) || { status: 'unknown', current: false }; }) : diagnostics;
+      a.track = a.track === 'operator' ? 'operator' : 'public';
+      a.phase = ['verify', 'prepare', 'respond', 'review'].includes(a.phase) ? a.phase : 'verify';
+      a.when = ['always', 'triggered', 'unknown'].includes(a.when) ? a.when : 'unknown';
+      if (a.when === 'always' && a.phase === 'respond') a.phase = 'prepare';
+      a.selected = a.when === 'always' || relevant.some(function (d) { return d.status === a.when; });
+      a.practice = !!input.scenario || relevant.some(function (d) { return d.practice; });
+      a.withheld = a.phase === 'respond' && a.when !== 'always' && !a.practice && !relevant.some(function (d) { return d.status === 'triggered' && d.current; });
+      if (a.withheld) a.selected = false;
+      a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl); return a;
+    });
+    return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
+      evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null,
+      limitations: Array.isArray(input.limitations) ? input.limitations.map(text) : [], scenario: !!input.scenario };
+  }
+  function badge(basis) { return '<span class="cr-badge">' + esc(basisNames[basis] || basisNames.interpretive) + '</span>'; }
+  function sourceLink(source, label) { return url(source) ? '<a href="' + esc(url(source)) + '" target="_blank" rel="noopener noreferrer">' + esc(label || 'Source') + '</a>' : '<span>Source not supplied</span>'; }
+  function mount() {
+    if (!doc || !doc.body) return;
+    var panel = doc.getElementById('console-response');
+    if (!panel) return;
+    if (!panel.dataset.mounted) {
+      panel.dataset.mounted = 'true';
+      panel.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print]');
+        if (!button) return;
+        if (button.dataset.crTrack) { track = button.dataset.crTrack; render(); }
+        if (button.hasAttribute('data-cr-print')) root.print();
+        if (button.hasAttribute('data-cr-export')) download();
+      });
+      panel.addEventListener('change', function (event) {
+        var metric = Number(event.target.dataset.crAssess);
+        if (metric >= 1 && metric <= 10) { if (event.target.value === 'review') manualReview.add(metric); else manualReview.delete(metric); render(); return; }
+        var id = event.target.dataset.crAck;
+        if (id) { if (event.target.checked) acknowledgments.add(id); else acknowledgments.delete(id); }
+      });
+      var shortcut = doc.getElementById('console-response-shortcut');
+      if (shortcut) shortcut.addEventListener('click', function (event) {
+        var group = panel.querySelector('[data-cr-section="plan"]'); if (group) group.open = true;
+        event.preventDefault(); var checklist = panel.querySelector('[data-cr-section="actions"]'); if (checklist) checklist.open = true;
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var heading = doc.getElementById('console-response-title'); if (heading) heading.focus();
+      });
+      var printSections = null;
+      function beginPrint() {
+        if (printSections) return;
+        printSections = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
+        panel.querySelectorAll('details').forEach(function (d) { d.open = true; });
+      }
+      function endPrint() {
+        if (!printSections) return;
+        panel.querySelectorAll('details').forEach(function (d) { d.open = printSections.has(d.dataset.crSection); });
+        printSections = null;
+      }
+      root.addEventListener('beforeprint', beginPrint); root.addEventListener('afterprint', endPrint);
+      if (root.matchMedia) {
+        var printMedia = root.matchMedia('print');
+        if (printMedia.addEventListener) printMedia.addEventListener('change', function (event) { if (event.matches) beginPrint(); else endPrint(); });
+      }
+    }
+    render();
+  }
+  function currentPlan() {
+    var plan = evaluate(payload);
+    manualReview.forEach(function (n) {
+      var d = plan.diagnostics.find(function (item) { return item.metricId === n; }); if (!d) return;
+      var authority = plan.actions.find(function (a) { return a.track === 'operator' && a.diagnosticIds.includes(d.id) && a.authorityUrl; });
+      plan.actions.push({ id: 'manual-review-' + n, track: 'operator', phase: 'verify', when: 'always', selected: true, practice: false,
+        diagnosticIds: [d.id], title: 'Self-reported review needed: #' + n + ' ' + d.canonicalLabel,
+        nextStep: d.analyticalMitigation + ' Required inputs: ' + text(d.requiredInputs),
+        escalateWhen: 'A local planning flag is not a measured incident. Review with your designated lead and verified SOP before taking operational action.',
+        authorityUrl: authority ? authority.authorityUrl : '', selfReported: true });
+    });
+    plan.manualAssessments = Array.from(manualReview).sort(function (a, b) { return a - b; }).map(function (n) { return { metricId: n, assessment: 'review needed', basis: 'self-reported local planning' }; });
+    return plan;
+  }
+  function render() {
+    if (!doc) return;
+    var panel = doc.getElementById('console-response'); if (!panel || !panel.dataset.mounted) return;
+    var plan = currentPlan(), unknown = plan.diagnostics.filter(function (d) { return d.metricId && d.status === 'unknown'; }).length;
+    var selected = plan.actions.filter(function (a) { return a.track === track && a.selected; });
+    var open = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
+    var focused = doc.activeElement && panel.contains(doc.activeElement) ? doc.activeElement.id : '';
+    panel.dataset.rendered = 'true';
+    var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
+    h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open ten-parameter checklist and evidence</summary>';
+    h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
+    function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
+    var actionHTML = '<p>These are planning prompts, not instructions to dispatch, switch equipment, prescribe, trade or evacuate. ' + (track === 'operator' ? 'Use your organization’s verified telemetry, SOP and decision authority.' : 'Follow current official instructions for your location.') + '</p>';
+    ['verify', 'prepare', 'respond', 'review'].forEach(function (phase) {
+      var list = selected.filter(function (a) { return a.phase === phase; }); if (!list.length) return;
+      actionHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
+      list.forEach(function (a) {
+        var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
+        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + d.status + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+      });
+    });
+    if (!selected.length) actionHTML += '<p class="cr-unknown">No supported conditional action is available for this track. Verify missing evidence and consult the responsible authority; this is not an all-clear.</p>';
+    actionHTML += '<p class="cr-note">Checks are temporary local planning notes, not completed operations. Context or evidence changes reset them. Nothing is transmitted or stored by this response layer.</p>';
+    h += section('actions', '1. Condition-dependent response plan', actionHTML, 'interpretive');
+    var evidenceHTML = plan.evidence.length ? '<ul>' + plan.evidence.map(function (f) { return '<li><b>' + esc(f.label || f.id) + ':</b> ' + esc(f.quality === 'missing' ? 'Unavailable' : f.value) + (f.unit ? ' ' + esc(f.unit) : '') + ' ' + badge(f.basis) + ' <span class="cr-quality">' + esc(f.quality) + '</span><br>Observed / reported: ' + esc(f.measuredAt || 'not supplied') + '; checked: ' + esc(f.checkedAt || 'not supplied') + '. ' + sourceLink(f.source) + (f.note ? '<br>' + esc(f.note) : '') + '</li>'; }).join('') + '</ul>' : '<p class="cr-unknown">Evidence unavailable. No current incident status can be inferred.</p>';
+    h += section('evidence', '2. Evidence, dates and sources', evidenceHTML, 'interpretive');
+    var diagnosticHTML = ['comparison', 'structure', 'spillover'].map(function (pillar) {
+      var ds = plan.diagnostics.filter(function (d) { return d.pillar === pillar; });
+      return '<h3>' + ({ comparison: 'Comparison and balance', structure: 'Structure and coverage', spillover: 'Spillover and dependence' })[pillar] + '</h3>' + (ds.length ? ds.map(function (d) {
+        var related = plan.actions.filter(function (a) { return a.track === track && a.diagnosticIds.includes(d.id); });
+        var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + (d.metricId ? '#' + d.metricId + ' ' + esc(d.canonicalLabel) : esc(d.label)) + ' — ' + esc(d.status.toUpperCase()) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc((typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+      }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
+    }).join('');
+    h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');
+    var net = plan.network, networkHTML;
+    if (!net) networkHTML = '<p class="cr-unknown">Directed network information is unavailable. No source/sink, causal route or restoration gain is inferred.</p>';
+    else {
+      networkHTML = '<p><b>' + esc(net.label) + '</b> ' + badge(net.basis) + '<br>' + esc(net.semantics) + '<br>Period alignment: ' + esc(net.period || 'not supplied') + '; coverage: ' + esc(net.coverage || 'not supplied') + '.</p>';
+      if (Array.isArray(net.roles) && net.roles.length) networkHTML += '<div class="cr-table"><table><thead><tr><th>Entity</th><th>Role / interpretation</th><th>Inbound</th><th>Outbound</th><th>Unit</th></tr></thead><tbody>' + net.roles.map(function (r) { return '<tr><td>' + esc(r.label || r.id) + '</td><td>' + esc(r.role) + '</td><td>' + esc(r.inbound == null ? 'Unavailable' : r.inbound) + '</td><td>' + esc(r.outbound == null ? 'Unavailable' : r.outbound) + '</td><td>' + esc(r.unit || 'not additive') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      networkHTML += '<p>' + esc((net.limitations || []).join(' ')) + '</p>';
+    }
+    h += section('network', '4. Directed accounting and method limits', networkHTML, 'interpretive');
+    h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p><p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
+    h += '</details>';
+    panel.innerHTML = h;
+    if (focused) { var nextFocus = doc.getElementById(focused); if (nextFocus) nextFocus.focus({ preventScroll: true }); }
+  }
+  function set(input) {
+    var nextRevision = signature(input || {});
+    if (nextRevision === revision) return;
+    function evidenceOnly(value) {
+      if (Array.isArray(value)) return value.map(evidenceOnly);
+      if (value && typeof value === 'object') { var out = {}; Object.keys(value).forEach(function (key) { if (key !== 'checkedAt') out[key] = evidenceOnly(value[key]); }); return out; }
+      return value;
+    }
+    var nextEvidence = signature(evidenceOnly(input || {}));
+    if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
+    evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
+  }
+  function connect(read, selectors) {
+    var stopped = false, timer = null, interval = null, observer = null, targets = Array.isArray(selectors) ? selectors : selectors ? [selectors] : [];
+    function update() {
+      if (stopped) return;
+      try { set(read()); }
+      catch (error) { set({ title: 'Response plan', context: 'Evidence reader unavailable', limitations: ['The console evidence could not be read. Verify the original sources before deciding.'] }); }
+    }
+    function start() {
+      if (stopped) return;
+      update();
+      if (!doc || !root.MutationObserver) return;
+      observer = new root.MutationObserver(function (records) {
+        var relevant = records.some(function (record) {
+          var el = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+          if (!el || el.closest('#console-response')) return false;
+          return !targets.length || targets.some(function (selector) { return el.matches(selector) || !!el.closest(selector) || !!el.querySelector(selector); });
+        });
+        if (relevant) { root.clearTimeout(timer); timer = root.setTimeout(update, 80); }
+      });
+      observer.observe(doc.body, { subtree: true, childList: true, characterData: true, attributes: true });
+      interval = root.setInterval(function () { if (!doc.hidden) update(); }, 60000);
+      doc.addEventListener('visibilitychange', visible);
+      doc.addEventListener('change', changed);
+      doc.addEventListener('input', changed);
+    }
+    function visible() { if (!doc.hidden) update(); }
+    function changed(event) { if (!event.target.closest('#console-response') && (!targets.length || targets.some(function (selector) { return event.target.matches(selector) || !!event.target.closest(selector); }))) update(); }
+    if (doc && doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', start, { once: true }); else start();
+    return function () { stopped = true; root.clearTimeout(timer); root.clearInterval(interval); if (observer) observer.disconnect(); if (doc) { doc.removeEventListener('visibilitychange', visible); doc.removeEventListener('change', changed); doc.removeEventListener('input', changed); } };
+  }
+  function exportPlan() {
+    return { exportedAt: new Date().toISOString(), note: 'Local planning review; not a record of completed operations.',
+      track: track, plan: currentPlan(), acknowledgments: Array.from(acknowledgments) };
+  }
+  function download() {
+    var blob = new Blob([JSON.stringify(exportPlan(), null, 2)], { type: 'application/json' });
+    var link = doc.createElement('a'), objectURL = root.URL.createObjectURL(blob);
+    link.href = objectURL; link.download = 'console-response-plan.json'; link.click(); root.setTimeout(function () { root.URL.revokeObjectURL(objectURL); }, 1000);
+  }
+  function wasserstein1(left, right) {
+    if (!Array.isArray(left) || !Array.isArray(right) || !left.length || !right.length ||
+        left.concat(right).some(function (n) { return typeof n !== 'number' || !Number.isFinite(n); })) return null;
+    var a = left.slice().sort(function (x, y) { return x - y; }), b = right.slice().sort(function (x, y) { return x - y; });
+    var points = Array.from(new Set(a.concat(b))).sort(function (x, y) { return x - y; }), i = 0, j = 0, area = 0;
+    for (var k = 0; k < points.length - 1; k++) {
+      while (i < a.length && a[i] <= points[k]) i++;
+      while (j < b.length && b[j] <= points[k]) j++;
+      area += Math.abs(i / a.length - j / b.length) * (points[k + 1] - points[k]);
+    }
+    return area;
+  }
+  var definitions = Object.freeze(metrics.map(function (m, i) { return Object.freeze({ id: i + 1, name: m[0], pillar: m[1], requiredInputs: m[2] }); }));
+  var api = { set: set, connect: connect, evaluate: evaluate, exportPlan: exportPlan, metricDefinitions: definitions, math: { wasserstein1: wasserstein1 }, version: 1 };
+  root.ConsoleResponse = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  if (doc) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', mount, { once: true }); else mount(); }
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* Pure numerical and authoring helpers. Embedded with the response layer; no network or imports. */
+(function () {
+  'use strict';
+  const names = ['Population Balance', 'Wasserstein Distance (Shape Imbalance)', 'Density Symmetry',
+    'Euler Characteristic (Contiguity)', 'Persistence Gap', 'Spatial Mixing (scale-stability)',
+    'Variational Free Energy', 'Contamination AUC', 'Frontier Risk (Buffer Depth AUC)', 'Mobility Network Leakage'];
+  function wasserstein(a, b) {
+    return window.ConsoleResponse.math.wasserstein1(a, b);
+  }
+  function components(ids, edges) {
+    if (!Array.isArray(ids) || !Array.isArray(edges) || !ids.length) return null;
+    const adjacency = new Map(ids.map(id => [id, new Set()]));
+    for (const [a, b] of edges) if (adjacency.has(a) && adjacency.has(b)) {
+      adjacency.get(a).add(b); adjacency.get(b).add(a);
+    }
+    let count = 0; const seen = new Set();
+    for (const id of adjacency.keys()) if (!seen.has(id)) {
+      count++; const queue = [id]; seen.add(id);
+      for (let i = 0; i < queue.length; i++) for (const next of adjacency.get(queue[i]))
+        if (!seen.has(next)) { seen.add(next); queue.push(next); }
+    }
+    return count;
+  }
+  function build(spec) {
+    const overrides = spec.overrides || {};
+    const diagnostics = names.map((label, index) => {
+      const id = index + 1, row = spec.rows[index] || {}, override = overrides[id] || {};
+      return { id: 'metric-' + id, metricId: id, label,
+        pillar: id <= 3 ? 'comparison' : id <= 7 ? 'structure' : 'spillover',
+        status: 'unknown', evidenceIds: [], scope: 'planning',
+        rule: row.rule || 'Assess this dimension against a documented local comparison and review criterion.',
+        explanation: row.explanation || 'Not assessable from the public inputs currently supplied.',
+        analyticalMitigation: row.analyticalMitigation || 'Document the comparison, input quality and scope before interpreting this dimension.',
+        requiredInputs: row.requiredInputs || [], ...override };
+    });
+    const actions = [];
+    diagnostics.forEach((diagnostic, index) => {
+      const row = spec.rows[index] || {};
+      for (const track of ['public', 'operator']) for (const when of ['triggered', 'unknown']) {
+        const next = (track === 'public' ? row.publicAction : row.operatorAction) || 'Confirm the required inputs with the responsible data source.';
+        actions.push({ id: spec.slug + '-m' + (index + 1) + '-' + track + '-' + when,
+          metricIds: [index + 1], diagnosticIds: [diagnostic.id], track, when,
+          phase: when === 'unknown' ? 'verify' : (row.phase || 'prepare'),
+          title: (when === 'unknown' ? 'Resolve the input gap: ' : 'Review: ') + diagnostic.label,
+          nextStep: (when === 'unknown' ? 'This dimension is not machine-assessed. ' : '') + next,
+          escalateWhen: row.escalateWhen || spec.escalateWhen,
+          authorityUrl: row.authorityUrl || spec.authorityUrl });
+      }
+    });
+    return { slug: spec.slug, title: spec.title, context: spec.context,
+      scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics,
+      actions: [...(spec.baseline || []), ...actions], network: spec.network,
+      limitations: spec.limitations || [] };
+  }
+  window.ConsoleResponse.domain = { wasserstein, components, build };
+})();
+</script>
+<!-- CONSOLE_RESPONSE_HEAD_END -->
 </head>
-<body>
+<body><!-- CONSOLE_RESPONSE_MOUNT_START -->
+<section id="console-response" aria-labelledby="console-response-title"></section>
+<a id="console-response-shortcut" href="#console-response">Response plan</a>
+<!-- CONSOLE_RESPONSE_MOUNT_END -->
+
 <header>
   <div>
     <h1>USAID WITHDRAWAL — Consequence Console</h1>
@@ -68,14 +418,14 @@
 <main>
   <div id="left">
     <div class="card" id="fundcard">
-      <h2>Foreign-aid obligations: the collapse <span class="bdg MEASURED">MEASURED</span></h2>
-      <div class="cap">USAID (agency 072) total obligations by fiscal year — the real, measured policy shock everything downstream conditions on. Live from USAspending.gov; FY2026 is partial (through Q3).</div>
+      <h2>Foreign-aid obligations by reporting period <span class="bdg MEASURED">MEASURED</span></h2>
+      <div class="cap">USAID (agency 072) total obligations by fiscal year — agency financial reports from USAspending.gov when reachable. Latest fiscal-year totals can be partial; completed and partial windows are shown separately, without an unmatched annual cut percentage.</div>
       <div id="fundchart"></div>
       <div id="fundkv"></div>
     </div>
     <div class="card" id="ctrycard">
-      <h2>Where it dropped — recipient countries <span class="bdg MEASURED">MEASURED</span></h2>
-      <div class="cap">USAID obligations by recipient country, FY2024 → FY2026. Bars scaled to each country's FY2024 baseline; the dark overlay is FY2026. Home-coded buckets (United States HQ, Switzerland = Global Fund/UN pass-through) are excluded.</div>
+      <h2>Recipient-country allocation context <span class="bdg MEASURED">MEASURED</span></h2>
+      <div class="cap">Embedded recipient-country obligations, vintage 19 June 2026: full FY2024 versus partial FY2026 through Q3. These are unequal windows, not a matched annual cut estimate. This country allocation table is not refreshed by the agency-budget feed. Bars use the FY2024 scale; overlay is partial FY2026. Home-coded buckets (United States HQ, Switzerland = Global Fund/UN pass-through) are excluded.</div>
       <div id="ctrybars"></div>
       <div class="legend"><span><i style="background:var(--dim)"></i>FY2024 baseline</span><span><i style="background:var(--red)"></i>FY2026 (partial)</span></div>
     </div>
@@ -83,7 +433,7 @@
       <h2>Economic dependency — can the state survive it? <span class="bdg MEASURED">MEASURED · World Bank <span id="econdepfeed" style="opacity:.8">(snapshot)</span></span></h2>
       <div class="cap">Net development aid (ODA) as a share of each recipient's <b>whole economy</b> (% of GNI). Where this is high, an aid collapse is a macro and fiscal shock to the state itself — a consequence no death count captures. <b>Distinct from the recipient panel above</b> (which ranks USAID dollars): this ranks aid against GDP, surfacing the most structurally exposed economies — several of which are <i>not</i> the biggest dollar recipients. The US was the largest bilateral donor, so its withdrawal removes a large slice.</div>
       <div id="econdep"></div>
-      <div class="caveat">Net ODA received, % of GNI — all-donor and annual (latest World Bank data, 2023). US share varies by country; the projected "% of GDP lost from the 2025 cut" is a separate MODELED overlay (ODI/CGD), not shown here as a live figure.</div>
+      <div class="caveat">Net ODA received, % of GNI — all-donor annual context. Per-country reporting years can differ and are shown with each row. US share varies by country; the projected "% of GDP lost from the 2025 cut" is a separate MODELED overlay (ODI/CGD), not shown here as a live figure.</div>
       <div class="cite">Source: World Bank World Development Indicators, <code>DT.ODA.ODAT.GN.ZS</code> (fetched live in-browser, keyless; 2023 snapshot fallback).</div>
     </div>
     <div class="card" id="domesticcard">
@@ -102,7 +452,7 @@
     </div>
     <div class="card" id="deathcard">
       <h2>Modeled excess deaths <span class="bdg MODELED">MODELED — projections, not counts</span></h2>
-      <div class="cap">Published projections, each with its range and citation. Counterfactual: assumes cuts persist with no donor/national backfill — a worst-case <b>bound</b>, not a realized count. Not a running death ticker.</div>
+      <div class="cap">Published projections, each with its range and citation. Counterfactual: assumes cuts persist with no donor/national backfill — a published scenario, not a realized count. Not a running death ticker.</div>
       <div id="deaths"></div>
       <div class="caveat" id="deathnote"></div>
     </div>
@@ -171,7 +521,9 @@
 const SNAP = {"oblig":[{"fy":2019,"v":16.06},{"fy":2020,"v":16.84},{"fy":2021,"v":23.66},{"fy":2022,"v":32.76},{"fy":2023,"v":38.18},{"fy":2024,"v":25.34},{"fy":2025,"v":15.84},{"fy":2026,"v":6.21}],"status":{"fy":"2026","q":"3","oblig":6.25,"ba":16.66},"countries":[{"c":"Uganda","fy24":213,"fy25":47,"fy26":5},{"c":"South Africa","fy24":207,"fy25":89,"fy26":2},{"c":"Kenya","fy24":195,"fy25":127,"fy26":40},{"c":"Zimbabwe","fy24":134,"fy25":2,"fy26":0},{"c":"Tanzania","fy24":124,"fy25":69,"fy26":11},{"c":"Mozambique","fy24":109,"fy25":8,"fy26":7},{"c":"Nigeria","fy24":100,"fy25":21,"fy26":13},{"c":"Zambia","fy24":75,"fy25":13,"fy26":12},{"c":"Malawi","fy24":58,"fy25":25,"fy26":13},{"c":"Guatemala","fy24":56,"fy25":14,"fy26":0},{"c":"Bangladesh","fy24":56,"fy25":4,"fy26":0},{"c":"Congo (Kinshasa)","fy24":40,"fy25":10,"fy26":1},{"c":"Ethiopia","fy24":38,"fy25":14,"fy26":4},{"c":"El Salvador","fy24":33,"fy25":20,"fy26":0}],"deaths":[{"prog":"All programs (aggregate)","mid":14000000,"lo":8500000,"hi":19700000,"horizon":"by 2030 \u00b7 incl. >4.5M under-5; ~1.78M in 2025","badge":"MODELED","src":"Lancet, Rasella et al. (Jul 2025), 95% UI"},{"prog":"HIV / PEPFAR","mid":2900000,"lo":null,"hi":null,"horizon":"deaths by 2030 (~10.8M new infections)","badge":"MODELED","src":"Lancet HIV, Brink et al. (full-interruption)"},{"prog":"Tuberculosis","mid":null,"lo":100000,"hi":2240000,"horizon":"deaths by 2030 (scenario-dependent)","badge":"MODELED","src":"PLOS Glob. Pub. Health, 26-country"},{"prog":"Malaria","mid":100000,"lo":null,"hi":null,"horizon":"deaths / 13.6M cases = FULL PMI benefit at risk","badge":"MODELED","src":"Topazian et al./MAP \u2014 avertable benefit, not the ~47%-cut toll"},{"prog":"Family planning (maternal)","mid":34000,"lo":null,"hi":null,"horizon":"maternal deaths / yr (no published CI)","badge":"MODELED","src":"Guttmacher Institute"},{"prog":"Childhood vaccines","mid":1200000,"lo":null,"hi":null,"horizon":"child deaths over 5 yr","badge":"MODELED","src":"Gavi (stakeholder estimate)"}],"signals":[{"t":"South Africa HIV services (Q1-24\u2192Q1-25)","v":"testing \u22128.5% \u00b7 diagnosis \u221231% \u00b7 treatment initiation \u221230%","src":"aidsmap / Anova","attr":"measured"},{"t":"Mozambique HIV program","v":"ART initiation \u221214% \u00b7 viral-load tests \u221238\u201344% \u00b7 missed pickups +39%","src":"program data","attr":"measured"},{"t":"ARV stock (56 countries, May 2025)","v":"14% report \u22646 months' stock \u00b7 46% supply-chain disruptions","src":"UNAIDS","attr":"measured"},{"t":"Child nutrition (RUTF)","v":"shortages in 17 countries \u00b7 ~5,000t / ~$13M stranded","src":"UNICEF","attr":"measured"},{"t":"Implementing partners","v":"71% cancelled \u22651 activity \u00b7 widespread layoffs","src":"KFF","attr":"measured"},{"t":"Measles, Americas 2025","v":"14,891 cases / 29 deaths (~32\u00d7 vs 2024)","src":"PAHO","attr":"mixed \u00b7 multi-causal (incl. US domestic hesitancy)"}],"sectors":[{"s":"All awards terminated","pct":"83\u201386%","note":"~$27.7B unobligated freed","src":"CGD / State"},{"s":"Health awards","pct":"77%","src":"KFF/CGD"},{"s":"PEPFAR","pct":"65%","src":"KFF/CGD"},{"s":"Family planning","pct":"94\u201398%","src":"KFF/CGD"},{"s":"Climate","pct":">98%","src":"KFF/CGD"}],"geo":[{"region":"Sub-Saharan Africa","status":"mostly UNFILLED","note":"grant-funded HIV/TB/nutrition services stop rather than transfer; no donor at US scale","src":"CGD/KFF"},{"region":"China as 'gap-filler'","status":"largely a myth","note":"China grant-equivalent ~$5\u20138B/yr vs US ~$63B; its finance is mostly LOANS / rescue-lending (~60% to distressed borrowers by 2022)","src":"AidData v3.0"},{"region":"Russia / Gulf","status":"selective, narrow","note":"information & security influence (Sahel); targeted Gulf humanitarian spend \u2014 not broad health substitution","src":"Carnegie / ECFR"}],"baselines":{"pepfar":"20.6M people on ART via PEPFAR","pmi":"~30 PMI malaria focus countries","dah":"global development assistance for health down ~51% (IHME, 2025)"},"vintage":"2026-06-19"};
 const $=s=>document.querySelector(s);
 let DATA=JSON.parse(JSON.stringify(SNAP));
-const feedStatus={USAspending:'idle',Snapshot:'live',Narrative:'frozen'};
+const feedStatus={USAspending:'idle',Snapshot:'dated snapshot',Narrative:'frozen'};
+let budgetCheckedAt=null,budgetDownloadedAt=null;
+function budgetLabel(){return feedStatus.USAspending==='live'?'downloaded agency reports':budgetDownloadedAt?'last successful agency download; current refresh unavailable':'embedded '+DATA.vintage+' fallback; current refresh '+(feedStatus.USAspending==='loading'?'in progress':'unavailable');}
 const STATUS_OVERRIDE={}; // operator hook: STATUS_OVERRIDE[country|program]='watch'|'alert'
 function bdg(k){return `<span class="bdg ${k}">${k}</span>`;}
 function fmtB(v){return '$'+v.toFixed(1)+'B';}
@@ -187,18 +539,20 @@ function drawFund(){const o=DATA.oblig;const W=560,H=170,pad=30,bw=(W-2*pad)/o.l
       <text x="${cx.toFixed(1)}" y="${H-13}" text-anchor="middle" font-size="9" fill="var(--dim)">'${String(x.fy).slice(2)}</text>
       <text x="${cx.toFixed(1)}" y="${(H-30-h).toFixed(1)}" text-anchor="middle" font-size="8.5" fill="${recent?'#f0a0a0':'var(--dim)'}">${x.v.toFixed(0)}</text>`;});
   $('#fundchart').innerHTML=`<svg viewBox="0 0 ${W} ${H}">${bars}</svg>`;
-  const f23=o.find(x=>x.fy===2023),f26=o.find(x=>x.fy===2026);
-  const drop=f23&&f26?Math.round((1-f26.v/f23.v)*100):null;
-  $('#fundkv').innerHTML=`<div class="kv"><span>Peak (FY2023) → latest (FY2026, partial Q${DATA.status.q})</span><b>${fmtB(f23.v)} → ${fmtB(f26.v)} <span style="color:var(--red)">(−${drop}%)</span></b></div>
-    <div class="kv"><span>Current-year obligations (live)</span><b>${fmtB(DATA.status.oblig)} of ${fmtB(DATA.status.ba)} budget authority</b></div>
-    <div class="kv"><span>Awards terminated in the 2025 dismantling</span><b>${DATA.sectors[0].pct} <span class="cite">(${DATA.sectors[0].note}; ${DATA.sectors[0].src})</span></b></div>`;}
+  const reference=o.find(x=>x.fy===2023),latest=o.find(x=>x.fy===+DATA.status.fy)||o.at(-1);
+  $('#fundkv').innerHTML=`<div class="kv"><span>FY2023 full-year reference</span><b>${reference?fmtB(reference.v):'Unavailable'}</b></div>
+    <div class="kv"><span>Latest reporting FY${latest?.fy??'—'} (through Q${DATA.status.q}; completeness not confirmed)</span><b>${latest?fmtB(latest.v):'Unavailable'}</b></div>
+    <div class="caveat">Unequal reporting windows: no matched-period percent change is calculated. Annual totals and agency-status obligations may use different accounting updates.</div>
+    <div class="kv"><span>Agency status FY${DATA.status.fy} Q${DATA.status.q} · ${budgetLabel()}</span><b>${fmtB(DATA.status.oblig)} of ${fmtB(DATA.status.ba)} budget authority</b></div>
+    <div class="kv"><span>Archived award-termination context · snapshot ${DATA.vintage}</span><b>${DATA.sectors[0].pct} <span class="cite">(${DATA.sectors[0].note}; ${DATA.sectors[0].src})</span></b></div>`;}
+
 
 /* ---------- recipient country bars ---------- */
 function drawCountries(){const c=DATA.countries;const mx=Math.max(...c.map(x=>x.fy24));
-  let h='';for(const x of c){const ov=(STATUS_OVERRIDE[x.c]);const drop=x.fy24>0?Math.round((1-x.fy26/x.fy24)*100):0;
+  let h='';for(const x of c){const ov=(STATUS_OVERRIDE[x.c]);
     h+=`<div class="rank"><div class="nm">${x.c}${ov?' ⚑':''}</div>
       <div class="barwrap"><div class="bar" style="width:${(x.fy24/mx*100).toFixed(0)}%;background:var(--dim);opacity:.45"></div><div class="bar" style="width:${(x.fy26/mx*100).toFixed(0)}%;background:var(--red)"></div></div>
-      <div class="val">${fmtM(x.fy24)}→${fmtM(x.fy26)} <span style="color:var(--red)">−${drop}%</span></div></div>`;}
+      <div class="val">${fmtM(x.fy24)}→${fmtM(x.fy26)} <span class="cite">unequal windows</span></div></div>`;}
   $('#ctrybars').innerHTML=h;}
 
 /* ---------- waterfall ---------- */
@@ -255,23 +609,13 @@ function drawGeo(){let h='';for(const g of DATA.geo){const col=/myth/i.test(g.st
   $('#geo').innerHTML=h;}
 
 /* ---------- plain-English readout ---------- */
-function drawReadout(){const o=DATA.oblig,f23=o.find(x=>x.fy===2023),f26=o.find(x=>x.fy===2026),drop=Math.round((1-f26.v/f23.v)*100);
-  const agg=DATA.deaths[0];
-  $('#readout').innerHTML=`<ul style="margin:0;padding-left:18px">
-    <li style="margin:5px 0"><b>Measured:</b> U.S. foreign-aid obligations have fallen about <b>${drop}%</b> from their FY2023 peak (${fmtB(f23.v)} → ${fmtB(f26.v)}), with ${DATA.sectors[0].pct} of awards terminated. The hardest-hit recipients (e.g. ${DATA.countries[0].c}, ${DATA.countries[1].c}, ${DATA.countries[3].c}) are down 90%+ .</li>
-    <li style="margin:5px 0"><b>Measured on the ground:</b> real declines in HIV testing/treatment, ARV and nutrition supply, and partner staffing — observed, not projected.</li>
-    <li style="margin:5px 0"><b>Modeled:</b> if cuts persist with no backfill, published models project on the order of <b>${fmtDeaths(agg.lo)}–${fmtDeaths(agg.hi)}</b> excess deaths ${agg.horizon.split('·')[0]} (${agg.src}). This is a worst-case <b>bound</b> with wide uncertainty — a projection, not a count, and partly offset by documented mitigants.</li>
-    <li style="margin:5px 0"><b>Interpretive:</b> the "China fills the gap" story is mostly a myth — grant-funded health services tend to <b>stop</b> rather than transfer; the vacuum is largely <b>unfilled</b>. Instability/migration effects are multi-causal.</li>
-    </ul>
-    <div class="caveat" style="border-top:1px solid var(--bd);padding-top:7px"><b>Bottom line:</b> the funding shock is real and large; the human toll is a modeled range, not a measured count; the geopolitical fallout is interpretive. Descriptive of a policy shock — not a forecast, and not for release as a death count.</div>`;}
+function drawReadout(){
+  $('#readout').innerHTML=`<ul style="margin:0;padding-left:18px"><li><b>Agency finance:</b> ${budgetLabel()}; latest status FY${DATA.status.fy} Q${DATA.status.q}. A partial fiscal year is not compared as a full-year decline.</li><li><b>Country allocations and service signals:</b> dated embedded context (${DATA.vintage}), not live operational status. Verify current program budgets, inventory, service activity and backfill with the responsible organizations.</li><li><b>Published health scenarios:</b> projections in the separate panel are not observed deaths and are not recalculated from a funding ratio. Their assumptions, horizons and uncertainty differ; do not sum overlapping models.</li><li><b>Interpretation:</b> conflict, climate, national budgets and other donors also affect services and health. This console does not estimate a causal policy effect or current mortality.</li></ul>`;}
 
-/* ---------- escalate + feeds ---------- */
-function escalate(){const o=DATA.oblig,f23=o.find(x=>x.fy===2023),f26=o.find(x=>x.fy===2026),drop=1-f26.v/f23.v;
-  let col='var(--amber)',tx='Elevated — aid contracting';
-  if(drop>=0.6){col='var(--red)';tx='Critical — aid largely withdrawn';}
-  if(Object.values(STATUS_OVERRIDE).includes('alert')){col='var(--red)';tx='Operator alert active';}
-  $('#threat').innerHTML=`<span class="dot" style="background:${col}"></span><span>${tx}</span>`;
-  $('#banner').innerHTML=`<b>DESCRIPTIVE, NOT PREDICTIVE.</b> Funding cuts are <b style="color:var(--measured)">MEASURED</b> live from USAspending.gov. Health consequences are <b style="color:var(--modeled)">MODELED</b> projections with wide, sourced confidence intervals — every figure is badged, ranged and cited, and is <b>not</b> a running death count. The geopolitical layer is <b style="color:var(--interp)">INTERPRETIVE</b> and multi-causal: read downstream claims as "associated with", never "caused by". Headline mortality figures are forecasts contingent on cuts persisting with no backfill — a worst-case bound. For analytic use; not for public release as a death forecast. <span style="color:var(--dim)">Snapshot vintage ${DATA.vintage}.</span>`;}
+/* Reporting-window comparability is a prerequisite, not an automated threat score. */
+function escalate(){
+  $('#threat').innerHTML='<span class="dot" style="background:var(--amber)"></span><span>Review reporting windows and service evidence</span>';
+  $('#banner').innerHTML=`<b>DESCRIPTIVE, NOT PREDICTIVE.</b> Agency financial reports: <b>${budgetLabel()}</b>. Country allocations and narrative/service context remain the dated ${DATA.vintage} snapshot. Full-year and partial-year totals are not a matched comparison; no annual cut percentage or operational threat is inferred from their ratio. Health figures are separately sourced <b>MODELED scenarios, not observed deaths</b>, and are not calculated from the funding ratios. Service and geopolitical outcomes are multi-causal. Confirm current budgets, backfill and local service evidence with the responsible authority.`;}
 function drawFeeds(){const map={USAspending:'USAspending.gov (funding)',Snapshot:'embedded snapshot',Narrative:'modeled/narrative sources'};let h='';
   for(const k in feedStatus){const s=feedStatus[k];const c=s==='live'?'var(--measured)':s==='loading'?'var(--amber)':s==='unavailable'?'var(--red)':'var(--dim)';
     h+=`<div class="f"><span class="dot" style="background:${c}"></span>${map[k]} <span style="opacity:.7">${s}</span></div>`;}
@@ -282,12 +626,19 @@ function renderAll(){drawFund();drawCountries();drawFlow();drawDeaths();drawSign
 
 /* ---------- live USAspending refresh (CORS-open, fail-silent) ---------- */
 function fetchT(u,ms){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms||9000);return fetch(u,{signal:c.signal}).finally(()=>clearTimeout(t));}
-async function refresh(){feedStatus.USAspending='loading';drawFeeds();try{
-    const r=await fetchT('https://api.usaspending.gov/api/v2/agency/072/budgetary_resources/');const j=await r.json();
-    DATA.oblig=j.agency_data_by_year.filter(x=>x.fiscal_year>=2019).map(x=>({fy:x.fiscal_year,v:+(x.agency_total_obligated/1e9).toFixed(2)})).sort((a,b)=>a.fy-b.fy);
-    const t=await (await fetchT('https://api.usaspending.gov/api/v2/references/toptier_agencies/')).json();
-    const u=t.results.find(a=>a.abbreviation==='USAID');if(u){DATA.status={fy:u.active_fy,q:u.active_fq,oblig:+(u.obligated_amount/1e9).toFixed(2),ba:+((u.budget_authority_amount||0)/1e9).toFixed(2)};}
-    feedStatus.USAspending='live';}catch(e){feedStatus.USAspending='unavailable';console.warn('USAspending',e);}
+async function refresh(){feedStatus.USAspending='loading';budgetCheckedAt=new Date().toISOString();drawFeeds();try{
+    const r=await fetchT('https://api.usaspending.gov/api/v2/agency/072/budgetary_resources/');if(!r.ok)throw new Error('Budget HTTP '+r.status);const j=await r.json();
+    if(!Array.isArray(j.agency_data_by_year))throw new Error('Missing fiscal-year records');
+    const numeric=v=>v!==null&&v!==''&&Number.isFinite(+v);
+    const rows=j.agency_data_by_year.filter(x=>x.fiscal_year>=2019);
+    if(!rows.length||rows.some(x=>!Number.isInteger(+x.fiscal_year)||!numeric(x.agency_total_obligated)))throw new Error('Invalid fiscal-year records');
+    const nextOblig=rows.map(x=>({fy:+x.fiscal_year,v:+(x.agency_total_obligated/1e9).toFixed(2)})).sort((a,b)=>a.fy-b.fy);
+    const tr=await fetchT('https://api.usaspending.gov/api/v2/references/toptier_agencies/');if(!tr.ok)throw new Error('Agency status HTTP '+tr.status);const t=await tr.json();
+    const u=Array.isArray(t.results)&&t.results.find(a=>a.abbreviation==='USAID');
+    if(!u||!Number.isInteger(+u.active_fy)||![1,2,3,4].includes(+u.active_fq)||!numeric(u.obligated_amount)||!numeric(u.budget_authority_amount)||!nextOblig.some(x=>x.fy===+u.active_fy))throw new Error('Incomplete agency status');
+    const nextStatus={fy:String(u.active_fy),q:String(u.active_fq),oblig:+(u.obligated_amount/1e9).toFixed(2),ba:+(u.budget_authority_amount/1e9).toFixed(2)};
+    DATA.oblig=nextOblig;DATA.status=nextStatus;budgetDownloadedAt=new Date().toISOString();feedStatus.USAspending='live';
+  }catch(e){feedStatus.USAspending='unavailable';console.warn('USAspending',e);}
   renderAll();}
 
 function clockTick(){$('#clock').textContent=new Date().toISOString().replace('T',' ').slice(0,19)+' UTC';}
@@ -304,9 +655,9 @@ renderAll();clockTick();setInterval(clockTick,1000);refresh();
    const top=rows.slice(0,N), mx=Math.max.apply(null,rows.map(r=>r[1]));
    el.innerHTML=top.map(r=>'<div class="rank"><div class="nm" style="width:152px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)" title="'+r[0]+'">'+r[0]+'</div>'+
      '<div class="barwrap"><div class="bar" style="width:'+Math.min(100,r[1]/mx*100).toFixed(0)+'%;background:'+col(r[1])+'"></div></div>'+
-     '<div class="val">'+r[1].toFixed(1)+'%</div></div>').join('')+
+     '<div class="val">'+r[1].toFixed(1)+'% <small>'+(r[2]||2023)+'</small></div></div>').join('')+
      '<div class="caveat" style="margin-top:5px">Most aid-dependent of the recipients queried ('+rows.length+' returned). Bars scaled to the top value.</div>';
-   const f=document.getElementById('econdepfeed'); if(f){f.textContent=live?'(live)':'(2023 snapshot)';if(live)f.style.color='var(--measured)';}
+   const f=document.getElementById('econdepfeed'); if(f){f.textContent=live?'(downloaded annual records)':'(2023 snapshot)';if(live)f.style.color='var(--measured)';}
  }
  draw(SNAP,false);
  const CC="CAF;SOM;BDI;AFG;MOZ;GMB;LBR;MWI;RWA;MDG;SLE;NER;BFA;COD;TCD;TGO;ZMB;HTI;MLI;UGA;ETH;SDN;GIN";
@@ -314,10 +665,41 @@ renderAll();clockTick();setInterval(clockTick,1000);refresh();
    .then(r=>r.json()).then(d=>{
      const recs=(Array.isArray(d)&&d[1])||[]; const best={};
      recs.forEach(r=>{if(r.value==null)return;const c=r.country.value,y=+r.date;if(!best[c]||y>best[c][1])best[c]=[r.value,y];});
-     const rows=Object.keys(best).map(c=>[c,best[c][0]]).sort((a,b)=>b[1]-a[1]);
+     const rows=Object.keys(best).map(c=>[c,best[c][0],best[c][1]]).sort((a,b)=>b[1]-a[1]);
      if(rows.length>=8) draw(rows,true);
    }).catch(e=>console.warn('WorldBank econdep',e));
 })();
 </script>
+<!-- CONSOLE_RESPONSE_ADAPTER_START -->
+<script>
+(function(){
+ 'use strict';
+ const authority='https://www.usaspending.gov/';
+ function read(){
+  const d=typeof DATA==='object'?DATA:{},countries=d.countries||[],valid=countries.length>0&&countries.every(c=>Number.isFinite(c.fy24)&&Number.isFinite(c.fy25)),x=countries.map(c=>c.fy24),y=countries.map(c=>c.fy25),w=valid?ConsoleResponse.math.wasserstein1(x,y):null,status=d.status||{},downloaded=typeof feedStatus==='object'&&feedStatus.USAspending==='live';
+  const total24=valid?x.reduce((a,b)=>a+b,0):null,total25=valid?y.reduce((a,b)=>a+b,0):null;
+  const evidence=[{id:'country-periods',label:'Recipient allocation context',value:valid?'Selected-country FY2024 total '+total24+'M; FY2025 total '+total25+'M; FY2026 partial through Q3':'Unavailable',unit:'USD',measuredAt:d.vintage,basis:'measured',quality:valid?'historical':'missing',source:authority,note:'Dated embedded selected-country context; only agency-level finance is refreshed. Country allocations are not a current service-status feed.'},
+   {id:'shape',label:'Selected-country allocation shape shift FY2024 to FY2025',value:w??'Unavailable',unit:'million USD W1',measuredAt:d.vintage,basis:'interpretive',quality:w!=null?'historical':'missing',source:authority,note:'Exact empirical Wasserstein distance of country allocations across two completed fiscal-year fields in this snapshot. Equal country weights; not per-person burden or mortality.'},
+   {id:'budget-window',label:'Agency budget reporting window',value:status.fy?'FY'+status.fy+' through Q'+status.q+' · '+(downloaded?'downloaded reports':'dated/last-good fallback'):'Unavailable',measuredAt:null,checkedAt:typeof budgetCheckedAt!=='undefined'?budgetCheckedAt:null,basis:'measured',quality:status.fy?'historical':'missing',source:'https://api.usaspending.gov/api/v2/agency/072/budgetary_resources/',note:'Retrieved '+(typeof budgetDownloadedAt!=='undefined'&&budgetDownloadedAt?budgetDownloadedAt:'embedded '+d.vintage)+'. Latest fiscal-year completeness is not confirmed. No matched-window cut percentage is inferred.'}];
+  const specs=[
+   [1,'comparison','Country counts do not balance beneficiary exposure','unknown',[],'Selected recipient-country allocation values lack beneficiary and service-dependency denominators.','Compare verified beneficiary/service weights rather than assigning equal need to countries or budget dollars.','Current beneficiary populations, service coverage and donor/backfill shares'],
+   [2,'comparison','Completed-year allocation shape shift',w!=null?(w>0?'triggered':'clear'):'unknown',['shape'],'Nonzero W1 between the embedded FY2024 and FY2025 country-allocation distributions prompts planning review. No emergency threshold or health effect is implied.','Review the country-level distribution and scope, verify fiscal definitions, and distinguish allocation change from service interruption.','Comparable completed-year country allocations and country-selection scope'],
+   [3,'comparison','Service density symmetry is unavailable','unknown',[],'Country-level dollars do not locate clinics, staff, supply routes or beneficiaries.','Audit facility catchments and service access before using funding geography for operational prioritization.','Current facilities/catchments, staffing and beneficiary geography'],
+   [4,'structure','Service-network contiguity is unavailable','unknown',[],'Country funding bars do not establish connected health-service components or redundancy.','Obtain a verified referral/service-supply network and document geographic access gaps.','Current facility/referral/supply topology and operating status'],
+   [5,'structure','Reporting-window comparability requires review',status.fy?'triggered':'unknown',['budget-window','country-periods'],'Latest FY is through a reported quarter with unconfirmed completeness; country FY2026 is partial Q3 and cannot be compared as a full-year cut against FY2024.','Use matched fiscal quarters or confirmed completed years. Do not translate an unmatched budget ratio into a funding-cut estimate, threat level or mortality point.','Matched fiscal-quarter or completed-year series and explicit retrieval/vintage metadata'],
+   [6,'structure','Allocation scale stability is untested','unknown',[],'A selected-country subset and one agency budget do not show robustness across program, country and all-donor aggregation.','Repeat the analysis on verified consistent scopes and show omitted countries/donors rather than generalizing a subset.','Comparable complete country/program/donor scopes and accounting definitions'],
+   [7,'structure','Program dependence is not a free-energy fit','unknown',[],'No calibrated program/service dependence or other-donor backfill model is supplied.','Verify program co-dependencies and actual national/other-donor backfill before treating reductions as independent shocks.','Current program co-dependencies, budget execution and backfill data'],
+   [8,'spillover','Funding is not integrated health exposure','unknown',[],'Obligations and published mortality scenarios cannot supply a calibrated contamination AUC.','Obtain service-coverage histories and explicitly validated scenario models; keep published health projections separate and avoid double counting.','Service-coverage histories, exposure denominator and validated scenario/uncertainty model'],
+   [9,'spillover','Frontier vulnerability needs local service evidence','unknown',[],'Country allocations cannot locate vulnerable facilities/populations at a service-loss boundary.','Use verified stock, staffing, catchment and access data before frontier planning.','Current service boundary, beneficiary distances and consequence weights'],
+   [10,'spillover','No measured funding-to-mortality propagation graph','unknown',[],'Narrative funding→service→health links and country co-membership are not measured causal edges.','Confirm local service interruptions and distinguish multiple causes; no health/mortality point is inferred from a funding ratio.','Verified supply/service dependencies, current interruption evidence and causal identification']
+  ];
+  const diagnostics=[],actions=[];
+  for(const [metricId,pillar,label,state,evidenceIds,rule,analyticalMitigation,requiredInputs]of specs){const id='metric-'+metricId;diagnostics.push({id,metricId,pillar,label,status:state,evidenceIds,scope:'planning',rule,analyticalMitigation,requiredInputs,explanation:'Financial-comparability/planning proxy or not assessable. Archived allocation context cannot establish a current incident.'});for(const track of ['public','operator'])actions.push({id:id+'-'+track,metricIds:[metricId],track,phase:state==='unknown'?'verify':'review',when:state==='unknown'?'unknown':'triggered',diagnosticIds:[id],title:'#'+metricId+' '+label,nextStep:track==='operator'?analyticalMitigation+' Required inputs: '+requiredInputs+'. Verify with the responsible agency/program under approved continuity and financial procedures.':'Read the source period and current agency/program information before repeating a cut or health-impact claim. '+analyticalMitigation,escalateWhen:'A responsible program confirms a current service disruption or a verified local continuity/financial threshold applies. Dated funding context alone cannot activate an operational or health response.',authorityUrl:authority});}
+  return {slug:'usaid-consequence',title:'Aid-program continuity response plan',context:'Embedded country/service context '+(d.vintage||'unknown')+'; agency finance '+(downloaded?'download succeeded':'fallback / refresh unavailable'),evidence,diagnostics,actions,network:{label:'Verified service dependency network unavailable',basis:'interpretive',semantics:'The narrative cascade is conceptual, not measured causal source/sink accounting.',coverage:'Selected country allocations plus agency-level finance',roles:[],limitations:['Dollar ratios do not establish service loss, disease transmission or mortality.']},limitations:['Country allocations, service signals and health scenarios retain their own dated provenance; agency refresh does not refresh them.','Partial and full fiscal-year totals are not compared as matched annual cuts. No mortality point is computed from funding ratios.','Professional continuity decisions require verified local budgets, inventories, service telemetry, backfill, approved SOP and responsible authority.']};
+ }
+ window.ConsoleResponse.connect(read,['#fundkv','#ctrybars','#feeds','#banner']);
+})();
+</script>
+<!-- CONSOLE_RESPONSE_ADAPTER_END -->
 </body>
 </html>

@@ -17,10 +17,14 @@ combines live NOAA/NHC/NWS coastal information with a ten-metric diagnostic suit
 ([preprint](https://doi.org/10.5281/zenodo.23486177)) and directed source/sink topology accounting
 informed by [directed-asymmetry contagion research](https://github.com/patrickiben/directed-asymmetry-contagion).
 It demonstrates translating methods across domains, integrating data sources, and building an interactive
-explanation with explicit provenance. The public lift-station network is **synthetic**, calibrated to
-published network-level aggregates; it contains no real station locations. Live observations, archived
-aggregates, synthetic computations and interpretive guidance carry separate labels. The directed component
-is source/sink accounting, not a port of the contagion paper's VAR/FEVD estimation.
+explanation with explicit provenance. A separate **public-station register** shows 131 officially
+published locations, including 82 City-owned/maintained stations, County evacuation-zone intersections
+and USGS NAVD88 terrain estimates. The ten-metric calibration network remains synthetic and separate;
+its connections are not real pipe topology. Projected-impact exercises expose their population, duration,
+flow, repair-cost and funding assumptions. Terrain screening does not establish flooding, pump failure
+or service loss. Live observations, dated public inventories, synthetic computations and interpretive
+guidance carry separate labels. The directed component is source/sink accounting, not a port of the
+contagion paper's VAR/FEVD estimation.
 
 [Resilience Telemetry](https://patrickiben.github.io/public-data-consoles/consoles/resilience-telemetry/)
 also adapts the directed-contagion work; its [research guide](https://patrickiben.github.io/public-data-consoles/consoles/resilience-telemetry/wiki.html#s8b)
@@ -32,6 +36,21 @@ for each paper's draft, code/data archive and related applications.
 
 [Open the console catalog](https://patrickiben.github.io/public-data-consoles/).
 
+## Ten-parameter response plans
+
+Every console includes a checklist organized around the same ten numbered research dimensions.
+The **Response plan** shortcut opens the shared checklist; Coastal has its own **Response plan** tab.
+Each dimension shows the domain condition or numerical proxy, required inputs, analytical mitigation
+and practical next steps. Public and professional-operator tracks use the same evidence with different
+responsibilities, escalation routes and verify/prepare/respond/review phases.
+
+Unsupported dimensions are **unknown**, with the inputs needed to assess them. Historical reports
+support planning; synthetic exercises remain practice. A proxy is labeled with its units and limits,
+and does not establish the original CRT estimand or a validated cross-domain metric. Acknowledgments
+are local planning notes, reset when evidence changes; exports and printing are local browser actions.
+See the [field guide](https://patrickiben.github.io/public-data-consoles/response-plans/guide.html) for interpretation and the
+[maintainer contract](response-plans/CONTRACT.md) for adaptation rules.
+
 ## Consoles
 
 **Hazards & Early Warning**
@@ -42,7 +61,7 @@ for each paper's draft, code/data archive and related applications.
 | [River Flood Propagation](consoles/river-flood-propagation/) | Live, U.S. | NOAA National Water Prediction Service (NWPS) |
 | [River Flood Network](consoles/river-flood-network/) | Live, U.S. | USGS NLDI (network-linked data index) |
 | [Hazards Near You](consoles/us-local-hazards/) | Live, U.S. | NWS, NOAA SPC/NHC/Tides, USGS, FEMA NFHL, keyless EPA AirNow observations, U.S. Drought Monitor |
-| [Coastal Water Resilience](consoles/coastal-water-resilience/) | Live + modeled (synthetic network) | NOAA CO-OPS gauge 8726520 (water level, tide predictions, OFS forecast), NOAA NHC (Esri Active Hurricanes), NWS alerts |
+| [Coastal Water Resilience](consoles/coastal-water-resilience/) | Live feeds + dated real-station register + modeled exercises | NOAA/NHC/NWS; City public wastewater GIS; County evacuation zones; USGS 3DEP terrain |
 | [U.S. Grid Strain](consoles/us-grid-strain/) | Automatically updated public reports, U.S. | Official keyless EIA-930 downloads; source timestamps and offline fallback |
 | [Global Outbreak & Emerging-Threat Tracker](consoles/global-outbreak-tracker/) | Live + snapshot | OWID (mpox), CDC (measles), disease.sh, curated WHO / Africa CDC watch |
 
@@ -50,7 +69,7 @@ for each paper's draft, code/data archive and related applications.
 
 | Console | Data | Sources |
 |---|---|---|
-| [NHS Scotland — Hospital Strain](consoles/nhs-scotland-strain/) | Live, Scotland | Public Health Scotland open-data (CKAN) |
+| [NHS Scotland — Hospital Strain](consoles/nhs-scotland-strain/) | Dated baseline + what-if, Scotland | Packaged Public Health Scotland reports, with reporting periods shown |
 | [USAID Withdrawal — Consequence](consoles/usaid-consequence/) | Live + modeled | USAspending API + cited published estimates |
 | [VA Medical Center — Strain](consoles/va-strain/) | Demo template | Labeled demo data + hooks for internal feeds |
 
@@ -143,9 +162,14 @@ medical, legal, financial, or predictive validity. GitHub Actions runs these che
 
 Run `python3 -m unittest discover -s tests -v` for source/credential regressions and snapshot checks.
 For browser checks, run `npm ci`, `npx playwright install --only-shell chromium`, then `npm test`.
-These exercise keyless startup, public-data fixtures and unavailable map/feed states. External requests
+These exercise keyless startup, public-data fixtures, all 32 response plans and unavailable map/feed states. External requests
 are intercepted; automated tests do not download OpenStreetMap tiles. Normal interactive maps follow
 the [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/).
+
+When Google Chrome is already installed, use `CHROME_CHANNEL=chrome npm test` instead of installing
+the bundled Chromium. Run `python3 scripts/embed_response_plans.py --check` to verify that the
+single-file consoles contain the current shared checklist and domain adapters. After editing those
+maintainer sources, regenerate with `python3 scripts/embed_response_plans.py` before testing/publishing.
 
 ## Automatic EIA grid updates
 

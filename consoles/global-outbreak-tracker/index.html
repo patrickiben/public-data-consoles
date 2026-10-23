@@ -67,19 +67,369 @@ footer b{color:var(--ink2)}
 .demoflag{display:inline-block;font-size:9px;font-weight:800;color:#04181c;background:var(--amber);border-radius:4px;padding:1px 5px;margin-left:5px;letter-spacing:.4px}
 .stale{display:inline-block;font-size:9.5px;font-weight:800;color:#04181c;background:var(--orange);border-radius:4px;padding:1px 6px;margin-left:6px;letter-spacing:.4px}
 </style>
+<!-- CONSOLE_RESPONSE_HEAD_START -->
+<style>
+#console-response{box-sizing:border-box;position:relative;z-index:1;margin:16px auto;padding:18px;max-width:1440px;border:1px solid #486377;border-top:4px solid #26c6da;border-radius:12px;background:#10212d;color:#e2edf4;font:14px/1.55 system-ui,sans-serif;text-align:left}
+#console-response *{box-sizing:border-box}#console-response h2{font-size:22px;margin:0 0 4px;color:#f1f8fc}#console-response h3{font-size:16px;margin:16px 0 8px;color:#e2edf4}#console-response h4{font-size:15px;margin:0 0 6px;color:#f1f8fc}
+#console-response p{margin:7px 0}#console-response a{color:#86e1ee;text-decoration:underline}#console-response li{margin:12px 0}#console-response .cr-head{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+#console-response .cr-head p,#console-response .cr-note{color:#b2c6d3}#console-response .cr-note{font-size:12px}#console-response .cr-badge{display:inline-block;border:1px solid #648093;border-radius:5px;padding:1px 5px;font-size:10px;color:#d2e6f0;vertical-align:middle}
+#console-response .cr-head{padding:0;margin:0;border:0;background:transparent}
+#console-response .cr-plan-group>summary{color:#a7f0f2;font-size:15px}
+#console-response .cr-summary{padding:10px;border-left:3px solid #e5b35a;background:#24303b}#console-response .cr-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+#console-response button{font:inherit;font-size:13px;padding:8px 12px;border:1px solid #6d8b9e;border-radius:6px;background:#173343;color:#f1f8fc;cursor:pointer}#console-response button[aria-pressed=true]{background:#165e6b;border-color:#6de3e7}
+#console-response details{margin:9px 0;border:1px solid #3e596b;border-radius:7px;padding:10px}#console-response summary{cursor:pointer;font-weight:650;list-style:revert}#console-response details>p,#console-response details>ul{padding:2px 7px}
+#console-response .cr-action{margin:10px 0;padding:13px;border:1px solid #3f6475;border-radius:7px;background:#142b39}#console-response .cr-action label{display:block;color:#c7dce7;font-size:12px;margin-top:10px}#console-response input[type=checkbox]{margin-right:6px;width:16px;height:16px;vertical-align:middle}
+#console-response .cr-diagnostic{padding:10px;border-left:3px solid #698396;background:#162d3b}#console-response .cr-triggered{border-color:#e5b35a}#console-response .cr-clear{border-color:#55bda0}#console-response .cr-unknown,#console-response .cr-quality{color:#f0cc87}
+#console-response .cr-table{overflow-x:auto}#console-response table{width:100%;border-collapse:collapse;color:inherit;font-size:12px}#console-response th,#console-response td{text-align:left;padding:8px;border-bottom:1px solid #3e596b}
+#console-response :focus-visible,#console-response-shortcut:focus-visible{outline:3px solid #f4d57d;outline-offset:3px}
+#console-response select{font:inherit;color:#e2edf4;background:#173343;border:1px solid #6d8b9e;border-radius:4px;padding:5px;max-width:100%}
+#console-response-shortcut{position:fixed;right:14px;bottom:14px;z-index:10020;border:1px solid #87d5e0;border-radius:24px;padding:10px 15px;background:#103f50;color:#f1f8fc;font:600 13px system-ui,sans-serif;box-shadow:0 2px 12px #0007;text-decoration:none}
+@media(max-width:640px){#console-response{margin:10px 6px;padding:13px}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:19px}}
+@media print{#console-response-shortcut,#console-response .cr-toolbar{display:none!important}#console-response{background:white!important;color:#111!important;max-width:none;border:1px solid #555}#console-response *{color:#111!important;box-shadow:none!important}#console-response details{display:block!important}#console-response details>*{display:block!important}#console-response .cr-action{break-inside:avoid;background:white!important}#console-response .cr-badge{border-color:#555}}
+</style>
+<script>
+(function (root) {
+  'use strict';
+  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set();
+  var metrics = [
+    ['Population Balance', 'comparison', 'Defined comparison groups, workload/population denominators and aligned periods.'],
+    ['Wasserstein Distance / Shape Imbalance', 'comparison', 'Comparable distributions in the same unit and period; group membership.'],
+    ['Density Symmetry', 'comparison', 'Observed locations or defined comparable density denominators.'],
+    ['Euler Characteristic / Contiguity', 'structure', 'A justified adjacency/topology definition and observed coverage.'],
+    ['Persistence Gap', 'structure', 'Repeated or threshold-adjacent measurements and an explicit reference margin.'],
+    ['Spatial Mixing / Scale Stability', 'structure', 'Comparable measurements across specified spatial or aggregation scales.'],
+    ['Variational Free Energy', 'structure', 'A specified probabilistic model/objective and dependence structure; not an invented score.'],
+    ['Contamination AUC', 'spillover', 'Exposure/response across a justified range of distances, doses or thresholds.'],
+    ['Frontier Risk / Buffer Depth AUC', 'spillover', 'Defined exposed/unexposed boundary, distance/depth and comparable weights.'],
+    ['Mobility Network Leakage', 'spillover', 'Observed directed links or a labeled scenario, transfer semantics and boundary coverage.']
+  ];
+  var basisNames = { measured: 'MEASURED', modeled: 'MODELED', interpretive: 'INTERPRETIVE', demo: 'DEMO · practice only' };
+  function text(value) { return value == null ? '' : String(value); }
+  function esc(value) { return text(value).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function url(value) { return /^https?:\/\/[^\s]+$/i.test(text(value)) ? text(value) : ''; }
+  function canonical(value) {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === 'object') {
+      var out = {}; Object.keys(value).sort().forEach(function (key) { out[key] = canonical(value[key]); }); return out;
+    }
+    return value;
+  }
+  function signature(value) { return JSON.stringify(canonical(value)); }
+  function evaluate(input) {
+    input = input || {};
+    var facts = (Array.isArray(input.evidence) ? input.evidence : []).map(function (fact) {
+      var f = Object.assign({}, fact);
+      if (!basisNames[f.basis]) f.basis = 'interpretive';
+      if (!['current', 'historical', 'stale', 'missing'].includes(f.quality)) f.quality = 'missing';
+      if (f.value == null || f.value === '' || (typeof f.value === 'number' && !Number.isFinite(f.value))) f.quality = 'missing';
+      if (!['number', 'string'].includes(typeof f.value)) { f.value = null; f.quality = 'missing'; }
+      f.source = url(f.source); return f;
+    });
+    var byFact = new Map(facts.map(function (f) { return [f.id, f]; }));
+    var diagnostics = (Array.isArray(input.diagnostics) ? input.diagnostics : []).map(function (diagnostic) {
+      var d = Object.assign({}, diagnostic), ids = Array.isArray(d.evidenceIds) ? d.evidenceIds : [];
+      d.evidenceIds = ids; d.status = ['triggered', 'clear', 'unknown'].includes(d.status) ? d.status : 'unknown';
+      d.scope = d.scope === 'planning' ? 'planning' : 'current';
+      d.reasons = [];
+      if (typeof d.value === 'number' && !Number.isFinite(d.value)) d.reasons.push('The numeric metric is not finite.');
+      if (!ids.length) d.reasons.push('No supporting evidence is linked.');
+      ids.forEach(function (id) {
+        var fact = byFact.get(id);
+        if (!fact || ['missing', 'stale'].includes(fact.quality)) d.reasons.push((fact ? fact.label : id) + ': missing or stale evidence.');
+        else if (fact.quality === 'historical' && d.scope !== 'planning') d.reasons.push(fact.label + ': historical evidence cannot establish current conditions.');
+      });
+      if (d.reasons.length) d.status = 'unknown';
+      d.practice = !!input.scenario || ids.some(function (id) { return byFact.get(id) && byFact.get(id).basis === 'demo'; });
+      d.current = ids.length > 0 && ids.every(function (id) { var f = byFact.get(id); return f && f.quality === 'current' && f.basis !== 'demo'; });
+      return d;
+    });
+    diagnostics.forEach(function (d) { var n = Number(d.metricId == null ? d.dimension : d.metricId); d.metricId = Number.isInteger(n) && n >= 1 && n <= 10 ? n : null; });
+    var canonicalDiagnostics = metrics.map(function (metric, index) {
+      var matches = diagnostics.filter(function (d) { return d.metricId === index + 1; });
+      var d = matches.length === 1 ? matches[0] : { id: 'dimension-' + (index + 1), metricId: index + 1, status: 'unknown', evidenceIds: [], reasons: [], scope: 'planning', current: false };
+      d = Object.assign({}, d, { canonicalLabel: metric[0], pillar: metric[1] });
+      if (matches.length > 1) { d.status = 'unknown'; d.reasons = ['Conflicting duplicate canonical dimension definitions.']; }
+      d.label = d.label || metric[0];
+      d.requiredInputs = d.requiredInputs && (!Array.isArray(d.requiredInputs) || d.requiredInputs.length) ? d.requiredInputs : metric[2];
+      d.analyticalMitigation = d.analyticalMitigation || 'Acquire and validate the required inputs; assess applicability before choosing an analysis.';
+      if (!matches.length) { d.rule = 'Not assessable from the supplied data.'; d.explanation = 'No validated metric or justified domain proxy has been supplied.'; }
+      return d;
+    });
+    diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
+    var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
+    var actions = (Array.isArray(input.actions) ? input.actions : []).map(function (action) {
+      var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
+      (Array.isArray(a.metricIds) ? a.metricIds : []).forEach(function (n) { var d = diagnostics.find(function (item) { return item.metricId === Number(n); }); if (d && !ids.includes(d.id)) ids.push(d.id); });
+      var relevant = ids.length ? ids.map(function (id) { return byDiagnostic.get(id) || { status: 'unknown', current: false }; }) : diagnostics;
+      a.track = a.track === 'operator' ? 'operator' : 'public';
+      a.phase = ['verify', 'prepare', 'respond', 'review'].includes(a.phase) ? a.phase : 'verify';
+      a.when = ['always', 'triggered', 'unknown'].includes(a.when) ? a.when : 'unknown';
+      if (a.when === 'always' && a.phase === 'respond') a.phase = 'prepare';
+      a.selected = a.when === 'always' || relevant.some(function (d) { return d.status === a.when; });
+      a.practice = !!input.scenario || relevant.some(function (d) { return d.practice; });
+      a.withheld = a.phase === 'respond' && a.when !== 'always' && !a.practice && !relevant.some(function (d) { return d.status === 'triggered' && d.current; });
+      if (a.withheld) a.selected = false;
+      a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl); return a;
+    });
+    return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
+      evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null,
+      limitations: Array.isArray(input.limitations) ? input.limitations.map(text) : [], scenario: !!input.scenario };
+  }
+  function badge(basis) { return '<span class="cr-badge">' + esc(basisNames[basis] || basisNames.interpretive) + '</span>'; }
+  function sourceLink(source, label) { return url(source) ? '<a href="' + esc(url(source)) + '" target="_blank" rel="noopener noreferrer">' + esc(label || 'Source') + '</a>' : '<span>Source not supplied</span>'; }
+  function mount() {
+    if (!doc || !doc.body) return;
+    var panel = doc.getElementById('console-response');
+    if (!panel) return;
+    if (!panel.dataset.mounted) {
+      panel.dataset.mounted = 'true';
+      panel.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print]');
+        if (!button) return;
+        if (button.dataset.crTrack) { track = button.dataset.crTrack; render(); }
+        if (button.hasAttribute('data-cr-print')) root.print();
+        if (button.hasAttribute('data-cr-export')) download();
+      });
+      panel.addEventListener('change', function (event) {
+        var metric = Number(event.target.dataset.crAssess);
+        if (metric >= 1 && metric <= 10) { if (event.target.value === 'review') manualReview.add(metric); else manualReview.delete(metric); render(); return; }
+        var id = event.target.dataset.crAck;
+        if (id) { if (event.target.checked) acknowledgments.add(id); else acknowledgments.delete(id); }
+      });
+      var shortcut = doc.getElementById('console-response-shortcut');
+      if (shortcut) shortcut.addEventListener('click', function (event) {
+        var group = panel.querySelector('[data-cr-section="plan"]'); if (group) group.open = true;
+        event.preventDefault(); var checklist = panel.querySelector('[data-cr-section="actions"]'); if (checklist) checklist.open = true;
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var heading = doc.getElementById('console-response-title'); if (heading) heading.focus();
+      });
+      var printSections = null;
+      function beginPrint() {
+        if (printSections) return;
+        printSections = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
+        panel.querySelectorAll('details').forEach(function (d) { d.open = true; });
+      }
+      function endPrint() {
+        if (!printSections) return;
+        panel.querySelectorAll('details').forEach(function (d) { d.open = printSections.has(d.dataset.crSection); });
+        printSections = null;
+      }
+      root.addEventListener('beforeprint', beginPrint); root.addEventListener('afterprint', endPrint);
+      if (root.matchMedia) {
+        var printMedia = root.matchMedia('print');
+        if (printMedia.addEventListener) printMedia.addEventListener('change', function (event) { if (event.matches) beginPrint(); else endPrint(); });
+      }
+    }
+    render();
+  }
+  function currentPlan() {
+    var plan = evaluate(payload);
+    manualReview.forEach(function (n) {
+      var d = plan.diagnostics.find(function (item) { return item.metricId === n; }); if (!d) return;
+      var authority = plan.actions.find(function (a) { return a.track === 'operator' && a.diagnosticIds.includes(d.id) && a.authorityUrl; });
+      plan.actions.push({ id: 'manual-review-' + n, track: 'operator', phase: 'verify', when: 'always', selected: true, practice: false,
+        diagnosticIds: [d.id], title: 'Self-reported review needed: #' + n + ' ' + d.canonicalLabel,
+        nextStep: d.analyticalMitigation + ' Required inputs: ' + text(d.requiredInputs),
+        escalateWhen: 'A local planning flag is not a measured incident. Review with your designated lead and verified SOP before taking operational action.',
+        authorityUrl: authority ? authority.authorityUrl : '', selfReported: true });
+    });
+    plan.manualAssessments = Array.from(manualReview).sort(function (a, b) { return a - b; }).map(function (n) { return { metricId: n, assessment: 'review needed', basis: 'self-reported local planning' }; });
+    return plan;
+  }
+  function render() {
+    if (!doc) return;
+    var panel = doc.getElementById('console-response'); if (!panel || !panel.dataset.mounted) return;
+    var plan = currentPlan(), unknown = plan.diagnostics.filter(function (d) { return d.metricId && d.status === 'unknown'; }).length;
+    var selected = plan.actions.filter(function (a) { return a.track === track && a.selected; });
+    var open = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
+    var focused = doc.activeElement && panel.contains(doc.activeElement) ? doc.activeElement.id : '';
+    panel.dataset.rendered = 'true';
+    var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
+    h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open ten-parameter checklist and evidence</summary>';
+    h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
+    function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
+    var actionHTML = '<p>These are planning prompts, not instructions to dispatch, switch equipment, prescribe, trade or evacuate. ' + (track === 'operator' ? 'Use your organization’s verified telemetry, SOP and decision authority.' : 'Follow current official instructions for your location.') + '</p>';
+    ['verify', 'prepare', 'respond', 'review'].forEach(function (phase) {
+      var list = selected.filter(function (a) { return a.phase === phase; }); if (!list.length) return;
+      actionHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
+      list.forEach(function (a) {
+        var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
+        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + d.status + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+      });
+    });
+    if (!selected.length) actionHTML += '<p class="cr-unknown">No supported conditional action is available for this track. Verify missing evidence and consult the responsible authority; this is not an all-clear.</p>';
+    actionHTML += '<p class="cr-note">Checks are temporary local planning notes, not completed operations. Context or evidence changes reset them. Nothing is transmitted or stored by this response layer.</p>';
+    h += section('actions', '1. Condition-dependent response plan', actionHTML, 'interpretive');
+    var evidenceHTML = plan.evidence.length ? '<ul>' + plan.evidence.map(function (f) { return '<li><b>' + esc(f.label || f.id) + ':</b> ' + esc(f.quality === 'missing' ? 'Unavailable' : f.value) + (f.unit ? ' ' + esc(f.unit) : '') + ' ' + badge(f.basis) + ' <span class="cr-quality">' + esc(f.quality) + '</span><br>Observed / reported: ' + esc(f.measuredAt || 'not supplied') + '; checked: ' + esc(f.checkedAt || 'not supplied') + '. ' + sourceLink(f.source) + (f.note ? '<br>' + esc(f.note) : '') + '</li>'; }).join('') + '</ul>' : '<p class="cr-unknown">Evidence unavailable. No current incident status can be inferred.</p>';
+    h += section('evidence', '2. Evidence, dates and sources', evidenceHTML, 'interpretive');
+    var diagnosticHTML = ['comparison', 'structure', 'spillover'].map(function (pillar) {
+      var ds = plan.diagnostics.filter(function (d) { return d.pillar === pillar; });
+      return '<h3>' + ({ comparison: 'Comparison and balance', structure: 'Structure and coverage', spillover: 'Spillover and dependence' })[pillar] + '</h3>' + (ds.length ? ds.map(function (d) {
+        var related = plan.actions.filter(function (a) { return a.track === track && a.diagnosticIds.includes(d.id); });
+        var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + (d.metricId ? '#' + d.metricId + ' ' + esc(d.canonicalLabel) : esc(d.label)) + ' — ' + esc(d.status.toUpperCase()) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc((typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+      }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
+    }).join('');
+    h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');
+    var net = plan.network, networkHTML;
+    if (!net) networkHTML = '<p class="cr-unknown">Directed network information is unavailable. No source/sink, causal route or restoration gain is inferred.</p>';
+    else {
+      networkHTML = '<p><b>' + esc(net.label) + '</b> ' + badge(net.basis) + '<br>' + esc(net.semantics) + '<br>Period alignment: ' + esc(net.period || 'not supplied') + '; coverage: ' + esc(net.coverage || 'not supplied') + '.</p>';
+      if (Array.isArray(net.roles) && net.roles.length) networkHTML += '<div class="cr-table"><table><thead><tr><th>Entity</th><th>Role / interpretation</th><th>Inbound</th><th>Outbound</th><th>Unit</th></tr></thead><tbody>' + net.roles.map(function (r) { return '<tr><td>' + esc(r.label || r.id) + '</td><td>' + esc(r.role) + '</td><td>' + esc(r.inbound == null ? 'Unavailable' : r.inbound) + '</td><td>' + esc(r.outbound == null ? 'Unavailable' : r.outbound) + '</td><td>' + esc(r.unit || 'not additive') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      networkHTML += '<p>' + esc((net.limitations || []).join(' ')) + '</p>';
+    }
+    h += section('network', '4. Directed accounting and method limits', networkHTML, 'interpretive');
+    h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p><p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
+    h += '</details>';
+    panel.innerHTML = h;
+    if (focused) { var nextFocus = doc.getElementById(focused); if (nextFocus) nextFocus.focus({ preventScroll: true }); }
+  }
+  function set(input) {
+    var nextRevision = signature(input || {});
+    if (nextRevision === revision) return;
+    function evidenceOnly(value) {
+      if (Array.isArray(value)) return value.map(evidenceOnly);
+      if (value && typeof value === 'object') { var out = {}; Object.keys(value).forEach(function (key) { if (key !== 'checkedAt') out[key] = evidenceOnly(value[key]); }); return out; }
+      return value;
+    }
+    var nextEvidence = signature(evidenceOnly(input || {}));
+    if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
+    evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
+  }
+  function connect(read, selectors) {
+    var stopped = false, timer = null, interval = null, observer = null, targets = Array.isArray(selectors) ? selectors : selectors ? [selectors] : [];
+    function update() {
+      if (stopped) return;
+      try { set(read()); }
+      catch (error) { set({ title: 'Response plan', context: 'Evidence reader unavailable', limitations: ['The console evidence could not be read. Verify the original sources before deciding.'] }); }
+    }
+    function start() {
+      if (stopped) return;
+      update();
+      if (!doc || !root.MutationObserver) return;
+      observer = new root.MutationObserver(function (records) {
+        var relevant = records.some(function (record) {
+          var el = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+          if (!el || el.closest('#console-response')) return false;
+          return !targets.length || targets.some(function (selector) { return el.matches(selector) || !!el.closest(selector) || !!el.querySelector(selector); });
+        });
+        if (relevant) { root.clearTimeout(timer); timer = root.setTimeout(update, 80); }
+      });
+      observer.observe(doc.body, { subtree: true, childList: true, characterData: true, attributes: true });
+      interval = root.setInterval(function () { if (!doc.hidden) update(); }, 60000);
+      doc.addEventListener('visibilitychange', visible);
+      doc.addEventListener('change', changed);
+      doc.addEventListener('input', changed);
+    }
+    function visible() { if (!doc.hidden) update(); }
+    function changed(event) { if (!event.target.closest('#console-response') && (!targets.length || targets.some(function (selector) { return event.target.matches(selector) || !!event.target.closest(selector); }))) update(); }
+    if (doc && doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', start, { once: true }); else start();
+    return function () { stopped = true; root.clearTimeout(timer); root.clearInterval(interval); if (observer) observer.disconnect(); if (doc) { doc.removeEventListener('visibilitychange', visible); doc.removeEventListener('change', changed); doc.removeEventListener('input', changed); } };
+  }
+  function exportPlan() {
+    return { exportedAt: new Date().toISOString(), note: 'Local planning review; not a record of completed operations.',
+      track: track, plan: currentPlan(), acknowledgments: Array.from(acknowledgments) };
+  }
+  function download() {
+    var blob = new Blob([JSON.stringify(exportPlan(), null, 2)], { type: 'application/json' });
+    var link = doc.createElement('a'), objectURL = root.URL.createObjectURL(blob);
+    link.href = objectURL; link.download = 'console-response-plan.json'; link.click(); root.setTimeout(function () { root.URL.revokeObjectURL(objectURL); }, 1000);
+  }
+  function wasserstein1(left, right) {
+    if (!Array.isArray(left) || !Array.isArray(right) || !left.length || !right.length ||
+        left.concat(right).some(function (n) { return typeof n !== 'number' || !Number.isFinite(n); })) return null;
+    var a = left.slice().sort(function (x, y) { return x - y; }), b = right.slice().sort(function (x, y) { return x - y; });
+    var points = Array.from(new Set(a.concat(b))).sort(function (x, y) { return x - y; }), i = 0, j = 0, area = 0;
+    for (var k = 0; k < points.length - 1; k++) {
+      while (i < a.length && a[i] <= points[k]) i++;
+      while (j < b.length && b[j] <= points[k]) j++;
+      area += Math.abs(i / a.length - j / b.length) * (points[k + 1] - points[k]);
+    }
+    return area;
+  }
+  var definitions = Object.freeze(metrics.map(function (m, i) { return Object.freeze({ id: i + 1, name: m[0], pillar: m[1], requiredInputs: m[2] }); }));
+  var api = { set: set, connect: connect, evaluate: evaluate, exportPlan: exportPlan, metricDefinitions: definitions, math: { wasserstein1: wasserstein1 }, version: 1 };
+  root.ConsoleResponse = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  if (doc) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', mount, { once: true }); else mount(); }
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* Pure numerical and authoring helpers. Embedded with the response layer; no network or imports. */
+(function () {
+  'use strict';
+  const names = ['Population Balance', 'Wasserstein Distance (Shape Imbalance)', 'Density Symmetry',
+    'Euler Characteristic (Contiguity)', 'Persistence Gap', 'Spatial Mixing (scale-stability)',
+    'Variational Free Energy', 'Contamination AUC', 'Frontier Risk (Buffer Depth AUC)', 'Mobility Network Leakage'];
+  function wasserstein(a, b) {
+    return window.ConsoleResponse.math.wasserstein1(a, b);
+  }
+  function components(ids, edges) {
+    if (!Array.isArray(ids) || !Array.isArray(edges) || !ids.length) return null;
+    const adjacency = new Map(ids.map(id => [id, new Set()]));
+    for (const [a, b] of edges) if (adjacency.has(a) && adjacency.has(b)) {
+      adjacency.get(a).add(b); adjacency.get(b).add(a);
+    }
+    let count = 0; const seen = new Set();
+    for (const id of adjacency.keys()) if (!seen.has(id)) {
+      count++; const queue = [id]; seen.add(id);
+      for (let i = 0; i < queue.length; i++) for (const next of adjacency.get(queue[i]))
+        if (!seen.has(next)) { seen.add(next); queue.push(next); }
+    }
+    return count;
+  }
+  function build(spec) {
+    const overrides = spec.overrides || {};
+    const diagnostics = names.map((label, index) => {
+      const id = index + 1, row = spec.rows[index] || {}, override = overrides[id] || {};
+      return { id: 'metric-' + id, metricId: id, label,
+        pillar: id <= 3 ? 'comparison' : id <= 7 ? 'structure' : 'spillover',
+        status: 'unknown', evidenceIds: [], scope: 'planning',
+        rule: row.rule || 'Assess this dimension against a documented local comparison and review criterion.',
+        explanation: row.explanation || 'Not assessable from the public inputs currently supplied.',
+        analyticalMitigation: row.analyticalMitigation || 'Document the comparison, input quality and scope before interpreting this dimension.',
+        requiredInputs: row.requiredInputs || [], ...override };
+    });
+    const actions = [];
+    diagnostics.forEach((diagnostic, index) => {
+      const row = spec.rows[index] || {};
+      for (const track of ['public', 'operator']) for (const when of ['triggered', 'unknown']) {
+        const next = (track === 'public' ? row.publicAction : row.operatorAction) || 'Confirm the required inputs with the responsible data source.';
+        actions.push({ id: spec.slug + '-m' + (index + 1) + '-' + track + '-' + when,
+          metricIds: [index + 1], diagnosticIds: [diagnostic.id], track, when,
+          phase: when === 'unknown' ? 'verify' : (row.phase || 'prepare'),
+          title: (when === 'unknown' ? 'Resolve the input gap: ' : 'Review: ') + diagnostic.label,
+          nextStep: (when === 'unknown' ? 'This dimension is not machine-assessed. ' : '') + next,
+          escalateWhen: row.escalateWhen || spec.escalateWhen,
+          authorityUrl: row.authorityUrl || spec.authorityUrl });
+      }
+    });
+    return { slug: spec.slug, title: spec.title, context: spec.context,
+      scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics,
+      actions: [...(spec.baseline || []), ...actions], network: spec.network,
+      limitations: spec.limitations || [] };
+  }
+  window.ConsoleResponse.domain = { wasserstein, components, build };
+})();
+</script>
+<!-- CONSOLE_RESPONSE_HEAD_END -->
 </head>
-<body>
+<body><!-- CONSOLE_RESPONSE_MOUNT_START -->
+<section id="console-response" aria-labelledby="console-response-title"></section>
+<a id="console-response-shortcut" href="#console-response">Response plan</a>
+<!-- CONSOLE_RESPONSE_MOUNT_END -->
+
 <div id="splash">loading outbreak surveillance…</div>
 <div id="disc"><b>Unofficial · descriptive surveillance, not a forecast.</b> Public aggregate counts only, with large and uneven reporting lags. <b>Absence of data is not absence of disease</b> — many outbreaks are under-reported. Not for clinical, travel, or policy decisions. For exposure or illness concerns, consult your national/local health authority.</div>
 <div class="wrap">
   <header>
-    <h1>Global Outbreak &amp; Emerging-Threat Tracker<span class="sub">Active outbreaks &amp; a curated watch list — mpox (incl. clade I in central/east Africa), the U.S. measles resurgence, and the WHO / CDC / Africa CDC emerging-threat set, with still-circulating COVID-19 context</span></h1>
-    <div class="banner"><b>How to read this.</b> Counts are <b>cumulative</b> case and death totals for the current outbreak/wave unless noted — they are not "today's" incidence. Trend arrows compare the latest period to an earlier one and show <i>direction</i>, not precise change. <b>Measured</b> panels carry a live source; the <b>watch list</b> is interpretive context curated from official outbreak bulletins, not a live count. This is descriptive — it does not predict the future.</div>
+    <h1>Global Outbreak &amp; Emerging-Threat Tracker<span class="sub">Dated cumulative surveillance &amp; a curated watch list — mpox (incl. clade I in central/east Africa), the U.S. measles resurgence, and the WHO / CDC / Africa CDC emerging-threat set, with still-circulating COVID-19 context</span></h1>
+    <div class="banner"><b>How to read this.</b> Counts are <b>dated cumulative</b> case and death totals over the stated reporting period — they are not "today's" incidence. Trend arrows compare the latest period to an earlier one and describe reporting changes, not active transmission. <b>Measured</b> panels identify their source and data dates; the <b>watch list</b> is interpretive context curated from official outbreak bulletins, not a live count. This is descriptive — it does not predict the future.</div>
     <div class="strip">
-      <button class="btn" id="refresh">↻ Refresh live feeds</button>
+      <button class="btn" id="refresh">↻ Refresh source data</button>
       <span class="chip" id="srcchip">—</span>
       <span class="chip" id="vintchip">—</span>
-      <span class="chip"><span class="badge b-meas">measured</span> live counts</span>
+      <span class="chip"><span class="badge b-meas">measured</span> dated reported counts</span>
       <span class="chip"><span class="badge b-mod">modeled</span> derived</span>
       <span class="chip"><span class="badge b-int">interpretive</span> curated watch</span>
     </div>
@@ -104,7 +454,7 @@ footer b{color:var(--ink2)}
       </div>
       <div style="margin-top:13px"><div class="small muted">Cumulative global cases, monthly (2024 → latest) — slope is the signal, not the value</div><div id="sparkMp" style="margin-top:4px"></div></div>
       <div style="margin-top:14px">
-        <div class="small muted" style="margin-bottom:4px">Most-affected countries by cumulative cases (current per-country latest)
+        <div class="small muted" style="margin-bottom:4px">Selected countries by cumulative reported cases (unequal per-country reporting dates)
           <span class="tools" style="float:right"><span class="seg" id="mpsort"><button data-k="cases" class="on">cases</button><button data-k="deaths">deaths</button></span></span>
         </div>
         <div class="lead" id="mpLead"></div>
@@ -115,7 +465,7 @@ footer b{color:var(--ink2)}
 
   <!-- MEASLES -->
   <details class="card" open id="c-meas">
-    <summary><span class="ico">▦</span> Active outbreak — U.S. measles resurgence <span class="badge b-meas">measured</span></summary>
+    <summary><span class="ico">▦</span> Dated U.S. measles surveillance <span class="badge b-meas">measured</span></summary>
     <div class="body">
       <div class="small muted" style="margin-bottom:6px">Confirmed U.S. measles cases reported per year. After elimination was declared in 2000, 2025 saw the largest annual case count in decades, driven by under-vaccinated communities. Source: CDC measles surveillance (annual confirmed-case totals).</div>
       <div class="grid2">
@@ -139,7 +489,7 @@ footer b{color:var(--ink2)}
   <details class="card" open id="c-watch">
     <summary><span class="ico">⚠</span> Emerging-threat watch list <span class="badge b-int">interpretive</span></summary>
     <div class="body">
-      <div class="small muted" style="margin-bottom:4px">A curated set of the current major outbreak / health-emergency threats tracked by WHO Disease Outbreak News, CDC and Africa CDC. This is qualitative early-warning context — <b>not</b> a live count — and reflects status as of the embed date below.</div>
+      <div class="small muted" style="margin-bottom:4px">An archived curated set of outbreak / health-emergency topics tracked by WHO Disease Outbreak News, CDC and Africa CDC. This is qualitative early-warning context — <b>not</b> a live count — and reflects status as of the embed date below.</div>
       <div id="watch"></div>
       <div class="caveat">Compiled from public outbreak bulletins: WHO Disease Outbreak News (DON), CDC travel/health notices, Africa CDC, and PAHO. There is <b>no</b> single CORS-open live API for these, so entries are curated and dated, not streamed. Status labels (e.g. "active", "expanding", "watch") are editorial summaries of the cited authorities, not formal risk ratings. <b>Reporting lags are large and absence of data is not absence of disease</b> — surveillance is weakest exactly where outbreaks are often largest.</div>
     </div>
@@ -177,8 +527,8 @@ footer b{color:var(--ink2)}
       <b>COVID-19:</b> <a href="https://disease.sh/" target="_blank" rel="noopener">disease.sh</a> aggregator (<code>/v3/covid-19/all</code> and <code>/countries</code>), live when reachable; cumulative pandemic totals, not current incidence.
       <b>Watch list:</b> curated from WHO DON, CDC, Africa CDC &amp; PAHO bulletins.
     </div>
-    <div style="margin-top:8px"><b>Honesty.</b> Cumulative counts grow monotonically and revise as reports arrive; recent periods under-count. Reporting is uneven across countries and <b>absence of data is not absence of disease</b>. Mpox per-country "latest" dates differ, so cumulative totals are not all current to the same day. COVID figures are largely frozen historical totals. The watch list and country comparisons are interpretive context, not live risk ratings. This tool is <b>descriptive, not predictive</b>; it does not forecast, advise, or rank threats. No personal or protected health information is used.</div>
-    <div style="margin-top:8px" class="muted">Embedded snapshot vintage: <span id="vintfoot">—</span>. If a live refresh succeeds, the source chip above switches to "live".</div>
+    <div style="margin-top:8px"><b>Honesty.</b> Cumulative counts can be revised upward or downward as reports are corrected; recent periods under-count. Reporting is uneven across countries and <b>absence of data is not absence of disease</b>. Mpox per-country "latest" dates differ, so cumulative totals are not all current to the same day. COVID figures are largely frozen historical totals. The watch list and country comparisons are interpretive context, not live risk ratings. This tool is <b>descriptive, not predictive</b>; it does not forecast, advise, or rank threats. No personal or protected health information is used.</div>
+    <div style="margin-top:8px" class="muted">Embedded snapshot vintage: <span id="vintfoot">—</span>. A successful download changes the source chip; it does not make old reporting dates current.</div>
   </footer>
 </div>
 
@@ -243,6 +593,7 @@ let SNAP={
   }
 };
 let LIVE={mpox:false,covid:false};
+const OUTBREAK_STATUS={mpox:{checkedAt:null,downloadedAt:null},covid:{checkedAt:null,downloadedAt:null}};
 
 // ---------- WATCH LIST (INTERPRETIVE, curated 2026-06-27) ----------
 const WATCH=[
@@ -289,7 +640,7 @@ function pctChangeArr(arr,back){ // latest vs `back` periods earlier
 function chgHtml(ch,label){if(ch==null)return '<span class="muted">—</span>';const up=ch>0;const c=up?'up':'dn';const ar=up?'▲':'▼';return '<span class="delta '+c+'">'+ar+' '+(up?'+':'')+Math.round(ch*100)+'%</span>'+(label?' <span class="muted">'+label+'</span>':'');}
 function hex2rgba(h,a){const n=parseInt(h.slice(1),16);return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
 function staleFlag(asof){ // flag if latest data older than ~120 days vs runtime
- try{const ad=Math.floor(new Date(asof+'T00:00:00Z').getTime()/1000/86400)-10957;const age=epochDays()-ad;if(age>120)return '<span class="stale">data '+Math.round(age/30)+ ' mo old</span>';}catch(e){}return '';}
+ try{const ad=Math.floor(new Date(asof+'T00:00:00Z').getTime()/1000/86400)-10957;const age=epochDays()-ad;if(age>30)return '<span class="stale">data '+Math.round(age/30)+ ' mo old</span>';}catch(e){}return '';}
 
 // ---------- render ----------
 let MPSORT='cases';
@@ -298,22 +649,23 @@ function render(){
  $('vintchip').innerHTML='<b>snapshot '+S.embedded+'</b>';
  $('vintfoot').textContent=S.embedded;
  const live=LIVE.mpox||LIVE.covid;
- $('srcchip').innerHTML=live?'<span class="badge b-meas">live</span> '+(LIVE.mpox?'OWID':'')+(LIVE.mpox&&LIVE.covid?' + ':'')+(LIVE.covid?'disease.sh':''):'<span class="badge b-mod">snapshot</span> embedded';
+ $('srcchip').innerHTML=live?'<span class="badge b-meas">source downloaded</span> '+(LIVE.mpox?'OWID':'')+(LIVE.mpox&&LIVE.covid?' + ':'')+(LIVE.covid?'disease.sh':''):'<span class="badge b-mod">snapshot</span> embedded';
 
  // --- mpox ---
  const M=S.mpox;
  $('mpAsof').textContent=M.asof;
  $('mpCases').innerHTML=fmt(M.worldCases);
  const mpCh=pctChangeArr(M.monthsCases,12);
- $('mpCasesSub').innerHTML='global cumulative since 2022 · 12-mo change '+chgHtml(mpCh)+' '+staleFlag(M.asof);
+ $('mpCasesSub').innerHTML='global cumulative since 2022 · 12-mo cumulative change (not incidence) '+chgHtml(mpCh)+' '+staleFlag(M.asof);
  $('mpDeaths').innerHTML=fmt(M.worldDeaths);
- const cfr=M.worldCases?(100*M.worldDeaths/M.worldCases):null;
+ const cfr=M.worldCases&&M.worldDeaths!=null?(100*M.worldDeaths/M.worldCases):null;
  $('mpDeathsSub').innerHTML='apparent crude case-fatality ~'+(cfr!=null?cfr.toFixed(2):'—')+'% <span class="muted">(reported deaths ÷ reported cases — not a true CFR)</span>';
  $('sparkMp').innerHTML=spark(M.monthsCases,560,52,'#f3833b',true);
  renderMpCountries();
  const clade=M.countries.filter(c=>c.clade1);
  const cladeCases=clade.reduce((a,c)=>a+c.cases,0);
- $('mpCaveat').innerHTML='Cumulative cases keep rising because the count never decreases — the <b>slope</b> (new cases per month) is what matters, and it has been '+(mpCh!=null&&mpCh>0.05?'still climbing':'flattening')+'. The clade I outbreak in central/east Africa ('+clade.map(c=>c.n).join(', ')+') accounts for roughly '+fmt(cladeCases)+' cumulative cases here and carries a higher fatality burden than the 2022 clade II wave. Per-country totals are current to <b>different</b> dates (see each row), so they are not all up to the same day. <span class="badge b-meas">measured</span> from OWID; <b>absence of data is not absence of disease</b> — many African cases go unconfirmed for lack of testing.';
+ $('mpCaveat').innerHTML='These are cumulative reported cases, not active cases or a present transmission ranking. Changes can include retrospective revisions and differences in testing. Countries marked for clade-I context total '+fmt(cladeCases)+' cumulative cases across all reported clades; country membership is not genomic confirmation of those cases. Per-country dates differ and must be aligned before comparison. Absence of data is not absence of disease.';
+
 
  // --- measles ---
  const ME=S.measles, ys=ME.years;
@@ -328,17 +680,17 @@ function render(){
  $('msCtx').innerHTML='× '+(peakHist?(headline.cases/peakHist).toFixed(1):'—')+' the 2019 spike';
  $('msCtxSub').innerHTML='2019 ('+fmt(peakHist)+') had been the post-elimination high; '+headline.y+' '+(headline.cases>peakHist?'exceeded it':'is below it')+'. '+(cur.partial?'<b>'+cur.y+'</b> shown as year-to-date ('+fmt(cur.cases)+').':'');
  renderMeaslesBars();
- $('msCaveat').innerHTML='The U.S. declared measles eliminated (no continuous transmission) in 2000. The '+headline.y+' total is the highest in roughly three decades and is concentrated in <b>under-vaccinated communities</b>; most cases are unvaccinated. Counts are confirmed cases reported to CDC and revise as investigations close. Any year marked <span class="demoflag">partial / YTD</span> is incomplete. <span class="badge b-meas">measured</span> from CDC measles surveillance.';
+ $('msCaveat').innerHTML='The U.S. declared measles eliminated (no continuous transmission) in 2000. The displayed annual series is archived context, not a current local outbreak assessment. Counts are confirmed cases reported to CDC and revise as investigations close. Any year marked <span class="demoflag">partial / YTD</span> is incomplete. <span class="badge b-meas">measured</span> from CDC measles surveillance.';
 
  // --- watch list ---
- $('watch').innerHTML=WATCH.map(w=>'<div class="em"><div class="dot" style="background:'+w.col+'"></div><div><div class="nm">'+w.n+' <span class="st" style="background:'+hex2rgba(STCOL[w.st]||'#6b8290',.16)+';color:'+(STCOL[w.st]||'#9fb4bd')+'">'+w.st+'</span></div><div class="cls">'+w.cls+'</div><div class="note">'+w.note+'</div><div class="src">authorities: '+w.src+'</div></div></div>').join('');
+ $('watch').innerHTML=WATCH.map(w=>'<div class="em"><div class="dot" style="background:'+w.col+'"></div><div><div class="nm">'+w.n+' <span class="st" style="background:'+hex2rgba(STCOL[w.st]||'#6b8290',.16)+';color:'+(STCOL[w.st]||'#9fb4bd')+'">'+w.st+'</span></div><div class="cls">'+w.cls+'</div><div class="note">Archived editorial summary (curated '+SNAP.embedded+'): '+w.note+'</div><div class="src">authorities: '+w.src+'</div></div></div>').join('');
 
  // --- covid ---
  const C=S.covid;
  $('cvCases').innerHTML=fmtBig(C.all.cases);
  $('cvCasesSub').innerHTML=fmt(C.all.cases)+' across '+C.all.affectedCountries+' countries/territories';
  $('cvDeaths').innerHTML=fmtBig(C.all.deaths);
- const gcfr=C.all.cases?(100*C.all.deaths/C.all.cases):null;
+ const gcfr=C.all.cases&&C.all.deaths!=null?(100*C.all.deaths/C.all.cases):null;
  $('cvDeathsSub').innerHTML=fmt(C.all.deaths)+' · crude reported case-fatality ~'+(gcfr!=null?gcfr.toFixed(2):'—')+'%';
  $('cvLead').innerHTML=(()=>{const mx=Math.max(...C.countries.map(c=>c.cases),1);return C.countries.map((c,i)=>'<div class="row2"><div class="rk">'+(i+1)+'</div><div class="nm">'+c.n+'</div><div class="meter"><div class="tk"><div class="fl" style="width:'+(100*c.cases/mx).toFixed(1)+'%;background:#26c6da"></div></div></div><div class="rate">'+fmtBig(c.cases)+'</div><div class="cnt">'+fmtBig(c.deaths)+' d</div></div>').join('');})();
  $('cvCaveat').innerHTML='These are <b>cumulative totals since early 2020</b>, not current activity. Most countries stopped case-based reporting in 2023–2024, so the aggregator is largely <b>frozen historical data</b>; true ongoing circulation is now tracked via wastewater, hospitalizations and variant genomics rather than case counts. <span class="badge b-meas">measured</span> totals from disease.sh; <span class="badge b-mod">modeled</span> case-fatality is a crude reported ratio, not infection-fatality. Reported-case CFR overstates severity because most infections were never counted.';
@@ -353,7 +705,7 @@ function renderMpCountries(){
   const col=r.clade1?'#ef5466':'#26c6da';
   const disp=MPSORT==='cases'?fmt(r.cases):fmt(r.deaths)+' <small style="color:var(--dim)">deaths</small>';
   const sec=MPSORT==='cases'?fmt(r.deaths)+' d':fmt(r.cases)+' cases';
-  const tag=r.clade1?' <small style="color:#ef9aa4">clade I</small>':'';
+  const tag=r.clade1?' <small style="color:#ef9aa4">clade-I country context</small>':'';
   return '<div class="row2"><div class="rk">'+(i+1)+'</div><div class="nm">'+r.n+tag+'<br><small>as of '+r.asof+'</small></div>'+
    '<div class="meter"><div class="tk"><div class="fl" style="width:'+(100*v/max).toFixed(1)+'%;background:'+col+'"></div></div></div>'+
    '<div class="rate">'+disp+'</div><div class="cnt">'+sec+'</div></div>';}).join('')||'<div class="muted">No data.</div>';
@@ -394,31 +746,34 @@ async function fetchMpox(){
  const txt=await fetch(OWID_CSV).then(r=>{if(!r.ok)throw r.status;return r.text();});
  const {idx,rows}=parseCSV(txt);
  const iL=idx['location'],iD=idx['date'],iIso=idx['iso_code'],iC=idx['total_cases'],iDe=idx['total_deaths'];
- const num=x=>{const f=parseFloat(x);return isFinite(f)?f:0;};
+ const num=x=>{if(x==null||String(x).trim()==='')return null;const f=Number(x);return Number.isFinite(f)&&f>=0?f:null;};
+ if([iL,iD,iIso,iC,iDe].some(x=>x==null))throw new Error('Missing mpox columns');
  // latest row per location; world monthly
  const latest={};const worldMonthly={};
  rows.forEach(c=>{const loc=c[iL],d=c[iD];
   if(!latest[loc]||d>latest[loc][iD])latest[loc]=c;
-  if(loc==='World'){const ym=d.slice(0,7);if(!worldMonthly[ym]||d>worldMonthly[ym].d)worldMonthly[ym]={d,cases:num(c[iC]),deaths:num(c[iDe])};}});
- const w=latest['World'];if(!w)throw 'no world row';
+  if(loc==='World'&&num(c[iC])!=null){const ym=d.slice(0,7);if(!worldMonthly[ym]||d>worldMonthly[ym].d)worldMonthly[ym]={d,cases:num(c[iC]),deaths:num(c[iDe])};}});
+ const w=latest['World'];if(!w||num(w[iC])==null||!/^\d{4}-\d{2}-\d{2}$/.test(w[iD]))throw new Error('No usable world cumulative row');
+ if(w[iD]<SNAP.mpox.asof)throw new Error('Regressed source date');
  const mKeys=Object.keys(worldMonthly).filter(k=>k>='2024-01').sort();
  const monthsCases=mKeys.map(k=>Math.round(worldMonthly[k].cases));
  // countries
  const countries=[];
- Object.keys(latest).forEach(loc=>{if(AGG.has(loc))return;const c=latest[loc];const iso=c[iIso];if(!iso||iso.startsWith('OWID'))return;
-  countries.push({n:loc==='Democratic Republic of Congo'?'DR Congo':loc,iso,cases:Math.round(num(c[iC])),deaths:Math.round(num(c[iDe])),asof:c[iD],clade1:CLADE1.has(iso)});});
+ Object.keys(latest).forEach(loc=>{if(AGG.has(loc))return;const c=latest[loc];const iso=c[iIso];if(!iso||iso.startsWith('OWID')||num(c[iC])==null)return;
+  countries.push({n:loc==='Democratic Republic of Congo'?'DR Congo':loc,iso,cases:Math.round(num(c[iC])),deaths:num(c[iDe])==null?null:Math.round(num(c[iDe])),asof:c[iD],clade1:CLADE1.has(iso)});});
  countries.sort((a,b)=>b.cases-a.cases);
- SNAP.mpox={asof:w[iD],worldCases:Math.round(num(w[iC])),worldDeaths:Math.round(num(w[iDe])),monthsLabels:mKeys,monthsCases,countries:countries.slice(0,12)};
- LIVE.mpox=true;
+ SNAP.mpox={asof:w[iD],worldCases:Math.round(num(w[iC])),worldDeaths:num(w[iDe])==null?null:Math.round(num(w[iDe])),monthsLabels:mKeys,monthsCases,countries:countries.slice(0,12)};
+ LIVE.mpox=true;OUTBREAK_STATUS.mpox.downloadedAt=new Date().toISOString();
 }
 async function fetchCovid(){
  const all=await fetch(COVID_ALL).then(r=>{if(!r.ok)throw r.status;return r.json();});
  const cty=await fetch(COVID_CTY).then(r=>{if(!r.ok)throw r.status;return r.json();});
  SNAP.covid={all:{cases:all.cases,deaths:all.deaths,affectedCountries:all.affectedCountries,updated:new Date(all.updated).toISOString().slice(0,7)},
    countries:cty.slice(0,6).map(c=>({n:c.country,cases:c.cases,deaths:c.deaths}))};
- LIVE.covid=true;
+ LIVE.covid=true;OUTBREAK_STATUS.covid.downloadedAt=new Date().toISOString();
 }
 async function refresh(){
+ OUTBREAK_STATUS.mpox.checkedAt=OUTBREAK_STATUS.covid.checkedAt=new Date().toISOString();
  $('srcchip').innerHTML='<span class="badge b-mod">…</span> contacting live feeds';
  const tasks=[fetchMpox().catch(e=>{LIVE.mpox=false;}),fetchCovid().catch(e=>{LIVE.covid=false;})];
  await Promise.all(tasks);
@@ -431,5 +786,36 @@ function boot(){$('splash').style.display='none';render();refresh();}
 $('refresh').onclick=refresh;
 if(document.readyState!=='loading')boot();else document.addEventListener('DOMContentLoaded',boot);
 </script>
+<!-- CONSOLE_RESPONSE_ADAPTER_START -->
+<script>
+(function(){
+ 'use strict';
+ const authority='https://www.who.int/emergencies/disease-outbreak-news';
+ function read(){
+  const data=typeof SNAP==='object'?SNAP:{},m=data.mpox||{},countries=m.countries||[],years=data.measles?.years||[],last=years.at(-1),stamps=countries.map(c=>Date.parse(c.asof+'T00:00:00Z')),validDates=countries.length>0&&stamps.every(Number.isFinite),range=validDates?(Math.max(...stamps)-Math.min(...stamps))/86400000:null;
+  const origin=Number.isFinite(Date.parse(m.asof))?Date.parse(m.asof):Date.now(),groupAge=flag=>countries.filter(c=>!!c.clade1===flag).map(c=>(origin-Date.parse(c.asof+'T00:00:00Z'))/86400000).filter(Number.isFinite),a=groupAge(true),b=groupAge(false),w=a.length&&b.length?ConsoleResponse.math.wasserstein1(a,b):null;
+  const evidence=[{id:'mpox-dates',label:'Selected mpox country reporting dates',value:validDates?new Date(Math.min(...stamps)).toISOString().slice(0,10)+' to '+new Date(Math.max(...stamps)).toISOString().slice(0,10)+' ('+range+' days apart)':'Unavailable',measuredAt:m.asof,checkedAt:typeof OUTBREAK_STATUS==='object'?OUTBREAK_STATUS.mpox.checkedAt:null,basis:'measured',quality:validDates?'historical':'missing',source:'https://github.com/owid/monkeypox',note:'Per-country latest dates differ; cumulative counts and a successful download cannot establish present incidence.'},
+   {id:'age-shape',label:'Reporting-age distribution gap',value:w??'Unavailable',unit:'days W1',measuredAt:m.asof,basis:'interpretive',quality:w!=null?'historical':'missing',source:'https://github.com/owid/monkeypox',note:'Exact empirical Wasserstein distance between reporting-age distributions of country-context groups. This is a reporting-comparability proxy, not a disease-severity or transmission estimate.'},
+   {id:'annual',label:'Latest measles reporting window',value:last?last.y+' · '+(last.partial?'partial / year to date':'annual total'):'Unavailable',measuredAt:data.embedded,basis:'measured',quality:last?'historical':'missing',source:'https://www.cdc.gov/measles/data-research/index.html',note:'Archived annual confirmed-case context; no matched year-to-date denominator or present local incidence is supplied.'}];
+  const specs=[
+   [1,'comparison','Countries do not supply population balance','unknown',[],'Cumulative selected-country counts do not measure affected population, ascertainment or active burden.','Obtain population denominators and testing/reporting coverage before comparing burden or allocating response resources.','Aligned population denominators, surveillance coverage and current incidence'],
+   [2,'comparison','Reporting-age shape imbalance',w!=null?(w>0?'triggered':'clear'):'unknown',['age-shape'],'A nonzero W1 of reporting-age distributions indicates unequal reporting timeliness between country-context groups. No clinical threshold is implied.','Align dates or stratify by reporting vintage before comparing case distributions; do not interpret reporting-age imbalance as outbreak severity.','Valid per-country report dates and explicit comparison groups'],
+   [3,'comparison','Surveillance density symmetry is unavailable','unknown',[],'Country totals do not locate monitors, tested populations or unreported areas.','Audit surveillance catchments and case ascertainment before interpreting sparse counts.','Surveillance catchments, tested populations and geographic coverage'],
+   [4,'structure','Outbreak contiguity is unestablished','unknown',[],'Country membership does not provide connected transmission clusters.','Obtain compatible geocoded incidence/catchment data and a documented adjacency model before counting components.','Geocoded current incidence and validated adjacency/catchment definitions'],
+   [5,'structure','Reporting-window persistence and alignment',validDates&&last?(range>0||last.partial?'triggered':'clear'):'unknown',['mpox-dates','annual'],'Unequal country dates or a partial annual measles total require an alignment review. This is a timing proxy, not persistent homology.','Compare matched epidemiological weeks and complete versus partial windows separately; refresh source data before interpreting change.','Explicit report dates and complete/partial annual-window flags'],
+   [6,'structure','Geographic scale stability is untested','unknown',[],'Selected cumulative countries cannot establish robustness to subnational aggregation or reporting filters.','Repeat a defined incidence comparison at nested geographic levels using matched weeks.','Complete matched subnational/national incidence and stable denominators'],
+   [7,'structure','Cross-surveillance dependence is not fitted','unknown',[],'Differences in testing, definitions and ascertainment are not an estimated free-energy model.','Document definition changes and surveillance systems; avoid treating reports as independent observations.','Case definitions, ascertainment model and aligned time series'],
+   [8,'spillover','Cumulative cases are not a contamination AUC','unknown',[],'A cumulative total is not integrated current exposure over a documented scenario ladder.','Use incident cases over matched intervals with population/exposure denominators before integration.','Aligned incidence histories, exposure denominator and defined integration range'],
+   [9,'spillover','Frontier exposure cannot be located','unknown',[],'Country totals cannot locate susceptible populations at a transmission boundary.','Use authority-approved local surveillance and exposure data for boundary planning.','Current local incidence boundary, susceptible population and exposure distances'],
+   [10,'spillover','No measured transmission/mobility graph','unknown',[],'Country co-reporting and country-context clade flags are not observed person-to-person or mobility edges.','Use validated contact/mobility and genomic investigation under health-authority procedures; never name a causal source from cumulative rankings.','Verified transmission/contact or mobility edges, time alignment and ascertainment']
+  ];
+  const diagnostics=[],actions=[];
+  for(const [metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs]of specs){const id='metric-'+metricId;diagnostics.push({id,metricId,pillar,label,status,evidenceIds,scope:'planning',rule,analyticalMitigation,requiredInputs,explanation:'Reporting-quality/planning proxy or not assessable; no validated ten-parameter epidemiological transfer is claimed.'});for(const track of ['public','operator'])actions.push({id:id+'-'+track,metricIds:[metricId],track,phase:status==='unknown'?'verify':'review',when:status==='unknown'?'unknown':'triggered',diagnosticIds:[id],title:'#'+metricId+' '+label,nextStep:track==='operator'?analyticalMitigation+' Required inputs: '+requiredInputs+'. Confirm with the responsible public-health authority under its SOP before operational decisions.':'Use current WHO/national/local public-health notices rather than this dated cumulative ranking. '+analyticalMitigation,escalateWhen:'A current local public-health notice or verified surveillance trigger requires authority review; these historical/planning parameters cannot activate an incident response.',authorityUrl:metricId===5?'https://www.cdc.gov/measles/data-research/index.html':authority});}
+  return {slug:'global-outbreak-tracker',title:'Outbreak surveillance response plan',context:'Dated surveillance comparison · embedded '+(data.embedded||'unknown')+' · mpox source '+(m.asof||'unknown'),evidence,diagnostics,actions,network:{label:'Directed transmission information unavailable',basis:'interpretive',semantics:'No transmission, contact, mobility or fitted contagion edges are supplied.',period:'Country dates differ',coverage:'Selected cumulative countries and annual U.S. measles context',roles:[],limitations:['Cumulative reported burden is not active burden, present risk or transmission source attribution.']},limitations:['Country-context clade flags do not genotype cumulative cases. Source download success does not make the reporting period current.','WHO DON is not an exhaustive list of events; absence of a bulletin or data is not absence of disease.','No medication, vaccination, isolation, travel or resource-allocation instruction is automated. Public-health decisions require current local evidence and authority.']};
+ }
+ window.ConsoleResponse.connect(read,['#mpLead','#mpCases','#msBars','#srcchip']);
+})();
+</script>
+<!-- CONSOLE_RESPONSE_ADAPTER_END -->
 </body>
 </html>

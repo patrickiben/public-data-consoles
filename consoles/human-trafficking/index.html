@@ -136,8 +136,358 @@ footer{padding:30px 0 50px;border-top:1px solid var(--line);color:var(--mut2);fo
 .pill{font-size:11.5px;padding:4px 10px;border-radius:20px;background:var(--panel);border:1px solid var(--line2);color:var(--mut)}
 .kbd{font-family:ui-monospace,Menlo,monospace;background:var(--panel2);border:1px solid var(--line2);border-radius:5px;padding:1px 5px;font-size:12px;color:var(--ink)}
 </style>
+<!-- CONSOLE_RESPONSE_HEAD_START -->
+<style>
+#console-response{box-sizing:border-box;position:relative;z-index:1;margin:16px auto;padding:18px;max-width:1440px;border:1px solid #486377;border-top:4px solid #26c6da;border-radius:12px;background:#10212d;color:#e2edf4;font:14px/1.55 system-ui,sans-serif;text-align:left}
+#console-response *{box-sizing:border-box}#console-response h2{font-size:22px;margin:0 0 4px;color:#f1f8fc}#console-response h3{font-size:16px;margin:16px 0 8px;color:#e2edf4}#console-response h4{font-size:15px;margin:0 0 6px;color:#f1f8fc}
+#console-response p{margin:7px 0}#console-response a{color:#86e1ee;text-decoration:underline}#console-response li{margin:12px 0}#console-response .cr-head{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+#console-response .cr-head p,#console-response .cr-note{color:#b2c6d3}#console-response .cr-note{font-size:12px}#console-response .cr-badge{display:inline-block;border:1px solid #648093;border-radius:5px;padding:1px 5px;font-size:10px;color:#d2e6f0;vertical-align:middle}
+#console-response .cr-head{padding:0;margin:0;border:0;background:transparent}
+#console-response .cr-plan-group>summary{color:#a7f0f2;font-size:15px}
+#console-response .cr-summary{padding:10px;border-left:3px solid #e5b35a;background:#24303b}#console-response .cr-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+#console-response button{font:inherit;font-size:13px;padding:8px 12px;border:1px solid #6d8b9e;border-radius:6px;background:#173343;color:#f1f8fc;cursor:pointer}#console-response button[aria-pressed=true]{background:#165e6b;border-color:#6de3e7}
+#console-response details{margin:9px 0;border:1px solid #3e596b;border-radius:7px;padding:10px}#console-response summary{cursor:pointer;font-weight:650;list-style:revert}#console-response details>p,#console-response details>ul{padding:2px 7px}
+#console-response .cr-action{margin:10px 0;padding:13px;border:1px solid #3f6475;border-radius:7px;background:#142b39}#console-response .cr-action label{display:block;color:#c7dce7;font-size:12px;margin-top:10px}#console-response input[type=checkbox]{margin-right:6px;width:16px;height:16px;vertical-align:middle}
+#console-response .cr-diagnostic{padding:10px;border-left:3px solid #698396;background:#162d3b}#console-response .cr-triggered{border-color:#e5b35a}#console-response .cr-clear{border-color:#55bda0}#console-response .cr-unknown,#console-response .cr-quality{color:#f0cc87}
+#console-response .cr-table{overflow-x:auto}#console-response table{width:100%;border-collapse:collapse;color:inherit;font-size:12px}#console-response th,#console-response td{text-align:left;padding:8px;border-bottom:1px solid #3e596b}
+#console-response :focus-visible,#console-response-shortcut:focus-visible{outline:3px solid #f4d57d;outline-offset:3px}
+#console-response select{font:inherit;color:#e2edf4;background:#173343;border:1px solid #6d8b9e;border-radius:4px;padding:5px;max-width:100%}
+#console-response-shortcut{position:fixed;right:14px;bottom:14px;z-index:10020;border:1px solid #87d5e0;border-radius:24px;padding:10px 15px;background:#103f50;color:#f1f8fc;font:600 13px system-ui,sans-serif;box-shadow:0 2px 12px #0007;text-decoration:none}
+@media(max-width:640px){#console-response{margin:10px 6px;padding:13px}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:19px}}
+@media print{#console-response-shortcut,#console-response .cr-toolbar{display:none!important}#console-response{background:white!important;color:#111!important;max-width:none;border:1px solid #555}#console-response *{color:#111!important;box-shadow:none!important}#console-response details{display:block!important}#console-response details>*{display:block!important}#console-response .cr-action{break-inside:avoid;background:white!important}#console-response .cr-badge{border-color:#555}}
+</style>
+<script>
+(function (root) {
+  'use strict';
+  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set();
+  var metrics = [
+    ['Population Balance', 'comparison', 'Defined comparison groups, workload/population denominators and aligned periods.'],
+    ['Wasserstein Distance / Shape Imbalance', 'comparison', 'Comparable distributions in the same unit and period; group membership.'],
+    ['Density Symmetry', 'comparison', 'Observed locations or defined comparable density denominators.'],
+    ['Euler Characteristic / Contiguity', 'structure', 'A justified adjacency/topology definition and observed coverage.'],
+    ['Persistence Gap', 'structure', 'Repeated or threshold-adjacent measurements and an explicit reference margin.'],
+    ['Spatial Mixing / Scale Stability', 'structure', 'Comparable measurements across specified spatial or aggregation scales.'],
+    ['Variational Free Energy', 'structure', 'A specified probabilistic model/objective and dependence structure; not an invented score.'],
+    ['Contamination AUC', 'spillover', 'Exposure/response across a justified range of distances, doses or thresholds.'],
+    ['Frontier Risk / Buffer Depth AUC', 'spillover', 'Defined exposed/unexposed boundary, distance/depth and comparable weights.'],
+    ['Mobility Network Leakage', 'spillover', 'Observed directed links or a labeled scenario, transfer semantics and boundary coverage.']
+  ];
+  var basisNames = { measured: 'MEASURED', modeled: 'MODELED', interpretive: 'INTERPRETIVE', demo: 'DEMO · practice only' };
+  function text(value) { return value == null ? '' : String(value); }
+  function esc(value) { return text(value).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function url(value) { return /^https?:\/\/[^\s]+$/i.test(text(value)) ? text(value) : ''; }
+  function canonical(value) {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === 'object') {
+      var out = {}; Object.keys(value).sort().forEach(function (key) { out[key] = canonical(value[key]); }); return out;
+    }
+    return value;
+  }
+  function signature(value) { return JSON.stringify(canonical(value)); }
+  function evaluate(input) {
+    input = input || {};
+    var facts = (Array.isArray(input.evidence) ? input.evidence : []).map(function (fact) {
+      var f = Object.assign({}, fact);
+      if (!basisNames[f.basis]) f.basis = 'interpretive';
+      if (!['current', 'historical', 'stale', 'missing'].includes(f.quality)) f.quality = 'missing';
+      if (f.value == null || f.value === '' || (typeof f.value === 'number' && !Number.isFinite(f.value))) f.quality = 'missing';
+      if (!['number', 'string'].includes(typeof f.value)) { f.value = null; f.quality = 'missing'; }
+      f.source = url(f.source); return f;
+    });
+    var byFact = new Map(facts.map(function (f) { return [f.id, f]; }));
+    var diagnostics = (Array.isArray(input.diagnostics) ? input.diagnostics : []).map(function (diagnostic) {
+      var d = Object.assign({}, diagnostic), ids = Array.isArray(d.evidenceIds) ? d.evidenceIds : [];
+      d.evidenceIds = ids; d.status = ['triggered', 'clear', 'unknown'].includes(d.status) ? d.status : 'unknown';
+      d.scope = d.scope === 'planning' ? 'planning' : 'current';
+      d.reasons = [];
+      if (typeof d.value === 'number' && !Number.isFinite(d.value)) d.reasons.push('The numeric metric is not finite.');
+      if (!ids.length) d.reasons.push('No supporting evidence is linked.');
+      ids.forEach(function (id) {
+        var fact = byFact.get(id);
+        if (!fact || ['missing', 'stale'].includes(fact.quality)) d.reasons.push((fact ? fact.label : id) + ': missing or stale evidence.');
+        else if (fact.quality === 'historical' && d.scope !== 'planning') d.reasons.push(fact.label + ': historical evidence cannot establish current conditions.');
+      });
+      if (d.reasons.length) d.status = 'unknown';
+      d.practice = !!input.scenario || ids.some(function (id) { return byFact.get(id) && byFact.get(id).basis === 'demo'; });
+      d.current = ids.length > 0 && ids.every(function (id) { var f = byFact.get(id); return f && f.quality === 'current' && f.basis !== 'demo'; });
+      return d;
+    });
+    diagnostics.forEach(function (d) { var n = Number(d.metricId == null ? d.dimension : d.metricId); d.metricId = Number.isInteger(n) && n >= 1 && n <= 10 ? n : null; });
+    var canonicalDiagnostics = metrics.map(function (metric, index) {
+      var matches = diagnostics.filter(function (d) { return d.metricId === index + 1; });
+      var d = matches.length === 1 ? matches[0] : { id: 'dimension-' + (index + 1), metricId: index + 1, status: 'unknown', evidenceIds: [], reasons: [], scope: 'planning', current: false };
+      d = Object.assign({}, d, { canonicalLabel: metric[0], pillar: metric[1] });
+      if (matches.length > 1) { d.status = 'unknown'; d.reasons = ['Conflicting duplicate canonical dimension definitions.']; }
+      d.label = d.label || metric[0];
+      d.requiredInputs = d.requiredInputs && (!Array.isArray(d.requiredInputs) || d.requiredInputs.length) ? d.requiredInputs : metric[2];
+      d.analyticalMitigation = d.analyticalMitigation || 'Acquire and validate the required inputs; assess applicability before choosing an analysis.';
+      if (!matches.length) { d.rule = 'Not assessable from the supplied data.'; d.explanation = 'No validated metric or justified domain proxy has been supplied.'; }
+      return d;
+    });
+    diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
+    var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
+    var actions = (Array.isArray(input.actions) ? input.actions : []).map(function (action) {
+      var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
+      (Array.isArray(a.metricIds) ? a.metricIds : []).forEach(function (n) { var d = diagnostics.find(function (item) { return item.metricId === Number(n); }); if (d && !ids.includes(d.id)) ids.push(d.id); });
+      var relevant = ids.length ? ids.map(function (id) { return byDiagnostic.get(id) || { status: 'unknown', current: false }; }) : diagnostics;
+      a.track = a.track === 'operator' ? 'operator' : 'public';
+      a.phase = ['verify', 'prepare', 'respond', 'review'].includes(a.phase) ? a.phase : 'verify';
+      a.when = ['always', 'triggered', 'unknown'].includes(a.when) ? a.when : 'unknown';
+      if (a.when === 'always' && a.phase === 'respond') a.phase = 'prepare';
+      a.selected = a.when === 'always' || relevant.some(function (d) { return d.status === a.when; });
+      a.practice = !!input.scenario || relevant.some(function (d) { return d.practice; });
+      a.withheld = a.phase === 'respond' && a.when !== 'always' && !a.practice && !relevant.some(function (d) { return d.status === 'triggered' && d.current; });
+      if (a.withheld) a.selected = false;
+      a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl); return a;
+    });
+    return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
+      evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null,
+      limitations: Array.isArray(input.limitations) ? input.limitations.map(text) : [], scenario: !!input.scenario };
+  }
+  function badge(basis) { return '<span class="cr-badge">' + esc(basisNames[basis] || basisNames.interpretive) + '</span>'; }
+  function sourceLink(source, label) { return url(source) ? '<a href="' + esc(url(source)) + '" target="_blank" rel="noopener noreferrer">' + esc(label || 'Source') + '</a>' : '<span>Source not supplied</span>'; }
+  function mount() {
+    if (!doc || !doc.body) return;
+    var panel = doc.getElementById('console-response');
+    if (!panel) return;
+    if (!panel.dataset.mounted) {
+      panel.dataset.mounted = 'true';
+      panel.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print]');
+        if (!button) return;
+        if (button.dataset.crTrack) { track = button.dataset.crTrack; render(); }
+        if (button.hasAttribute('data-cr-print')) root.print();
+        if (button.hasAttribute('data-cr-export')) download();
+      });
+      panel.addEventListener('change', function (event) {
+        var metric = Number(event.target.dataset.crAssess);
+        if (metric >= 1 && metric <= 10) { if (event.target.value === 'review') manualReview.add(metric); else manualReview.delete(metric); render(); return; }
+        var id = event.target.dataset.crAck;
+        if (id) { if (event.target.checked) acknowledgments.add(id); else acknowledgments.delete(id); }
+      });
+      var shortcut = doc.getElementById('console-response-shortcut');
+      if (shortcut) shortcut.addEventListener('click', function (event) {
+        var group = panel.querySelector('[data-cr-section="plan"]'); if (group) group.open = true;
+        event.preventDefault(); var checklist = panel.querySelector('[data-cr-section="actions"]'); if (checklist) checklist.open = true;
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var heading = doc.getElementById('console-response-title'); if (heading) heading.focus();
+      });
+      var printSections = null;
+      function beginPrint() {
+        if (printSections) return;
+        printSections = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
+        panel.querySelectorAll('details').forEach(function (d) { d.open = true; });
+      }
+      function endPrint() {
+        if (!printSections) return;
+        panel.querySelectorAll('details').forEach(function (d) { d.open = printSections.has(d.dataset.crSection); });
+        printSections = null;
+      }
+      root.addEventListener('beforeprint', beginPrint); root.addEventListener('afterprint', endPrint);
+      if (root.matchMedia) {
+        var printMedia = root.matchMedia('print');
+        if (printMedia.addEventListener) printMedia.addEventListener('change', function (event) { if (event.matches) beginPrint(); else endPrint(); });
+      }
+    }
+    render();
+  }
+  function currentPlan() {
+    var plan = evaluate(payload);
+    manualReview.forEach(function (n) {
+      var d = plan.diagnostics.find(function (item) { return item.metricId === n; }); if (!d) return;
+      var authority = plan.actions.find(function (a) { return a.track === 'operator' && a.diagnosticIds.includes(d.id) && a.authorityUrl; });
+      plan.actions.push({ id: 'manual-review-' + n, track: 'operator', phase: 'verify', when: 'always', selected: true, practice: false,
+        diagnosticIds: [d.id], title: 'Self-reported review needed: #' + n + ' ' + d.canonicalLabel,
+        nextStep: d.analyticalMitigation + ' Required inputs: ' + text(d.requiredInputs),
+        escalateWhen: 'A local planning flag is not a measured incident. Review with your designated lead and verified SOP before taking operational action.',
+        authorityUrl: authority ? authority.authorityUrl : '', selfReported: true });
+    });
+    plan.manualAssessments = Array.from(manualReview).sort(function (a, b) { return a - b; }).map(function (n) { return { metricId: n, assessment: 'review needed', basis: 'self-reported local planning' }; });
+    return plan;
+  }
+  function render() {
+    if (!doc) return;
+    var panel = doc.getElementById('console-response'); if (!panel || !panel.dataset.mounted) return;
+    var plan = currentPlan(), unknown = plan.diagnostics.filter(function (d) { return d.metricId && d.status === 'unknown'; }).length;
+    var selected = plan.actions.filter(function (a) { return a.track === track && a.selected; });
+    var open = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
+    var focused = doc.activeElement && panel.contains(doc.activeElement) ? doc.activeElement.id : '';
+    panel.dataset.rendered = 'true';
+    var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
+    h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open ten-parameter checklist and evidence</summary>';
+    h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
+    function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
+    var actionHTML = '<p>These are planning prompts, not instructions to dispatch, switch equipment, prescribe, trade or evacuate. ' + (track === 'operator' ? 'Use your organization’s verified telemetry, SOP and decision authority.' : 'Follow current official instructions for your location.') + '</p>';
+    ['verify', 'prepare', 'respond', 'review'].forEach(function (phase) {
+      var list = selected.filter(function (a) { return a.phase === phase; }); if (!list.length) return;
+      actionHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
+      list.forEach(function (a) {
+        var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
+        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + d.status + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+      });
+    });
+    if (!selected.length) actionHTML += '<p class="cr-unknown">No supported conditional action is available for this track. Verify missing evidence and consult the responsible authority; this is not an all-clear.</p>';
+    actionHTML += '<p class="cr-note">Checks are temporary local planning notes, not completed operations. Context or evidence changes reset them. Nothing is transmitted or stored by this response layer.</p>';
+    h += section('actions', '1. Condition-dependent response plan', actionHTML, 'interpretive');
+    var evidenceHTML = plan.evidence.length ? '<ul>' + plan.evidence.map(function (f) { return '<li><b>' + esc(f.label || f.id) + ':</b> ' + esc(f.quality === 'missing' ? 'Unavailable' : f.value) + (f.unit ? ' ' + esc(f.unit) : '') + ' ' + badge(f.basis) + ' <span class="cr-quality">' + esc(f.quality) + '</span><br>Observed / reported: ' + esc(f.measuredAt || 'not supplied') + '; checked: ' + esc(f.checkedAt || 'not supplied') + '. ' + sourceLink(f.source) + (f.note ? '<br>' + esc(f.note) : '') + '</li>'; }).join('') + '</ul>' : '<p class="cr-unknown">Evidence unavailable. No current incident status can be inferred.</p>';
+    h += section('evidence', '2. Evidence, dates and sources', evidenceHTML, 'interpretive');
+    var diagnosticHTML = ['comparison', 'structure', 'spillover'].map(function (pillar) {
+      var ds = plan.diagnostics.filter(function (d) { return d.pillar === pillar; });
+      return '<h3>' + ({ comparison: 'Comparison and balance', structure: 'Structure and coverage', spillover: 'Spillover and dependence' })[pillar] + '</h3>' + (ds.length ? ds.map(function (d) {
+        var related = plan.actions.filter(function (a) { return a.track === track && a.diagnosticIds.includes(d.id); });
+        var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + (d.metricId ? '#' + d.metricId + ' ' + esc(d.canonicalLabel) : esc(d.label)) + ' — ' + esc(d.status.toUpperCase()) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc((typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+      }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
+    }).join('');
+    h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');
+    var net = plan.network, networkHTML;
+    if (!net) networkHTML = '<p class="cr-unknown">Directed network information is unavailable. No source/sink, causal route or restoration gain is inferred.</p>';
+    else {
+      networkHTML = '<p><b>' + esc(net.label) + '</b> ' + badge(net.basis) + '<br>' + esc(net.semantics) + '<br>Period alignment: ' + esc(net.period || 'not supplied') + '; coverage: ' + esc(net.coverage || 'not supplied') + '.</p>';
+      if (Array.isArray(net.roles) && net.roles.length) networkHTML += '<div class="cr-table"><table><thead><tr><th>Entity</th><th>Role / interpretation</th><th>Inbound</th><th>Outbound</th><th>Unit</th></tr></thead><tbody>' + net.roles.map(function (r) { return '<tr><td>' + esc(r.label || r.id) + '</td><td>' + esc(r.role) + '</td><td>' + esc(r.inbound == null ? 'Unavailable' : r.inbound) + '</td><td>' + esc(r.outbound == null ? 'Unavailable' : r.outbound) + '</td><td>' + esc(r.unit || 'not additive') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      networkHTML += '<p>' + esc((net.limitations || []).join(' ')) + '</p>';
+    }
+    h += section('network', '4. Directed accounting and method limits', networkHTML, 'interpretive');
+    h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p><p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
+    h += '</details>';
+    panel.innerHTML = h;
+    if (focused) { var nextFocus = doc.getElementById(focused); if (nextFocus) nextFocus.focus({ preventScroll: true }); }
+  }
+  function set(input) {
+    var nextRevision = signature(input || {});
+    if (nextRevision === revision) return;
+    function evidenceOnly(value) {
+      if (Array.isArray(value)) return value.map(evidenceOnly);
+      if (value && typeof value === 'object') { var out = {}; Object.keys(value).forEach(function (key) { if (key !== 'checkedAt') out[key] = evidenceOnly(value[key]); }); return out; }
+      return value;
+    }
+    var nextEvidence = signature(evidenceOnly(input || {}));
+    if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
+    evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
+  }
+  function connect(read, selectors) {
+    var stopped = false, timer = null, interval = null, observer = null, targets = Array.isArray(selectors) ? selectors : selectors ? [selectors] : [];
+    function update() {
+      if (stopped) return;
+      try { set(read()); }
+      catch (error) { set({ title: 'Response plan', context: 'Evidence reader unavailable', limitations: ['The console evidence could not be read. Verify the original sources before deciding.'] }); }
+    }
+    function start() {
+      if (stopped) return;
+      update();
+      if (!doc || !root.MutationObserver) return;
+      observer = new root.MutationObserver(function (records) {
+        var relevant = records.some(function (record) {
+          var el = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+          if (!el || el.closest('#console-response')) return false;
+          return !targets.length || targets.some(function (selector) { return el.matches(selector) || !!el.closest(selector) || !!el.querySelector(selector); });
+        });
+        if (relevant) { root.clearTimeout(timer); timer = root.setTimeout(update, 80); }
+      });
+      observer.observe(doc.body, { subtree: true, childList: true, characterData: true, attributes: true });
+      interval = root.setInterval(function () { if (!doc.hidden) update(); }, 60000);
+      doc.addEventListener('visibilitychange', visible);
+      doc.addEventListener('change', changed);
+      doc.addEventListener('input', changed);
+    }
+    function visible() { if (!doc.hidden) update(); }
+    function changed(event) { if (!event.target.closest('#console-response') && (!targets.length || targets.some(function (selector) { return event.target.matches(selector) || !!event.target.closest(selector); }))) update(); }
+    if (doc && doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', start, { once: true }); else start();
+    return function () { stopped = true; root.clearTimeout(timer); root.clearInterval(interval); if (observer) observer.disconnect(); if (doc) { doc.removeEventListener('visibilitychange', visible); doc.removeEventListener('change', changed); doc.removeEventListener('input', changed); } };
+  }
+  function exportPlan() {
+    return { exportedAt: new Date().toISOString(), note: 'Local planning review; not a record of completed operations.',
+      track: track, plan: currentPlan(), acknowledgments: Array.from(acknowledgments) };
+  }
+  function download() {
+    var blob = new Blob([JSON.stringify(exportPlan(), null, 2)], { type: 'application/json' });
+    var link = doc.createElement('a'), objectURL = root.URL.createObjectURL(blob);
+    link.href = objectURL; link.download = 'console-response-plan.json'; link.click(); root.setTimeout(function () { root.URL.revokeObjectURL(objectURL); }, 1000);
+  }
+  function wasserstein1(left, right) {
+    if (!Array.isArray(left) || !Array.isArray(right) || !left.length || !right.length ||
+        left.concat(right).some(function (n) { return typeof n !== 'number' || !Number.isFinite(n); })) return null;
+    var a = left.slice().sort(function (x, y) { return x - y; }), b = right.slice().sort(function (x, y) { return x - y; });
+    var points = Array.from(new Set(a.concat(b))).sort(function (x, y) { return x - y; }), i = 0, j = 0, area = 0;
+    for (var k = 0; k < points.length - 1; k++) {
+      while (i < a.length && a[i] <= points[k]) i++;
+      while (j < b.length && b[j] <= points[k]) j++;
+      area += Math.abs(i / a.length - j / b.length) * (points[k + 1] - points[k]);
+    }
+    return area;
+  }
+  var definitions = Object.freeze(metrics.map(function (m, i) { return Object.freeze({ id: i + 1, name: m[0], pillar: m[1], requiredInputs: m[2] }); }));
+  var api = { set: set, connect: connect, evaluate: evaluate, exportPlan: exportPlan, metricDefinitions: definitions, math: { wasserstein1: wasserstein1 }, version: 1 };
+  root.ConsoleResponse = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  if (doc) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', mount, { once: true }); else mount(); }
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* Pure numerical and authoring helpers. Embedded with the response layer; no network or imports. */
+(function () {
+  'use strict';
+  const names = ['Population Balance', 'Wasserstein Distance (Shape Imbalance)', 'Density Symmetry',
+    'Euler Characteristic (Contiguity)', 'Persistence Gap', 'Spatial Mixing (scale-stability)',
+    'Variational Free Energy', 'Contamination AUC', 'Frontier Risk (Buffer Depth AUC)', 'Mobility Network Leakage'];
+  function wasserstein(a, b) {
+    return window.ConsoleResponse.math.wasserstein1(a, b);
+  }
+  function components(ids, edges) {
+    if (!Array.isArray(ids) || !Array.isArray(edges) || !ids.length) return null;
+    const adjacency = new Map(ids.map(id => [id, new Set()]));
+    for (const [a, b] of edges) if (adjacency.has(a) && adjacency.has(b)) {
+      adjacency.get(a).add(b); adjacency.get(b).add(a);
+    }
+    let count = 0; const seen = new Set();
+    for (const id of adjacency.keys()) if (!seen.has(id)) {
+      count++; const queue = [id]; seen.add(id);
+      for (let i = 0; i < queue.length; i++) for (const next of adjacency.get(queue[i]))
+        if (!seen.has(next)) { seen.add(next); queue.push(next); }
+    }
+    return count;
+  }
+  function build(spec) {
+    const overrides = spec.overrides || {};
+    const diagnostics = names.map((label, index) => {
+      const id = index + 1, row = spec.rows[index] || {}, override = overrides[id] || {};
+      return { id: 'metric-' + id, metricId: id, label,
+        pillar: id <= 3 ? 'comparison' : id <= 7 ? 'structure' : 'spillover',
+        status: 'unknown', evidenceIds: [], scope: 'planning',
+        rule: row.rule || 'Assess this dimension against a documented local comparison and review criterion.',
+        explanation: row.explanation || 'Not assessable from the public inputs currently supplied.',
+        analyticalMitigation: row.analyticalMitigation || 'Document the comparison, input quality and scope before interpreting this dimension.',
+        requiredInputs: row.requiredInputs || [], ...override };
+    });
+    const actions = [];
+    diagnostics.forEach((diagnostic, index) => {
+      const row = spec.rows[index] || {};
+      for (const track of ['public', 'operator']) for (const when of ['triggered', 'unknown']) {
+        const next = (track === 'public' ? row.publicAction : row.operatorAction) || 'Confirm the required inputs with the responsible data source.';
+        actions.push({ id: spec.slug + '-m' + (index + 1) + '-' + track + '-' + when,
+          metricIds: [index + 1], diagnosticIds: [diagnostic.id], track, when,
+          phase: when === 'unknown' ? 'verify' : (row.phase || 'prepare'),
+          title: (when === 'unknown' ? 'Resolve the input gap: ' : 'Review: ') + diagnostic.label,
+          nextStep: (when === 'unknown' ? 'This dimension is not machine-assessed. ' : '') + next,
+          escalateWhen: row.escalateWhen || spec.escalateWhen,
+          authorityUrl: row.authorityUrl || spec.authorityUrl });
+      }
+    });
+    return { slug: spec.slug, title: spec.title, context: spec.context,
+      scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics,
+      actions: [...(spec.baseline || []), ...actions], network: spec.network,
+      limitations: spec.limitations || [] };
+  }
+  window.ConsoleResponse.domain = { wasserstein, components, build };
+})();
+</script>
+<!-- CONSOLE_RESPONSE_HEAD_END -->
 </head>
-<body>
+<body><!-- CONSOLE_RESPONSE_MOUNT_START -->
+<section id="console-response" aria-labelledby="console-response-title"></section>
+<a id="console-response-shortcut" href="#console-response">Response plan</a>
+<!-- CONSOLE_RESPONSE_MOUNT_END -->
+
 
 <div class="emerg"><div class="wrap"><b>In immediate danger?</b> &nbsp;Call <a href="tel:911">911</a> now. &nbsp;·&nbsp; Help is available 24/7, free and confidential: National Human Trafficking Hotline <a href="tel:18883737888">1‑888‑373‑7888</a> · text <b>233733</b>.</div></div>
 
@@ -533,5 +883,139 @@ footer{padding:30px 0 50px;border-top:1px solid var(--line);color:var(--mut2);fo
  }
 })();
 </script>
+<!-- CONSOLE_RESPONSE_ADAPTER_START -->
+<script>
+// Maintainer adapter: public evidence only; no private questionnaire values.
+(function () {
+  'use strict';
+  var cfg = {
+  "slug": "human-trafficking",
+  "title": "Safe assistance reference review",
+  "source": "https://www.dhs.gov/blue-campaign",
+  "authority": "https://www.transportation.gov/stop-human-trafficking/roadmap",
+  "scope": "Public awareness and safe-assistance reference review only. No personal situation choice, location, identity, narrative or response output is read or exported.",
+  "gap": "This is a public-reference review, not a scored assessment. The underlying personal forms and outputs are deliberately excluded; applicable dimensions require independently verified inputs and qualified review.",
+  "escalate": "For immediate danger, use appropriate local emergency help when safe. Otherwise use the official assistance/reporting resources and the organization’s safeguarding protocol. Do not confront, pursue or independently investigate; keep identifying details out of public exports.",
+  "limit": "These ten lenses are a qualitative resource-review checklist, not a trafficking detector, investigation tool, person-level risk score or proof from the presence/absence of indicators. Do not confront or pursue a suspected trafficker.",
+  "lenses": [
+    [
+      "Inclusive assistance scope",
+      "Verified public service eligibility, language/accessibility scope and underserved-population needs.",
+      "Review who a resource excludes without profiling or scoring individuals.",
+      "Check accessible official assistance options; no demographic trait proves trafficking.",
+      "Review non-discriminatory, accessible referral information with a qualified safeguarding lead."
+    ],
+    [
+      "Comparable evidence definitions",
+      "Validated definitions and ethically governed aggregate evidence; no personal-case data here.",
+      "Do not compute W1 from warning-sign lists or infer a case from a pattern score.",
+      "Treat awareness indicators as prompts for safe official guidance, never proof about a person.",
+      "Use trained safeguarding review and validated definitions; prohibit automated person-level classification."
+    ],
+    [
+      "Safe assistance availability",
+      "Verified current public support services, accessibility and safe-contact options.",
+      "Review availability with qualified service partners; no public map of vulnerable people is created.",
+      "Use official service information and a safe device/contact channel where possible.",
+      "Verify assistance availability and accessible contact methods; do not publish sensitive shelter or survivor locations."
+    ],
+    [
+      "Accountable safeguarding pathway",
+      "Verified organizational reporting and support responsibilities.",
+      "Map approved safeguarding handoffs, not suspected criminal relationships.",
+      "Follow official reporting/support options; do not confront or investigate.",
+      "Review the organization’s safeguarding protocol and designated handoff responsibilities with trained staff."
+    ],
+    [
+      "Reference / contact recency",
+      "Current official support contacts and dated protocol reviews.",
+      "Recheck service links and protocol versions; repeated indicators do not prove a case.",
+      "Check current official assistance resources before sharing an old contact sheet.",
+      "Version resource reviews and test public contacts without transmitting sensitive case details."
+    ],
+    [
+      "Setting / jurisdiction applicability",
+      "Current setting-specific official guidance and qualified local safeguarding advice.",
+      "Review applicability without transferring a protocol blindly between settings or jurisdictions.",
+      "Use official guidance relevant to the location and setting; avoid speculation about individuals.",
+      "Have the designated lead review jurisdiction and setting-specific protocol differences."
+    ],
+    [
+      "Uncertainty / evidence integrity",
+      "Ethically governed validated definitions and qualified safeguarding review.",
+      "Document uncertainty and possible harms; no VFE model, risk score or accusation is justified by this page.",
+      "Do not turn ambiguous signs into allegations; use official help and safe reporting options.",
+      "Require trained review, proportionality and privacy safeguards before any organizational action."
+    ],
+    [
+      "Information / rumor contamination",
+      "Verified sources, consent and clear distinction between observation and inference.",
+      "Avoid spreading unverified identifying information; no exposure AUC is computed.",
+      "Do not post names, images or suspicions publicly; seek official guidance safely.",
+      "Review communications for unverified allegations and secondary harm; use approved confidential channels."
+    ],
+    [
+      "Safety / contingency review",
+      "A trained, context-specific safeguarding plan and safe assistance options.",
+      "A public checklist cannot calculate a safety radius or buffer AUC; prioritize qualified safety planning.",
+      "For immediate danger, seek appropriate local emergency help when safe; do not confront or pursue.",
+      "Use the approved safeguarding/emergency protocol and trained partners; never infer a safe intervention distance."
+    ],
+    [
+      "Consent / support handoff",
+      "Verified support contacts, consent requirements and safe confidential handoff roles.",
+      "Assess privacy and handoff accountability; no mobility/criminal network is inferred.",
+      "Use official support options without entering identifying details into this plan.",
+      "Review consent, data minimization and support handoff with trained partners; store case records only in approved systems."
+    ]
+  ]
+};
+  var names = ['Population Balance','Wasserstein Shape Imbalance','Density Symmetry','Euler Contiguity','Persistence Gap','Spatial Mixing / Scale Stability','Variational Free Energy','Contamination AUC','Frontier Risk / Buffer Depth AUC','Mobility Network Leakage'];
+  function finite(v) { return typeof v === 'number' && Number.isFinite(v); }
+  function round(v) { return finite(v) ? Number(v.toPrecision(6)) : null; }
+  function fact(id,label,value,unit,date,source,quality,basis,note,checked) {
+    return { id:id,label:label,value:value,unit:unit || '',measuredAt:date || null,checkedAt:checked || null,source:source || cfg.source,
+      quality:value == null ? 'missing' : quality || 'historical',basis:basis || 'modeled',note:note || '' };
+  }
+  // Shared exact empirical CDF distance; no approximation or extra dependency.
+  function w1(a,b) { return ConsoleResponse.math.wasserstein1(a,b); }
+  function assess(number,label,status,ids,rule,explanation) { return {metricId:number,id:'dimension-'+number,label:label,status:status,evidenceIds:ids,rule:rule,explanation:explanation,scope:'planning'}; }
+  function plan(context,evidence,overrides) {
+    evidence=evidence.slice();
+    evidence.push(fact('reference-scope','Scope of this planning review',cfg.scope,'',null,cfg.source,'historical','interpretive','Official resources support review and handoff, not a validated transfer of all ten CRT parameters.','2026-10-23'));
+    var diagnostics=cfg.lenses.map(function(l,i) {
+      var d=Object.assign(assess(i+1,l[0],'unknown',['reference-scope'],'Not assessable from this console’s supplied inputs.',cfg.gap),overrides && overrides[i+1] || {});
+      d.requiredInputs=l[1]; d.analyticalMitigation=l[2]; d.operationalMitigation=l[4]; return d;
+    });
+    var actions=[];
+    diagnostics.forEach(function(d,i) {
+      var l=cfg.lenses[i];
+      ['public','operator'].forEach(function(track) {
+        // Keep an unknown path even if the core later invalidates stale dependencies.
+        var supported=d.evidenceIds.length && d.evidenceIds.every(function(id){var f=evidence.find(function(fact){return fact.id===id;});return f && f.value!=null && ['current','historical'].includes(f.quality);});
+        var conditions=['unknown','triggered'];if(d.status==='clear' && supported)conditions.push('always');
+        conditions.forEach(function(when) {
+          var unknown=when==='unknown';
+          actions.push({id:track+'-dimension-'+(i+1)+'-'+when,track:track,phase:unknown?'verify':when==='triggered'?'prepare':'review',when:when,diagnosticIds:[d.id],
+            title:'#'+(i+1)+' '+names[i]+': '+l[0],
+            nextStep:(unknown?'Evidence needed. ':when==='triggered'?'Planning review condition met. ':'Baseline review. ')+(track==='public'?l[3]:l[4])+(unknown?' Required inputs: '+l[1]:''),
+            escalateWhen:cfg.escalate,authorityUrl:cfg.authority});
+        });
+      });
+    });
+    return {slug:cfg.slug,title:'Ten-dimension action checklist · '+cfg.title,context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
+      limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. A domain proxy is labeled explicitly; unavailable inputs never become an all-clear. No fitted CRT causal effect, validated clinical score or intervention benefit is estimated.']};
+  }
+
+  function read() {
+    var evidence=[fact('public-resource','Public official reference context',cfg.scope,'',null,cfg.source,'historical','interpretive','Links checked 23 October 2026; reference content may change. No private form or result is inspected.','2026-10-23')];
+
+    return plan('Public reference context only · ten-point review · no individual assessment',evidence,{});
+  }
+  ConsoleResponse.connect(read,[]);
+
+})();
+</script>
+<!-- CONSOLE_RESPONSE_ADAPTER_END -->
 </body>
 </html>

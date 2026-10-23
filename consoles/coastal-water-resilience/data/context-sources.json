@@ -1,0 +1,321 @@
+{
+  "schemaVersion": 1,
+  "scope": "Public-source context catalog; loading is explicit and bounded. No private snapshots copied.",
+  "sources": [
+    {
+      "id": "layer-1",
+      "name": "Base \u00b7 City limit",
+      "url": "https://egis.stpete.org/arcgis/rest/services/ServicesDOTS/CityLimits/MapServer/0/query?where=1%3D1&outFields=*&f=geojson",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-2",
+      "name": "Base \u00b7 County water service area",
+      "url": "https://egis.pinellas.gov/gis/rest/services/AGO/DEI_InfrastructureOperations/MapServer/7/query?where=1%3D1&outFields=*&returnGeometry=true&f=json",
+      "kind": "unsupported",
+      "note": "The predecessor public endpoint currently returns a service error (verified23Oct2026). No live records are represented. A working current public source with dates/units is required; this link is retained for source traceability."
+    },
+    {
+      "id": "layer-3",
+      "name": "Infra \u00b7 County sewer mains",
+      "url": "https://egis.pinellas.gov/gis/rest/services/UtilitiesValves/SanitarySewerNetwork/MapServer/318/query?where=1%3D1&geometry=-82.78,27.66,-82.55,27.90&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&returnGeometry=true&f=json",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-4",
+      "name": "Infra \u00b7 County stormwater gravity mains",
+      "url": "https://egis.pinellas.gov/gis/rest/services/AGO/StormwaterData/MapServer/2/query?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=json",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-5",
+      "name": "Infra \u00b7 Wastewater facilities (FDEP)",
+      "url": "https://ca.dep.state.fl.us/arcgis/rest/services/OpenData/WAFR/MapServer/3/query?where=COUNTY_NAME%3D%27Pinellas%27&outFields=*&returnGeometry=true&f=geojson",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-6",
+      "name": "Flood \u00b7 FEMA flood zones (NFHL)",
+      "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?where=1%3D1&geometry=-82.78,27.66,-82.55,27.90&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE,ZONE_SUBTY,SFHA_TF&returnGeometry=true&f=json",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-7",
+      "name": "Flood \u00b7 City road closures",
+      "url": "https://egis.stpete.org/arcgis/rest/services/ServicesENG/Road_Closures/FeatureServer/0/query?where=1%3D1&outFields=*&f=geojson",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-8",
+      "name": "Flood \u00b7 County road closures",
+      "url": "https://egis.pinellas.gov/gis/rest/services/RoadClosures/RoadClosuresPublic/MapServer/0/query?where=1%3D1&outFields=*&f=geojson",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-9",
+      "name": "Flood \u00b7 County FLOOD road closures (live)",
+      "url": "https://egis.pinellas.gov/gis/rest/services/RoadClosures/RoadClosuresPublic/MapServer/2/query?where=1%3D1&outFields=*&f=geojson",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-10",
+      "name": "Flood \u00b7 Evacuation routes",
+      "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/Pinellas_PCEM_EvacRoute_view/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID,FULLNAME&returnGeometry=true&outSR=4326&f=json",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-11",
+      "name": "Flood \u00b7 Active tropical systems (NHC)",
+      "url": "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Active_Hurricanes_v1/FeatureServer/1/query?where=1%3D1&outFields=*&returnGeometry=true&f=json",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-12",
+      "name": "Facilities \u00b7 Emergency shelters",
+      "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/ArcGIS/rest/services/KYZSheltersProdView/FeatureServer/0/query?where=1%3D1&outFields=shelter_name,status,shelter_role,shelter_type,EditDate&returnGeometry=true&outSR=4326&f=json",
+      "kind": "arc",
+      "note": "Current official shelter view; no returned records mean no usable listing, not all shelters open or closed. Read current county shelter instructions."
+    },
+    {
+      "id": "layer-13",
+      "name": "Facilities \u00b7 Health-care sites (EMA)",
+      "url": "https://egis.pinellas.gov/gis/rest/services/AGO/EMA/MapServer/14/query?where=1%3D1&outFields=*&f=geojson",
+      "kind": "unsupported",
+      "note": "The predecessor public endpoint currently returns a service error (verified23Oct2026). No live records are represented. A working current public source with dates/units is required; this link is retained for source traceability."
+    },
+    {
+      "id": "layer-14",
+      "name": "Hydro \u00b7 River/flood gauges (NWS NWPS)",
+      "url": "https://mapservices.weather.noaa.gov/eventdriven/rest/services/water/riv_gauges/MapServer/0/query?where=state%3D%27FL%27&geometry=-83.0,27.5,-82.4,28.1&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&returnGeometry=true&f=json",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-15",
+      "name": "Hydro \u00b7 SWFWMD rainfall (last record)",
+      "url": "https://www25.swfwmd.state.fl.us/arcgis10/rest/services/Hydrologic/DCS_LastRecord_WL/MapServer/0/query?where=COUNTY%3D%27Pinellas%27&outFields=STATION_NAME,LASTVALUE,UNITS_OF_MEASUREMENT,LASTTIMESTAMP_UTC&returnGeometry=true&f=json",
+      "kind": "arc",
+      "note": "Reported rainfall with units and timestamp; service operates6AM\u201310PM daily and is not survey certified. Rainfall is not water-surface elevation."
+    },
+    {
+      "id": "layer-16",
+      "name": "Hydro \u00b7 Groundwater monitor wells (SWFWMD)",
+      "url": "https://www25.swfwmd.state.fl.us/arcgis12/rest/services/OpenData/Environmental/MapServer/2/query?geometry=-82.85,27.6,-82.55,28.05&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&returnGeometry=true&f=json",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-17",
+      "name": "Hydro \u00b7 Watershed basins (Pinellas)",
+      "url": "https://egis.pinellas.gov/gis/rest/services/AGO/DEI_ReferenceData/MapServer/1/query?where=1%3D1&outFields=*&f=geojson",
+      "kind": "unsupported",
+      "note": "The predecessor public endpoint currently returns a service error (verified23Oct2026). No live records are represented. A working current public source with dates/units is required; this link is retained for source traceability."
+    },
+    {
+      "id": "layer-18",
+      "name": "Hydro \u00b7 Drainage basins (SWFWMD)",
+      "url": "https://www25.swfwmd.state.fl.us/arcgis12/rest/services/OpenData/Hydrography/MapServer/10/query?geometry=-82.85,27.6,-82.55,28.05&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&f=geojson",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-19",
+      "name": "WQ \u00b7 Impaired-water monitoring (FDEP)",
+      "url": "https://ca.dep.state.fl.us/arcgis/rest/services/OpenData/IMPAIRED_WATERS/MapServer/1/query?geometry=-82.85,27.62,-82.55,28.0&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=STATION_NAME,WATERBODY_ID,RESULT_COUNT,BEGIN_DATE,END_DATE&returnGeometry=true&f=geojson",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-20",
+      "name": "WQ \u00b7 Water-distribution sampling sites",
+      "url": "https://egis.pinellas.gov/gis/rest/services/Utility/SamplingStationsCollector/FeatureServer/0/query?where=1%3D1&outFields=*&f=geojson",
+      "kind": "unsupported",
+      "note": "The predecessor public endpoint currently returns a service error (verified23Oct2026). No live records are represented. A working current public source with dates/units is required; this link is retained for source traceability."
+    },
+    {
+      "id": "layer-21",
+      "name": "WQ \u00b7 Derelict vessels (FWC)",
+      "url": "https://gis.myfwc.com/mapping/rest/services/Open_Data/Derelict_Vessels/MapServer/5/query?where=County%3D%27Pinellas%27&outFields=*&returnGeometry=true&f=geojson",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "layer-22",
+      "name": "WQ \u00b7 Boat ramps (response staging)",
+      "url": "https://gis.myfwc.com/mapping/rest/services/Open_Data/FWC_Florida_Boat_Ramp_Inventory/MapServer/4/query?where=COUNTY%3D%27Pinellas%27&outFields=*&returnGeometry=true&f=geojson",
+      "kind": "arc",
+      "note": "Official public context layer. Bounded query; record date and completeness must be checked. Inventory/geometry is not live operability or an evacuation order."
+    },
+    {
+      "id": "red-tide",
+      "name": "FWC red tide / HAB samples",
+      "url": "https://services2.arcgis.com/z6TmTIyYXEYhuNM0/arcgis/rest/services/HAB_Current_Web_Layer/FeatureServer/0/query?where=1%3D1&geometry=-82.85,27.6,-82.55,28.05&geometryType=esriGeometryEnvelope&inSR=4326&outFields=SampleDate_t,LOCATION,LATITUDE,LONGITUDE,Abundance,County,Source&f=json",
+      "kind": "arc",
+      "note": "Reported samples and sampling dates, not current conditions at every shore. Empty coverage is not a bloom all-clear."
+    },
+    {
+      "id": "freshwater-hab",
+      "name": "FDEP freshwater algal-bloom reports",
+      "url": "https://services1.arcgis.com/nRHtyn3uE1kyzoYc/arcgis/rest/services/AlgalBloom_Final_View/FeatureServer/0/query?where=County%3D%27Pinellas%27&outFields=SampleDateTime,County,BloomObserved,AlgalIDResult,ToxinPresent,Microcystin,OtherToxin,locationString&f=json",
+      "kind": "arc",
+      "note": "Public sample/report context; verify sample dates and official advisories."
+    },
+    {
+      "id": "wildlife",
+      "name": "Community-reported notable wildlife",
+      "url": "https://api.inaturalist.org/v1/observations?nelat=28.05&nelng=-82.55&swlat=27.6&swlng=-82.85&threatened=true&introduced=false&per_page=120&order_by=observed_on&order=desc",
+      "kind": "wildlife",
+      "note": "Community observations, not a complete census or an official operational exclusion zone."
+    },
+    {
+      "id": "subsidence",
+      "name": "FGS reported subsidence",
+      "url": "https://ca.dep.state.fl.us/arcgis/rest/services/OpenData/FGS_SUBSIDENCE/MapServer/0/query?where=COUNTY%3D%27PINELLAS%27&outFields=REF_NUM,EVENT_DATE,TRUE_SINK,LATDD,LONGDD,SINDEPTH,COMMENTS&f=json",
+      "kind": "arc",
+      "note": "Historical reports include unverified events; not a sinkhole-collapse forecast."
+    },
+    {
+      "id": "beach-sites",
+      "name": "Florida DOH beach sampling sites",
+      "url": "https://www.floridahealth.gov/environmental-health/beach-water-quality/",
+      "kind": "unsupported",
+      "note": "The former source currently requires a token. No key is requested. Use current Florida DOH beach advisories at the official public reference; this console does not establish current beach quality."
+    },
+    {
+      "id": "fdep-notices",
+      "name": "FDEP pollution notices",
+      "url": "https://ca.dep.state.fl.us/arcgis/rest/services/External_Services/PNP/FeatureServer/0/query?where=AFFECTED_COUNTIES%20LIKE%20%27%25Pinellas%25%27&outFields=INCIDENT_NAME,FACILITY_NAME,FACILITY_CITY,RELEASE_START_DATE_TIME,RELEASE_ONGOING,RELEASE_END_DATE_TIME&f=json",
+      "kind": "arc",
+      "note": "Reported ongoing/ended flag and date remain source assertions; notices are not attributed to a particular station without evidence."
+    },
+    {
+      "id": "sso",
+      "name": "Pinellas reported SSO incidents",
+      "url": "https://egis.pinellas.gov/gis/rest/services/SSO/SSOSpills/FeatureServer/0/query?where=1%3D1&outFields=SSODATE,SSOVOLUME,SSODEST,LOCATION&orderByFields=SSODATE%20DESC&f=json",
+      "kind": "unsupported",
+      "note": "The predecessor public endpoint currently returns a service error (verified23Oct2026). No live records are represented. A working current public source with dates/units is required; this link is retained for source traceability."
+    },
+    {
+      "id": "water-atlas",
+      "name": "USF Water Atlas station inventory",
+      "url": "https://api.wateratlas.usf.edu/DataMapper/Stations/All/Minimized",
+      "kind": "atlas",
+      "note": "Station inventory is not current sample quality; retrieve dated results from the responsible source."
+    },
+    {
+      "id": "power",
+      "name": "ORNL ODIN Pinellas outage reports",
+      "url": "https://ornl.opendatasoft.com/api/explore/v2.1/catalog/datasets/odin-real-time-outages-county/records?where=state%3D%22Florida%22%20AND%20county%3D%22Pinellas%22&limit=20&select=name,utility_id,county,metersaffected,state",
+      "kind": "power",
+      "note": "Zero returned records mean unavailable coverage, not zero outages. County aggregates cannot establish station feeder status."
+    },
+    {
+      "id": "weather",
+      "name": "NWS heat / wind / precipitation forecast",
+      "url": "https://api.weather.gov/gridpoints/TBW/65,89",
+      "kind": "weather",
+      "note": "Forecast grid values retain their supplied units and valid times; not worker exposure measurements."
+    },
+    {
+      "id": "water-temperature",
+      "name": "NOAA8726520 water temperature",
+      "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=latest&station=8726520&product=water_temperature&units=english&time_zone=gmt&format=json",
+      "kind": "temperature",
+      "note": "Temperature observed at this station in degreesF; not a bay-wide or drinking-water measurement."
+    },
+    {
+      "id": "drought",
+      "name": "U.S. Drought Monitor county record",
+      "url": "https://usdmdataservices.unl.edu/api/CountyStatistics/GetDroughtSeverityStatisticsByAreaPercent?aoi=12103&startdate=1/1/2026&enddate=12/31/2026&statisticsType=1",
+      "kind": "drought",
+      "note": "County drought map date and class shares are context, not a live drinking-water supply measurement."
+    },
+    {
+      "id": "pathogens",
+      "name": "CDC NWSS wastewater target detections",
+      "url": "https://data.cdc.gov/",
+      "kind": "pathogens",
+      "note": "Dated county-serving surveillance records. No individual illness, station pathogen level or drinking-water safety is inferred."
+    },
+    {
+      "id": "currents",
+      "name": "NOAA tidal-current predictions",
+      "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter",
+      "kind": "currents",
+      "note": "Three published current-prediction stations. Forecast velocities are not measured sewer flow or navigation clearance."
+    },
+    {
+      "id": "sar",
+      "name": "ASF Sentinel-1 SAR acquisition footprints",
+      "url": "https://api.daac.asf.alaska.edu/services/search/param",
+      "kind": "sar",
+      "note": "Acquisition footprint/date only, not ground movement or flood damage. Imagery access and processing are separate."
+    },
+    {
+      "id": "vulnerable-sites",
+      "name": "Historical dialysis / nursing-facility reference",
+      "url": "https://gis.floridahealth.gov/server/rest/services/DEMO/HealthCareFacilities/MapServer",
+      "kind": "unsupported",
+      "note": "Original source metadata says May1,2013 licensure snapshot. Not used as a current facility/beds roster or as measured service dependence; a current verified roster is required."
+    },
+    {
+      "id": "nrc",
+      "name": "USCG NRC reported-spill history",
+      "url": "https://nrc.uscg.mil/",
+      "kind": "unsupported",
+      "note": "Original inline2024\u201325 initial/unverified reports lack a reproducible retrieval package. They are not copied as current observations; use the official record and verify reporting date/status."
+    },
+    {
+      "id": "sst",
+      "name": "NOAA CoastWatch Gulf SST context",
+      "url": "https://coastwatch.noaa.gov/",
+      "kind": "unsupported",
+      "note": "Original85\u00b0F June12,2026 constant is not a current measurement. NOAA station water temperature is available separately; no Gulf-wide SST is invented."
+    },
+    {
+      "id": "insar",
+      "name": "NASA/ASF OPERA ground-displacement screening",
+      "url": "https://displacement.asf.alaska.edu/",
+      "kind": "unsupported",
+      "note": "A grayscale tile is not a per-station vertical velocity. Verified raster lineage, projection/LOS interpretation and sampling are required before a numerical asset overlay."
+    },
+    {
+      "id": "manatee",
+      "name": "FWC manatee protection-zone reference",
+      "url": "https://gis.myfwc.com/hosting/rest/services/Open_Data/State_Manatee_Protection_Zones_in_Florida/MapServer/9/query?where=COUNTY%3D%27PINELLAS%27&outFields=*&f=json",
+      "kind": "arc",
+      "note": "Mapped protection-zone reference; follow current official restrictions, not the coordinate plot."
+    },
+    {
+      "id": "navigation",
+      "name": "NOAA/USCG navigation-aid reference",
+      "url": "https://encdirect.noaa.gov/arcgis/rest/services/encdirect/enc_harbour/MapServer/6/query?where=1%3D1&outFields=*&f=json",
+      "kind": "arc",
+      "note": "Published navigation context only. This console is not a navigational chart or route-clearance authority."
+    },
+    {
+      "id": "swfwmd-level-1",
+      "name": "Hydro \u00b7 SWFWMD Surface-water level (last record)",
+      "url": "https://www25.swfwmd.state.fl.us/arcgis10/rest/services/Hydrologic/DCS_LastRecord_WL/MapServer/1/query?where=COUNTY%3D%27Pinellas%27&outFields=STATION_NAME,LASTVALUE,UNITS_OF_MEASURE,LASTTIMESTAMP_UTC,DATUM&returnGeometry=true&f=json",
+      "kind": "arc",
+      "note": "Source level retains units, vertical datum and timestamp; not interchangeable with MLLW or surveyed asset heights. Service operates6AM\u201310PM daily and is not survey certified."
+    },
+    {
+      "id": "swfwmd-level-2",
+      "name": "Hydro \u00b7 SWFWMD Groundwater level (last record)",
+      "url": "https://www25.swfwmd.state.fl.us/arcgis10/rest/services/Hydrologic/DCS_LastRecord_WL/MapServer/2/query?where=COUNTY%3D%27Pinellas%27&outFields=STATION_NAME,LASTVALUE,UNITS_OF_MEASURE,LASTTIMESTAMP_UTC,DATUM&returnGeometry=true&f=json",
+      "kind": "arc",
+      "note": "Source level retains units, vertical datum and timestamp; not interchangeable with MLLW or surveyed asset heights. Service operates6AM\u201310PM daily and is not survey certified."
+    }
+  ]
+}

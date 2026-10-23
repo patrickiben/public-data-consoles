@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>River Flood Propagation — directed early warning</title>
-<meta name="description" content="A directed-network view of U.S. river flooding: it walks the main-stem gauge chain (NOAA NWPS), finds the upstream transmitter driving a flood wave, and gives each downstream community its lead time — the directedness-not-connectedness idea applied to rivers, which have the topology, conservation and exogenous upstream lead the method needs. Unofficial.">
+<meta name="description" content="A directed-network view of U.S. river flooding: it walks the main-stem gauge chain (NOAA NWPS), compares elevated gauge reports and independently forecast peak times. Directed reach order does not establish measured travel time or a safe response window. Unofficial.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <style>
@@ -41,13 +41,363 @@ header .s{color:var(--ink2);font-size:14.5px;margin-top:7px;max-width:760px}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#16273d;color:#eaf1f8}.leaflet-popup-content{font-family:var(--sans);font-size:13px}.leaflet-control-attribution{background:rgba(15,27,42,.7)!important;color:#7e93ad!important}
 @media(max-width:900px){#grid{grid-template-columns:1fr}#map{height:48vh}}
 </style>
+<!-- CONSOLE_RESPONSE_HEAD_START -->
+<style>
+#console-response{box-sizing:border-box;position:relative;z-index:1;margin:16px auto;padding:18px;max-width:1440px;border:1px solid #486377;border-top:4px solid #26c6da;border-radius:12px;background:#10212d;color:#e2edf4;font:14px/1.55 system-ui,sans-serif;text-align:left}
+#console-response *{box-sizing:border-box}#console-response h2{font-size:22px;margin:0 0 4px;color:#f1f8fc}#console-response h3{font-size:16px;margin:16px 0 8px;color:#e2edf4}#console-response h4{font-size:15px;margin:0 0 6px;color:#f1f8fc}
+#console-response p{margin:7px 0}#console-response a{color:#86e1ee;text-decoration:underline}#console-response li{margin:12px 0}#console-response .cr-head{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+#console-response .cr-head p,#console-response .cr-note{color:#b2c6d3}#console-response .cr-note{font-size:12px}#console-response .cr-badge{display:inline-block;border:1px solid #648093;border-radius:5px;padding:1px 5px;font-size:10px;color:#d2e6f0;vertical-align:middle}
+#console-response .cr-head{padding:0;margin:0;border:0;background:transparent}
+#console-response .cr-plan-group>summary{color:#a7f0f2;font-size:15px}
+#console-response .cr-summary{padding:10px;border-left:3px solid #e5b35a;background:#24303b}#console-response .cr-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+#console-response button{font:inherit;font-size:13px;padding:8px 12px;border:1px solid #6d8b9e;border-radius:6px;background:#173343;color:#f1f8fc;cursor:pointer}#console-response button[aria-pressed=true]{background:#165e6b;border-color:#6de3e7}
+#console-response details{margin:9px 0;border:1px solid #3e596b;border-radius:7px;padding:10px}#console-response summary{cursor:pointer;font-weight:650;list-style:revert}#console-response details>p,#console-response details>ul{padding:2px 7px}
+#console-response .cr-action{margin:10px 0;padding:13px;border:1px solid #3f6475;border-radius:7px;background:#142b39}#console-response .cr-action label{display:block;color:#c7dce7;font-size:12px;margin-top:10px}#console-response input[type=checkbox]{margin-right:6px;width:16px;height:16px;vertical-align:middle}
+#console-response .cr-diagnostic{padding:10px;border-left:3px solid #698396;background:#162d3b}#console-response .cr-triggered{border-color:#e5b35a}#console-response .cr-clear{border-color:#55bda0}#console-response .cr-unknown,#console-response .cr-quality{color:#f0cc87}
+#console-response .cr-table{overflow-x:auto}#console-response table{width:100%;border-collapse:collapse;color:inherit;font-size:12px}#console-response th,#console-response td{text-align:left;padding:8px;border-bottom:1px solid #3e596b}
+#console-response :focus-visible,#console-response-shortcut:focus-visible{outline:3px solid #f4d57d;outline-offset:3px}
+#console-response select{font:inherit;color:#e2edf4;background:#173343;border:1px solid #6d8b9e;border-radius:4px;padding:5px;max-width:100%}
+#console-response-shortcut{position:fixed;right:14px;bottom:14px;z-index:10020;border:1px solid #87d5e0;border-radius:24px;padding:10px 15px;background:#103f50;color:#f1f8fc;font:600 13px system-ui,sans-serif;box-shadow:0 2px 12px #0007;text-decoration:none}
+@media(max-width:640px){#console-response{margin:10px 6px;padding:13px}#console-response .cr-toolbar button{flex:1 1 40%}#console-response h2{font-size:19px}}
+@media print{#console-response-shortcut,#console-response .cr-toolbar{display:none!important}#console-response{background:white!important;color:#111!important;max-width:none;border:1px solid #555}#console-response *{color:#111!important;box-shadow:none!important}#console-response details{display:block!important}#console-response details>*{display:block!important}#console-response .cr-action{break-inside:avoid;background:white!important}#console-response .cr-badge{border-color:#555}}
+</style>
+<script>
+(function (root) {
+  'use strict';
+  var doc = root.document, payload = null, revision = '', evidenceRevision = '', track = 'public', acknowledgments = new Set(), manualReview = new Set();
+  var metrics = [
+    ['Population Balance', 'comparison', 'Defined comparison groups, workload/population denominators and aligned periods.'],
+    ['Wasserstein Distance / Shape Imbalance', 'comparison', 'Comparable distributions in the same unit and period; group membership.'],
+    ['Density Symmetry', 'comparison', 'Observed locations or defined comparable density denominators.'],
+    ['Euler Characteristic / Contiguity', 'structure', 'A justified adjacency/topology definition and observed coverage.'],
+    ['Persistence Gap', 'structure', 'Repeated or threshold-adjacent measurements and an explicit reference margin.'],
+    ['Spatial Mixing / Scale Stability', 'structure', 'Comparable measurements across specified spatial or aggregation scales.'],
+    ['Variational Free Energy', 'structure', 'A specified probabilistic model/objective and dependence structure; not an invented score.'],
+    ['Contamination AUC', 'spillover', 'Exposure/response across a justified range of distances, doses or thresholds.'],
+    ['Frontier Risk / Buffer Depth AUC', 'spillover', 'Defined exposed/unexposed boundary, distance/depth and comparable weights.'],
+    ['Mobility Network Leakage', 'spillover', 'Observed directed links or a labeled scenario, transfer semantics and boundary coverage.']
+  ];
+  var basisNames = { measured: 'MEASURED', modeled: 'MODELED', interpretive: 'INTERPRETIVE', demo: 'DEMO · practice only' };
+  function text(value) { return value == null ? '' : String(value); }
+  function esc(value) { return text(value).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function url(value) { return /^https?:\/\/[^\s]+$/i.test(text(value)) ? text(value) : ''; }
+  function canonical(value) {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === 'object') {
+      var out = {}; Object.keys(value).sort().forEach(function (key) { out[key] = canonical(value[key]); }); return out;
+    }
+    return value;
+  }
+  function signature(value) { return JSON.stringify(canonical(value)); }
+  function evaluate(input) {
+    input = input || {};
+    var facts = (Array.isArray(input.evidence) ? input.evidence : []).map(function (fact) {
+      var f = Object.assign({}, fact);
+      if (!basisNames[f.basis]) f.basis = 'interpretive';
+      if (!['current', 'historical', 'stale', 'missing'].includes(f.quality)) f.quality = 'missing';
+      if (f.value == null || f.value === '' || (typeof f.value === 'number' && !Number.isFinite(f.value))) f.quality = 'missing';
+      if (!['number', 'string'].includes(typeof f.value)) { f.value = null; f.quality = 'missing'; }
+      f.source = url(f.source); return f;
+    });
+    var byFact = new Map(facts.map(function (f) { return [f.id, f]; }));
+    var diagnostics = (Array.isArray(input.diagnostics) ? input.diagnostics : []).map(function (diagnostic) {
+      var d = Object.assign({}, diagnostic), ids = Array.isArray(d.evidenceIds) ? d.evidenceIds : [];
+      d.evidenceIds = ids; d.status = ['triggered', 'clear', 'unknown'].includes(d.status) ? d.status : 'unknown';
+      d.scope = d.scope === 'planning' ? 'planning' : 'current';
+      d.reasons = [];
+      if (typeof d.value === 'number' && !Number.isFinite(d.value)) d.reasons.push('The numeric metric is not finite.');
+      if (!ids.length) d.reasons.push('No supporting evidence is linked.');
+      ids.forEach(function (id) {
+        var fact = byFact.get(id);
+        if (!fact || ['missing', 'stale'].includes(fact.quality)) d.reasons.push((fact ? fact.label : id) + ': missing or stale evidence.');
+        else if (fact.quality === 'historical' && d.scope !== 'planning') d.reasons.push(fact.label + ': historical evidence cannot establish current conditions.');
+      });
+      if (d.reasons.length) d.status = 'unknown';
+      d.practice = !!input.scenario || ids.some(function (id) { return byFact.get(id) && byFact.get(id).basis === 'demo'; });
+      d.current = ids.length > 0 && ids.every(function (id) { var f = byFact.get(id); return f && f.quality === 'current' && f.basis !== 'demo'; });
+      return d;
+    });
+    diagnostics.forEach(function (d) { var n = Number(d.metricId == null ? d.dimension : d.metricId); d.metricId = Number.isInteger(n) && n >= 1 && n <= 10 ? n : null; });
+    var canonicalDiagnostics = metrics.map(function (metric, index) {
+      var matches = diagnostics.filter(function (d) { return d.metricId === index + 1; });
+      var d = matches.length === 1 ? matches[0] : { id: 'dimension-' + (index + 1), metricId: index + 1, status: 'unknown', evidenceIds: [], reasons: [], scope: 'planning', current: false };
+      d = Object.assign({}, d, { canonicalLabel: metric[0], pillar: metric[1] });
+      if (matches.length > 1) { d.status = 'unknown'; d.reasons = ['Conflicting duplicate canonical dimension definitions.']; }
+      d.label = d.label || metric[0];
+      d.requiredInputs = d.requiredInputs && (!Array.isArray(d.requiredInputs) || d.requiredInputs.length) ? d.requiredInputs : metric[2];
+      d.analyticalMitigation = d.analyticalMitigation || 'Acquire and validate the required inputs; assess applicability before choosing an analysis.';
+      if (!matches.length) { d.rule = 'Not assessable from the supplied data.'; d.explanation = 'No validated metric or justified domain proxy has been supplied.'; }
+      return d;
+    });
+    diagnostics = canonicalDiagnostics.concat(diagnostics.filter(function (d) { return !d.metricId; }));
+    var byDiagnostic = new Map(diagnostics.map(function (d) { return [d.id, d]; }));
+    var actions = (Array.isArray(input.actions) ? input.actions : []).map(function (action) {
+      var a = Object.assign({}, action), ids = Array.isArray(a.diagnosticIds) ? a.diagnosticIds.slice() : [];
+      (Array.isArray(a.metricIds) ? a.metricIds : []).forEach(function (n) { var d = diagnostics.find(function (item) { return item.metricId === Number(n); }); if (d && !ids.includes(d.id)) ids.push(d.id); });
+      var relevant = ids.length ? ids.map(function (id) { return byDiagnostic.get(id) || { status: 'unknown', current: false }; }) : diagnostics;
+      a.track = a.track === 'operator' ? 'operator' : 'public';
+      a.phase = ['verify', 'prepare', 'respond', 'review'].includes(a.phase) ? a.phase : 'verify';
+      a.when = ['always', 'triggered', 'unknown'].includes(a.when) ? a.when : 'unknown';
+      if (a.when === 'always' && a.phase === 'respond') a.phase = 'prepare';
+      a.selected = a.when === 'always' || relevant.some(function (d) { return d.status === a.when; });
+      a.practice = !!input.scenario || relevant.some(function (d) { return d.practice; });
+      a.withheld = a.phase === 'respond' && a.when !== 'always' && !a.practice && !relevant.some(function (d) { return d.status === 'triggered' && d.current; });
+      if (a.withheld) a.selected = false;
+      a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl); return a;
+    });
+    return { slug: text(input.slug), title: text(input.title || 'Response plan'), context: text(input.context || 'Current console view'),
+      evidence: facts, diagnostics: diagnostics, actions: actions, network: input.network || null,
+      limitations: Array.isArray(input.limitations) ? input.limitations.map(text) : [], scenario: !!input.scenario };
+  }
+  function badge(basis) { return '<span class="cr-badge">' + esc(basisNames[basis] || basisNames.interpretive) + '</span>'; }
+  function sourceLink(source, label) { return url(source) ? '<a href="' + esc(url(source)) + '" target="_blank" rel="noopener noreferrer">' + esc(label || 'Source') + '</a>' : '<span>Source not supplied</span>'; }
+  function mount() {
+    if (!doc || !doc.body) return;
+    var panel = doc.getElementById('console-response');
+    if (!panel) return;
+    if (!panel.dataset.mounted) {
+      panel.dataset.mounted = 'true';
+      panel.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print]');
+        if (!button) return;
+        if (button.dataset.crTrack) { track = button.dataset.crTrack; render(); }
+        if (button.hasAttribute('data-cr-print')) root.print();
+        if (button.hasAttribute('data-cr-export')) download();
+      });
+      panel.addEventListener('change', function (event) {
+        var metric = Number(event.target.dataset.crAssess);
+        if (metric >= 1 && metric <= 10) { if (event.target.value === 'review') manualReview.add(metric); else manualReview.delete(metric); render(); return; }
+        var id = event.target.dataset.crAck;
+        if (id) { if (event.target.checked) acknowledgments.add(id); else acknowledgments.delete(id); }
+      });
+      var shortcut = doc.getElementById('console-response-shortcut');
+      if (shortcut) shortcut.addEventListener('click', function (event) {
+        var group = panel.querySelector('[data-cr-section="plan"]'); if (group) group.open = true;
+        event.preventDefault(); var checklist = panel.querySelector('[data-cr-section="actions"]'); if (checklist) checklist.open = true;
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var heading = doc.getElementById('console-response-title'); if (heading) heading.focus();
+      });
+      var printSections = null;
+      function beginPrint() {
+        if (printSections) return;
+        printSections = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
+        panel.querySelectorAll('details').forEach(function (d) { d.open = true; });
+      }
+      function endPrint() {
+        if (!printSections) return;
+        panel.querySelectorAll('details').forEach(function (d) { d.open = printSections.has(d.dataset.crSection); });
+        printSections = null;
+      }
+      root.addEventListener('beforeprint', beginPrint); root.addEventListener('afterprint', endPrint);
+      if (root.matchMedia) {
+        var printMedia = root.matchMedia('print');
+        if (printMedia.addEventListener) printMedia.addEventListener('change', function (event) { if (event.matches) beginPrint(); else endPrint(); });
+      }
+    }
+    render();
+  }
+  function currentPlan() {
+    var plan = evaluate(payload);
+    manualReview.forEach(function (n) {
+      var d = plan.diagnostics.find(function (item) { return item.metricId === n; }); if (!d) return;
+      var authority = plan.actions.find(function (a) { return a.track === 'operator' && a.diagnosticIds.includes(d.id) && a.authorityUrl; });
+      plan.actions.push({ id: 'manual-review-' + n, track: 'operator', phase: 'verify', when: 'always', selected: true, practice: false,
+        diagnosticIds: [d.id], title: 'Self-reported review needed: #' + n + ' ' + d.canonicalLabel,
+        nextStep: d.analyticalMitigation + ' Required inputs: ' + text(d.requiredInputs),
+        escalateWhen: 'A local planning flag is not a measured incident. Review with your designated lead and verified SOP before taking operational action.',
+        authorityUrl: authority ? authority.authorityUrl : '', selfReported: true });
+    });
+    plan.manualAssessments = Array.from(manualReview).sort(function (a, b) { return a - b; }).map(function (n) { return { metricId: n, assessment: 'review needed', basis: 'self-reported local planning' }; });
+    return plan;
+  }
+  function render() {
+    if (!doc) return;
+    var panel = doc.getElementById('console-response'); if (!panel || !panel.dataset.mounted) return;
+    var plan = currentPlan(), unknown = plan.diagnostics.filter(function (d) { return d.metricId && d.status === 'unknown'; }).length;
+    var selected = plan.actions.filter(function (a) { return a.track === track && a.selected; });
+    var open = new Set(Array.from(panel.querySelectorAll('details[open]')).map(function (d) { return d.dataset.crSection; }));
+    var focused = doc.activeElement && panel.contains(doc.activeElement) ? doc.activeElement.id : '';
+    panel.dataset.rendered = 'true';
+    var h = '<header class="cr-head"><div><h2 id="console-response-title" tabindex="-1">' + esc(plan.title) + '</h2><p>' + esc(plan.context) + '</p></div>' + badge('interpretive') + '</header>';
+    h += '<p class="cr-summary" role="status">' + (plan.scenario ? 'PRACTICE / SCENARIO · ' : '') + unknown + ' of 10 dimensions unknown. Unknown does not mean safe. People and responsible authorities decide.</p>';
+    h += '<details class="cr-plan-group" data-cr-section="plan"' + (open.has('plan') ? ' open' : '') + '><summary>Open ten-parameter checklist and evidence</summary>';
+    h += '<div class="cr-toolbar" role="group" aria-label="Response audience"><button id="cr-track-public" data-cr-track="public" aria-pressed="' + (track === 'public') + '">Public / local decision makers</button><button id="cr-track-operator" data-cr-track="operator" aria-pressed="' + (track === 'operator') + '">Professional operators</button><button id="cr-export" data-cr-export>Export local plan</button><button id="cr-print" data-cr-print>Print</button></div>';
+    function section(id, title, body, basis) { return '<details data-cr-section="' + id + '"' + (open.has(id) ? ' open' : '') + '><summary>' + title + ' ' + badge(basis) + '</summary>' + body + '</details>'; }
+    var actionHTML = '<p>These are planning prompts, not instructions to dispatch, switch equipment, prescribe, trade or evacuate. ' + (track === 'operator' ? 'Use your organization’s verified telemetry, SOP and decision authority.' : 'Follow current official instructions for your location.') + '</p>';
+    ['verify', 'prepare', 'respond', 'review'].forEach(function (phase) {
+      var list = selected.filter(function (a) { return a.phase === phase; }); if (!list.length) return;
+      actionHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
+      list.forEach(function (a) {
+        var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
+        actionHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + d.status + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+      });
+    });
+    if (!selected.length) actionHTML += '<p class="cr-unknown">No supported conditional action is available for this track. Verify missing evidence and consult the responsible authority; this is not an all-clear.</p>';
+    actionHTML += '<p class="cr-note">Checks are temporary local planning notes, not completed operations. Context or evidence changes reset them. Nothing is transmitted or stored by this response layer.</p>';
+    h += section('actions', '1. Condition-dependent response plan', actionHTML, 'interpretive');
+    var evidenceHTML = plan.evidence.length ? '<ul>' + plan.evidence.map(function (f) { return '<li><b>' + esc(f.label || f.id) + ':</b> ' + esc(f.quality === 'missing' ? 'Unavailable' : f.value) + (f.unit ? ' ' + esc(f.unit) : '') + ' ' + badge(f.basis) + ' <span class="cr-quality">' + esc(f.quality) + '</span><br>Observed / reported: ' + esc(f.measuredAt || 'not supplied') + '; checked: ' + esc(f.checkedAt || 'not supplied') + '. ' + sourceLink(f.source) + (f.note ? '<br>' + esc(f.note) : '') + '</li>'; }).join('') + '</ul>' : '<p class="cr-unknown">Evidence unavailable. No current incident status can be inferred.</p>';
+    h += section('evidence', '2. Evidence, dates and sources', evidenceHTML, 'interpretive');
+    var diagnosticHTML = ['comparison', 'structure', 'spillover'].map(function (pillar) {
+      var ds = plan.diagnostics.filter(function (d) { return d.pillar === pillar; });
+      return '<h3>' + ({ comparison: 'Comparison and balance', structure: 'Structure and coverage', spillover: 'Spillover and dependence' })[pillar] + '</h3>' + (ds.length ? ds.map(function (d) {
+        var related = plan.actions.filter(function (a) { return a.track === track && a.diagnosticIds.includes(d.id); });
+        var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + (d.metricId ? '#' + d.metricId + ' ' + esc(d.canonicalLabel) : esc(d.label)) + ' — ' + esc(d.status.toUpperCase()) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc((typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+      }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
+    }).join('');
+    h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');
+    var net = plan.network, networkHTML;
+    if (!net) networkHTML = '<p class="cr-unknown">Directed network information is unavailable. No source/sink, causal route or restoration gain is inferred.</p>';
+    else {
+      networkHTML = '<p><b>' + esc(net.label) + '</b> ' + badge(net.basis) + '<br>' + esc(net.semantics) + '<br>Period alignment: ' + esc(net.period || 'not supplied') + '; coverage: ' + esc(net.coverage || 'not supplied') + '.</p>';
+      if (Array.isArray(net.roles) && net.roles.length) networkHTML += '<div class="cr-table"><table><thead><tr><th>Entity</th><th>Role / interpretation</th><th>Inbound</th><th>Outbound</th><th>Unit</th></tr></thead><tbody>' + net.roles.map(function (r) { return '<tr><td>' + esc(r.label || r.id) + '</td><td>' + esc(r.role) + '</td><td>' + esc(r.inbound == null ? 'Unavailable' : r.inbound) + '</td><td>' + esc(r.outbound == null ? 'Unavailable' : r.outbound) + '</td><td>' + esc(r.unit || 'not additive') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      networkHTML += '<p>' + esc((net.limitations || []).join(' ')) + '</p>';
+    }
+    h += section('network', '4. Directed accounting and method limits', networkHTML, 'interpretive');
+    h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p><p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
+    h += '</details>';
+    panel.innerHTML = h;
+    if (focused) { var nextFocus = doc.getElementById(focused); if (nextFocus) nextFocus.focus({ preventScroll: true }); }
+  }
+  function set(input) {
+    var nextRevision = signature(input || {});
+    if (nextRevision === revision) return;
+    function evidenceOnly(value) {
+      if (Array.isArray(value)) return value.map(evidenceOnly);
+      if (value && typeof value === 'object') { var out = {}; Object.keys(value).forEach(function (key) { if (key !== 'checkedAt') out[key] = evidenceOnly(value[key]); }); return out; }
+      return value;
+    }
+    var nextEvidence = signature(evidenceOnly(input || {}));
+    if (nextEvidence !== evidenceRevision) { acknowledgments.clear(); manualReview.clear(); }
+    evidenceRevision = nextEvidence; revision = nextRevision; payload = input || {}; render();
+  }
+  function connect(read, selectors) {
+    var stopped = false, timer = null, interval = null, observer = null, targets = Array.isArray(selectors) ? selectors : selectors ? [selectors] : [];
+    function update() {
+      if (stopped) return;
+      try { set(read()); }
+      catch (error) { set({ title: 'Response plan', context: 'Evidence reader unavailable', limitations: ['The console evidence could not be read. Verify the original sources before deciding.'] }); }
+    }
+    function start() {
+      if (stopped) return;
+      update();
+      if (!doc || !root.MutationObserver) return;
+      observer = new root.MutationObserver(function (records) {
+        var relevant = records.some(function (record) {
+          var el = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+          if (!el || el.closest('#console-response')) return false;
+          return !targets.length || targets.some(function (selector) { return el.matches(selector) || !!el.closest(selector) || !!el.querySelector(selector); });
+        });
+        if (relevant) { root.clearTimeout(timer); timer = root.setTimeout(update, 80); }
+      });
+      observer.observe(doc.body, { subtree: true, childList: true, characterData: true, attributes: true });
+      interval = root.setInterval(function () { if (!doc.hidden) update(); }, 60000);
+      doc.addEventListener('visibilitychange', visible);
+      doc.addEventListener('change', changed);
+      doc.addEventListener('input', changed);
+    }
+    function visible() { if (!doc.hidden) update(); }
+    function changed(event) { if (!event.target.closest('#console-response') && (!targets.length || targets.some(function (selector) { return event.target.matches(selector) || !!event.target.closest(selector); }))) update(); }
+    if (doc && doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', start, { once: true }); else start();
+    return function () { stopped = true; root.clearTimeout(timer); root.clearInterval(interval); if (observer) observer.disconnect(); if (doc) { doc.removeEventListener('visibilitychange', visible); doc.removeEventListener('change', changed); doc.removeEventListener('input', changed); } };
+  }
+  function exportPlan() {
+    return { exportedAt: new Date().toISOString(), note: 'Local planning review; not a record of completed operations.',
+      track: track, plan: currentPlan(), acknowledgments: Array.from(acknowledgments) };
+  }
+  function download() {
+    var blob = new Blob([JSON.stringify(exportPlan(), null, 2)], { type: 'application/json' });
+    var link = doc.createElement('a'), objectURL = root.URL.createObjectURL(blob);
+    link.href = objectURL; link.download = 'console-response-plan.json'; link.click(); root.setTimeout(function () { root.URL.revokeObjectURL(objectURL); }, 1000);
+  }
+  function wasserstein1(left, right) {
+    if (!Array.isArray(left) || !Array.isArray(right) || !left.length || !right.length ||
+        left.concat(right).some(function (n) { return typeof n !== 'number' || !Number.isFinite(n); })) return null;
+    var a = left.slice().sort(function (x, y) { return x - y; }), b = right.slice().sort(function (x, y) { return x - y; });
+    var points = Array.from(new Set(a.concat(b))).sort(function (x, y) { return x - y; }), i = 0, j = 0, area = 0;
+    for (var k = 0; k < points.length - 1; k++) {
+      while (i < a.length && a[i] <= points[k]) i++;
+      while (j < b.length && b[j] <= points[k]) j++;
+      area += Math.abs(i / a.length - j / b.length) * (points[k + 1] - points[k]);
+    }
+    return area;
+  }
+  var definitions = Object.freeze(metrics.map(function (m, i) { return Object.freeze({ id: i + 1, name: m[0], pillar: m[1], requiredInputs: m[2] }); }));
+  var api = { set: set, connect: connect, evaluate: evaluate, exportPlan: exportPlan, metricDefinitions: definitions, math: { wasserstein1: wasserstein1 }, version: 1 };
+  root.ConsoleResponse = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  if (doc) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', mount, { once: true }); else mount(); }
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* Pure numerical and authoring helpers. Embedded with the response layer; no network or imports. */
+(function () {
+  'use strict';
+  const names = ['Population Balance', 'Wasserstein Distance (Shape Imbalance)', 'Density Symmetry',
+    'Euler Characteristic (Contiguity)', 'Persistence Gap', 'Spatial Mixing (scale-stability)',
+    'Variational Free Energy', 'Contamination AUC', 'Frontier Risk (Buffer Depth AUC)', 'Mobility Network Leakage'];
+  function wasserstein(a, b) {
+    return window.ConsoleResponse.math.wasserstein1(a, b);
+  }
+  function components(ids, edges) {
+    if (!Array.isArray(ids) || !Array.isArray(edges) || !ids.length) return null;
+    const adjacency = new Map(ids.map(id => [id, new Set()]));
+    for (const [a, b] of edges) if (adjacency.has(a) && adjacency.has(b)) {
+      adjacency.get(a).add(b); adjacency.get(b).add(a);
+    }
+    let count = 0; const seen = new Set();
+    for (const id of adjacency.keys()) if (!seen.has(id)) {
+      count++; const queue = [id]; seen.add(id);
+      for (let i = 0; i < queue.length; i++) for (const next of adjacency.get(queue[i]))
+        if (!seen.has(next)) { seen.add(next); queue.push(next); }
+    }
+    return count;
+  }
+  function build(spec) {
+    const overrides = spec.overrides || {};
+    const diagnostics = names.map((label, index) => {
+      const id = index + 1, row = spec.rows[index] || {}, override = overrides[id] || {};
+      return { id: 'metric-' + id, metricId: id, label,
+        pillar: id <= 3 ? 'comparison' : id <= 7 ? 'structure' : 'spillover',
+        status: 'unknown', evidenceIds: [], scope: 'planning',
+        rule: row.rule || 'Assess this dimension against a documented local comparison and review criterion.',
+        explanation: row.explanation || 'Not assessable from the public inputs currently supplied.',
+        analyticalMitigation: row.analyticalMitigation || 'Document the comparison, input quality and scope before interpreting this dimension.',
+        requiredInputs: row.requiredInputs || [], ...override };
+    });
+    const actions = [];
+    diagnostics.forEach((diagnostic, index) => {
+      const row = spec.rows[index] || {};
+      for (const track of ['public', 'operator']) for (const when of ['triggered', 'unknown']) {
+        const next = (track === 'public' ? row.publicAction : row.operatorAction) || 'Confirm the required inputs with the responsible data source.';
+        actions.push({ id: spec.slug + '-m' + (index + 1) + '-' + track + '-' + when,
+          metricIds: [index + 1], diagnosticIds: [diagnostic.id], track, when,
+          phase: when === 'unknown' ? 'verify' : (row.phase || 'prepare'),
+          title: (when === 'unknown' ? 'Resolve the input gap: ' : 'Review: ') + diagnostic.label,
+          nextStep: (when === 'unknown' ? 'This dimension is not machine-assessed. ' : '') + next,
+          escalateWhen: row.escalateWhen || spec.escalateWhen,
+          authorityUrl: row.authorityUrl || spec.authorityUrl });
+      }
+    });
+    return { slug: spec.slug, title: spec.title, context: spec.context,
+      scenario: !!spec.scenario, evidence: spec.evidence || [], diagnostics,
+      actions: [...(spec.baseline || []), ...actions], network: spec.network,
+      limitations: spec.limitations || [] };
+  }
+  window.ConsoleResponse.domain = { wasserstein, components, build };
+})();
+</script>
+<!-- CONSOLE_RESPONSE_HEAD_END -->
 </head>
-<body>
+<body><!-- CONSOLE_RESPONSE_MOUNT_START -->
+<section id="console-response" aria-labelledby="console-response-title"></section>
+<a id="console-response-shortcut" href="#console-response">Response plan</a>
+<!-- CONSOLE_RESPONSE_MOUNT_END -->
+
 <div id="disc"><b>Unofficial.</b> A directed-network view of public NOAA river forecasts — <b>not</b> an official source, and it does not replace the <a href="https://water.noaa.gov" target="_blank" rel="noopener" style="color:#9fd2f0">National Water Prediction Service</a>. <b>In a flood emergency, call 911 and follow local officials.</b></div>
 <div class="wrap">
   <header>
     <h1>River Flood Propagation</h1>
-    <div class="s">Rivers are a <b>directed</b> network — water flows one way, and an upstream rise <em>leads</em> downstream flooding by hours to days. This walks the main‑stem gauge chain, finds the upstream <b>source</b> driving a flood wave, and gives every community below it a <b>lead time</b> — instead of only reacting to wherever the water is loudest right now.</div>
+    <div class="s">Rivers are a <b>directed</b> network — water flows one way, and an upstream rise <em>leads</em> downstream flooding by hours to days. This walks the main‑stem gauge chain, identifies elevated upstream gauges and compares downstream <b>forecast peak times</b> — instead of only reacting to wherever the water is loudest right now.</div>
     <div class="searchbar"><i class="ti ti-search lead"></i><input id="q" type="search" placeholder="ZIP or town near a river, e.g. 63701 or Cape Girardeau, MO" aria-label="ZIP or town"><button id="go">Trace river</button></div>
     <div id="status"></div>
   </header>
@@ -55,11 +405,11 @@ header .s{color:var(--ink2);font-size:14.5px;margin-top:7px;max-width:760px}
     <div id="map"></div>
     <div id="side">
       <div class="card"><h2><i class="ti ti-arrow-down"></i> The river corridor</h2><div class="sub" id="corridor-sub">upstream → downstream main stem (NOAA NWPS gauges)</div><div id="chain"><div class="muted"><span class="spin"></span> tracing…</div></div></div>
-      <div class="card"><h2><i class="ti ti-target-arrow"></i> Where the leverage is</h2><div class="sub">upstream gauges ranked by how many downstream communities they lead — the directedness signal</div><div id="leverage"></div></div>
+      <div class="card"><h2><i class="ti ti-target-arrow"></i> Where the leverage is</h2><div class="sub">upstream gauges ranked by the number of elevated downstream gauges in this chain — the directedness signal</div><div id="leverage"></div></div>
       <div class="card"><h2><i class="ti ti-info-circle"></i> How this works</h2><div class="small muted" id="method"></div></div>
     </div>
   </div>
-  <div id="foot"><div class="note"><b>About.</b> An <b>unofficial</b> prototype that reorganizes NOAA's own public gauge observations &amp; forecasts into the directed river network. It does <b>not</b> forecast better than NWS — it surfaces the propagation: who's upstream, who's downstream, and how much warning the downstream has. Always follow the National Weather Service / National Water Prediction Service and local officials; <b>call 911 in an emergency.</b></div><div class="note"><b>Related tools.</b> <a href="../us-local-hazards/"><i class="ti ti-arrow-left"></i> All U.S. local hazards</a> (weather, fire, quake, flood zone &amp; more) · <a href="../river-flood-network/">River Flood Network <small>which upstream tributary is the driver →</small></a></div><div id="src"></div></div>
+  <div id="foot"><div class="note"><b>About.</b> An <b>unofficial</b> prototype that reorganizes NOAA's own public gauge observations &amp; forecasts into the directed river network. It does <b>not</b> forecast better than NWS — it surfaces the propagation: upstream/downstream order and independently reported forecast peak times. Always follow the National Weather Service / National Water Prediction Service and local officials; <b>call 911 in an emergency.</b></div><div class="note"><b>Related tools.</b> <a href="../us-local-hazards/"><i class="ti ti-arrow-left"></i> All U.S. local hazards</a> (weather, fire, quake, flood zone &amp; more) · <a href="../river-flood-network/">River Flood Network <small>upstream tributary and main-stem reports →</small></a></div><div id="src"></div></div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -74,7 +424,11 @@ const NWPS='https://api.water.noaa.gov/nwps/v1/gauges/';
 const CAT={no_flooding:0,action:1,minor:2,moderate:3,major:4};
 const CATLAB={0:'normal',1:'action',2:'minor flood',3:'moderate flood',4:'major flood'};
 const CATCOL={0:'#34c98a',1:'#f0b429',2:'#f97316',3:'#ef5350',4:'#b46ff0'};
-const sevOf=c=>CAT[c]!=null?CAT[c]:0;
+CATLAB.unknown='status unavailable';CATCOL.unknown='#7e93ad';
+const sevOf=c=>CAT[c]!=null?CAT[c]:null;
+const responseState=window.RiverPropagationResponse={context:'St. Louis, MO',nodes:[],checkedAt:null,loading:true};
+let responseRun=0;
+function resetResponse(context){responseState.context=context;responseState.nodes=[];responseState.loading=true;responseState.checkedAt=new Date().toISOString();}
 const map=L.map('map',{zoomControl:true}).setView([38.5,-90],7);
 // Standard public OSM tiles need no account or API key. Browser caching and Referer stay intact.
 // Request only the visible viewport; no offline tile download or prefetch.
@@ -87,7 +441,7 @@ basemap.on('tileerror',()=>{basemapNotice.textContent='Some basemap tiles are un
 if(/^https?:$/.test(location.protocol))basemap.addTo(map);else if(basemapNotice){basemapNotice.textContent='Map tiles are available over HTTP(S). Data panels and overlays remain usable in this local file.';basemapNotice.style.display='block';}
 let G=L.layerGroup().addTo(map);
 const lg=L.control({position:'bottomright'});lg.onAdd=function(){const d=L.DomUtil.create('div','legend');d.innerHTML='<b>Gauge status</b><br><i style="background:#34c98a"></i>normal<br><i style="background:#f0b429"></i>action<br><i style="background:#f97316"></i>minor<br><i style="background:#ef5350"></i>moderate<br><i style="background:#b46ff0"></i>major<br><span style="color:#9fb6cf">→ arrow = flow direction</span>';return d;};lg.addTo(map);
-$('method').innerHTML='This is the <b>directedness‑not‑connectedness</b> idea on its ideal domain. A river has fixed topology, conservation of water, and a genuine <b>exogenous lead</b> (upstream causes downstream, never the reverse) — the properties this method needs. So instead of treating gauges as independent dots, it follows NOAA\'s <code>upstreamLid</code>/<code>downstreamLid</code> links to build the directed chain, marks the upstream <b>transmitter</b> (the rising source) apart from the <b>loudest</b> gauge (where water is highest now), and reads each downstream gauge\'s forecast <b>crest time</b> as a lead time. The leverage ranking is the net‑source: the upstream gauge that, if watched, warns the most communities below it.';
+$('method').textContent='NOAA upstream/downstream gauge links define the inspected main-stem corridor. Elevated categories identify gauges for review, not causal source attribution. Each forecast peak is taken from its NOAA hydrograph. Time until a peak and differences between forecast peaks are separate quantities; neither is a measured wave travel time or an evacuation deadline. Gauge coverage is limited to this inspected chain.';
 $('src').innerHTML='Source: NOAA National Water Prediction Service (api.water.noaa.gov/nwps) — gauge observations, forecasts, flood thresholds and the upstream/downstream stream-network links. Geocoding: Zippopotam.us &amp; OpenStreetMap Nominatim. All public, no key; runs in your browser.';
 
 /* ---- geocode ---- */
@@ -107,8 +461,11 @@ function node(d){if(!d||!d.latitude)return null;const cats=(d.flood&&d.flood.cat
  const ob=(d.status&&d.status.observed)||{},fo=(d.status&&d.status.forecast)||{};
  const cr=(d.flood&&d.flood.crests);const crArr=Array.isArray(cr)?cr:(cr&&typeof cr==='object'?Object.values(cr):[]);const crest=crArr.find(c=>c&&typeof c==='object'&&c.value!=null)||{};
  return {lid:d.lid,name:d.name||d.lid,lat:d.latitude,lon:d.longitude,up:d.upstreamLid,dn:d.downstreamLid,
-  stage:ob.primary,unit:(d.flood&&d.flood.stageUnits)||'ft',obs:ob.floodCategory||'no_flooding',fcst:fo.floodCategory,
-  thr:cats,crest:crest.value,crestTime:crest.validTime||fo.validTime,fcstTime:fo.validTime};}
+  stage:ob.primary,unit:(d.flood&&d.flood.stageUnits)||'ft',obs:ob.floodCategory||null,observedAt:ob.validTime||null,fcst:fo.floodCategory||null,
+  thr:cats,crest:null,crestTime:null,forecastAt:null,fcstTime:fo.validTime||null};}
+async function attachForecast(n){
+ try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);let r;try{r=await fetch(NWPS+n.lid+'/stageflow/forecast',{signal:c.signal});if(!r.ok)return;const j=await r.json();n.forecastAt=j.issuedTime||null;const rows=(j.data||[]).filter(p=>p.primary!==null&&p.primary!==''&&Number.isFinite(+p.primary)&&Number.isFinite(Date.parse(p.validTime)));if(rows.length){const peak=rows.reduce((a,b)=>+b.primary>+a.primary?b:a);n.crest=+peak.primary;n.crestTime=peak.validTime;n.forecastRows=rows.map(p=>({time:p.validTime,stage:+p.primary}));}}finally{clearTimeout(to);}}catch(e){}
+}
 
 async function buildChain(startLid){if(!await gj(startLid))return [];
  const walk=async(dir,max)=>{const out=[];let lid=startLid,seen=new Set([startLid]);
@@ -120,45 +477,48 @@ async function buildChain(startLid){if(!await gj(startLid))return [];
 function fmtLead(t){if(!t)return null;const h=(new Date(t)-Date.now())/3600000;if(h<0)return 'crest passed';if(h<1)return 'crest <1 h';if(h<48)return 'crest in ~'+Math.round(h)+' h';return 'crest in ~'+Math.round(h/24)+' d';}
 
 function render(nodes,startLid,placeName){G.clearLayers();
- nodes.forEach(n=>{n.sev=sevOf(n.obs);n.fsev=n.fcst&&CAT[n.fcst]!=null?CAT[n.fcst]:n.sev;});
+ responseState.nodes=nodes;responseState.context=placeName;responseState.loading=false;responseState.checkedAt=new Date().toISOString();
+ nodes.forEach(n=>{n.sev=sevOf(n.obs);n.fsev=n.fcst&&CAT[n.fcst]!=null?CAT[n.fcst]:null;n.displaySeverity=n.sev==null&&n.fsev==null?'unknown':Math.max(n.sev??-1,n.fsev??-1);});
  // directed edges (upstream -> downstream)
  for(let i=0;i<nodes.length-1;i++){L.polyline([[nodes[i].lat,nodes[i].lon],[nodes[i+1].lat,nodes[i+1].lon]],{color:'#3a5f87',weight:3,opacity:.7}).addTo(G);
   const mx=(nodes[i].lat+nodes[i+1].lat)/2,my=(nodes[i].lon+nodes[i+1].lon)/2;const ang=Math.atan2(nodes[i+1].lat-nodes[i].lat,nodes[i+1].lon-nodes[i].lon)*180/Math.PI;
   L.marker([mx,my],{icon:L.divIcon({className:'',html:'<div style="color:#7fb6e8;font-size:15px;transform:rotate('+(-ang)+'deg)">▶</div>',iconSize:[16,16]})}).addTo(G);}
- nodes.forEach((n,i)=>{const col=CATCOL[Math.max(n.sev,n.fsev)];
+ nodes.forEach((n,i)=>{const col=CATCOL[n.displaySeverity];
   L.circleMarker([n.lat,n.lon],{radius:n.lid===startLid?9:7,fillColor:col,color:n.lid===startLid?'#fff':'#0c1726',weight:n.lid===startLid?2.4:1.4,fillOpacity:.95})
-   .bindPopup('<b>'+(i+1)+'. '+n.name+'</b><br>stage '+(n.stage!=null?n.stage+' '+n.unit:'—')+' · '+CATLAB[n.sev]+(n.fcst&&n.fsev!==n.sev?'<br>forecast: '+CATLAB[n.fsev]:'')+(n.crest!=null?'<br>crest '+n.crest+' '+n.unit+(fmtLead(n.crestTime)?' ('+fmtLead(n.crestTime)+')':''):'')).addTo(G);});
+   .bindPopup('<b>'+(i+1)+'. '+n.name+'</b><br>stage '+(n.stage!=null?n.stage+' '+n.unit:'—')+' · '+CATLAB[n.sev==null?'unknown':n.sev]+(n.fcst&&n.fsev!==n.sev?'<br>forecast: '+CATLAB[n.fsev]:'')+(n.crest!=null?'<br>crest '+n.crest+' '+n.unit+(fmtLead(n.crestTime)?' ('+fmtLead(n.crestTime)+')':''):'')).addTo(G);});
  if(nodes.length)map.fitBounds(L.latLngBounds(nodes.map(n=>[n.lat,n.lon])).pad(.15));
  // analysis
- const atRisk=nodes.filter(n=>Math.max(n.sev,n.fsev)>=1);
+ const atRisk=nodes.filter(n=>n.displaySeverity!=='unknown'&&n.displaySeverity>=1);
  const loudest=nodes.reduce((a,b)=>b.sev>a.sev?b:a,nodes[0]);
  const transmitter=atRisk.length?atRisk[0]:null; // most-upstream at/approaching flood
  // chain panel
- $('chain').innerHTML=nodes.map((n,i)=>{const sev=Math.max(n.sev,n.fsev),col=CATCOL[sev];
+ $('chain').innerHTML=nodes.map((n,i)=>{const sev=n.displaySeverity,col=CATCOL[sev];
   const isT=transmitter&&n.lid===transmitter.lid,isL=loudest&&n.lid===loudest.lid&&loudest.sev>=1;
   const downstreamOfT=transmitter&&i>nodes.indexOf(transmitter);
-  const lead=downstreamOfT&&n.crestTime?fmtLead(n.crestTime):null;
+  const lead=n.crestTime?fmtLead(n.crestTime):null;
+  const separation=downstreamOfT&&n.crestTime&&transmitter.crestTime?(Date.parse(n.crestTime)-Date.parse(transmitter.crestTime))/3600000:null;
   return '<div class="node"><div class="n" style="background:'+col+'">'+(i+1)+'</div><div class="body">'+
-   '<div class="name">'+n.name+(isT?'<span class="tag" style="background:#f0b42933;color:#f0b429">↑ source</span>':'')+(isL?'<span class="tag" style="background:#ef535033;color:#ef5350">loudest now</span>':'')+'</div>'+
-   '<div class="meta">stage '+(n.stage!=null?n.stage+' '+n.unit:'—')+' · <span style="color:'+CATCOL[n.sev]+'">'+CATLAB[n.sev]+'</span>'+(n.fcst&&n.fsev!==n.sev?' → <span style="color:'+CATCOL[n.fsev]+'">'+CATLAB[n.fsev]+'</span>':'')+'</div>'+
-   (lead?'<div class="lead" style="color:'+col+'"><i class="ti ti-clock"></i> '+lead+' — lead time from the upstream source</div>':'')+
+   '<div class="name">'+n.name+(isT?'<span class="tag" style="background:#f0b42933;color:#f0b429">↑ upstream elevated</span>':'')+(isL?'<span class="tag" style="background:#ef535033;color:#ef5350">loudest now</span>':'')+'</div>'+
+   '<div class="meta">stage '+(n.stage!=null?n.stage+' '+n.unit:'—')+' · <span style="color:'+CATCOL[n.sev==null?'unknown':n.sev]+'">'+CATLAB[n.sev==null?'unknown':n.sev]+'</span>'+(n.fcst&&n.fsev!==n.sev?' → <span style="color:'+CATCOL[n.fsev]+'">'+CATLAB[n.fsev]+'</span>':'')+'</div>'+
+   (lead?'<div class="lead" style="color:'+col+'"><i class="ti ti-clock"></i> '+lead+' — time from now to this forecast peak</div>':'')+
+   (separation!=null?'<div class="meta">Forecast peak separation from '+transmitter.name+': '+Math.round(separation)+' h; not measured travel time or a safe-response deadline.</div>':'')+
    '</div></div>';}).join('');
  // leverage ranking: each at-risk node -> # of downstream at-risk nodes it leads
- const lev=nodes.map((n,i)=>({n,lead:nodes.slice(i+1).filter(m=>Math.max(m.sev,m.fsev)>=1).length})).filter(x=>Math.max(x.n.sev,x.n.fsev)>=1&&x.lead>0).sort((a,b)=>b.lead-a.lead);
+ const lev=nodes.map((n,i)=>({n,lead:nodes.slice(i+1).filter(m=>m.displaySeverity!=='unknown'&&m.displaySeverity>=1).length})).filter(x=>Math.max(x.n.sev,x.n.fsev)>=1&&x.lead>0).sort((a,b)=>b.lead-a.lead);
  const maxlev=Math.max(1,...lev.map(x=>x.lead));
- $('leverage').innerHTML=lev.length?lev.slice(0,6).map(x=>'<div class="lvrow"><span style="flex:none;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+x.n.name+'</span><span class="bar"><i style="width:'+Math.round(100*x.lead/maxlev)+'%;background:'+CATCOL[Math.max(x.n.sev,x.n.fsev)]+'"></i></span><span class="muted" style="flex:none">leads '+x.lead+'</span></div>').join('')
-  :'<div class="muted">No upstream gauge is in or approaching flood in this corridor, so there is no active wave to lead. The chain above shows how one <em>would</em> propagate.</div>';
+ $('leverage').innerHTML=lev.length?lev.slice(0,6).map(x=>'<div class="lvrow"><span style="flex:none;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+x.n.name+'</span><span class="bar"><i style="width:'+Math.round(100*x.lead/maxlev)+'%;background:'+CATCOL[x.n.displaySeverity]+'"></i></span><span class="muted" style="flex:none">downstream watchpoints '+x.lead+'</span></div>').join('')
+  :'<div class="muted">No upstream gauge is in or approaching flood in this corridor, so there is no confirmed elevated gauge to rank. The chain above shows the inspected upstream/downstream order.</div>';
  // status line
  const nFlood=atRisk.length;
- $('status').innerHTML='<i class="ti ti-map-pin"></i> Main‑stem corridor through <b>'+placeName+'</b> — '+nodes.length+' gauges'+(nFlood?', <b style="color:#f0b429">'+nFlood+'</b> in or approaching flood'+(transmitter&&loudest&&transmitter.lid!==loudest.lid?'. Upstream <b>source</b>: '+transmitter.name+'; <b>loudest now</b>: '+loudest.name+'.':'.'):' — none in flood right now.');
+ $('status').innerHTML='<i class="ti ti-map-pin"></i> Main‑stem corridor through <b>'+placeName+'</b> — '+nodes.length+' gauges'+(nFlood?', <b style="color:#f0b429">'+nFlood+'</b> in or approaching flood'+(transmitter&&loudest&&transmitter.lid!==loudest.lid?'. Upstream <b>source</b>: '+transmitter.name+'; <b>loudest now</b>: '+loudest.name+'.':'.'):' — no confirmed elevated category in the available reports.');
 }
 
-async function run(loc){$('status').innerHTML='<span class="muted"><span class="spin"></span> finding the nearest river gauge…</span>';
- const lid=await nearestGauge(loc.lat,loc.lon);
- if(!lid){$('status').innerHTML='<span style="color:#ef5350">No NOAA river gauge found near '+loc.name+'. Try a town on or near a forecasted river.</span>';$('chain').innerHTML='';$('leverage').innerHTML='';return;}
+async function run(loc){const runId=++responseRun;resetResponse(loc.name);$('status').innerHTML='<span class="muted"><span class="spin"></span> finding the nearest river gauge…</span>';
+ let lid;try{lid=await nearestGauge(loc.lat,loc.lon);}catch(e){}if(runId!==responseRun)return;
+ if(!lid){responseState.loading=false;$('status').innerHTML='<span style="color:#ef5350">No NOAA river gauge found near '+loc.name+'. Try a town on or near a forecasted river.</span>';$('chain').innerHTML='';$('leverage').innerHTML='';return;}
  $('status').innerHTML='<span class="muted"><span class="spin"></span> walking the upstream→downstream chain…</span>';
- const nodes=await buildChain(lid);
- if(!nodes.length){$('status').innerHTML='<span style="color:#ef5350">Couldn\'t trace a gauge chain here.</span>';return;}
+ const nodes=await buildChain(lid);await Promise.all(nodes.map(attachForecast));if(runId!==responseRun)return;
+ if(!nodes.length){responseState.loading=false;$('status').innerHTML='<span style="color:#ef5350">Couldn\'t trace a gauge chain here.</span>';return;}
  render(nodes,lid,loc.name);}
 
 async function go(){const q=$('q').value;if(!q.trim())return;$('status').innerHTML='<span class="muted"><span class="spin"></span> finding '+q+'…</span>';
@@ -168,5 +528,56 @@ $('go').onclick=go;$('q').addEventListener('keydown',e=>{if(e.key==='Enter')go()
 run({lat:38.63,lon:-90.18,name:'St. Louis, MO (Mississippi River)'});
 })();
 </script>
+<!-- CONSOLE_RESPONSE_ADAPTER_START -->
+<script>
+(function(){
+ 'use strict';
+ const fresh=(stamp,hours)=>Number.isFinite(Date.parse(stamp))&&Date.now()-Date.parse(stamp)>=-3600000&&Date.now()-Date.parse(stamp)<=hours*3600000;
+ const authority='https://water.noaa.gov/';
+ function read(){
+  const state=window.RiverPropagationResponse||{},nodes=state.nodes||[],evidence=[],diagnostics=[],actions=[];
+  for(const n of nodes){
+   const id='gauge-'+n.lid,known=n.sev!=null&&fresh(n.observedAt,6),forecastKnown=n.crest!=null&&fresh(n.forecastAt,24);
+   evidence.push({id,label:n.name+' observed category',value:n.obs||'Unavailable',measuredAt:n.observedAt,checkedAt:state.checkedAt,basis:'measured',quality:known?'current':n.observedAt?'stale':'missing',source:'https://api.water.noaa.gov/nwps/v1/gauges/'+n.lid,note:'Observed categories are not flood-depth comparisons between gauges. Six-hour observation freshness screen.'});
+   evidence.push({id:id+'-peak',label:n.name+' forecast peak',value:n.crest??'Unavailable',unit:n.unit,measuredAt:n.forecastAt,checkedAt:state.checkedAt,basis:'modeled',quality:forecastKnown?'current':n.forecastAt?'stale':'missing',source:'https://api.water.noaa.gov/nwps/v1/gauges/'+n.lid+'/stageflow/forecast',note:n.crestTime?'Forecast peak valid '+n.crestTime+'. Issue must be within24 hours.':'No usable forecast hydrograph.'});
+   const threshold=n.thr&&n.thr.action;
+   diagnostics.push({id,pillar:'comparison',label:n.name+' needs elevated-stage review',status:known?(n.sev>=1?'triggered':'clear'):'unknown',evidenceIds:[id],rule:'NOAA observed category at action stage or above; never substitute a missing category with normal.',explanation:'Compare the report with its own gauge thresholds, not raw stage at another gauge.'});
+   diagnostics.push({id:id+'-forecast',pillar:'spillover',label:n.name+' forecast reaches local action threshold',status:forecastKnown&&Number.isFinite(threshold)?(n.crest>=threshold?'triggered':'clear'):'unknown',evidenceIds:[id+'-peak'],rule:'Latest usable NOAA forecast maximum >= this gauge\'s action threshold.',explanation:'An independent forecast for a downstream gauge is not a routed causal propagation estimate.'});
+   actions.push({id:id+'-public',track:'public',phase:'respond',when:'triggered',diagnosticIds:[id,id+'-forecast'],title:'Check official instructions for '+n.name,nextStep:'Read the current NOAA gauge page and local NWS warnings. Confirm your local flood plan and follow current official instructions; this gauge is a monitoring point, not an address-level flood forecast.',escalateWhen:'An official warning or local instruction changes; do not wait for a forecast crest before following it.',authorityUrl:'https://water.noaa.gov/gauges/'+n.lid.toLowerCase()});
+   actions.push({id:id+'-operator',track:'operator',phase:'verify',when:'triggered',diagnosticIds:[id,id+'-forecast'],title:'Verify the '+n.name+' corridor watchpoint',nextStep:'Confirm gauge telemetry and forecast issue, compare the local action threshold'+(Number.isFinite(threshold)?' ('+threshold+' '+n.unit+')':'')+', then review the downstream contact/asset roster under your organization\'s flood SOP. '+(n.crestTime?'Forecast peak valid '+n.crestTime+'. ':'No forecast timing is available. ')+'The console does not assign dispatch or evacuation deadlines.',escalateWhen:'Your authority\'s stage/impact trigger or current warning is met, or local telemetry contradicts the public report.',authorityUrl:'https://water.noaa.gov/gauges/'+n.lid.toLowerCase()});
+  }
+  evidence.push({id:'coverage',label:'Inspected corridor',value:nodes.length+' NOAA gauges',checkedAt:state.checkedAt,basis:'measured',quality:nodes.length&&!state.loading?'current':'missing',source:authority,note:'At most6 upstream and9 downstream links; unmonitored communities and tributaries are outside this chain.'});
+  diagnostics.push({id:'coverage',pillar:'structure',label:'Corridor evidence availability',status:nodes.length&&!state.loading?'clear':'unknown',evidenceIds:['coverage'],rule:'A nonempty inspected NOAA main-stem gauge chain is required.',explanation:'This adapts the CRT principle of defining comparison groups and inspecting coverage before comparing conditions.'});
+  actions.push({id:'unknown-public',track:'public',phase:'verify',when:'unknown',diagnosticIds:diagnostics.map(d=>d.id),title:'Check the official flood information directly',nextStep:'A gauge category, forecast or corridor link is missing or stale. Use NOAA/NWS and local officials; unavailable evidence does not establish a clear corridor.',escalateWhen:'Conditions at your location differ from the available report or an official warning is issued.',authorityUrl:authority});
+  actions.push({id:'unknown-operator',track:'operator',phase:'verify',when:'unknown',diagnosticIds:diagnostics.map(d=>d.id),title:'Resolve the monitoring gap',nextStep:'Confirm missing/stale gauges through approved telemetry and document unmonitored tributaries and downstream assets before using this corridor in a response briefing.',escalateWhen:'A required decision cannot be supported by current local observations.',authorityUrl:authority});
+
+  const obsIds=nodes.map(n=>'gauge-'+n.lid),known=nodes.length>0&&nodes.every(n=>n.sev!=null&&fresh(n.observedAt,6));
+  const exposed=nodes.filter(n=>n.sev>=1),dependentWeight=n=>nodes.length-nodes.indexOf(n),allWeight=nodes.reduce((a,n)=>a+dependentWeight(n),0),weightShare=allWeight?exposed.reduce((a,n)=>a+dependentWeight(n),0)/allWeight:null;
+  const countShare=nodes.length?exposed.length/nodes.length:null;
+  let fronts=0;nodes.forEach((n,i)=>{if(n.sev>=1&&(i===0||nodes[i-1].sev<1||nodes[i-1].dn!==n.lid))fronts++;});
+  const links=nodes.slice(0,-1).filter((n,i)=>n.dn===nodes[i+1].lid),cross=links.filter(n=>(n.sev>=1)!==(nodes[nodes.indexOf(n)+1].sev>=1)).length;
+  const forecastKnown=known&&nodes.every(n=>n.fcst!=null&&fresh(n.forecastAt,24));
+  const changes=nodes.filter(n=>n.sev!=null&&n.fcst!=null&&n.obs!==n.fcst).length;
+  evidence.push({id:'ten-screen',label:'Inspected corridor diagnostic counts',value:known?exposed.length+'/'+nodes.length+' elevated gauges; '+fronts+' separated elevated fronts; '+cross+'/'+links.length+' linked gauge pairs cross the elevated/non-elevated boundary':'Not assessable',checkedAt:state.checkedAt,basis:'interpretive',quality:known?'current':'missing',source:authority,note:'Gauge and descendant-gauge counts are sampling/topology proxies, not population, discharge or resource benefit.'});
+  const specs=[
+   [1,'comparison','Elevation-screen balance versus downstream gauge dependence',known?(weightShare>countShare?'triggered':'clear'):'unknown',obsIds.concat('ten-screen'),'Compare elevated-gauge share '+(countShare==null?'unavailable':Math.round(countShare*100)+'%')+' with upstream-position weight share '+(weightShare==null?'unavailable':Math.round(weightShare*100)+'%')+'. Greater weight share is a descriptive review cue, not a validated emergency threshold.','Separate gauge-count and dependent-gauge weighting; obtain actual population/asset exposure before allocating resources.','Actual community/asset exposure weights and verified corridor coverage'],
+   [2,'comparison','Shape imbalance requires comparable site measurements','unknown',[],'Raw stage datums differ between gauges; no meaningful stage-distribution distance is claimed.','Collect a common, documented measure such as threshold-normalized exceedance before comparing distributions.','Aligned threshold-normalized histories for exposed and comparison gauges; validated comparison scale'],
+   [3,'comparison','Gauge sampling density is not resident exposure','unknown',[],'A few forecast points cannot establish density symmetry of communities or assets.','Audit unmonitored areas separately from observed gauges before treating counts as coverage.','Geocoded community/asset denominator and monitored-area boundaries'],
+   [4,'structure','Separated elevated fronts along the inspected chain',known?(fronts>1?'triggered':'clear'):'unknown',['ten-screen'],'More than one elevated connected gauge segment prompts separate corridor review. Components use only verified adjacent NOAA links.','Keep each separated elevated segment and unobserved break explicit; do not smooth gaps into one wave.','Current categories and verified adjacent main-stem links'],
+   [5,'structure','Observed-to-forecast category persistence',forecastKnown?(changes?'triggered':'clear'):'unknown',obsIds.concat(nodes.map(n=>'gauge-'+n.lid+'-peak')),'A change between observed and forecast category is a classification-sensitivity proxy, not persistent homology.','Review the actual hydrograph and threshold at each changing gauge; keep observation and forecast issue times separate.','Current observed categories, current forecast issues and forecast categories'],
+   [6,'structure','Scale stability is not supplied by one corridor','unknown',[],'A single bounded chain cannot establish stability to network extent or forecast perturbation.','Repeat the screen under documented network/forecast alternatives before treating a boundary as robust.','Nested complete network extents or a documented forecast ensemble'],
+   [7,'structure','Cross-jurisdiction cohesion cannot be inferred','unknown',[],'No administrative/service-area assignment or calibrated free-energy model is supplied.','Map responsible jurisdictions and use actual inter-agency agreements; do not call a cross-link a fitted free-energy estimate.','Jurisdiction/service-area assignments and defined dependence model'],
+   [8,'spillover','Integrated exposure across scenarios is unavailable','unknown',[],'One observation/forecast pair is not an exposure curve over a documented hazard ladder.','Obtain multiple comparable forecast/scenario levels and local exposure inventories before integrating exposure.','Hazard scenario ladder, exposure denominator and documented integration range'],
+   [9,'spillover','Boundary risk needs asset distances and impact weights','unknown',[],'Gauge order alone cannot locate vulnerable properties on a flood frontier.','Use approved inundation/asset maps and impact weights before prioritizing boundary surveillance.','Inundation boundary, asset distances and verified consequence weights'],
+   [10,'spillover','Elevated/non-elevated links in the gauge chain',known&&links.length?(cross?'triggered':'clear'):'unknown',['ten-screen'],'A verified adjacent gauge link crossing the category boundary prompts review; it is not measured contaminant leakage.','Follow the linked gauges and local reports on both sides of the category boundary; do not infer routed damage.','Verified directed gauge links and current categories']
+  ];
+  for(const [metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs]of specs){const id='metric-'+metricId;diagnostics.push({id,metricId,pillar,label,status,evidenceIds,rule,analyticalMitigation,requiredInputs,explanation:'Domain proxy / applicability screen; no validated ten-metric transfer is claimed.'});for(const track of ['public','operator'])actions.push({id:id+'-'+track,track,phase:status==='unknown'?'verify':'review',when:status==='unknown'?'unknown':'triggered',diagnosticIds:[id],title:'#'+metricId+' '+label,nextStep:track==='operator'?analyticalMitigation+' Required inputs: '+requiredInputs+'. Use approved local SOP and decision authority.':'Review what this corridor comparison can support: '+analyticalMitigation+' Ask the local responsible authority for the missing context; fictional or missing exposure is not a local instruction.',escalateWhen:'A current official warning or verified local SOP threshold applies; an unknown parameter requires evidence review, not an all-clear.',authorityUrl:authority});}
+
+  return {slug:'river-flood-propagation',title:'River corridor response plan',context:state.context||'Choose a river location',evidence,diagnostics,actions,network:{label:'Inspected main-stem roles',basis:'measured',semantics:'NOAA upstream/downstream reach order. Inbound/outbound are inspected gauge-link counts, not water volume.',period:'Topology only; each measurement has its own date',coverage:'Maximum6 upstream and9 downstream gauge links',roles:nodes.map((n,i)=>({id:n.lid,label:n.name,role:i===0?'upstream boundary':i===nodes.length-1?'downstream boundary':'intermediate watchpoint',inbound:i?1:0,outbound:i<nodes.length-1?1:0,unit:'inspected links'})),limitations:['Gauge count is not population exposed. Forecast peak differences are not travel times or safe-response windows. No discharge routing, causal contagion fit or VAR/FEVD is implemented.']},limitations:['CRT comparison, structure and spillover principles are adapted qualitatively; Coastal thresholds and all ten metrics are not transferred.','Public observations older than6 hours or forecast issues older than24 hours require verification.','Operator actions require local telemetry, authority and an approved SOP.']};
+ }
+ window.ConsoleResponse.connect(read,['#chain','#leverage','#status']);
+})();
+</script>
+<!-- CONSOLE_RESPONSE_ADAPTER_END -->
 </body>
 </html>

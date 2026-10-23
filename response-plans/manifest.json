@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "consoles": [
+    {
+      "slug": "antimicrobial-resistance",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "coastal-water-resilience",
+      "native": true,
+      "method": "Native coastal plan: measured monitoring, modeled synthetic topology and interpretive actions; no validated CRT transfer."
+    },
+    {
+      "slug": "global-air-pollution",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-cancer",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-demographic-transition",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-health-atlas",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-health-systems",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-hiv-tb-malaria",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-immunization",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-maternal-child-health",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-mental-health",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-ncd-burden",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-ntds",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-nutrition",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-outbreak-tracker",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-road-safety",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "global-wash",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "human-trafficking",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "medical-cost-abroad",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "medical-debt-assistant",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "nhs-scotland-strain",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "prescription-savings",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "quake-consequence",
+      "native": false,
+      "method": "Model or association graph supports labeled scenarios, not verified causal transmission or intervention benefit."
+    },
+    {
+      "slug": "resilience-telemetry",
+      "native": false,
+      "method": "Model or association graph supports labeled scenarios, not verified causal transmission or intervention benefit."
+    },
+    {
+      "slug": "river-flood-network",
+      "native": false,
+      "method": "Domain-specific directed observations require time/unit/boundary alignment; diagnostics and actions remain interpretive."
+    },
+    {
+      "slug": "river-flood-propagation",
+      "native": false,
+      "method": "Domain-specific directed observations require time/unit/boundary alignment; diagnostics and actions remain interpretive."
+    },
+    {
+      "slug": "us-grid-strain",
+      "native": false,
+      "method": "Domain-specific directed observations require time/unit/boundary alignment; diagnostics and actions remain interpretive."
+    },
+    {
+      "slug": "us-local-hazards",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "us-overdose-surveillance",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "us-respiratory-surveillance",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "usaid-consequence",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    },
+    {
+      "slug": "va-strain",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld."
+    }
+  ]
+}
