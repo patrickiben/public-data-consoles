@@ -2,10 +2,10 @@
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir,rename} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
-import {chromium} from 'playwright';
 const root=new URL('../',import.meta.url),slugs=['us-respiratory-surveillance','us-overdose-surveillance'];
 async function check(){for(const slug of slugs){const html=await readFile(new URL('consoles/'+slug+'/index.html',root),'utf8'),data=JSON.parse(await readFile(new URL('consoles/'+slug+'/data/cdc-context.json',root),'utf8')),embedded=JSON.parse(html.match(/let SNAP=(.*?);\s*\n/)[1]);assert.equal(data.schemaVersion,1);assert.ok(Number.isFinite(Date.parse(data.capturedAt)));assert.ok(Date.parse(data.capturedAt)<=Date.now()+864e5);assert.ok(data.sources.length>0);for(const s of data.sources){assert.match(s.url,/^https:\/\/data\.cdc\.gov\/resource\//);assert.equal(s.status,200);assert.match(s.decodedResponseSha256,/^[a-f0-9]{64}$/);}assert.deepEqual(embedded,data.snapshot);assert.equal(embedded.embedded,data.capturedAt.slice(0,10));console.log('PASS CDC portable/embedded snapshot '+slug);}}
 if(process.argv.includes('--check')){await check();}else{
+ const {chromium}=await import('playwright');
  const browser=await chromium.launch({headless:true,channel:process.env.CHROME_CHANNEL||undefined}),prepared=[];
  try{for(const slug of slugs){const htmlPath=new URL('consoles/'+slug+'/index.html',root),html=await readFile(htmlPath,'utf8'),origin='https://patrickiben.github.io/public-data-consoles/consoles/'+slug+'/',context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage(),sources=[],pending=[];
   try{await context.route('**/*',route=>{const url=new URL(route.request().url());if(url.href===origin)return route.fulfill({contentType:'text/html',body:html});if(url.hostname==='data.cdc.gov')return route.continue();return route.fulfill({status:503,body:'not required for public aggregate capture'});});page.on('response',response=>{if(new URL(response.url()).hostname==='data.cdc.gov')pending.push((async()=>sources.push({url:response.url(),status:response.status(),decodedResponseSha256:createHash('sha256').update(await response.body()).digest('hex')}))());});await page.goto(origin);

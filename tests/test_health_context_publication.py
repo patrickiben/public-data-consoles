@@ -1,10 +1,19 @@
 """Guard the public denominators and CDC fallback artifacts against drift from published HTML."""
-import json,math,re,unittest
+import json,math,re,shutil,subprocess,tempfile,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 SLUGS=['global-air-pollution','global-demographic-transition','global-health-atlas','global-health-systems','global-hiv-tb-malaria','global-immunization','global-maternal-child-health','global-mental-health','global-ncd-burden','global-nutrition','global-road-safety','global-wash']
 def snapshot(html):return json.loads(re.search(r'let SNAP=(.*?);\s*\n',html).group(1))
 class HealthPublication(unittest.TestCase):
+ def test_offline_cdc_check_runs_without_installed_browser_dependencies(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory)
+   files=['scripts/refresh_health_snapshots.mjs']+[f'consoles/{slug}/{name}' for slug in ['us-respiratory-surveillance','us-overdose-surveillance'] for name in ['index.html','data/cdc-context.json']]
+   for name in files:
+    target=root/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(ROOT/name,target)
+   checked=subprocess.run(['node','scripts/refresh_health_snapshots.mjs','--check'],cwd=root,capture_output=True,text=True,timeout=30)
+   self.assertEqual(checked.returncode,0,checked.stdout+checked.stderr)
+   self.assertEqual(checked.stdout.count('PASS CDC portable/embedded snapshot'),2)
  def test_population_land_source_and_exact_displayed_country_coverage(self):
   data=json.loads((ROOT/'consoles/global-health-atlas/data/population-area.json').read_text());expected=set()
   self.assertEqual(data['schemaVersion'],1);self.assertEqual(len(data['sources']),2)
