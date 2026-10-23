@@ -46,6 +46,7 @@ async function fixture(route, options, requests) {
   const request = route.request();
   const url = new URL(request.url());
   requests.push(url.href);
+  if (url.origin === origin && url.pathname.endsWith('/us-grid-strain/data/latest.json')) return route.fulfill({ status: 404, body: 'Fixture: no published update' });
   if (url.origin === origin) return route.continue();
   // All external requests terminate here: never continue to an OSM/provider server.
   const headers = { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' };
@@ -112,13 +113,15 @@ async function checkData(page, slug) {
   } else if (slug === 'us-grid-strain') {
     assert.equal(await page.locator('#app').isVisible(), true);
     assert.equal(await page.locator('#gate').count(), 0);
-    await page.waitForFunction(() => document.querySelectorAll('#lead .row2').length === 53);
-    assert.equal(await page.locator('#lead .row2').count(), 53);
+    const metadata = await page.locator('#grid-snapshot').evaluate(el => JSON.parse(el.textContent));
+    const expected = new Set(metadata.snap.filter(r => r[1] === 'D').map(r => r[0])).size;
+    await page.waitForFunction(expected => document.querySelectorAll('#lead .row2').length === expected, expected);
+    assert.equal(await page.locator('#lead .row2').count(), expected);
     assert.equal(await page.locator('#kpis .kpi').count(), 4);
     const note = await page.locator('#data-note').textContent();
     assert.match(note, /MEASURED/i);
     assert.match(note, /snapshot/i);
-    assert.match(note, /2026-10-23/);
+    assert.ok(note.includes(metadata.capturedAt.slice(0, 10)), 'Capture date comes from embedded metadata');
     assert.match(note, /not live/i);
     const first = page.locator('#lead .row2').first();
     const code = await first.getAttribute('data-c');

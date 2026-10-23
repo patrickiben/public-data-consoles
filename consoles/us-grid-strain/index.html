@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>U.S. Grid Strain — public EIA data</title>
-<meta name="description" content="U.S. electrical grid strain from a dated, embedded public EIA snapshot; optional personal-key updates. Demand by balancing authority, built on the public EIA Hourly Electric Grid Monitor: demand vs recent peak, day-ahead forecast surprise, fuel mix, and the directed inter-region interchange network. Unofficial.">
+<meta name="description" content="U.S. electrical grid strain from automatically updated public EIA reports, with dated embedded data available offline and no key required. Demand by balancing authority, recent-peak pressure, forecast surprise, fuel mix, and directed interchange. Unofficial.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -68,13 +68,13 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
 </style>
 </head>
 <body>
-<div id="disc"><b>Unofficial.</b> Built on the public EIA Hourly Electric Grid Monitor — <b>not</b> an official grid operator source. Descriptive, not predictive. The default is a dated snapshot, not live conditions. For real-time conditions and conservation appeals, follow your utility, your grid operator (ERCOT, CAISO, PJM…) and <b>call 911 in an emergency.</b></div>
+<div id="disc"><b>Unofficial.</b> Built on the public EIA Hourly Electric Grid Monitor — <b>not</b> an official grid operator source. Descriptive, not predictive. Automatically updated public reports remain dated measurements, not live conditions. For real-time conditions and conservation appeals, follow your utility, your grid operator (ERCOT, CAISO, PJM…) and <b>call 911 in an emergency.</b></div>
 <div class="wrap">
   <header>
     <h1>U.S. Grid Strain</h1>
     <div class="s">Explore each region's reported demand vs. its own recent peak, day-ahead forecast surprise, fuel mix, and the <b>directed interchange network</b> — which regions are sourcing power and which are leaning on their neighbors.</div>
     <div class="bar">
-      <button class="btn" id="refresh"><i class="ti ti-refresh"></i> Refresh</button>
+      <button class="btn" id="refresh"><i class="ti ti-refresh"></i> Check public updates</button>
       <span class="chip" id="upd"><span class="muted">not loaded</span></span>
       <span class="chip" id="natdemand"><span class="muted">—</span></span>
       <span class="chip"><i class="ti ti-key"></i> <a href="#connection-panel" id="changekey">Optional live API connection</a></span>
@@ -82,14 +82,15 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
   </header>
 
   <div class="data-note" id="data-note" role="status">Loading the embedded official EIA snapshot…</div>
+  <div class="data-note">Automatically updated public EIA reports. Public updates are scheduled every <span id="refresh-hours">6</span> hours; measurement times can lag. <a href="https://github.com/patrickiben/public-data-consoles/actions/workflows/update-grid.yml" target="_blank" rel="noopener">Update status</a><br><span id="public-check-status" role="status">Checking published reports…</span></div>
 
   <!-- Optional advanced connection; never hides the public snapshot. -->
   <div id="connection-panel">
     <h2><i class="ti ti-key" style="color:var(--gold)"></i> Optional: connect your personal EIA API key</h2>
-    <div class="muted">The dated official snapshot below works without an account or a key. For newer hourly reports, you can connect a free personal EIA key. It is stored in this browser and sent only to <b>api.eia.gov</b> when requesting data; it is not included in this page.</div>
+    <div class="muted">Public reports update automatically without an account or a key. You can also request hourly reports directly with a free personal EIA key. It is stored in this browser and sent only to <b>api.eia.gov</b> when requesting data; it is not included in this page.</div>
     <div style="margin-top:10px">1. Get a key (instant, free): <a href="https://www.eia.gov/opendata/register.php" target="_blank" rel="noopener">eia.gov/opendata/register <i class="ti ti-external-link"></i></a></div>
     <input type="password" id="keyin" placeholder="Paste your EIA API key here" autocomplete="off" spellcheck="false">
-    <div class="row"><button class="btn" id="savekey">Connect &amp; refresh</button><button class="btn" id="clearkey">Use public snapshot</button><button class="btn" id="closeconnection">Close</button><span class="muted" id="keymsg"></span></div>
+    <div class="row"><button class="btn" id="savekey">Connect &amp; refresh</button><button class="btn" id="clearkey">Use public reports</button><button class="btn" id="closeconnection">Close</button><span class="muted" id="keymsg"></span></div>
   </div>
 
   <div id="app">
@@ -109,7 +110,7 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
       </div>
       <div>
         <div class="card">
-          <div class="hd"><i class="ti ti-gauge"></i> Reported BA snapshot <span class="badge">MEASURED · EIA</span></div>
+          <div class="hd"><i class="ti ti-gauge"></i> Reported grid conditions <span class="badge">MEASURED · EIA</span></div>
           <div class="body"><div class="kpis" id="kpis"></div></div>
         </div>
         <div class="card" style="margin-top:16px">
@@ -132,7 +133,7 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
 
     <footer>
       <div class="note"><b>How to read "strain" honestly.</b> The headline number is each region's <b>demand as a % of its own highest reported demand in the snapshot's 7-day window</b> — a <b>pressure proxy</b>, not a reserve margin. A region can sit at 100% of its recent peak and still be fine if it has spare capacity; this dashboard can't see true capacity or reserves (that's the grid operators' real-time data). Treat high numbers as "working hard / worth watching," not "about to fail." The <b>interchange arrows</b> are real, directional public data (region-to-region net power flow), but grid physics is loop-governed (Kirchhoff), so flows distribute across all paths — this is the net result, not a simple upstream→downstream chain.</div>
-      <div>Data: <a href="https://www.eia.gov/electricity/gridmonitor/" target="_blank" rel="noopener">EIA Hourly Electric Grid Monitor</a> (EIA-930), raw reported values from the official <a id="balance-source" href="https://www.eia.gov/electricity/gridmonitor/sixMonthFiles/EIA930_BALANCE_2026_Jul_Dec.csv">balance CSV</a> and <a id="interchange-source" href="https://www.eia.gov/electricity/gridmonitor/sixMonthFiles/EIA930_INTERCHANGE_2026_Jul_Dec.csv">interchange CSV</a>, downloaded <span id="snapshot-capture">23 October 2026</span>. No imputed or adjusted demand is substituted. Reports can lag, have gaps and be revised; each BA has its own timestamp. The default snapshot does not update itself. Fuel bars show positive generation only; storage charging and other negative entries are omitted. Optional personal-key updates use the EIA OpenData v2 API. Map © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>; <a href="https://operations.osmfoundation.org/policies/tiles/">standard tile policy</a>. Basemap service is best effort.</div>
+      <div>Data: <a href="https://www.eia.gov/electricity/gridmonitor/" target="_blank" rel="noopener">EIA Hourly Electric Grid Monitor</a> (EIA-930), raw reported values from the official <a id="balance-source" href="https://www.eia.gov/electricity/gridmonitor/sixMonthFiles/EIA930_BALANCE_2026_Jul_Dec.csv">balance CSV</a> and <a id="interchange-source" href="https://www.eia.gov/electricity/gridmonitor/sixMonthFiles/EIA930_INTERCHANGE_2026_Jul_Dec.csv">interchange CSV</a>, downloaded <span id="snapshot-capture">23 October 2026</span>. No imputed or adjusted demand is substituted. Reports can lag, have gaps and be revised; each BA has its own timestamp. Published reports are checked automatically; the embedded snapshot remains available if an update cannot be loaded. Fuel bars show positive generation only; storage charging and other negative entries are omitted. Optional personal-key updates use the EIA OpenData v2 API. Map © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>; <a href="https://operations.osmfoundation.org/policies/tiles/">standard tile policy</a>. Basemap service is best effort.</div>
     </footer>
   </div>
 </div>
@@ -789,10 +790,109 @@ const BASE='https://api.eia.gov/v2/electricity/rto';
 const storage={get(){try{return localStorage.getItem('eia_key')||'';}catch{return '';}},set(k){try{if(k)localStorage.setItem('eia_key',k);else localStorage.removeItem('eia_key');}catch{}}};
 let KEY=storage.get();
 const SNAPSHOT=JSON.parse($('grid-snapshot').textContent);
-$('balance-source').href=SNAPSHOT.sources[0].url;$('interchange-source').href=SNAPSHOT.sources[1].url;
-$('snapshot-capture').textContent=new Date(SNAPSHOT.capturedAt).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
+let lastPublicPayload=SNAPSHOT, lastPublicMode='snapshot', publicRequest=null, publicCheckedAt=0, apiRequestId=0;
+function updateSources(payload){
+ const sources=payload.sources||[];
+ const balance=sources.find(s=>s.url.includes('EIA930_BALANCE_')),interchange=sources.find(s=>s.url.includes('EIA930_INTERCHANGE_'));
+ if(balance)$('balance-source').href=balance.url;if(interchange)$('interchange-source').href=interchange.url;
+ $('snapshot-capture').textContent=new Date(payload.capturedAt).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
+ $('refresh-hours').textContent=payload.refreshEveryHours||6;
+}
 const utc=p=>p?p.replace('T',' ')+':00 UTC':'unavailable';
 const validValue=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(+v);
+
+function periodTime(period){
+ if(typeof period!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}$/.test(period))throw new Error('Invalid measurement timestamp');
+ const time=Date.parse(period+':00:00Z');
+ if(!Number.isFinite(time)||new Date(time).toISOString().slice(0,13)!==period)throw new Error('Invalid measurement timestamp');
+ return time;
+}
+function validatePublicPayload(data){
+ const object=x=>x&&typeof x==='object'&&!Array.isArray(x);
+ const code=x=>typeof x==='string'&&/^[A-Z][A-Z0-9]{1,9}$/.test(x);
+ const numeric=x=>typeof x==='number'&&Number.isFinite(x);
+ if(!object(data)||data.schemaVersion!==1||!numeric(data.refreshEveryHours)||data.refreshEveryHours<=0||data.refreshEveryHours>168)throw new Error('Unsupported public data format');
+ const captured=Date.parse(data.capturedAt);
+ if(typeof data.capturedAt!=='string'||!Number.isFinite(captured)||captured>Date.now()+15*60000)throw new Error('Invalid capture timestamp');
+ const through=periodTime(data.demandThrough),start=periodTime(data.historyStart),interThrough=periodTime(data.interchangeThrough);
+ if(start>through||through>captured||interThrough>through)throw new Error('Inconsistent public measurement times');
+ if(!Array.isArray(data.sources)||data.sources.length<2)throw new Error('Missing public data provenance');
+ const kinds=new Set();
+ for(const source of data.sources){
+  if(!object(source)||typeof source.url!=='string'||!/^https:\/\/www\.eia\.gov\/electricity\/gridmonitor\/sixMonthFiles\/EIA930_(BALANCE|INTERCHANGE)_\d{4}_(Jan_Jun|Jul_Dec)\.csv$/.test(source.url)||!/^([a-f0-9]{64})$/i.test(source.sha256||''))throw new Error('Invalid public data provenance');
+  kinds.add(source.url.includes('EIA930_BALANCE_')?'balance':'interchange');
+ }
+ if(kinds.size!==2||!Array.isArray(data.snap)||!data.snap.length||!object(data.history)||!object(data.fuel)||!Array.isArray(data.interchange)||!data.interchange.length)throw new Error('Incomplete public measurements');
+ const demands=new Map(),unique=new Set();
+ for(const row of data.snap){
+  if(!Array.isArray(row)||row.length!==4||!code(row[0])||!['D','DF','NG','TI'].includes(row[1])||!numeric(row[3]))throw new Error('Malformed public balance row');
+  const time=periodTime(row[2]),key=row[0]+'|'+row[1];
+  if(time<start||time>through||unique.has(key))throw new Error('Invalid or duplicate public balance row');unique.add(key);
+  if(row[1]==='D')demands.set(row[0],{period:row[2],value:row[3]});
+ }
+ if(!demands.size||Math.max(...[...demands.values()].map(r=>periodTime(r.period)))!==through)throw new Error('Missing latest public demand');
+ for(const row of data.snap)if(!demands.has(row[0])||demands.get(row[0]).period!==row[2])throw new Error('Public metrics do not share the actual-demand hour');
+ for(const [name,rows]of Object.entries(data.history)){
+  if(!code(name)||!Array.isArray(rows)||!rows.length)throw new Error('Malformed public history');
+  const dates=new Set();
+  for(const row of rows){if(!Array.isArray(row)||row.length!==2||!numeric(row[1]))throw new Error('Malformed public history row');const time=periodTime(row[0]);if(time<start||time>through||dates.has(row[0]))throw new Error('Invalid public history dates');dates.add(row[0]);}
+ }
+ for(const [name,demand]of demands)if(!data.history[name]?.some(row=>row[0]===demand.period&&row[1]===demand.value))throw new Error('Public demand is absent from its history');
+ for(const [name,mix]of Object.entries(data.fuel)){
+  if(!code(name)||!Array.isArray(mix)||mix.length!==2||!object(mix[1])||!Object.keys(mix[1]).length)throw new Error('Malformed public fuel mix');
+  const time=periodTime(mix[0]);if(time<start||time>through)throw new Error('Invalid public fuel timestamp');
+  for(const [kind,value]of Object.entries(mix[1]))if(!/^[A-Z][A-Z0-9]{0,9}$/.test(kind)||!numeric(value))throw new Error('Malformed public fuel value');
+ }
+ const pairs=new Set();let latestInter=-Infinity;
+ for(const row of data.interchange){
+  if(!Array.isArray(row)||row.length!==4||!code(row[0])||!code(row[1])||!numeric(row[2]))throw new Error('Malformed public interchange row');
+  const time=periodTime(row[3]),key=row[0]+'>'+row[1];if(time<start||time>through||pairs.has(key))throw new Error('Invalid public interchange dates');pairs.add(key);latestInter=Math.max(latestInter,time);
+ }
+ if(latestInter!==interThrough)throw new Error('Interchange vintage does not match its measurements');
+ return data;
+}
+function rejectRegression(candidate,previous){
+ if(Date.parse(candidate.capturedAt)<Date.parse(previous.capturedAt)||candidate.demandThrough<previous.demandThrough||candidate.interchangeThrough<previous.interchangeThrough)throw new Error('Published report dates regressed');
+ const demand=new Map(candidate.snap.filter(r=>r[1]==='D').map(r=>[r[0],r[2]]));
+ for(const row of previous.snap)if(row[1]==='D'){
+  const period=demand.get(row[0]);
+  if((period&&period<row[2])||(!period&&row[2]>=candidate.historyStart))throw new Error('A still-current balancing-authority report is missing or older');
+ }
+ const pairs=new Map(candidate.interchange.map(r=>[r[0]+'>'+r[1],r[3]]));
+ for(const row of previous.interchange){
+  const period=pairs.get(row[0]+'>'+row[1]);
+  if((period&&period<row[3])||(!period&&row[3]>=candidate.historyStart))throw new Error('A still-current interchange report is missing or older');
+ }
+}
+function publicState(data,mode){
+ const snap=data.snap.map(([respondent,type,period,value])=>({respondent,type,period,value}));
+ const hist=Object.entries(data.history).flatMap(([respondent,rows])=>rows.map(([period,value])=>({respondent,period,value})));
+ const inter=data.interchange.map(([fromba,toba,value,period])=>({fromba,toba,value,period}));
+ return buildGridState(snap,hist,inter,{mode,capturedAt:data.capturedAt,sourcePayload:data},data.fuel);
+}
+function stateIsOlder(next,previous){
+ if(next.demandThrough<previous.demandThrough||(next.interchangeThrough&&previous.interchangeThrough&&next.interchangeThrough<previous.interchangeThrough))return true;
+ for(const [code,report]of Object.entries(next.ba))if(report.D!=null&&previous.ba[code]?.D!=null&&report.period<previous.ba[code].period)return true;
+ for(const [pair,period]of Object.entries(next.edgePeriods||{}))if(previous.edgePeriods?.[pair]&&period<previous.edgePeriods[pair])return true;
+ return false;
+}
+async function refreshPublished(){
+ if(!/^https?:$/.test(location.protocol)){$('public-check-status').textContent='Local-file view: using embedded reports. Open the public site for automatic updates.';return;}
+ if(publicRequest)return publicRequest;
+ $('public-check-status').textContent='Checking published EIA reports…';
+ publicRequest=(async()=>{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+  try{
+   const response=await fetch(new URL('./data/latest.json',location.href),{signal:controller.signal,cache:'no-cache'});
+   if(!response.ok)throw new Error('Public update HTTP '+response.status);
+   const payload=validatePublicPayload(await response.json());rejectRegression(payload,lastPublicPayload);
+   const next=publicState(payload,'published');
+   lastPublicPayload=payload;lastPublicMode='published';publicCheckedAt=Date.now();
+   if(STATE.mode!=='api'&&!stateIsOlder(next,STATE))applyGridState(next);
+   $('public-check-status').textContent='Published reports checked '+new Date(publicCheckedAt).toISOString().slice(0,16).replace('T',' ')+' UTC.'+(STATE.mode==='api'?' Your personal API reports remain displayed.':'');
+  }catch(error){$('public-check-status').textContent='Public update unavailable; keeping the last good reports and their original measurement times.';}
+  finally{clearTimeout(timer);showDataStatus();publicRequest=null;}
+ })();return publicRequest;
+}
 
 /* ---- Balancing-authority geography (code -> map centroid + interconnection).
    SEED set of the major load-serving BAs; replaced by a verified full table. ---- */
@@ -869,8 +969,8 @@ const BA_GEO={
 
 const fmt=n=>n==null||!isFinite(n)?'—':Math.round(n).toLocaleString();
 const gw=n=>n==null||!isFinite(n)?'—':(n/1000).toFixed(1);
-async function eia(path,params){
- const u=new URL(BASE+path);u.searchParams.set('api_key',KEY);u.searchParams.set('frequency','hourly');u.searchParams.append('data[0]','value');
+async function eia(path,params,key=KEY){
+ const u=new URL(BASE+path);u.searchParams.set('api_key',key);u.searchParams.set('frequency','hourly');u.searchParams.append('data[0]','value');
  for(const[k,v]of params)u.searchParams.append(k,v);
  let lastErr;
  for(let a=0;a<3;a++){ // retry transient network blips / 5xx / rate-limit; never retry a bad key
@@ -883,7 +983,7 @@ async function eia(path,params){
  }
  throw lastErr;}
 // paginated fetch (EIA caps length at 5000)
-async function eiaAll(path,params,maxRows){const out=[];let off=0;for(let i=0;i<6;i++){const p=params.concat([['length','5000'],['offset',String(off)]]);const d=await eia(path,p);out.push(...d);if(d.length<5000||out.length>=(maxRows||1e9))break;off+=5000;}return out;}
+async function eiaAll(path,params,maxRows,key=KEY){const out=[];let off=0;for(let i=0;i<6;i++){const p=params.concat([['length','5000'],['offset',String(off)]]);const d=await eia(path,p,key);out.push(...d);if(d.length<5000||out.length>=(maxRows||1e9))break;off+=5000;}return out;}
 
 const hasPct=p=>Number.isFinite(p);
 const pctText=p=>hasPct(p)?p+'%':'—';
@@ -904,7 +1004,7 @@ function bearing(a,b,c,d){const y=Math.sin((d-b)*Math.PI/180)*Math.cos(c*Math.PI
 
 // Keep the existing pressure, import-share and forecast-surprise formulas.
 // Match the other metrics to each BA's latest demand hour: forecasts can extend into the future.
-function assembleGrid(snap,hist,inter,meta,fuel={}){
+function buildGridState(snap,hist,inter,meta,fuel={}){
  const ba={},atHour={};
  for(const o of snap){
   const c=o.respondent;if(!c||!validValue(o.value))continue;
@@ -926,45 +1026,55 @@ function assembleGrid(snap,hist,inter,meta,fuel={}){
   b.imp=(b.TI!=null&&b.D)?Math.max(0,-b.TI)/b.D:((b.NG!=null&&b.D)?Math.max(0,(b.D-b.NG))/b.D:null);
   b.surp=(b.DF!=null&&b.DF>0&&b.D!=null)?(b.D-b.DF)/b.DF:null;
  }
- const edges={},edgePeriods=[];
- for(const o of inter){if(!o.fromba||!o.toba||!validValue(o.value))continue;const k=o.fromba+'>'+o.toba;if(edges[k]==null){edges[k]=+o.value;edgePeriods.push(o.period);}}
+ const edges={},edgePeriods={};
+ for(const o of inter){if(!o.fromba||!o.toba||!validValue(o.value))continue;const k=o.fromba+'>'+o.toba;if(edges[k]==null){edges[k]=+o.value;edgePeriods[k]=o.period;}}
  if(!Object.values(ba).some(b=>b.D!=null))throw new Error('No measured demand returned');
  const periods=Object.values(ba).filter(b=>b.D!=null).map(b=>b.period).sort();
- STATE={ba,edges,fuel,...meta,demandThrough:periods.at(-1),demandFrom:periods[0],interchangeThrough:edgePeriods.sort().at(-1)};
+ return {ba,edges,edgePeriods,fuel,...meta,demandThrough:periods.at(-1),demandFrom:periods[0],interchangeThrough:Object.values(edgePeriods).sort().at(-1)};
+}
+function applyGridState(next){
+ STATE=next;if(STATE.sourcePayload)updateSources(STATE.sourcePayload);
  $('detail').style.display='none';render();showDataStatus();
 }
+function assembleGrid(snap,hist,inter,meta,fuel={}){
+ applyGridState(buildGridState(snap,hist,inter,meta,fuel));
+}
 function showDataStatus(message=''){
- const snapshot=STATE.mode==='snapshot',age=Date.now()-Date.parse(STATE.demandThrough+':00:00Z');
- $('upd').textContent=(snapshot?'Snapshot':'EIA API')+' · '+utc(STATE.demandThrough);
- $('data-note').classList.toggle('stale',age>=30*864e5);
- $('data-note').textContent='MEASURED · '+(snapshot?'embedded EIA snapshot, captured '+SNAPSHOT.capturedAt.slice(0,10)+'. Not live. ':'EIA hourly API reports, retrieved '+new Date(STATE.capturedAt).toISOString().replace('T',' ').slice(0,16)+' UTC. Not real-time. ')+
+ const snapshot=STATE.mode==='snapshot',published=STATE.mode==='published',age=Date.now()-Date.parse(STATE.demandThrough+':00:00Z'),captureAge=Date.now()-Date.parse(STATE.capturedAt);
+ $('upd').textContent=(snapshot?'Embedded fallback':published?'Published reports':'Personal EIA API')+' · '+utc(STATE.demandThrough);
+ $('data-note').classList.toggle('stale',age>72*3600000||captureAge>48*3600000);
+ const capture=new Date(STATE.capturedAt).toISOString().replace('T',' ').slice(0,16)+' UTC';
+ $('data-note').textContent='MEASURED · '+(snapshot?'embedded EIA snapshot, captured '+capture+'. Not live. ':published?'automatically updated public EIA reports, captured '+capture+'. Not real-time. ':'personal EIA hourly API reports, retrieved '+capture+'. Not real-time. ')+
   'Latest BA demand reports: '+utc(STATE.demandFrom)+' to '+utc(STATE.demandThrough)+'. Interchange through '+utc(STATE.interchangeThrough)+'. '+
-  (age>=30*864e5?'STALE: measurements are over 30 days old. ':'')+
+  (age>72*3600000?'DATA AGE: latest demand measurements are over 72 hours old. ':'')+(captureAge>48*3600000?'UPDATE AGE: this data capture is over 48 hours old. ':'')+
   (validValue(STATE.ba.US48?.D)?'U.S. total uses the US48 aggregate as of '+utc(STATE.ba.US48.period)+'. ':'Demand totals sum the latest BA reports, which may represent different hours. ')+message;
 }
 function useSnapshot(message=''){
- const snap=SNAPSHOT.snap.map(([respondent,type,period,value])=>({respondent,type,period,value}));
- const hist=Object.entries(SNAPSHOT.history).flatMap(([respondent,rows])=>rows.map(([period,value])=>({respondent,period,value})));
- const inter=SNAPSHOT.interchange.map(([fromba,toba,value,period])=>({fromba,toba,value,period}));
- assembleGrid(snap,hist,inter,{mode:'snapshot',capturedAt:SNAPSHOT.capturedAt},SNAPSHOT.fuel);showDataStatus(message);
+ applyGridState(publicState(lastPublicPayload,lastPublicMode));showDataStatus(message);
 }
+
 let loading=false;
 async function loadGrid(){
  if(loading)return;
- if(!KEY){showDataStatus('No live connection is configured; the embedded snapshot remains available. Newer public downloads are linked below.');return;}
- loading=true;$('refresh').disabled=true;$('upd').innerHTML='<span class="spin"></span> requesting newer EIA reports…';
+ if(!KEY)return refreshPublished();
+ loading=true;const requestId=++apiRequestId,connectionKey=KEY;$('upd').innerHTML='<span class="spin"></span> requesting personal EIA reports…';
  try{
-  const snap=await eia('/region-data/data/',[['facets[type][]','D'],['facets[type][]','DF'],['facets[type][]','NG'],['facets[type][]','TI'],['sort[0][column]','period'],['sort[0][direction]','desc'],['length','5000']]);
+  const snap=await eia('/region-data/data/',[['facets[type][]','D'],['facets[type][]','DF'],['facets[type][]','NG'],['facets[type][]','TI'],['sort[0][column]','period'],['sort[0][direction]','desc'],['length','5000']],connectionKey);
   const start=new Date(Date.now()-7*864e5).toISOString().slice(0,13);
-  const hist=await eiaAll('/region-data/data/',[['facets[type][]','D'],['start',start],['sort[0][column]','period'],['sort[0][direction]','desc']],14000);
-  const inter=await eia('/interchange-data/data/',[['sort[0][column]','period'],['sort[0][direction]','desc'],['length','5000']]);
-  assembleGrid(snap,hist,inter,{mode:'api',capturedAt:new Date().toISOString()});
+  const hist=await eiaAll('/region-data/data/',[['facets[type][]','D'],['start',start],['sort[0][column]','period'],['sort[0][direction]','desc']],14000,connectionKey);
+  const inter=await eia('/interchange-data/data/',[['sort[0][column]','period'],['sort[0][direction]','desc'],['length','5000']],connectionKey);
+  const next=buildGridState(snap,hist,inter,{mode:'api',capturedAt:new Date().toISOString()});
+  if(requestId!==apiRequestId)return;
+  if(!next.interchangeThrough)throw new Error('No personal API interchange measurements');
+  if(stateIsOlder(next,STATE)){showDataStatus('The personal API response is older than the displayed reports; keeping the newer data.');return;}
+  applyGridState(next);
  }catch(e){
+  if(requestId!==apiRequestId)return;
   const rejected=e&&(e.status===403||e.status===400);
   if(rejected){KEY='';storage.set('');$('keymsg').textContent='EIA rejected the request. Check your personal key and try again.';}
   showDataStatus('API refresh failed'+(e&&e.status?' (HTTP '+e.status+')':'')+'. The displayed '+(STATE.mode==='snapshot'?'embedded snapshot remains':'previous reports remain')+' available; no new measurements were loaded.');
   $('upd').textContent='Refresh failed · showing '+(STATE.mode==='snapshot'?'snapshot':'previous reports');
- }finally{loading=false;$('refresh').disabled=false;}
+ }finally{loading=false;}
 }
 
 // EIA region-data mixes individual BAs with REGION/NATIONAL aggregates (US48 + 13 regions);
@@ -1020,6 +1130,7 @@ function drawMap(list){
 }
 
 async function selectBA(code){
+ const selectedState=STATE;
  const b=STATE.ba[code];if(!b)return;const g=BA_GEO[code];const p=b.pct,col=CATCOL(p);
  $('detail').style.display='block';$('dname').textContent=b.code+' — '+(b.name||(g&&g.n)||'');
  $('dsub').textContent=(g?(g.reg+' · '+g.ic+' Interconnection'+(g.iso?' · ISO/RTO':'')+' · '):'')+utc(b.period);
@@ -1036,7 +1147,8 @@ async function selectBA(code){
  $('dfuel').innerHTML='';$('dfleg').innerHTML='<span class="muted"><span class="spin"></span> loading fuel mix…</span>';
  try{
   const embedded=STATE.fuel[code];
-  const f=STATE.mode==='snapshot'?(embedded?Object.entries(embedded[1]).map(([fueltype,value])=>({fueltype,value,period:embedded[0]})):[]):await eia('/fuel-type-data/data/',[['facets[respondent][]',code],['sort[0][column]','period'],['sort[0][direction]','desc'],['length','60']]);
+  const f=STATE.mode!=='api'?(embedded?Object.entries(embedded[1]).map(([fueltype,value])=>({fueltype,value,period:embedded[0]})):[]):await eia('/fuel-type-data/data/',[['facets[respondent][]',code],['sort[0][column]','period'],['sort[0][direction]','desc'],['length','60']]);
+  if(STATE!==selectedState||!$('dname').textContent.startsWith(code+' —'))return;
   const latest={};const fp=f.map(o=>o.period).filter(Boolean).sort().at(-1)||'';
   f.forEach(o=>{const ft=o.fueltype;if(!ft||o.period!==fp)return;if(latest[ft]==null&&validValue(o.value))latest[ft]=+o.value;});
   const FC={NG:['#f0883e','Natural gas'],COL:['#8a8a8a','Coal'],NUC:['#b46ff0','Nuclear'],WND:['#34c98a','Wind'],SUN:['#f0c419','Solar'],WAT:['#3fa9f5','Hydro'],OIL:['#9c6b4f','Oil'],OTH:['#6b7d92','Other'],BAT:['#e06ec0','Batteries'],GEO:['#c0734f','Geothermal'],PS:['#5fc7c7','Pumped storage']};
@@ -1046,21 +1158,25 @@ async function selectBA(code){
   $('dfleg').innerHTML=parts.length?parts.map(([k,v])=>'<span><i style="background:'+((FC[k]||['#6b7d92'])[0])+'"></i>'+(FC[k]?FC[k][1]:k)+' '+Math.round(100*v/tot)+'%</span>').join(''):'<span class="muted">No positive reported fuel generation for this hour.</span>';
   $('dfleg').insertAdjacentHTML('beforeend','<span class="muted">Shares use only positive generation reported at this hour. Missing categories are unreported, not zero; the mix may be incomplete.</span>');
   $('dfuelhd').textContent='Generation by fuel'+(fp?' · measured as of '+utc(fp)+' (may lag demand)':' · no reported mix');
- }catch(e){$('dfleg').innerHTML='<span class="muted">fuel mix unavailable for this region</span>';}
+ }catch(e){if(STATE===selectedState&&$('dname').textContent.startsWith(code+' —'))$('dfleg').innerHTML='<span class="muted">fuel mix unavailable for this region</span>';}
 }
 
 /* ---- optional personal connection ---- */
 function showConnection(){$('connection-panel').style.display='block';$('keyin').value=KEY;$('keyin').focus();}
 function hideConnection(){$('connection-panel').style.display='none';}
-$('savekey').onclick=()=>{const k=$('keyin').value.trim();if(k.length<20){$('keymsg').textContent='Paste your full personal EIA key, or use the public snapshot.';return;}KEY=k;storage.set(k);hideConnection();loadGrid();};
-$('clearkey').onclick=()=>{KEY='';storage.set('');$('keyin').value='';hideConnection();useSnapshot('Personal API connection removed.');};
+$('savekey').onclick=()=>{if(loading){$('keymsg').textContent='A personal API request is already loading; you can still use public updates.';return;}const k=$('keyin').value.trim();if(k.length<20){$('keymsg').textContent='Paste your full personal EIA key, or use the public snapshot.';return;}KEY=k;storage.set(k);hideConnection();loadGrid();};
+$('clearkey').onclick=()=>{apiRequestId++;KEY='';storage.set('');$('keyin').value='';hideConnection();useSnapshot('Personal API connection removed.');refreshPublished();};
 $('closeconnection').onclick=hideConnection;
 $('keyin').addEventListener('keydown',e=>{if(e.key==='Enter')$('savekey').click();});
 $('changekey').onclick=e=>{e.preventDefault();showConnection();};
-$('refresh').onclick=loadGrid;
+$('refresh').onclick=refreshPublished;
 
 // The embedded public measurements render immediately, even with no network, map library or key.
-initMap();useSnapshot();if(map)setTimeout(()=>map.invalidateSize(),60);if(KEY)loadGrid();
+initMap();useSnapshot();if(map)setTimeout(()=>map.invalidateSize(),60);
+// A saved personal key never suppresses anonymous public updates or triggers API calls by itself.
+refreshPublished();
+setInterval(()=>{if(!document.hidden)refreshPublished();},15*60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshPublished();});
 </script>
 </body>
 </html>

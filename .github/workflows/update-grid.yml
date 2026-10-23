@@ -1,0 +1,80 @@
+name: Update keyless grid snapshot
+
+on:
+  schedule:
+    - cron: '17 4,10,16,22 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-grid-main
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    # A manual run selected on another branch must never publish to main.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pages: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - name: Record the checked-out main revision
+        id: base
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+        timeout-minutes: 5
+      - run: npx playwright install --with-deps --only-shell chromium
+        timeout-minutes: 10
+      - name: Refresh from public EIA downloads
+        id: snapshot
+        run: python scripts/refresh_grid_snapshot.py --automated --github-output "$GITHUB_OUTPUT"
+        timeout-minutes: 5
+      # GITHUB_TOKEN pushes do not trigger push CI, so validate the candidate here.
+      - run: python scripts/check_catalog.py
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/refresh_fred.py --check
+      - run: npm test
+        timeout-minutes: 15
+      - name: Commit only validated grid data
+        id: target
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_main=$(git ls-remote --exit-code origin refs/heads/main | cut -f1)
+          if [ "$remote_main" != "$BASE_SHA" ]; then
+            echo 'Main advanced during validation; refusing to overwrite or rebase. Run again from current main.' >&2
+            exit 1
+          fi
+          git add -- consoles/us-grid-strain/index.html consoles/us-grid-strain/data/latest.json
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'data: refresh keyless EIA grid snapshot'
+            # A concurrent main update is rejected by this normal, non-force push.
+            git push origin HEAD:refs/heads/main
+          else
+            echo 'Measurements and provenance are unchanged; no data commit.'
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Publish or recover the legacy Pages build and verify public data
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        run: python scripts/publish_grid_pages.py --repository "$GITHUB_REPOSITORY" --commit "$TARGET_SHA" --timeout-seconds 720
+        timeout-minutes: 15

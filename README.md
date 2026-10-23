@@ -2,10 +2,11 @@
 
 A collection of **32 self-contained, browser-only dashboards** built on **public data feeds and dated snapshots**.
 Every console is a single HTML file: open it (or visit the GitHub Pages URL) and it runs — no install,
-no account, no build step, no server.
+no account, no build step or server setup for visitors. The grid console also checks a published data
+file for automatic updates; its embedded measurements remain available offline.
 
 These are **descriptive decision-support** tools, not predictions. Each console labels its data as
-*measured* (live public API), *modeled* (published estimates, cited), or *demo* (clearly-labeled
+*measured* (public observations, with timestamps), *modeled* (published estimates, cited), or *demo* (clearly-labeled
 placeholder data). Nothing in this repository contains protected health information or proprietary data.
 
 ## Featured: research engineering and systems architecture
@@ -42,7 +43,7 @@ for each paper's draft, code/data archive and related applications.
 | [River Flood Network](consoles/river-flood-network/) | Live, U.S. | USGS NLDI (network-linked data index) |
 | [Hazards Near You](consoles/us-local-hazards/) | Live, U.S. | NWS, NOAA SPC/NHC/Tides, USGS, FEMA NFHL, keyless EPA AirNow observations, U.S. Drought Monitor |
 | [Coastal Water Resilience](consoles/coastal-water-resilience/) | Live + modeled (synthetic network) | NOAA CO-OPS gauge 8726520 (water level, tide predictions, OFS forecast), NOAA NHC (Esri Active Hurricanes), NWS alerts |
-| [U.S. Grid Strain](consoles/us-grid-strain/) | Dated snapshot; optional live connection, U.S. | Official EIA-930 public downloads; optional EIA OpenData connection |
+| [U.S. Grid Strain](consoles/us-grid-strain/) | Automatically updated public reports, U.S. | Official keyless EIA-930 downloads; source timestamps and offline fallback |
 | [Global Outbreak & Emerging-Threat Tracker](consoles/global-outbreak-tracker/) | Live + snapshot | OWID (mpox), CDC (measles), disease.sh, curated WHO / Africa CDC watch |
 
 **Health-System Strain & Consequence**
@@ -105,13 +106,17 @@ for each paper's draft, code/data archive and related applications.
 All public consoles open without a visitor account or provider key. Maps use standard OpenStreetMap
 tiles with visible attribution; mapping failures leave the data panels usable. Air quality uses EPA's
 [public reporting-area observation file](https://files.airnowtech.org/airnow/today/reportingarea.dat),
-with observation time, reporting-area distance and freshness checks. U.S. Grid Strain opens on an
-embedded, dated snapshot from official EIA public downloads; its default view is explicitly **not live**.
-An optional personal EIA connection can refresh it, but never gates the existing data.
+with observation time, reporting-area distance and freshness checks. U.S. Grid Strain opens immediately
+on embedded EIA measurements and checks a same-origin public data file for updates. GitHub Actions
+checks EIA's keyless downloads every six hours; an open, visible dashboard checks the published file
+every 15 minutes. Neither visitors nor the scheduled job need an EIA key. These are **delayed public
+reports**, with measurement dates shown, rather than a real-time operational feed.
 
 ## How they work
 
-Each console fetches public APIs **client-side**, directly from your browser. Running on a real
+Most consoles fetch public APIs **client-side**, directly from your browser. The grid's EIA CSVs are
+processed by a scheduled GitHub Actions job and published with the site, avoiding browser CORS and
+provider-key requirements. Running on a real
 `https://` origin (GitHub Pages) is usually *more* reliable than opening the file locally, because some
 public APIs reject `file://` requests. A few feeds are rate-limited or CORS-restricted and degrade
 gracefully (the console falls back to an embedded snapshot or shows a clear message).
@@ -142,19 +147,40 @@ These exercise keyless startup, public-data fixtures and unavailable map/feed st
 are intercepted; automated tests do not download OpenStreetMap tiles. Normal interactive maps follow
 the [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/).
 
-## Refresh the embedded EIA grid snapshot
+## Automatic EIA grid updates
 
-Run `python3 scripts/refresh_grid_snapshot.py` to download the official keyless six-month EIA-930
-balance and interchange CSVs and replace the grid console's embedded measurements. It records source
-URLs, response modification dates, SHA-256 hashes and the actual capture time. Only raw reported
-values are used; forecasts are aligned with each authority's latest actual-demand hour, and missing
-values remain missing. The visible source links and capture date follow the embedded provenance.
+The [grid update workflow](https://github.com/patrickiben/public-data-consoles/actions/workflows/update-grid.yml)
+checks the official keyless EIA-930 downloads at **04:17, 10:17, 16:17 and 22:17 UTC**. GitHub schedules
+are best effort and can run late. A maintainer can also choose **Run workflow** there. No EIA key,
+personal access token or additional repository secret is needed.
+
+The refresh discovers published balance and interchange files from EIA's manifest, including prior
+reporting periods when needed. It validates schemas, coverage and timestamps, runs the catalog,
+Python and browser checks, and commits only changed grid data. It explicitly requests and verifies a
+Pages build because commits made with GitHub's built-in token do not start Pages builds themselves.
+An unchanged run still checks deployment so a previous publishing failure can recover.
+
+The same validated payload is embedded in the HTML and published at
+[`consoles/us-grid-strain/data/latest.json`](consoles/us-grid-strain/data/latest.json).
+The dashboard checks this file at startup, with **Check public updates**, every 15 minutes while visible and when
+returning to the page. Failed, invalid or older responses leave the last good measurements on screen.
+Local `file://` views use the embedded data. An optional personal EIA connection remains available.
+
+The displayed measurement dates are separate from capture and update-check times. EIA publishes
+different measurements at different speeds; its [publication notes](https://www.eia.gov/electricity/930-content/about.html)
+explain the generation and bilateral-interchange delays. Checking every six hours does not guarantee
+new source data on each run. The page warns about aging measurements or an old published capture.
+
+For a local refresh, run `python3 scripts/refresh_grid_snapshot.py --automated`. It records source URLs,
+response modification dates, SHA-256 hashes and the actual capture time. Only raw reported values are
+used; forecasts are aligned with each authority's latest actual-demand hour, and missing values remain
+missing. Source files with regressing or unexpectedly incomplete coverage stop the refresh and preserve
+the packaged measurements.
 
 To replay a saved capture, put `balance.csv`, `interchange.csv` and their optional `.headers` files
 in one folder and pass `--files /path/to/capture --period 2026_Jul_Dec --captured-at ISO_TIMESTAMP`.
 Use the original retrieval timestamp only for an archived replay. Review the data diff, run the catalog,
-unit and browser checks above, and inspect the page before publishing. The public snapshot does not
-refresh itself and warns when its measurements are over 30 days old.
+unit and browser checks above, and inspect the page before publishing.
 
 ## Refresh the embedded FRED snapshot
 
