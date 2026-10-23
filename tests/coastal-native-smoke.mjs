@@ -7,15 +7,24 @@ const browser=await chromium.launch({headless:true,channel:process.env.CHROME_CH
 let passed=0;
 async function scenario(slug,options,verify){
  const context=await browser.newContext({serviceWorkers:'block',acceptDownloads:true});
- const html=await readFile(new URL('consoles/coastal-water-resilience/index.html',root),'utf8'),origin='https://coastal-fixture.invalid/';
+ let html=await readFile(new URL('consoles/coastal-water-resilience/index.html',root),'utf8'),origin=options.file?new URL('consoles/coastal-water-resilience/index.html',root).href:'https://coastal-fixture.invalid/';
  const errors=[];
+ if(options.automatic){
+  const match=html.match(/<script type="application\/json" id="public-station-snapshot">([\s\S]*?)<\/script>/),inventory=JSON.parse(match[1]);let index=0;
+  inventory.stations.forEach(st=>{st.groundElevationFt=100;if(st.isCityOwned&&index<3){st.groundElevationFt=0;st.basin=['FIXTURE-A','FIXTURE-B','FIXTURE-A'][index++];}});
+  const fixture={schemaVersion:1,capturedAt:'2026-10-23T15:00:00Z',populationMethod:'Fixture source-defined basin internal-point assignment',sources:[{id:'census',title:'Offline2020Census fixture',url:'https://fixture.invalid/census',referencePeriod:'2020'},{id:'flow',title:'Offline2025throughput fixture',url:'https://fixture.invalid/flow',referencePeriod:'2024-10-01 / 2025-09-30'}],areas:[{id:'FIXTURE-A',blockIds:['one','shared'],sourceIds:['census']},{id:'FIXTURE-B',blockIds:['shared','two'],sourceIds:['census']}],populationBlocks:[{id:'one',population:100,referenceYear:2020,sourceIds:['census']},{id:'shared',population:50,referenceYear:2020,sourceIds:['census']},{id:'two',population:200,referenceYear:2020,sourceIds:['census']}],flowAggregates:[{id:'plant-one',label:'Fixture plant1',averageDailyFlowMGD:10,period:{start:'2024-10-01',end:'2025-09-30'},areaIds:[],sourceIds:['flow']},{id:'plant-two',label:'Fixture plant2',averageDailyFlowMGD:20,period:{start:'2024-10-01',end:'2025-09-30'},areaIds:[],sourceIds:['flow']}],limitations:[]};
+  fixture.sources.forEach(source=>{source.retrievedAt='2026-10-23T15:00:00Z';source.sha256='a'.repeat(64);});
+  html=html.replace(/(<script type="application\/json" id="public-station-snapshot">)[\s\S]*?(<\/script>)/,(_,a,b)=>a+JSON.stringify(inventory)+b).replace(/(<script type="application\/json" id="coastal-impact-context">)[\s\S]*?(<\/script>)/,(_,a,b)=>a+JSON.stringify(fixture)+b);
+ }
+
  try{
   await context.route('**/*',async route=>{
    const u=new URL(route.request().url()),json=data=>route.fulfill({contentType:'application/json',body:JSON.stringify(data)});
    if(u.href===origin)return route.fulfill({contentType:'text/html',body:html});
+   if(u.pathname.endsWith('/data/impact-context.json'))return route.fulfill({status:404,body:'fixture published update not present'});
    if(options.contextFixtures&&u.hostname==='ornl.opendatasoft.com')return json({results:[]});
    if(options.contextFixtures&&u.pathname.includes('/HAB_Current_Web_Layer/'))return json({features:[{attributes:{SampleDate_t:'2026-10-22',LOCATION:'Offline public sample',Abundance:'Not Present'},geometry:{x:-82.64,y:27.77}}]});
-   if(options.ofs&&u.hostname==='api.tidesandcurrents.noaa.gov'&&u.searchParams.get('product')==='ofs_water_level')return json({data:[{t:'2026-10-23 18:00',v:'7.5'},{t:'2026-10-24 02:00',v:'8.25'}]});
+   if((options.ofs||options.advancing)&&u.hostname==='api.tidesandcurrents.noaa.gov'&&u.searchParams.get('product')==='ofs_water_level')return json({data:options.advancing?[{t:'2026-10-23 17:00',v:'10'},{t:'2026-10-24 02:00',v:'8.25'},{t:'2026-10-24 04:00',v:'7'}]:[{t:'2026-10-23 18:00',v:'7.5'},{t:'2026-10-24 02:00',v:'8.25'}]});
    if(u.hostname==='api.weather.gov'&&u.pathname.includes('/alerts/active'))return json({features:[]});
    if(u.pathname.endsWith('.js')||u.pathname.endsWith('.css'))return route.fulfill({status:503,body:'fixture CDN blocked'});
    return json({features:[],data:[],results:[]});
@@ -52,7 +61,7 @@ try{
   await page.locator('#check input[type=checkbox]').first().check();await page.locator('#plan-data-scope').selectOption('all');assert.deepEqual(await page.evaluate(()=>CWR.exportPlan().acknowledgments),[]);
  });
  await scenario('coastal-water-resilience',{impact:true},async page=>{
-  await page.evaluate(()=>{CWR.setPage('impact');CWR.setSurge(6,true);});await page.locator('#impact-scope').selectOption('city');
+  await page.evaluate(()=>{CWR.setPage('impact');CWR.setSurge(6,true);});await page.locator('#impact-mode').selectOption('manual');await page.locator('#impact-water-source').selectOption('selected');await page.locator('#impact-scope').selectOption('city');
   let result=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(result.assetsInScope,82);assert.equal(result.planeFtNAVD88,4.52);assert.equal(result.terrainKnown,82);assert.equal(result.population,null);assert.equal(result.hypotheticalLocalUSD,null);assert.equal(result.upstreamCount,null);
   await page.locator('#impact-scope').selectOption('all');result=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(result.assetsInScope,131);
   const initial=result.directCount;await page.evaluate(()=>CWR.setSurge(12,true));const higher=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.ok(higher.directCount>initial);
@@ -63,7 +72,7 @@ try{
   await page.locator('#impact-duration').fill('48');const duration=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(duration.wastewaterGallons[0],result.wastewaterGallons[0]*2);
   await page.locator('#impact-scenario').selectOption('power');assert.match(await page.locator('#projected-impact').textContent(),/Not applicable \/ not assessed/);assert.equal(await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()).directCount),null);
   await page.locator('#impact-affected-count').fill('3');result=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(result.directCount,3);assert.equal(result.population,6000);
-  await page.locator('#impact-eligible').locator('xpath=ancestor::details').locator('summary').click();await page.locator('#impact-eligible').fill('50');await page.locator('#impact-share').fill('75');result=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(result.hypotheticalLocalUSD[0],187500);
+  await page.locator('#impact-eligible').locator('xpath=ancestor::details[1]').locator('summary').click();await page.locator('#impact-eligible').fill('50');await page.locator('#impact-share').fill('75');result=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(result.hypotheticalLocalUSD[0],187500);
   const download=page.waitForEvent('download');await page.locator('#impact-export').click();assert.equal((await download).suggestedFilename(),'coastal-impact-scenario.json');
   if(process.env.CAPTURE_QA){await mkdir(new URL('../keyless-audit/',root),{recursive:true});await page.screenshot({path:new URL('../keyless-audit/coastal-impact.png',root).pathname,fullPage:true});}
   await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile impact overflow');assert.ok((await page.locator('#impact-duration').boundingBox()).width>250);assert.ok((await page.locator('#impact-example').boundingBox()).height>=44);
@@ -72,13 +81,67 @@ try{
   await page.locator('#impact-scenario').selectOption('surge');await page.locator('#impact-water-source').selectOption('ofs');assert.equal(await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()).directCount),null);assert.match(await page.locator('#projected-impact').textContent(),/forecast is unavailable or stale/);
  });
  await scenario('coastal-water-resilience',{ofs:true,contextFixtures:true},async page=>{
-  await page.waitForFunction(()=>CWR.FEEDS.ofs.state==='live');await page.evaluate(()=>CWR.setPage('impact'));await page.locator('#impact-scope').selectOption('all');await page.locator('#impact-water-source').selectOption('ofs');
+  await page.waitForFunction(()=>CWR.FEEDS.ofs.state==='live');await page.evaluate(()=>CWR.setPage('impact'));await page.locator('#impact-mode').selectOption('manual');await page.locator('#impact-water-source').selectOption('selected');await page.locator('#impact-scope').selectOption('all');await page.locator('#impact-water-source').selectOption('ofs');
   const result=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(result.levelFtMLLW,8.25);assert.equal(result.planeFtNAVD88,6.77);assert.equal(result.forecastValidAt,'2026-10-24T02:00:00.000Z');
   await page.clock.setSystemTime(new Date('2026-10-24T03:00:00Z'));assert.equal(await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()).directCount),null);await page.clock.setSystemTime(new Date(now));
   await page.evaluate(()=>CWR.setPage('context'));await page.evaluate(()=>CWR.loadContext('red-tide'));assert.match(await page.locator('#context-result').textContent(),/Offline public sample/);assert.equal(await page.locator('#context-map circle').count(),1);
   await page.route('**/HAB_Current_Web_Layer/**',route=>route.fulfill({status:503,body:'fixture failed retry'}));await page.evaluate(()=>CWR.loadContext('red-tide'));assert.match(await page.locator('#context-result').textContent(),/last successful retrieval/);assert.equal(await page.locator('#context-map circle').count(),1);await page.unroute('**/HAB_Current_Web_Layer/**');await page.evaluate(()=>CWR.loadContext('red-tide'));assert.doesNotMatch(await page.locator('#context-status').textContent(),/HTTP 503/);
   await page.evaluate(()=>CWR.loadContext('power'));assert.match(await page.locator('#context-status').textContent(),/unavailable, not zero outages/);
   await page.evaluate(()=>CWR.loadContext('beach-sites'));assert.match(await page.locator('#context-status').textContent(),/No key is requested/);
+ });
+
+ await scenario('coastal-water-resilience',{automatic:true,ofs:true},async page=>{
+  await page.waitForFunction(()=>CWR.FEEDS.ofs.state==='live');await page.evaluate(()=>CWR.setPage('impact'));
+  assert.equal(await page.locator('#impact-mode').inputValue(),'automatic');assert.equal(await page.locator('#impact-local-overrides').getAttribute('open'),null);
+  let result=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(result.mode,'automatic');assert.equal(result.directCount,3);assert.equal(result.population,350);assert.equal(result.populationContext.blockCount,3);assert.equal(result.populationContext.basinIds.length,2);assert.equal(result.populationContext.complete,true);assert.equal(result.throughputContext.averageDailyFlowMGD,30);assert.equal(result.throughputContext.equivalentGallons,10000000);assert.equal(result.forecastWindow.hours,8);assert.equal(result.grossRepairUSD,null);assert.equal(result.hypotheticalLocalUSD,null);assert.equal(result.wastewaterGallons,null);
+  assert.match(await page.locator('#projected-impact').textContent(),/each block counted once/);assert.match(await page.locator('#projected-impact').textContent(),/not an outage duration/);assert.match(await page.locator('#projected-impact').textContent(),/not flooded residents, customers/);
+  await page.evaluate(()=>{document.querySelector('#impact-population').value='99999';document.querySelector('#impact-cost-low').value='100';document.querySelector('#impact-cost-high').value='200';});result=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(result.population,350);assert.equal(result.grossRepairUSD,null);
+  const partial=await page.evaluate(()=>{const saved=CWR.impactContext.areas;try{CWR.impactContext.areas=saved.filter(a=>a.id!=='FIXTURE-B');return CWR.computeProjectedImpact(CWR.impactOptions()).populationContext;}finally{CWR.impactContext.areas=saved;}});assert.equal(partial.value,150);assert.equal(partial.complete,false);assert.equal(partial.unmatchedStationIds.length,1);
+  await page.locator('#impact-water-source').selectOption('selected');result=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(result.population,350);assert.equal(result.forecastWindow,undefined);assert.equal(result.throughputContext.equivalentGallons,null);assert.match(await page.locator('#projected-impact').textContent(),/selected scenario level; not a forecast/);
+  const noValidBlocks=await page.evaluate(()=>{const saved=CWR.impactContext.populationBlocks;try{CWR.impactContext.populationBlocks=[];return CWR.computeProjectedImpact(CWR.impactOptions()).population;}finally{CWR.impactContext.populationBlocks=saved;}});assert.equal(noValidBlocks,null);
+  await page.locator('#impact-mode').selectOption('manual');result=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(result.population,99999);assert.ok(result.grossRepairUSD);
+ });
+ await scenario('coastal-water-resilience',{automatic:true,advancing:true},async page=>{
+  await page.waitForFunction(()=>CWR.FEEDS.ofs.state==='live');const compute=()=>page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));
+  assert.equal((await compute()).levelFtMLLW,10);await page.clock.setSystemTime(new Date('2026-10-23T19:00:00Z'));let result=await compute();assert.equal(result.levelFtMLLW,8.25);assert.equal(result.forecastValidAt,'2026-10-24T02:00:00.000Z');assert.equal(result.forecastWindow.hours,2);
+  await page.clock.setSystemTime(new Date('2026-10-24T03:00:00Z'));result=await compute();assert.equal(result.levelFtMLLW,7);assert.equal(result.forecastWindow.hours,null);assert.equal(result.throughputContext.equivalentGallons,null);
+  await page.clock.setSystemTime(new Date('2026-10-24T05:00:00Z'));result=await compute();assert.equal(result.levelFtMLLW,null);assert.equal(result.directCount,null);assert.equal(result.population,null);assert.equal(result.throughputContext.equivalentGallons,null);
+ });
+
+ await scenario('coastal-water-resilience',{automatic:true,ofs:true,refresh:true},async page=>{
+  await page.waitForFunction(()=>CWR.impactRefresh.state==='unavailable');await page.evaluate(()=>CWR.setPage('impact'));
+  let candidate=await page.evaluate(()=>JSON.parse(JSON.stringify(CWR.impactContext)));candidate.capturedAt='2026-10-23T15:30:00Z';candidate.populationBlocks.find(b=>b.id==='shared').population=60;
+  const install=async (payload,status=200)=>{await page.unroute('**/data/impact-context.json');await page.route('**/data/impact-context.json',route=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(payload)}));};
+  await install(candidate);assert.equal(await page.evaluate(()=>CWR.refreshImpactContext()),true);assert.equal(await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()).population),360);assert.match(await page.locator('#impact-context-status').textContent(),/Published public context loaded/);
+  const good=structuredClone(candidate);
+  const failures=[];let bad=structuredClone(good);bad.capturedAt='2026-10-23T15:40:00Z';bad.populationBlocks.push({...bad.populationBlocks[0]});failures.push([bad,/duplicate/]);
+  bad=structuredClone(good);bad.capturedAt='2026-10-23T15:40:00Z';bad.areas[0].blockIds.push('missing-block');failures.push([bad,/reference/]);
+  bad=structuredClone(good);bad.capturedAt='2026-10-23T15:40:00Z';bad.populationBlocks[0].population=-1;failures.push([bad,/population/]);
+  bad=structuredClone(good);bad.capturedAt='2026-10-23T15:00:00Z';failures.push([bad,/regressed/]);
+  bad=structuredClone(good);bad.capturedAt='2027-01-01T00:00:00Z';failures.push([bad,/future/]);
+  bad=structuredClone(good);bad.capturedAt='2026-10-23T15:40:00Z';bad.areas.forEach(a=>a.blockIds=[]);bad.populationBlocks=[];failures.push([bad,/empty/]);
+  bad=structuredClone(good);bad.capturedAt='2026-10-23T15:40:00Z';bad.areas[0].blockIds=['shared'];bad.populationBlocks=bad.populationBlocks.filter(b=>b.id!=='one');failures.push([bad,/coverage decreased/]);
+  bad=structuredClone(good);bad.capturedAt='2026-10-23T15:40:00Z';bad.populationBlocks[0].referenceYear=2021;failures.push([bad,/Mixed/]);
+  bad=structuredClone(good);bad.capturedAt='2026-10-23T15:40:00Z';bad.populationBlocks[0].population=Number.MAX_SAFE_INTEGER;failures.push([bad,/safe numeric/]);
+  bad=structuredClone(good);bad.capturedAt='2026-10-23T15:40:00Z';bad.flowAggregates.forEach(f=>f.averageDailyFlowMGD=1e308);failures.push([bad,/finite numeric/]);
+  bad=structuredClone(good);bad.capturedAt='2026-10-23T15:40:00Z';bad.flowAggregates=[];failures.push([bad,/flow coverage/]);
+  for(const [payload,error]of failures){await install(payload);assert.equal(await page.evaluate(()=>CWR.refreshImpactContext()),false);assert.equal(await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()).population),360);assert.match(await page.locator('#impact-context-status').textContent(),error);}
+  await install({},503);assert.equal(await page.evaluate(()=>CWR.refreshImpactContext()),false);assert.equal(await page.evaluate(()=>CWR.impactContext.capturedAt),good.capturedAt);
+  await page.unroute('**/data/impact-context.json');await page.route('**/data/impact-context.json',()=>{});const timeout=page.evaluate(()=>CWR.refreshImpactContext());await page.waitForFunction(()=>CWR.impactRefresh.state==='checking');await page.clock.runFor(12001);assert.equal(await timeout,false);assert.match(await page.locator('#impact-context-status').textContent(),/timed out/);
+  candidate=structuredClone(good);candidate.capturedAt='2026-10-23T21:00:00Z';candidate.populationBlocks.find(b=>b.id==='shared').population=70;await install(candidate);await page.clock.setSystemTime(new Date('2026-10-23T22:01:00Z'));await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.waitForFunction(()=>CWR.impactRefresh.state==='published');assert.equal(await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()).population),370);assert.doesNotMatch(await page.locator('#impact-context-status').textContent(),/timed out/);
+ });
+ await scenario('coastal-water-resilience',{automatic:true,file:true},async page=>{assert.equal(await page.evaluate(()=>CWR.impactRefresh.state),'offline');assert.equal(await page.evaluate(()=>CWR.refreshImpactContext()),false);assert.equal(await page.evaluate(()=>CWR.impactRefresh.checkedAt),null);await page.evaluate(()=>CWR.setPage('impact'));await page.locator('#impact-water-source').selectOption('selected');assert.equal(await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()).population),350);assert.equal(await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()).throughputContext.equivalentGallons),null);});
+
+ await scenario('coastal-water-resilience',{ofs:true,realData:true},async page=>{
+  await page.waitForFunction(()=>CWR.FEEDS.ofs.state==='live');const inventory=JSON.parse(await readFile(new URL('consoles/coastal-water-resilience/data/public-stations.json',root),'utf8')),contextData=JSON.parse(await readFile(new URL('consoles/coastal-water-resilience/data/impact-context.json',root),'utf8'));
+  const expectedStations=inventory.stations.filter(st=>st.isCityOwned&&st.elevationVerticalDatum==='NAVD88'&&st.groundElevationFt<=6.77),basins=new Set(expectedStations.map(st=>st.basin)),blocks=new Set(contextData.areas.filter(a=>basins.has(a.id)).flatMap(a=>a.blockIds)),population=contextData.populationBlocks.filter(b=>blocks.has(b.id)).reduce((sum,b)=>sum+b.population,0);
+  const result=await page.evaluate(()=>CWR.computeProjectedImpact(CWR.impactOptions()));assert.equal(result.directCount,expectedStations.length);assert.equal(result.population,population);assert.equal(result.populationContext.blockCount,blocks.size);assert.equal(result.throughputContext.averageDailyFlowMGD,35.18);assert.equal(result.throughputContext.equivalentGallons,35.18e6*8/24);
+  await page.evaluate(()=>CWR.setPage('impact'));if(process.env.CAPTURE_QA){await mkdir(new URL('../keyless-audit/',root),{recursive:true});await page.screenshot({path:new URL('../keyless-audit/coastal-automatic.png',root).pathname,fullPage:true});await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile automatic overflow');await page.screenshot({path:new URL('../keyless-audit/coastal-automatic-mobile.png',root).pathname,fullPage:true});}await page.locator('#impact-auto-methods summary').click();assert.match(await page.locator('#impact-auto-methods').textContent(),/2024-10-01 to 2025-09-30/);assert.match(await page.locator('#impact-auto-methods').textContent(),/retrieved/);
+  await page.clock.setSystemTime(new Date('2026-10-23T20:00:00Z'));let candidate=structuredClone(contextData);candidate.capturedAt='2026-10-23T19:00:00Z';
+  const area=candidate.areas.find(a=>basins.has(a.id)&&a.blockIds.length>1&&a.blockIds.some(id=>candidate.populationBlocks.find(b=>b.id===id).population>0));assert.ok(area,'known populated basin for source-version transition');const removedId=area.blockIds.find(id=>candidate.populationBlocks.find(b=>b.id===id).population>0);area.blockIds=area.blockIds.filter(id=>id!==removedId);area.blockCount=area.blockIds.length;candidate.populationBlocks=candidate.populationBlocks.filter(b=>b.id!==removedId);area.population=candidate.populationBlocks.filter(b=>area.blockIds.includes(b.id)).reduce((sum,b)=>sum+b.population,0);
+  candidate.populationCoverage.populationBlockCountInStationLinkedFootprints=candidate.populationBlocks.length;candidate.populationCoverage.deduplicatedPopulationAllRegisterFootprints=candidate.populationBlocks.reduce((sum,b)=>sum+b.population,0);const cityAreas=new Set(inventory.stations.filter(st=>st.isCityOwned).map(st=>st.basin)),cityBlocks=new Set(candidate.areas.filter(a=>cityAreas.has(a.id)).flatMap(a=>a.blockIds));candidate.populationCoverage.deduplicatedPopulationCityOwnedFootprints=candidate.populationBlocks.filter(b=>cityBlocks.has(b.id)).reduce((sum,b)=>sum+b.population,0);
+  const validates=payload=>page.evaluate(payload=>{try{CWR.validateImpactContext(payload);return true;}catch(e){return e.message;}},payload);
+  assert.match(await validates(candidate),/coverage decreased/);candidate.sources.find(s=>s.id==='city-sewer-subbasins').sha256='b'.repeat(64);assert.equal(await validates(candidate),true);const invalid=structuredClone(candidate);invalid.populationCoverage.deduplicatedPopulationAllRegisterFootprints++;assert.match(await validates(invalid),/do not reconcile/);
  });
  console.log('PASS '+passed+' native Coastal browser scenarios');
 }finally{await browser.close();}

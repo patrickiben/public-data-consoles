@@ -48,7 +48,7 @@ class FakeGitHub:
 
 
 class PublishTests(unittest.TestCase):
-    def run_publish(self, api, payloads=None, timeout=5):
+    def run_publish(self, api, payloads=None, timeout=5, data_path=grid.DATA_PATH):
         moment = [0]
         payloads = list(payloads or [PAYLOAD])
         self.public_urls = []
@@ -65,7 +65,22 @@ class PublishTests(unittest.TestCase):
 
         return grid.publish(api, SHA, PAYLOAD, timeout=timeout, poll=1,
                             fetch_public=public, clock=lambda: moment[0], sleep=sleep,
-                            log=lambda message: None)
+                            log=lambda message: None, data_path=data_path)
+
+    def test_coastal_payload_is_verified_at_its_own_public_url(self):
+        api = FakeGitHub([build("built")])
+        url = self.run_publish(api, data_path="consoles/coastal-water-resilience/data/impact-context.json")
+        self.assertEqual(url, "https://example.github.io/public-data-consoles/consoles/coastal-water-resilience/data/impact-context.json")
+        self.assertEqual(self.public_urls, [url])
+
+    def test_invalid_data_paths_are_rejected_before_any_api_call(self):
+        for path in ("../secret.json", "https://other.example/data.json", "/consoles/a/data/b.json",
+                     "consoles/a/data/../b.json", "consoles/a/data/b.json?token=x", "consoles/a/data/b.json#part"):
+            with self.subTest(path=path):
+                api = FakeGitHub([build("built")])
+                with self.assertRaisesRegex(grid.PublishError, "relative console data JSON path"):
+                    self.run_publish(api, data_path=path)
+                self.assertEqual(api.calls, [])
 
     def test_unchanged_data_already_published_needs_no_build(self):
         api = FakeGitHub([build("built")])

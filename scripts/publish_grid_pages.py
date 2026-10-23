@@ -64,15 +64,23 @@ def fingerprint(build: dict | None) -> tuple:
     return tuple(build.get(key) for key in ("url", "created_at", "updated_at", "commit", "status"))
 
 
+def validate_data_path(path: str) -> str:
+    if not isinstance(path, str) or not re.fullmatch(r"consoles/[a-z0-9-]+/data/[a-z0-9-]+\.json", path):
+        raise PublishError("Expected a relative console data JSON path; no URL, traversal or query is allowed")
+    return path
+
+
 def publish(api, commit: str, expected: dict, *, timeout: float = 720,
             poll: float = 10, fetch_public=public_json,
-            clock=time.monotonic, sleep=time.sleep, log=print) -> str:
+            clock=time.monotonic, sleep=time.sleep, log=print,
+            data_path: str = DATA_PATH) -> str:
     """Wait for this main revision and its exact public payload, or fail boundedly.
 
     Dependencies are injectable for offline failure/recovery regression tests.
     The Pages build API always builds latest main, so check main before requesting
     a build and throughout polling. A concurrent human push is never overwritten.
     """
+    data_path = validate_data_path(data_path)
     deadline = clock() + timeout
 
     def assert_main():
@@ -97,7 +105,7 @@ def publish(api, commit: str, expected: dict, *, timeout: float = 720,
     parsed = urlsplit(site_url)
     if parsed.scheme != "https" or not parsed.hostname or not parsed.hostname.endswith(".github.io") or parsed.username or parsed.password:
         raise PublishError("Expected the repository's canonical HTTPS github.io Pages URL")
-    data_url = site_url.rstrip("/") + "/" + DATA_PATH
+    data_url = site_url.rstrip("/") + "/" + data_path
     assert_main()
     previous = latest()
     if previous and previous.get("status") in IN_PROGRESS and previous.get("commit") != commit:
@@ -135,7 +143,7 @@ def publish(api, commit: str, expected: dict, *, timeout: float = 720,
                 try:
                     if fetch_public(data_url) == expected:
                         assert_main()
-                        log("Verified the canonical public grid JSON matches validated main " + commit)
+                        log("Verified the canonical public data JSON matches validated main " + commit)
                         return data_url
                     public_problem = "public JSON still differs from the validated snapshot"
                 except (HTTPError, URLError, ValueError, TimeoutError, OSError) as exc:
@@ -148,7 +156,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY"))
     parser.add_argument("--commit", required=True, help="Full SHA of the validated main revision")
-    parser.add_argument("--expected-json", type=Path, default=ROOT / DATA_PATH)
+    parser.add_argument("--data-path", default=DATA_PATH, help="Relative published console data JSON path")
+    parser.add_argument("--expected-json", type=Path, help="Local validated payload; defaults to --data-path")
     parser.add_argument("--timeout-seconds", type=float, default=720)
     parser.add_argument("--poll-seconds", type=float, default=10)
     args = parser.parse_args()
@@ -161,14 +170,20 @@ def main() -> None:
     token = os.environ.get("GITHUB_TOKEN")
     if not token:
         parser.error("GITHUB_TOKEN is required; use the workflow's built-in token")
-    expected = json.loads(args.expected_json.read_text())
-    if expected.get("schemaVersion") != 1 or expected.get("refreshEveryHours") != 6:
-        parser.error("Expected a validated schemaVersion 1 snapshot with a six-hour refresh interval")
+    try:
+        data_path = validate_data_path(args.data_path)
+    except PublishError as exc:
+        parser.error(str(exc))
+    expected = json.loads((args.expected_json or ROOT / data_path).read_text())
+    if expected.get("schemaVersion") != 1:
+        parser.error("Expected a validated schemaVersion 1 data payload")
+    if data_path == DATA_PATH and expected.get("refreshEveryHours") != 6:
+        parser.error("Expected a validated grid snapshot with a six-hour refresh interval")
     try:
         publish(GitHub(args.repository, token), args.commit, expected,
-                timeout=args.timeout_seconds, poll=args.poll_seconds)
+                timeout=args.timeout_seconds, poll=args.poll_seconds, data_path=data_path)
     except (PublishError, HTTPError, URLError, ValueError, OSError) as exc:
-        parser.exit(1, "Grid publication failed: " + str(exc) + "\n")
+        parser.exit(1, "Public data publication failed: " + str(exc) + "\n")
 
 
 if __name__ == "__main__":

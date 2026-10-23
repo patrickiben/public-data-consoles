@@ -20,8 +20,11 @@ It demonstrates translating methods across domains, integrating data sources, an
 explanation with explicit provenance. A separate **public-station register** shows 131 officially
 published locations, including 82 City-owned/maintained stations, County evacuation-zone intersections
 and USGS NAVD88 terrain estimates. The ten-metric calibration network remains synthetic and separate;
-its connections are not real pipe topology. Projected-impact exercises expose their population, duration,
-flow, repair-cost and funding assumptions. Terrain screening does not establish flooding, pump failure
+its connections are not real pipe topology. Projected impacts automatically combine the remaining NOAA
+forecast, public terrain, source-defined sewer basins, Census block populations and published annual
+treatment flows. Population is geographic context, and throughput remains a whole-facility historical
+reference. Optional local scenarios expose their duration, population, flow, repair-cost and funding
+assumptions. Terrain screening does not establish flooding, pump failure
 or service loss. Live observations, dated public inventories, synthetic computations and interpretive
 guidance carry separate labels. The directed component is source/sink accounting, not a port of the
 contagion paper's VAR/FEVD estimation.
@@ -205,6 +208,41 @@ To replay a saved capture, put `balance.csv`, `interchange.csv` and their option
 in one folder and pass `--files /path/to/capture --period 2026_Jul_Dec --captured-at ISO_TIMESTAMP`.
 Use the original retrieval timestamp only for an archived replay. Review the data diff, run the catalog,
 unit and browser checks above, and inspect the page before publishing.
+
+## Automatic Coastal impact inputs
+
+[Coastal projected impacts](https://patrickiben.github.io/public-data-consoles/consoles/coastal-water-resilience/#impact)
+open in automatic public-data mode; no example button, account or provider key is needed. The page
+reselects the highest remaining valid NOAA OFS sample within 48 hours and screens the actual published
+station terrain at the converted gauge datum. A selected scenario level can also use the public inputs.
+The displayed forecast-sample span is a reference time window, never an assumed outage duration.
+
+For screened locations, the page selects distinct official station basin IDs, unions their Census block
+IDs and sums each population once. The source is the **2020 Census**, assigned using block internal
+points inside the City's published basin geometry. This is a geographic footprint estimate, not a
+customer roster, a count of flooded residents or a service-loss prediction. Source labels are retained
+when station points and their published basin polygons disagree; no nearest-basin substitution is made.
+
+FDEP's annual reuse inventory supplies the three named facilities' **actual average annual wastewater
+throughput**, kept separate from permitted capacity and from distributed reclaimed-water volume. An
+equivalent volume over the real forecast-sample span is whole-facility reference arithmetic; no flow is
+allocated to screened stations or Census populations. Measurement periods, formulas and source links
+are shown. Repair costs, downtime and funding shares remain optional local inputs where public data
+cannot establish them.
+
+The [coastal source workflow](https://github.com/patrickiben/public-data-consoles/actions/workflows/update-coastal.yml)
+checks the official basin/Census services and discovers the latest published FDEP annual workbook
+**weekly**, using GitHub's built-in token and no additional secret. Source count/ID/aggregate controls,
+geometry coverage, workbook schema and all automated checks must pass before the portable JSON and
+offline HTML are committed and Pages is explicitly verified. Source failure preserves the last good
+publication. A visible page checks the same-origin context at startup, every six hours and on return
+to the foreground; malformed, incomplete or older updates retain its last good context. Local files use
+the embedded reference data. A new retrieval does not change the displayed Census or flow reference year.
+
+Maintainers can run `python3 scripts/refresh_coastal_impact.py` to reacquire the public inputs and
+`python3 scripts/refresh_coastal_impact.py --check` for the offline publication guard. The portable
+payload is [impact-context.json](consoles/coastal-water-resilience/data/impact-context.json). Collectors
+use Python's standard library; no spreadsheet or GIS package is required on the runner.
 
 ## Refresh the embedded FRED snapshot
 
