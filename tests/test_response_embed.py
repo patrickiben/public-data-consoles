@@ -37,6 +37,18 @@ class ResponseEmbedding(unittest.TestCase):
         html = "<head></head><body>Existing native response</body>"
         self.assertEqual(embed.build(html, {"native": True}, "", "", ""), html)
 
+    def test_help_embeds_without_a_second_plan_and_refuses_broken_markers(self):
+        original = "<head></head><body>Existing native response</body>"
+        first = embed.embed_help(original, "window.help=1;", ".help{color:white}")
+        self.assertEqual(first, embed.embed_help(first, "window.help=1;", ".help{color:white}"))
+        self.assertIn("Existing native response", first)
+        self.assertNotIn('id="console-response"', first)
+        self.assertNotEqual(first, embed.embed_help(first, "window.help=2;", ".help{color:white}"))
+        with self.assertRaises(ValueError):
+            embed.embed_help(original + "<!-- CONSOLE_METRIC_HELP_START -->", "", "")
+        with self.assertRaises(ValueError):
+            embed.embed_help(original, "</script>", "")
+
     def test_ambiguous_anchors_and_closing_source_tags_are_refused(self):
         for html in ("<head></head><body></body><body></body>", "<head></head><body>"):
             with self.assertRaises(ValueError):
@@ -58,7 +70,7 @@ class ResponseEmbedding(unittest.TestCase):
             good = root / "consoles/a/index.html"
             good.write_text("<head></head><body>Keep me</body>")
             (root / "consoles/b/index.html").write_text("<head></head><body>Broken")
-            for name in ("core.js", "domain-helpers.js", "observed-series.js", "style.css"):
+            for name in ("core.js", "domain-helpers.js", "observed-series.js", "style.css", "metric-help.js", "metric-help.css"):
                 (root / "response-plans" / name).write_text("")
             (root / "response-plans/manifest.json").write_text(json.dumps({"consoles": [{"slug": slug, "method": "test"} for slug in ("a", "b")]}))
             with self.assertRaises(ValueError):
@@ -74,7 +86,7 @@ class ResponseEmbedding(unittest.TestCase):
             (root / "consoles/a").mkdir(parents=True)
             page = root / "consoles/a/index.html"
             page.write_text("<head></head><body>Original</body>")
-            for name in ("core.js", "domain-helpers.js", "observed-series.js", "style.css"):
+            for name in ("core.js", "domain-helpers.js", "observed-series.js", "style.css", "metric-help.js", "metric-help.css"):
                 (source / name).write_text("")
             (source / "adapters/a.js").write_text("window.adapter=1;")
             priority = source / "priorities/tools.js"

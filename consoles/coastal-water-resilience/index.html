@@ -123,7 +123,150 @@ section.grid[data-page="inventory"]{grid-template-columns:minmax(0,1.5fr) minmax
 </style>
 <style>.station-links{display:flex;flex-wrap:wrap;gap:8px}.station-links button,#plan-review-impact{min-height:44px;padding:10px 12px;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:9px;font:600 13px var(--sans);cursor:pointer;text-align:left}
 #impact-station-review td small{display:block;margin-top:5px;color:var(--ink2)}#impact-station-review caption{text-align:left;padding:12px 0;color:var(--ink2)}#cwr-plan-summary p:last-child{margin-bottom:0}
-</style></head>
+</style><!-- CONSOLE_METRIC_HELP_START -->
+<style>
+.cmh-term{white-space:normal;overflow-wrap:anywhere}
+.cmh-term .cmh-button,#console-response .cmh-button{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;box-sizing:border-box;min-width:26px;min-height:26px;width:26px;height:26px;margin:0 0 0 6px;padding:0;border:1px solid #69bbd0;border-radius:50%;background:#15394a;color:#dcf8ff;font:700 14px/1 system-ui,sans-serif;cursor:help;flex:none;box-shadow:none}
+.cmh-term .cmh-button:hover,#console-response .cmh-button:hover{background:#24556a;border-color:#b0eaf5}
+.cmh-term .cmh-button:focus-visible,#console-response .cmh-button:focus-visible{outline:3px solid #f4d57d;outline-offset:3px}
+#console-metric-tooltip{position:fixed;z-index:2147483000;box-sizing:border-box;width:370px;padding:15px 17px;background:#102a39;color:#e9f4fa;border:1px solid #85d0e0;border-radius:12px;box-shadow:0 8px 28px #0008;font:14px/1.5 system-ui,sans-serif;overflow:auto;overflow-wrap:anywhere;text-align:left;user-select:text}
+#console-metric-tooltip[hidden]{display:none!important}
+#console-metric-tooltip strong{display:block;color:#c0f2ff;font-size:15px;line-height:1.35}
+#console-metric-tooltip p{margin:10px 0}
+#console-metric-tooltip small{display:block;color:#a9c4d4;font-size:11px;margin-top:10px}
+@media(max-width:640px),(pointer:coarse){.cmh-term .cmh-button,#console-response .cmh-button{width:44px;height:44px;min-width:44px;min-height:44px;font-size:17px}#console-metric-tooltip{font-size:14px}}
+@media print{.cmh-button,#console-metric-tooltip{display:none!important}}
+</style>
+<script>
+/* Shared, self-contained plain-language help. No data, scoring or network access. */
+(function(root){
+ 'use strict';
+ var definitions = [
+  {
+    "id": 1,
+    "name": "Population Balance",
+    "meaning": "Checks whether comparison groups are alike in the characteristics or population/workload weights that matter to the question. Equal numbers of sites do not ensure comparable groups."
+  },
+  {
+    "id": 2,
+    "name": "Wasserstein Distance / Shape Imbalance",
+    "meaning": "Measures how far apart two distributions are by how far their values would need to move to match. Read the distance in its stated units; a gap does not identify its cause."
+  },
+  {
+    "id": 3,
+    "name": "Density Symmetry",
+    "meaning": "Compares how concentrated or spread out two groups are, using the stated density measure. Similar totals can hide different geographic or statistical patterns."
+  },
+  {
+    "id": 4,
+    "name": "Euler Characteristic / Contiguity",
+    "meaning": "Describes connectedness using a declared spatial or graph definition. A component count is a proxy: the full Euler characteristic also accounts for holes."
+  },
+  {
+    "id": 5,
+    "name": "Persistence Gap",
+    "meaning": "Checks which spatial clusters or gaps remain as you change how nearby points are connected. A count near a chosen threshold is a simpler sensitivity check."
+  },
+  {
+    "id": 6,
+    "name": "Spatial Mixing / Scale Stability",
+    "meaning": "Checks whether a pattern changes when you change the spatial scale, grouping or comparison window. The dashboard states which scale it varies; this does not measure physical mixing."
+  },
+  {
+    "id": 7,
+    "name": "Variational Free Energy",
+    "meaning": "Checks how well a model describes relationships between parts of a system, while accounting for model complexity. The research uses a fit-versus-complexity score (BIC); a dashboard’s link-count proxy is a different measure."
+  },
+  {
+    "id": 8,
+    "name": "Contamination AUC",
+    "meaning": "Combines an exposure screen across a stated range of times, distances, thresholds or scenario levels into one summary: the area under the curve. It does not give the probability of contamination or damage."
+  },
+  {
+    "id": 9,
+    "name": "Frontier Risk / Buffer Depth AUC",
+    "meaning": "Summarizes how much of the otherwise unexposed group lies near the exposed group as a chosen buffer grows. Its meaning depends on the weights and distance range; it does not give a failure probability or a safe buffer distance."
+  },
+  {
+    "id": 10,
+    "name": "Mobility Network Leakage",
+    "meaning": "Measures or models movement between comparison groups along defined links. A cross-group link count alone does not establish actual volume, hydraulic flow or causal transmission."
+  }
+];
+ var doc=root.document, tip=null, active=null, pinned=false, timer=null, overTip=false;
+ function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+ function definition(id){return definitions.find(function(d){return d.id===Number(id);});}
+ function label(id,text,context){
+  var d=definition(id);if(!d)return esc(text);
+  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
+ }
+ function ensure(){
+  if(tip)return tip;
+  tip=doc.createElement('div');tip.id='console-metric-tooltip';tip.setAttribute('role','tooltip');tip.hidden=true;
+  doc.body.appendChild(tip);
+  tip.addEventListener('pointerenter',function(){overTip=true;root.clearTimeout(timer);});
+  tip.addEventListener('pointerleave',function(){overTip=false;schedule();});
+  return tip;
+ }
+ function close(){
+  root.clearTimeout(timer);
+  if(active){active.removeAttribute('aria-describedby');active.setAttribute('aria-expanded','false');}
+  if(tip)tip.hidden=true;
+  active=null;pinned=false;overTip=false;
+ }
+ function position(){
+  if(!active||!tip||tip.hidden)return;
+  if(!active.isConnected){close();return;}
+  var r=active.getBoundingClientRect(),v=root.visualViewport,w=v?v.width:root.innerWidth,h=v?v.height:root.innerHeight,x=v?v.offsetLeft:0,y=v?v.offsetTop:0;
+  if(r.bottom<y||r.top>y+h||r.right<x||r.left>x+w){close();return;}
+  tip.style.maxWidth=Math.max(0,w-24)+'px';tip.style.maxHeight=Math.max(0,h-24)+'px';
+  var box=tip.getBoundingClientRect(),left=Math.max(x+12,Math.min(r.left,x+w-box.width-12)),top=r.bottom+8;
+  if(top+box.height>y+h-12)top=r.top-box.height-8;
+  top=Math.max(y+12,Math.min(top,y+h-box.height-12));
+  tip.style.left=left+'px';tip.style.top=top+'px';
+ }
+ function show(button,lock){
+  var d=definition(button&&button.dataset.metricHelp);if(!d)return;
+  root.clearTimeout(timer);
+  if(active!==button){close();active=button;}
+  pinned=!!lock||pinned;
+  var el=ensure();el.replaceChildren();
+  var title=doc.createElement('strong');title.textContent='#'+d.id+' '+d.name;el.appendChild(title);
+  var meaning=doc.createElement('p');meaning.textContent=d.meaning;el.appendChild(meaning);
+  if(button.dataset.metricContext){var context=doc.createElement('p'),lead=doc.createElement('b');lead.textContent='In this view: ';context.append(lead,doc.createTextNode(button.dataset.metricContext));el.appendChild(context);}
+  var hint=doc.createElement('small');hint.textContent=pinned?'Tap ? again or elsewhere to close. Escape also closes.':'Tap ? to keep open. Press Escape to close.';el.appendChild(hint);
+  el.hidden=false;button.setAttribute('aria-describedby',el.id);button.setAttribute('aria-expanded','true');position();
+ }
+ function schedule(){
+  root.clearTimeout(timer);timer=root.setTimeout(function(){if(!pinned&&!overTip&&doc.activeElement!==active)close();},160);
+ }
+ function termButton(target){var term=target&&target.closest&&target.closest('[data-metric-term]');return term&&term.querySelector('[data-metric-help]');}
+ function start(){
+  doc.querySelectorAll('[data-metric-name]').forEach(function(el){el.innerHTML=label(el.dataset.metricName,el.textContent,el.dataset.metricContext);});
+  ensure();
+  doc.addEventListener('pointerover',function(e){if(e.pointerType==='touch')return;var b=termButton(e.target);if(b&&termButton(e.relatedTarget)!==b){if(active&&b!==active&&(pinned||doc.activeElement===active))return;show(b,false);}});
+  doc.addEventListener('pointerout',function(e){var b=termButton(e.target);if(b&&termButton(e.relatedTarget)!==b&&!tip.contains(e.relatedTarget))schedule();});
+  doc.addEventListener('focusin',function(e){if(e.target.matches('[data-metric-help]'))show(e.target,false);});
+  doc.addEventListener('focusout',function(e){if(e.target===active){pinned=false;schedule();}});
+  // Capture prevents help inside a summary/label from opening it or checking a box.
+  doc.addEventListener('click',function(e){
+   var b=e.target.closest('[data-metric-help]');
+   if(b){e.preventDefault();e.stopPropagation();if(active===b&&pinned)close();else show(b,true);return;}
+   if(!tip.contains(e.target))close();
+  },true);
+  doc.addEventListener('keydown',function(e){if(e.key==='Escape'&&active){close();e.preventDefault();e.stopPropagation();}},true);
+  doc.addEventListener('scroll',function(e){if(e.target!==tip)position();},true);
+  root.addEventListener('resize',position);
+  if(root.visualViewport){root.visualViewport.addEventListener('resize',position);root.visualViewport.addEventListener('scroll',position);}
+  if(root.MutationObserver)new root.MutationObserver(function(){if(active&&!active.isConnected)close();}).observe(doc.body,{childList:true,subtree:true});
+  root.addEventListener('beforeprint',close);
+ }
+ root.ConsoleMetricHelp={label:label,definition:definition,close:close,definitions:definitions};
+ if(doc){if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',start,{once:true});else start();}
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+<!-- CONSOLE_METRIC_HELP_END -->
+</head>
 <body>
 <script type="application/json" id="coastal-basemap-land">{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"MultiPolygon","coordinates":[[[[-82.57241777299993,27.559515692000048],[-82.58820553299995,27.557196356000077],[-82.60098222599993,27.552394924000055],[-82.60419674399992,27.55109284100007],[-82.6071152721486,27.55],[-82.61927715193859,27.55],[-82.61778723899994,27.552557684000078],[-82.61514238199993,27.555812893000052],[-82.61131751199991,27.554836330000057],[-82.60570227799991,27.552883205000057],[-82.60342363199993,27.55292389500005],[-82.60118567599994,27.553900458000044],[-82.5891820949999,27.56468333500004],[-82.5918676419999,27.56834544500009],[-82.59601803299995,27.57770416900007],[-82.57457434799994,27.590725002000056],[-82.56460527299993,27.60895416900007],[-82.5574438139999,27.62962474200009],[-82.54417883999992,27.650051174000055],[-82.51667232999995,27.66990794500009],[-82.51341712099992,27.677679755000042],[-82.51012122299994,27.689398505000042],[-82.50218665299991,27.69440338700008],[-82.49307206899994,27.697088934000078],[-82.48615475199995,27.701239325000074],[-82.47036699099993,27.729315497000073],[-82.4656469389999,27.736029364000046],[-82.45,27.745745976214632],[-82.45,27.55],[-82.57723905639574,27.55],[-82.57241777299993,27.559515692000048]]],[[[-82.45116126199991,27.93073151200008],[-82.47183183499993,27.920355536000045],[-82.48070227799991,27.90843333500004],[-82.48485266799992,27.89256419500009],[-82.48615475199995,27.85578034100007],[-82.4798070949999,27.841498114000046],[-82.47809811099995,27.831284898000035],[-82.48273678299995,27.82135651200008],[-82.51829993399991,27.822658596000053],[-82.52708899599992,27.824774481000077],[-82.53962154899995,27.84398021000004],[-82.54092363199993,27.868801174000055],[-82.53453528599994,27.917222398000035],[-82.54112708199995,27.94277578300006],[-82.55882727799991,27.95579661700009],[-82.58495032499991,27.960638739000046],[-82.61644446499992,27.961330471000053],[-82.61644446499992,27.96873607000009],[-82.59601803299995,27.97557200700004],[-82.59601803299995,27.98305898600006],[-82.62352454299992,27.996527411000045],[-82.63621985599991,28.005804755000042],[-82.64439856699994,28.016546942000048],[-82.65062415299991,28.016546942000048],[-82.65094967399995,28.01325104400007],[-82.65062415299991,28.00291575700004],[-82.67046908144918,28.02],[-82.45,28.02],[-82.45,27.930625696070802],[-82.45116126199991,27.93073151200008]]],[[[-82.67979895699995,28.01325104400007],[-82.67788652299993,28.006293036000045],[-82.67910722599993,27.998439846000053],[-82.68415279899995,27.98729075700004],[-82.68472245999993,27.98305898600006],[-82.69054114499994,27.975531317000048],[-82.69033769399994,27.970851955000057],[-82.68130449099993,27.96873607000009],[-82.64439856699994,27.96873607000009],[-82.65684973899994,27.956244208000044],[-82.70274817599994,27.94472890800006],[-82.71886145699995,27.927801825000074],[-82.68024654899995,27.914129950000074],[-82.64321855399993,27.89476146000004],[-82.60472571499992,27.88149648600006],[-82.56187903599994,27.88617584800005],[-82.57079016799992,27.879828192000048],[-82.6028539699999,27.862982489000046],[-82.60130774599992,27.85114166900007],[-82.59581458199995,27.82998281500005],[-82.59601803299995,27.81793854400007],[-82.60016842399995,27.807928778000075],[-82.61363684799994,27.792710679000038],[-82.61644446499992,27.787502346000053],[-82.61790930899991,27.780991929000038],[-82.63011633999992,27.75031159100007],[-82.6231176419999,27.734035549000055],[-82.62657630099994,27.71580638200004],[-82.63776607999995,27.701117255000042],[-82.65404212099992,27.695054429000038],[-82.67247473899994,27.695054429000038],[-82.67926998599995,27.69684479400007],[-82.68472245999993,27.701239325000074],[-82.68708248599995,27.709865627000056],[-82.68602454299992,27.731634833000044],[-82.68785559799994,27.736029364000046],[-82.70921790299991,27.738430080000057],[-82.7215063139999,27.74510325700004],[-82.73936926999994,27.76951732000009],[-82.75719153599994,27.787665106000077],[-82.79596920499995,27.815334377000056],[-82.81509355399993,27.83222077000005],[-82.81883704299992,27.818182684000078],[-82.81069902299993,27.804429429000038],[-82.75133216099994,27.746568101000037],[-82.73936926999994,27.728583075000074],[-82.7246801419999,27.69407786700009],[-82.71800696499992,27.67206452000005],[-82.71886145699995,27.65965403900009],[-82.73131262899994,27.662054755000042],[-82.74254309799994,27.679754950000074],[-82.75055904899995,27.702093817000048],[-82.75365149599992,27.71865469000005],[-82.76748613199993,27.75153229400007],[-82.82852128799993,27.80499909100007],[-82.84239661399994,27.828517971000053],[-82.8445531889999,27.841864325000074],[-82.85391191299993,27.870347398000035],[-82.85606848899994,27.889960028000075],[-82.85228430899991,27.90818919500009],[-82.84316972599993,27.925441799000055],[-82.83202063699991,27.939398505000042],[-82.82188880099994,27.94830963700008],[-82.8313695949999,27.93512604400007],[-82.83849036399994,27.91819896000004],[-82.84072831899994,27.90070221600007],[-82.83556067599994,27.88617584800005],[-82.80223548099991,27.966620184000078],[-82.78947177399671,28.02],[-82.68346118131221,28.02],[-82.67979895699995,28.01325104400007]]]]}}],"source":{"name":"Natural Earth 1:10m land v5.1.1","url":"https://naturalearth.s3.amazonaws.com/5.1.1/10m_physical/ne_10m_land.zip","documentation":"https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-land/","license":"Public domain","retrievedAt":"2026-10-23T19:24:15.585383+00:00","sha256":"e547d749445eaa0964aba76738090ec88f5e63c4585122170f98c67a7ea922dc","clipBounds":[-82.9,27.55,-82.45,28.02],"note":"Generalized coastline for regional orientation only; not a parcel, navigation, flood or shoreline survey."}}</script>
 <div id="disc"><b>Descriptive decision support, not a forecast and not an official source.</b> <b>Real public stations</b> shows agency-published locations and county zone results. Terrain impacts are modeled screens. <b>Synthetic exercise</b> contains a separate fictional network, with no real station locations or verified pipes. Follow the <a href="https://www.weather.gov/tbw/" target="_blank" rel="noopener">National Weather Service</a> and local emergency management. <b>In an emergency, call 911.</b></div>
@@ -734,6 +877,33 @@ var BASIN_NAME={N:'North',C:'Central',S:'South'};
 
 /* ---------- helpers ---------- */
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+// The shared explainer is optional in isolated engine/test contexts.
+var SYNTHETIC_METRIC_HELP=[
+ "Compares screened station share with its share of toy weights: one plus each station’s assumed upstream count. These are neither resident counts nor measured flow.",
+ "Approximates the fictional groups’ elevation-distribution gap in feet using 20 midpoint quantiles. Screened and above-plane groups must both contain stations.",
+ "Compares inverse mean nearest-neighbor spacing between fictional groups; closer to one means similar point spacing. This does not measure resident density or crew travel.",
+ "Counts separated screened-point groups using a 1.5 km proximity rule on the fictional map. These are geometric groups, not sewer or road-access islands.",
+ "Counts fictional stations within ±1 ft of the selected water plane. This tests sensitivity to a chosen band, rather than formal persistence diagrams.",
+ "Divides the fictional screened count two feet above the selected level by the original count. No original screened stations means the ratio is undefined.",
+ "Reports the fraction of assumed toy edges crossing fictional basin labels. This exercise fits no dependence model; its edge share is neither BIC nor VFE.",
+ "Averages the fictional screened-station fraction across the 3–12 ft scenario ladder using trapezoidal integration. It summarizes that range rather than measured water contamination.",
+ "Integrates above-plane toy weights near screened points over 0.5–5 km buffers. Weights use assumed upstream dependents; proximity does not establish backflow or actual flood boundaries.",
+ "Counts assumed edges crossing the screen and above-plane toy stations upstream of screened stations. The graph demonstrates assumed dependencies, not actual pumping or surcharge."
+];
+var PUBLIC_METRIC_HELP=[
+ "Compares the Census resident share in source basins containing screened stations with the selected basin share. Blocks are deduplicated; this is geographic context, not service loss.",
+ "Measures the exact elevation-distribution gap in feet between screened and above-plane public points. Elevation defines these groups, so the separation is descriptive.",
+ "Compares inverse mean nearest-neighbor spacing between public station groups. Each group needs two distinct points; station spacing does not establish service coverage or road access.",
+ "Counts separated screened public-point groups using a 1.5 km proximity rule. Nearby points do not establish connected pipes, shared access or one flooded area.",
+ "Counts public terrain points within ±1 ft of the selected water plane. These records merit rechecking; the band is not a surveyed equipment-height uncertainty interval.",
+ "Counts additional public terrain points screened when the selected water plane rises by 2 ft. This is a declared sensitivity test, not a forecast.",
+ "Unassessed: public locations, terrain and basin labels do not supply a fitted dependence model. Verified model inputs and a specified analysis are required.",
+ "Averages the equally weighted fraction of screened public terrain points across the declared water-level range using exact integration. The range is a planning choice.",
+ "Exactly integrates the equally weighted fraction of above-plane points near screened public points over 0.5–5 km buffers. This is straight-line proximity, not hydraulic connectivity.",
+ "Unassessed: the public register provides no verified directed connections, current flow or operating state. Terrain slope and nearby stations cannot establish pumped-flow routes."
+];
+function metricHelpContext(r,scope){return scope==='synthetic'?'Fictional calibration exercise. '+SYNTHETIC_METRIC_HELP[r.n-1]:'Real public station planning screen. '+PUBLIC_METRIC_HELP[r.n-1]+(r.bad==null?' Currently not assessable. Required inputs: '+(r.requiredInputs||'Applicable verified observations')+'.':'');}
+function metricLabel(id,label,context){var help=window.ConsoleMetricHelp;return help&&typeof help.label==='function'?help.label(id,label,context):esc(label);}
 var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function p2(n){return (n<10?'0':'')+n;}
 function fmtUTC(d){if(!d||isNaN(d))return 'unknown time';d=new Date(d);return MON[d.getUTCMonth()]+' '+d.getUTCDate()+' '+p2(d.getUTCHours())+':'+p2(d.getUTCMinutes())+' UTC';}
@@ -968,6 +1138,24 @@ function keepFocus(fn){var a=document.activeElement,key=null;
   else if(a.getAttribute('data-ph'))key='#phases [data-ph="'+a.getAttribute('data-ph')+'"]';else if(a.tagName==='SUMMARY'&&a.closest('#tm'))key='#tm details[data-n="'+a.parentNode.getAttribute('data-n')+'"] > summary';
   else if(a.tagName==='SUMMARY'&&a.closest('#gauge,#ofs'))key='#'+a.closest('#gauge,#ofs').id+' details.dt > summary';else if(a.classList&&a.classList.contains('ov')&&a.closest('.chart'))key='#'+a.closest('.chart').id+' .ov';}
  fn();if(key){var n=document.querySelector(key);if(n&&n!==document.activeElement)n.focus({preventScroll:true});}}
+// Preserve only an already-focused metric help control. Pointer hover never
+// creates a focus request, and a deliberate control/tab selection keeps focus.
+function metricHelpIdentity(button,container){
+ var owner=button.closest('[data-cwr-metric]'),item=button.closest('.chk'),detail=button.closest('details.tm'),row=button.closest('tr'),location='';
+ if(owner)location='register:'+owner.getAttribute('data-cwr-metric');
+ else if(item){var input=item.querySelector('input[type="checkbox"]');location='check:'+(input?input.id:'');}
+ else if(detail)location='exercise:'+detail.getAttribute('data-n');
+ else if(row)location='row:'+row.rowIndex;
+ return JSON.stringify([container.id,location,button.getAttribute('data-metric-help'),button.getAttribute('data-metric-context')]);
+}
+function preserveMetricHelpFocus(id,render){
+ var container=$(id),focused=document.activeElement,help=focused&&focused.matches&&focused.matches('[data-metric-help]')&&container&&container.contains(focused)?focused:null;
+ var identity=help?metricHelpIdentity(help,container):null,before=container&&container.getAttribute('data-metric-help-basis');render();
+ var after=id==='tm'?'synthetic-exercise':JSON.stringify([planDataset(),planTrack,$('plan-water-source').value]);if(container)container.setAttribute('data-metric-help-basis',after);
+ if(!help||before!==after||help.isConnected||container.hidden||container.closest('[hidden]')||(document.activeElement!==document.body&&document.activeElement!==help))return;
+ var replacement=Array.from(container.querySelectorAll('[data-metric-help]')).find(function(button){return metricHelpIdentity(button,container)===identity;});
+ if(replacement)replacement.focus({preventScroll:true});
+}
 var OPEN_TM={};document.addEventListener('toggle',function(e){var d=e.target;if(d&&d.matches&&d.matches('#tm details'))OPEN_TM[d.getAttribute('data-n')]=d.open;},true);
 function renderSurge(){keepFocus(function(){TM=tenMetrics();renderLadders();renderLadderChart();renderLadderSum();updateMap();renderTM();renderCheck();renderTimeline();renderStationTable();renderProjectedImpact();});}
 function renderLadders(){['ladder','ladder2'].forEach(function(id){var el=$(id);if(!el.children.length)el.innerHTML=SURGE_LEVELS.map(function(l){return '<button type="button" class="lv" data-lv="'+l+'">'+l+' ft</button>';}).join('');
@@ -996,12 +1184,13 @@ function renderLadderSum(){var cur=surgeAt(surgeSel),T=cur.list,p=cur.plane,ring
   '<div class="row"><span class="l">Criticality-flagged stations exposed</span><span class="v">'+critExp+' of '+crit.length+'</span></div>';}
 
 /* ---------- metrics panel ---------- */
-function renderTM(){var real=REAL_TM[surgeSel],bad=TM.filter(function(r){return r.bad;}).length;
+function renderTM(){preserveMetricHelpFocus('tm',renderTM_);}
+function renderTM_(){var real=REAL_TM[surgeSel],bad=TM.filter(function(r){return r.bad;}).length;
  $('tm-sub').innerHTML='At <b>'+surgeSel+' ft</b>: the synthetic network has <b>'+bad+' of 10</b> metrics sub-optimal'+(real?'; the real network ('+REAL_DATE+') had <b>'+real.bad+' of 10</b> with '+real.exposed+' exposed.':'. Real-network values are published for 6 and 8 ft only.')+' Exposed stations are one arm, the rest the other. Open a row for its condition and mitigations.';
  var html='',lastP=0;
  TM.forEach(function(r,i){if(r.pillar!==lastP){lastP=r.pillar;html+='<div class="muted" style="margin:10px 0 5px;font-weight:650;letter-spacing:.02em">Pillar '+r.pillar+': '+esc(r.pillarName)+'</div>';}
   var rv=real?real.v[i]:null;
-  html+='<details class="tm" data-n="'+r.n+'"'+(OPEN_TM[r.n]?' open':'')+'><summary><span class="n">'+r.n+'</span><span class="nm">'+esc(r.name)+'<small>'+esc(THRESH[i])+'</small></span>'+
+  html+='<details class="tm" data-n="'+r.n+'"'+(OPEN_TM[r.n]?' open':'')+'><summary><span class="n">'+r.n+'</span><span class="nm">'+metricLabel(r.n,r.name,metricHelpContext(r,'synthetic'))+'<small>'+esc(THRESH[i])+'</small></span>'+
    '<span class="val"><span class="syn">'+esc(r.display)+'</span><span class="real">'+(rv?'real network: '+esc(rv[0])+', '+(rv[1]?'sub-optimal':'ok'):'real network: published for 6 and 8 ft')+'</span></span>'+
    '<span class="flag '+(r.bad==null?'unknown':r.bad?'bad':'ok')+'">'+(r.bad==null?'? not assessable':r.bad?'▲ sub-optimal':'✓ ok')+'</span></summary>'+
    '<div class="tmb"><p><b>Sub-optimal condition.</b> '+esc(r.cond)+'</p><p><b>Analytical mitigation.</b> '+esc(r.anal)+'</p><p><b>Operational mitigation.</b> '+esc(r.oper)+'</p></div></details>';});
@@ -1116,7 +1305,7 @@ function phaseDecision(p){return planTrack==='public'?PUBLIC_PHASES[p.id]:planDa
 function nativePlan(){renderFeedClock();var real=planDataset()!=='synthetic',analysis=real?publicPlanAnalysis():null,water=real?sharedWaterContext():{waterSource:'selected',levelFtMLLW:surgeSel,planeFtNAVD88:planeOf(surgeSel)},records=real?publicScopeRecords(planDataset()):stations,terrainKnown=real?records.filter(validPublicTerrain).length:stations.length;
  return {scenario:true,track:planTrack,dataset:planDataset(),waterSource:water.waterSource,levelFtMLLW:water.levelFtMLLW,planeFtNAVD88:water.planeFtNAVD88,forecastValidAt:water.forecastValidAt||null,assetsInScope:records.length,terrainKnown:terrainKnown,terrainUnknown:records.length-terrainKnown,stationIds:records.map(function(s){return s.id||s.fid;}),stationResults:analysis?analysis.stationRows:[],coverage:analysis?analysis.coverage:null,forecastExposure:analysis?analysis.forecastExposure:null,projectedImpact:computeProjectedImpact(impactOptions()),publicContextReports:Object.keys(CONTEXT_STATE).map(function(id){var state=CONTEXT_STATE[id];return {sourceId:id,status:state.status,checkedAt:state.checkedAt,dataRetrievedAt:state.dataRetrievedAt,recordCount:state.features?state.features.length:null,note:state.note,error:state.error};}),publicInventoryContext:{capturedAt:PUBLIC_INVENTORY.capturedAt,inventoryFingerprint:IMPACT_CONTEXT.inventoryFingerprint||null,stationCount:PUBLIC_INVENTORY.stations.length,completeness:PUBLIC_INVENTORY.completeness,sources:PUBLIC_INVENTORY.sources,limitations:PUBLIC_INVENTORY.limitations,note:real?'Real agency-published stations; terrain and geographic diagnostics are planning screens, not operating telemetry.':'Separate fictional calibration exercise.'},zoneModel:real?realZoneContext(planDataset()):zoneSummary(),surgeFtMLLW:water.levelFtMLLW,phase:phaseSel,suggestedPhase:phaseSugg,metrics:getPlanMetrics().map(function(r){return {metricId:r.n,name:r.name,value:r.value,display:r.display,unit:r.unit||null,requiredInputs:r.requiredInputs||null,status:real?metricStatus(r):r.bad==null?'unknown':r.bad?'triggered':'clear',condition:r.cond,analyticalMitigation:r.anal,operationalAction:planTrack==='public'?PUBLIC_ACTIONS[r.n-1]:r.oper,threshold:metricCriterion(r),method:r.method||r.anal,evidenceIds:r.evidenceIds||[],phases:PHASES.filter(function(p){return p.dims.indexOf(r.n)>=0;}).map(function(p){return p.label;}),escalateWhen:'Verified local observations and the responsible authority’s procedure determine operational escalation.',authorityUrl:'https://www.weather.gov/tbw/'};}),evidence:Object.keys(FEEDS).map(function(k){return {feed:k,state:FEEDS[k].state,dataTime:FEEDS[k].dataTime};}),acknowledgments:Object.keys(CHECKED).filter(function(k){return CHECKED[k];}),note:real?'Planning screen from real public station records and explicitly named geographic/terrain proxies; not an outage, damage or hydraulic forecast. Acknowledgments record review, not completed operations.':'Fictional calibration exercise, not real station failure diagnostics.'};}
 
-function planItem(r,id){return '<label class="chk" for="'+id+'"><input type="checkbox" id="'+id+'"'+(CHECKED[id]?' checked':'')+'><span><b>#'+r.n+' '+esc(r.name)+'.</b> '+esc(planTrack==='public'?PUBLIC_ACTIONS[r.n-1]:'Operator SOP review: '+r.oper)+'<br><small>Trigger: '+esc(r.display)+'; '+esc(metricCriterion(r))+'. Analytical review: '+esc(r.anal)+' Escalate only when verified local telemetry and the procedure of the responsible authority justify action. <a href="https://www.weather.gov/tbw/" target="_blank" rel="noopener">Official NWS information</a>. This check acknowledges local planning review.</small></span></label>';}
+function planItem(r,id){return '<div class="chk"><input type="checkbox" id="'+id+'" aria-label="'+esc('Acknowledge local planning review: #'+r.n+' '+r.name)+'"'+(CHECKED[id]?' checked':'')+'><span><b>'+metricLabel(r.n,'#'+r.n+' '+r.name,metricHelpContext(r,planDataset()))+'.</b> <label for="'+id+'">'+esc(planTrack==='public'?PUBLIC_ACTIONS[r.n-1]:'Operator SOP review: '+r.oper)+'<br><small>Trigger: '+esc(r.display)+'; '+esc(metricCriterion(r))+'. Analytical review: '+esc(r.anal)+' Escalate only when verified local telemetry and the procedure of the responsible authority justify action. <a href="https://www.weather.gov/tbw/" target="_blank" rel="noopener">Official NWS information</a>. This check acknowledges local planning review.</small></label></span></div>';}
 function suggestPhase(){refreshNHCClock();if(!NHCS)return {id:null,why:FEEDS.nhc.state==='loading'?'Waiting for the NHC feed.':'Suggestion unavailable: the NHC feed is unavailable. Pick a phase manually.'};
  if(NHC_PART.fcErr||FEEDS.nhc.retained||Date.now()-FEEDS.nhc.acceptedAt>30*60e3)return {id:null,why:'Suggestion unavailable: current, complete NHC forecast positions are not available. Retained context is not a new advisory; pick a phase manually.'};
  var relevant=NHCS.filter(function(s){return s.pri===0;});if(relevant.some(function(s){return !s.forecastCurrent;}))return {id:null,why:'Suggestion unavailable: a listed Atlantic/East Pacific system has stale, expired or undated forecast coverage. Check NHC and pick a phase manually.'};
@@ -1130,13 +1319,14 @@ function renderPhase_(){var sg=suggestPhase();phaseSugg=sg.id;phaseWhy=sg.why;if
  var ph=$('phases');if(!ph.children.length)ph.innerHTML=PHASES.map(function(p){return '<button type="button" class="ph" data-ph="'+p.id+'">'+p.label+'</button>';}).join('');
  ph.querySelectorAll('.ph').forEach(function(b){var id=b.getAttribute('data-ph');b.setAttribute('aria-pressed',String(id===phaseSel));b.classList.toggle('sugg',id===phaseSugg);b.setAttribute('aria-label',b.textContent+(id===phaseSugg?' (suggested)':''));});
  if(TM){renderCheck();renderTimeline();}}
-function renderCheck(){var register=$('cwr-ten-register'),registerOpen=register&&register.open,metrics=getPlanMetrics();if(!metrics.length)return;renderRealPlanSummary();$('cwr-plan-basis').textContent='MODELED · '+(planDataset()==='synthetic'?'synthetic network':'real public station screen');
+function renderCheck(){preserveMetricHelpFocus('check',renderCheck_);}
+function renderCheck_(){var register=$('cwr-ten-register'),registerOpen=register&&register.open,metrics=getPlanMetrics();if(!metrics.length)return;renderRealPlanSummary();$('cwr-plan-basis').textContent='MODELED · '+(planDataset()==='synthetic'?'synthetic network':'real public station screen');
  var revision=JSON.stringify({scope:planDataset(),water:sharedWaterContext().waterSource,level:sharedWaterContext().levelFtMLLW,inventory:PUBLIC_INVENTORY.capturedAt,context:IMPACT_CONTEXT.capturedAt,surge:surgeSel,phase:phaseSel,metrics:metrics.map(function(r){return [r.value,r.bad];}),feeds:Object.keys(FEEDS).map(function(k){return [k,FEEDS[k].state,FEEDS[k].dataTime];})});if(revision!==planRevision){revisionChanged=!!planRevision;CHECKED={};planRevision=revision;}
  $('cwr-public-track').setAttribute('aria-pressed',String(planTrack==='public'));$('cwr-operator-track').setAttribute('aria-pressed',String(planTrack==='operator'));
  $('cwr-plan-revision').textContent=(planDataset()==='synthetic'?'PRACTICE / SCENARIO · synthetic calibrated network':'PUBLIC-DATA PLANNING · real public raster-terrain screen; no real operating telemetry')+'. '+(revisionChanged?'Evidence or scenario changed: review acknowledgments reset. ':'')+'Checks acknowledge local planning review, not completed operations. '+(planTrack==='operator'?'Operator concepts require utility telemetry, authority and approved SOP.':'Follow current official instructions; station terrain screens do not establish real property risk.');
  var bad=metrics.filter(function(r){return r.bad;}),badN={};bad.forEach(function(r){badN[r.n]=r;});var acts=0;
  var h='<div class="muted" style="margin-bottom:8px">'+bad.length+' dimensions call for planning review; '+metrics.filter(function(r){return r.bad==null;}).length+' not assessable. Remaining dimensions provide descriptive context, not an operational all-clear.</div>';
- h+='<details id="cwr-ten-register"><summary>All ten dimensions: metric → condition → mitigation → action → phase</summary>'+metrics.map(function(r){return '<article class="grp" data-cwr-metric="'+r.n+'"><h3>#'+r.n+' '+esc(r.name)+' · '+metricStatusLabel(r)+'</h3><p><b>Metric:</b> '+esc(r.display)+'. <b>Condition:</b> '+esc(r.cond)+'</p><p><b>Analytical mitigation / required inputs:</b> '+esc(r.anal)+'</p><p><b>'+ (planTrack==='public'?'Public / local planning action':'Operator SOP review')+':</b> '+esc(planTrack==='public'?PUBLIC_ACTIONS[r.n-1]:r.oper)+'</p><p><b>Phase:</b> '+esc(PHASES.filter(function(p){return p.dims.indexOf(r.n)>=0;}).map(function(p){return p.label;}).join(', ')||'Cross-phase review')+'. Verify current evidence and responsible authority before acting.</p></article>';}).join('')+'</details>';
+ h+='<details id="cwr-ten-register"><summary>All ten dimensions: metric → condition → mitigation → action → phase</summary>'+metrics.map(function(r){return '<article class="grp" data-cwr-metric="'+r.n+'"><h3>'+metricLabel(r.n,'#'+r.n+' '+r.name,metricHelpContext(r,planDataset()))+' · '+metricStatusLabel(r)+'</h3><p><b>Metric:</b> '+esc(r.display)+'. <b>Condition:</b> '+esc(r.cond)+'</p><p><b>Analytical mitigation / required inputs:</b> '+esc(r.anal)+'</p><p><b>'+ (planTrack==='public'?'Public / local planning action':'Operator SOP review')+':</b> '+esc(planTrack==='public'?PUBLIC_ACTIONS[r.n-1]:r.oper)+'</p><p><b>Phase:</b> '+esc(PHASES.filter(function(p){return p.dims.indexOf(r.n)>=0;}).map(function(p){return p.label;}).join(', ')||'Cross-phase review')+'. Verify current evidence and responsible authority before acting.</p></article>';}).join('')+'</details>';
  PHASES.forEach(function(p){var items=p.dims.filter(function(d){return badN[d];});acts+=items.length;
   h+='<div class="grp'+(p.id===phaseSel?' cur':'')+'"><h3>'+p.label+(p.id===phaseSugg?' <span class="pill">suggested</span>':'')+(p.id===phaseSel?' <span class="pill">selected</span>':'')+'</h3><div class="dec">'+esc(phaseDecision(p))+'.</div>'+
    (items.length?items.map(function(d){var r=badN[d],id='ck-'+planDataset()+'-'+planTrack+'-'+p.id+'-'+d;return planItem(r,id);}).join('')
@@ -1144,9 +1334,10 @@ function renderCheck(){var register=$('cwr-ten-register'),registerOpen=register&
  var mapped={};PHASES.forEach(function(p){p.dims.forEach(function(d){mapped[d]=1;});});var un=bad.filter(function(r){return !mapped[r.n];});
  if(un.length)h+='<div class="grp"><h3>Not tied to a timeline phase</h3><div class="dec">No timeline phase lists these dimensions, so their operational mitigations are collected here.</div>'+un.map(function(r){var id='ck-'+planDataset()+'-'+planTrack+'-any-'+r.n;return planItem(r,id);}).join('')+'</div>';
  var unknown=metrics.filter(function(r){return r.bad==null;});if(unknown.length)h+='<div class="grp"><h3>Verify missing evidence</h3><p>These dimensions remain not assessable. Acknowledge a review of the data requirement; this does not establish safe conditions.</p>'+unknown.map(function(r){return planItem(r,'ck-'+planDataset()+'-'+planTrack+'-verify-'+r.n);}).join('')+'</div>';$('check').innerHTML=h;if(registerOpen)$('cwr-ten-register').open=true;}
-function renderTimeline(){var metrics=getPlanMetrics();if(!metrics.length)return;
+function renderTimeline(){preserveMetricHelpFocus('timeline',renderTimeline_);}
+function renderTimeline_(){var metrics=getPlanMetrics();if(!metrics.length)return;
  $('timeline').innerHTML='<table class="tbl"><thead><tr><th>Phase</th><th>Decision</th><th>Dimensions</th></tr></thead><tbody>'+PHASES.map(function(p){
-  return '<tr'+(p.id===phaseSel?' class="sel"':'')+'><td style="white-space:nowrap;font-weight:650">'+p.label+(p.id===phaseSugg?'<div class="muted" style="font-weight:500">suggested</div>':'')+'</td><td>'+esc(phaseDecision(p))+'</td><td>'+p.dims.map(function(d){var r=metrics[d-1];return '<span class="pill '+(r.bad==null?'unknown':r.bad?'bad':'ok')+'" title="'+esc(r.name)+': '+metricStatusLabel(r)+'">#'+d+' '+(r.bad==null?'?':r.bad?'▲':'·')+'</span>';}).join('')+'</td></tr>';}).join('')+'</tbody></table>';}
+  return '<tr'+(p.id===phaseSel?' class="sel"':'')+'><td style="white-space:nowrap;font-weight:650">'+p.label+(p.id===phaseSugg?'<div class="muted" style="font-weight:500">suggested</div>':'')+'</td><td>'+esc(phaseDecision(p))+'</td><td>'+p.dims.map(function(d){var r=metrics[d-1];return '<span class="pill '+(r.bad==null?'unknown':r.bad?'bad':'ok')+'">'+metricLabel(d,'#'+d+' '+(r.bad==null?'?':r.bad?'▲':'·'),metricHelpContext(r,planDataset()))+'</span>';}).join('')+'</td></tr>';}).join('')+'</tbody></table>';}
 
 
 
@@ -1422,9 +1613,9 @@ function renderCalib(){var e=stations.map(function(s){return s.elev;}).sort(func
  var rows=[['Stations with ground elevations','130','130'],['Ladder count at 3 / 4 / 5 / 6 / 7 / 8 / 10 / 12 ft','2, 2, 6, 15, 32, 56, 85, 96',lad],['Helene / Idalia / Milton planes (7.08 / 4.63 / 1.86 ft)','69 / 15 / 2',storms],
   ['Elevation min / p10 / p25 / median / p75 / p90 / max (ft)','-0.8 / 4.2 / 5.6 / 6.9 / 10.7 / 34.8 / 54.4',q],['1 ft histogram bins matched','21 of 21',hm+' of 21'],['Evacuation zones','A 72 · B 10 · C 2 · D 4 · E 4 · M 1 · unassigned in archived aggregate 37',zs],
   ['Helene-plane stations in Zone A','52 of 69',helA+' of '+hel.length],['Unassigned synthetic zones: island/causeway sites versus the rest','Aggregate unassigned group skews to island and causeway sites',islU+' of '+isl.length+' vs '+mainU+' of '+(stations.length-isl.length)],
-  ['Criticality flag','about 10, none below 7 ft',crit.length+', lowest at '+critMin.toFixed(2)+' ft'],['Force-main edges and stations','15 among 28',E.length+' among '+nodes.size],['Edges crossing a basin line','about 40%',Math.round(100*cross/E.length)+'%'],
-  ['Islands at 1.5 km among stations exposed at 6 ft','11',String(comp6)],['Treatment plants (terminals) and basins','3 plants, 3 basins',GEO.plants.length+' plants, '+new Set(stations.map(function(s){return s.basin;})).size+' basins; '+SINKS.length+' sinks linked to their basin plant']];
- $('calib').innerHTML='<table class="tbl"><thead><tr><th>Target</th><th>Real network</th><th>Synthetic</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>';}).join('')+'</tbody></table>';
+  ['Criticality flag','about 10, none below 7 ft',crit.length+', lowest at '+critMin.toFixed(2)+' ft'],['Force-main edges and stations','15 among 28',E.length+' among '+nodes.size],['Edges crossing a basin line','about 40%',Math.round(100*cross/E.length)+'%',7],
+  ['Islands at 1.5 km among stations exposed at 6 ft','11',String(comp6),4],['Treatment plants (terminals) and basins','3 plants, 3 basins',GEO.plants.length+' plants, '+new Set(stations.map(function(s){return s.basin;})).size+' basins; '+SINKS.length+' sinks linked to their basin plant']];
+ $('calib').innerHTML='<table class="tbl"><thead><tr><th>Target</th><th>Real network</th><th>Synthetic</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td>'+(r[3]?metricLabel(r[3],r[0],metricHelpContext({n:r[3]},'synthetic')):esc(r[0]))+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>';}).join('')+'</tbody></table>';
  $('hook-state').textContent='STATUS_OVERRIDE currently holds '+Object.keys(STATUS_OVERRIDE).length+' entries.';}
 
 /* ===================== PAGES + WIRING ===================== */

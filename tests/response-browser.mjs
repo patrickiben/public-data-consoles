@@ -133,6 +133,7 @@ try{
         if(entry.native){
           await page.waitForFunction(()=>document.querySelector('#tm')?.textContent.includes('Mobility Network Leakage'),{timeout:45000});
           assert.equal(await page.locator('#console-response').count(),0,'Native Coastal must not have a duplicate panel');
+          assert.equal(await page.locator('#tm [data-metric-help]').count(),10,'All ten native exercise labels offer help');
           await page.locator('[data-tab="plan"]').click();
           await page.locator('#cwr-operator-track').click();assert.equal(await page.locator('#cwr-operator-track').getAttribute('aria-pressed'),'true');
           assert.equal(await page.locator('#cwr-export-plan').count(),1);
@@ -140,6 +141,7 @@ try{
           await page.waitForFunction(slug=>window.ConsoleResponse?.exportPlan().plan.slug===slug,entry.slug,{timeout:45000});
           assert.equal(await page.locator('#console-response').count(),1);
           assert.equal(await page.locator('[data-cr-metric]').count(),10,entry.slug+' needs all ten canonical dimensions');
+          for(let metric=1;metric<=10;metric++)assert.equal(await page.locator('[data-cr-metric="'+metric+'"] [data-metric-help="'+metric+'"]').count(),1,entry.slug+' offers help for parameter '+metric);
           assert.equal(await page.locator('#console-response-shortcut').count(),1);
           const exported=await page.evaluate(()=>ConsoleResponse.exportPlan());
           assert.equal(exported.plan.diagnostics.filter(d=>d.metricId).length,10);

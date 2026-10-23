@@ -25,6 +25,21 @@ def strip_blocks(html):
     return html
 
 
+def embed_help(html, script, style):
+    start, end = "<!-- CONSOLE_METRIC_HELP_START -->", "<!-- CONSOLE_METRIC_HELP_END -->"
+    if html.count(start) != html.count(end) or html.count(start) > 1:
+        raise ValueError("Malformed/duplicate metric help markers")
+    html = re.sub(re.escape(start) + ".*?" + re.escape(end) + r"\n?", "", html, flags=re.S)
+    if "</script" in script.lower() or "</style" in style.lower():
+        raise ValueError("Metric help source must not close its enclosing HTML element")
+    anchors = list(re.finditer(r"</head\s*>", html, flags=re.I))
+    if len(anchors) != 1:
+        raise ValueError("Expected exactly one metric help head anchor")
+    block = start + "\n<style>\n" + style.rstrip() + "\n</style>\n<script>\n" + script.rstrip() + "\n</script>\n" + end + "\n"
+    at = anchors[0].start()
+    return html[:at] + block + html[at:]
+
+
 def build(html, entry, core, style, adapter):
     if entry.get("native"):
         if "CONSOLE_RESPONSE_" in html:
@@ -56,6 +71,8 @@ def generate(root=ROOT, check=False):
         raise ValueError("Manifest must list every console exactly once")
     core = (source / "core.js").read_text() + "\n" + (source / "domain-helpers.js").read_text() + "\n" + (source / "observed-series.js").read_text()
     style = (source / "style.css").read_text()
+    help_script = (source / "metric-help.js").read_text()
+    help_style = (source / "metric-help.css").read_text()
     outputs = {}
     for entry in entries:
         page = root / "consoles" / entry["slug"] / "index.html"
@@ -69,9 +86,15 @@ def generate(root=ROOT, check=False):
                 raise ValueError("Priority source must be in response-plans/priorities")
             adapter = priority.read_text() + "\n" + adapter
         original = page.read_text()
-        expected = build(original, entry, core, style, adapter)
+        expected = embed_help(build(original, entry, core, style, adapter), help_script, help_style)
         if expected != original:
             outputs[page] = expected
+    guide = source / "guide.html"
+    if guide.exists():
+        original = guide.read_text()
+        expected = embed_help(original, help_script, help_style)
+        if expected != original:
+            outputs[guide] = expected
     if check:
         for page in outputs:
             print("Stale response blocks: " + str(page.relative_to(root)), file=sys.stderr)

@@ -462,9 +462,18 @@ footer b{color:var(--ink2)}
   function scrollToSection(el) {
     el.scrollIntoView({ behavior: root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   }
+  function metricLabel(d, label) {
+    var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.canonicalLabel || d.label);
+    var context = d.label + (d.status === 'unknown' ? ' — not assessable with the available inputs.' : d.scope === 'planning' ? ' — planning comparison.' : '');
+    return d.metricId && root.ConsoleMetricHelp ? root.ConsoleMetricHelp.label(d.metricId, value, context) : esc(value);
+  }
   function focusKey(el) {
     if (!el) return '';
     if (el.id) return 'id:' + el.id;
+    if (el.hasAttribute('data-metric-help')) {
+      var metricOwner = el.closest('[data-cr-diagnostic],[data-cr-action]');
+      return signature(['metric-help', el.dataset.metricHelp, metricOwner && [metricOwner.dataset.crDiagnostic, metricOwner.dataset.crAction]]);
+    }
     if (el.tagName === 'SUMMARY') return 'summary:' + el.parentElement.dataset.crSection;
     if (el.tagName === 'A') {
       var owner = el.closest('[data-cr-action],[data-cr-impact],[data-cr-impact-record],[data-cr-section]');
@@ -596,7 +605,7 @@ footer b{color:var(--ink2)}
       actionHTML += '<h3>Prioritized live action checklist</h3><p class="cr-note">Ordered for this selection and audience. Timing is an interpretive review prompt unless attributed to a current official notice. Source periods remain visible; older reports support planning.</p><ol class="cr-priority-list">';
       featured.forEach(function (a) {
         var priorityLabel = a.practice ? 'Practice / planning' : { immediate: 'Current official warning · check now', next: 'Next check', planned: 'Planning review', routine: 'Follow-up' }[a.priority];
-        actionHTML += '<li><article class="cr-action cr-priority" data-cr-action="' + esc(a.id) + '" data-cr-priority="' + esc(a.priority) + '"><div class="cr-priority-head"><span class="cr-priority-number" aria-label="Priority ' + a.position + '">' + a.position + '</span><div><span class="cr-badge">' + esc(priorityLabel) + '</span><h4>' + esc(a.title) + '</h4></div></div><p class="cr-priority-target"><b>Where / record:</b> ' + esc(a.target) + '</p><p><b>Why this is prioritized:</b> ' + esc(a.reason) + '</p><p class="cr-timing"><b>When:</b> ' + esc(a.timing) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><div class="cr-escalation"><p><b>Escalate if:</b> ' + esc(a.escalateWhen) + '</p><p><b>Escalate to:</b> ' + esc(a.escalateTo) + '</p></div><p><b>Recheck:</b> ' + esc(a.reviewAfter) + '</p>' + (a.validUntil ? '<p class="cr-note">Evidence valid until: ' + esc(a.validUntil) + '</p>' : '') + (a.diagnosticIds.length ? '<p class="cr-note">Checklist dimensions: ' + esc(a.diagnosticIds.map(function (id) { var d = plan.diagnostics.find(function (item) { return item.id === id; }); return d ? (d.metricId ? '#' + d.metricId + ' ' : '') + d.label : id; }).join('; ')) + '</p>' : '') + impactSources(a) + '<p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article></li>';
+        actionHTML += '<li><article class="cr-action cr-priority" data-cr-action="' + esc(a.id) + '" data-cr-priority="' + esc(a.priority) + '"><div class="cr-priority-head"><span class="cr-priority-number" aria-label="Priority ' + a.position + '">' + a.position + '</span><div><span class="cr-badge">' + esc(priorityLabel) + '</span><h4>' + esc(a.title) + '</h4></div></div><p class="cr-priority-target"><b>Where / record:</b> ' + esc(a.target) + '</p><p><b>Why this is prioritized:</b> ' + esc(a.reason) + '</p><p class="cr-timing"><b>When:</b> ' + esc(a.timing) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><div class="cr-escalation"><p><b>Escalate if:</b> ' + esc(a.escalateWhen) + '</p><p><b>Escalate to:</b> ' + esc(a.escalateTo) + '</p></div><p><b>Recheck:</b> ' + esc(a.reviewAfter) + '</p>' + (a.validUntil ? '<p class="cr-note">Evidence valid until: ' + esc(a.validUntil) + '</p>' : '') + (a.diagnosticIds.length ? '<p class="cr-note">Checklist dimensions: ' + a.diagnosticIds.map(function (id) { var d = plan.diagnostics.find(function (item) { return item.id === id; }); return d ? metricLabel(d, (d.metricId ? '#' + d.metricId + ' ' : '') + d.label) : esc(id); }).join('; ') + '</p>' : '') + impactSources(a) + '<p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article></li>';
       });
       actionHTML += '</ol>';
     }
@@ -606,7 +615,7 @@ footer b{color:var(--ink2)}
       followupHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
       list.forEach(function (a) {
         var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
-        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc((a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return (d.metricId ? '#' + d.metricId + ' ' : '') + d.label + ' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : ''); }).join('; ') || 'Evidence is incomplete; verify before deciding.')) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc(a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return metricLabel(d, (d.metricId ? '#' + d.metricId + ' ' : '') + d.label) + esc(' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : '')); }).join('; ') || 'Evidence is incomplete; verify before deciding.') + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
       });
     });
     actionHTML += featured.length ? section('followup', 'Dimension-by-dimension follow-up', followupHTML, 'interpretive') : followupHTML;
@@ -621,7 +630,7 @@ footer b{color:var(--ink2)}
       return '<h3>' + ({ comparison: 'Comparison and balance', structure: 'Structure and coverage', spillover: 'Spillover and dependence' })[pillar] + '</h3>' + (ds.length ? ds.map(function (d) {
         var related = plan.actions.filter(function (a) { return a.track === track && a.diagnosticIds.includes(d.id); });
         var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
-        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + (d.metricId ? '#' + d.metricId + ' ' + esc(d.canonicalLabel) : esc(d.label)) + ' — ' + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + metricLabel(d) + ' — ' + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
       }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
     }).join('');
     h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');
@@ -637,7 +646,7 @@ footer b{color:var(--ink2)}
     h += '</details>';
     panel.innerHTML = h;
     if (focused) {
-      var nextFocus = Array.from(panel.querySelectorAll('[id],summary,a')).find(function (el) { return focusKey(el) === focused; }) || doc.getElementById('console-response-title');
+      var nextFocus = Array.from(panel.querySelectorAll('[id],summary,a,[data-metric-help]')).find(function (el) { return focusKey(el) === focused; }) || doc.getElementById('console-response-title');
       if (nextFocus) nextFocus.focus({ preventScroll: true });
     }
   }
@@ -706,7 +715,7 @@ footer b{color:var(--ink2)}
       observer = new root.MutationObserver(function (records) {
         var relevant = records.some(function (record) {
           var el = record.target.nodeType === 1 ? record.target : record.target.parentElement;
-          if (!el || el.closest('#console-response')) return false;
+          if (!el || el.closest('#console-response,#console-metric-tooltip')) return false;
           return !targets.length || targets.some(function (selector) { return el.matches(selector) || !!el.closest(selector) || !!el.querySelector(selector); });
         });
         if (relevant) { root.clearTimeout(timer); timer = root.setTimeout(update, 80); }
@@ -900,6 +909,149 @@ footer b{color:var(--ink2)}
 })(window);
 </script>
 <!-- CONSOLE_RESPONSE_HEAD_END -->
+<!-- CONSOLE_METRIC_HELP_START -->
+<style>
+.cmh-term{white-space:normal;overflow-wrap:anywhere}
+.cmh-term .cmh-button,#console-response .cmh-button{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;box-sizing:border-box;min-width:26px;min-height:26px;width:26px;height:26px;margin:0 0 0 6px;padding:0;border:1px solid #69bbd0;border-radius:50%;background:#15394a;color:#dcf8ff;font:700 14px/1 system-ui,sans-serif;cursor:help;flex:none;box-shadow:none}
+.cmh-term .cmh-button:hover,#console-response .cmh-button:hover{background:#24556a;border-color:#b0eaf5}
+.cmh-term .cmh-button:focus-visible,#console-response .cmh-button:focus-visible{outline:3px solid #f4d57d;outline-offset:3px}
+#console-metric-tooltip{position:fixed;z-index:2147483000;box-sizing:border-box;width:370px;padding:15px 17px;background:#102a39;color:#e9f4fa;border:1px solid #85d0e0;border-radius:12px;box-shadow:0 8px 28px #0008;font:14px/1.5 system-ui,sans-serif;overflow:auto;overflow-wrap:anywhere;text-align:left;user-select:text}
+#console-metric-tooltip[hidden]{display:none!important}
+#console-metric-tooltip strong{display:block;color:#c0f2ff;font-size:15px;line-height:1.35}
+#console-metric-tooltip p{margin:10px 0}
+#console-metric-tooltip small{display:block;color:#a9c4d4;font-size:11px;margin-top:10px}
+@media(max-width:640px),(pointer:coarse){.cmh-term .cmh-button,#console-response .cmh-button{width:44px;height:44px;min-width:44px;min-height:44px;font-size:17px}#console-metric-tooltip{font-size:14px}}
+@media print{.cmh-button,#console-metric-tooltip{display:none!important}}
+</style>
+<script>
+/* Shared, self-contained plain-language help. No data, scoring or network access. */
+(function(root){
+ 'use strict';
+ var definitions = [
+  {
+    "id": 1,
+    "name": "Population Balance",
+    "meaning": "Checks whether comparison groups are alike in the characteristics or population/workload weights that matter to the question. Equal numbers of sites do not ensure comparable groups."
+  },
+  {
+    "id": 2,
+    "name": "Wasserstein Distance / Shape Imbalance",
+    "meaning": "Measures how far apart two distributions are by how far their values would need to move to match. Read the distance in its stated units; a gap does not identify its cause."
+  },
+  {
+    "id": 3,
+    "name": "Density Symmetry",
+    "meaning": "Compares how concentrated or spread out two groups are, using the stated density measure. Similar totals can hide different geographic or statistical patterns."
+  },
+  {
+    "id": 4,
+    "name": "Euler Characteristic / Contiguity",
+    "meaning": "Describes connectedness using a declared spatial or graph definition. A component count is a proxy: the full Euler characteristic also accounts for holes."
+  },
+  {
+    "id": 5,
+    "name": "Persistence Gap",
+    "meaning": "Checks which spatial clusters or gaps remain as you change how nearby points are connected. A count near a chosen threshold is a simpler sensitivity check."
+  },
+  {
+    "id": 6,
+    "name": "Spatial Mixing / Scale Stability",
+    "meaning": "Checks whether a pattern changes when you change the spatial scale, grouping or comparison window. The dashboard states which scale it varies; this does not measure physical mixing."
+  },
+  {
+    "id": 7,
+    "name": "Variational Free Energy",
+    "meaning": "Checks how well a model describes relationships between parts of a system, while accounting for model complexity. The research uses a fit-versus-complexity score (BIC); a dashboard’s link-count proxy is a different measure."
+  },
+  {
+    "id": 8,
+    "name": "Contamination AUC",
+    "meaning": "Combines an exposure screen across a stated range of times, distances, thresholds or scenario levels into one summary: the area under the curve. It does not give the probability of contamination or damage."
+  },
+  {
+    "id": 9,
+    "name": "Frontier Risk / Buffer Depth AUC",
+    "meaning": "Summarizes how much of the otherwise unexposed group lies near the exposed group as a chosen buffer grows. Its meaning depends on the weights and distance range; it does not give a failure probability or a safe buffer distance."
+  },
+  {
+    "id": 10,
+    "name": "Mobility Network Leakage",
+    "meaning": "Measures or models movement between comparison groups along defined links. A cross-group link count alone does not establish actual volume, hydraulic flow or causal transmission."
+  }
+];
+ var doc=root.document, tip=null, active=null, pinned=false, timer=null, overTip=false;
+ function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+ function definition(id){return definitions.find(function(d){return d.id===Number(id);});}
+ function label(id,text,context){
+  var d=definition(id);if(!d)return esc(text);
+  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
+ }
+ function ensure(){
+  if(tip)return tip;
+  tip=doc.createElement('div');tip.id='console-metric-tooltip';tip.setAttribute('role','tooltip');tip.hidden=true;
+  doc.body.appendChild(tip);
+  tip.addEventListener('pointerenter',function(){overTip=true;root.clearTimeout(timer);});
+  tip.addEventListener('pointerleave',function(){overTip=false;schedule();});
+  return tip;
+ }
+ function close(){
+  root.clearTimeout(timer);
+  if(active){active.removeAttribute('aria-describedby');active.setAttribute('aria-expanded','false');}
+  if(tip)tip.hidden=true;
+  active=null;pinned=false;overTip=false;
+ }
+ function position(){
+  if(!active||!tip||tip.hidden)return;
+  if(!active.isConnected){close();return;}
+  var r=active.getBoundingClientRect(),v=root.visualViewport,w=v?v.width:root.innerWidth,h=v?v.height:root.innerHeight,x=v?v.offsetLeft:0,y=v?v.offsetTop:0;
+  if(r.bottom<y||r.top>y+h||r.right<x||r.left>x+w){close();return;}
+  tip.style.maxWidth=Math.max(0,w-24)+'px';tip.style.maxHeight=Math.max(0,h-24)+'px';
+  var box=tip.getBoundingClientRect(),left=Math.max(x+12,Math.min(r.left,x+w-box.width-12)),top=r.bottom+8;
+  if(top+box.height>y+h-12)top=r.top-box.height-8;
+  top=Math.max(y+12,Math.min(top,y+h-box.height-12));
+  tip.style.left=left+'px';tip.style.top=top+'px';
+ }
+ function show(button,lock){
+  var d=definition(button&&button.dataset.metricHelp);if(!d)return;
+  root.clearTimeout(timer);
+  if(active!==button){close();active=button;}
+  pinned=!!lock||pinned;
+  var el=ensure();el.replaceChildren();
+  var title=doc.createElement('strong');title.textContent='#'+d.id+' '+d.name;el.appendChild(title);
+  var meaning=doc.createElement('p');meaning.textContent=d.meaning;el.appendChild(meaning);
+  if(button.dataset.metricContext){var context=doc.createElement('p'),lead=doc.createElement('b');lead.textContent='In this view: ';context.append(lead,doc.createTextNode(button.dataset.metricContext));el.appendChild(context);}
+  var hint=doc.createElement('small');hint.textContent=pinned?'Tap ? again or elsewhere to close. Escape also closes.':'Tap ? to keep open. Press Escape to close.';el.appendChild(hint);
+  el.hidden=false;button.setAttribute('aria-describedby',el.id);button.setAttribute('aria-expanded','true');position();
+ }
+ function schedule(){
+  root.clearTimeout(timer);timer=root.setTimeout(function(){if(!pinned&&!overTip&&doc.activeElement!==active)close();},160);
+ }
+ function termButton(target){var term=target&&target.closest&&target.closest('[data-metric-term]');return term&&term.querySelector('[data-metric-help]');}
+ function start(){
+  doc.querySelectorAll('[data-metric-name]').forEach(function(el){el.innerHTML=label(el.dataset.metricName,el.textContent,el.dataset.metricContext);});
+  ensure();
+  doc.addEventListener('pointerover',function(e){if(e.pointerType==='touch')return;var b=termButton(e.target);if(b&&termButton(e.relatedTarget)!==b){if(active&&b!==active&&(pinned||doc.activeElement===active))return;show(b,false);}});
+  doc.addEventListener('pointerout',function(e){var b=termButton(e.target);if(b&&termButton(e.relatedTarget)!==b&&!tip.contains(e.relatedTarget))schedule();});
+  doc.addEventListener('focusin',function(e){if(e.target.matches('[data-metric-help]'))show(e.target,false);});
+  doc.addEventListener('focusout',function(e){if(e.target===active){pinned=false;schedule();}});
+  // Capture prevents help inside a summary/label from opening it or checking a box.
+  doc.addEventListener('click',function(e){
+   var b=e.target.closest('[data-metric-help]');
+   if(b){e.preventDefault();e.stopPropagation();if(active===b&&pinned)close();else show(b,true);return;}
+   if(!tip.contains(e.target))close();
+  },true);
+  doc.addEventListener('keydown',function(e){if(e.key==='Escape'&&active){close();e.preventDefault();e.stopPropagation();}},true);
+  doc.addEventListener('scroll',function(e){if(e.target!==tip)position();},true);
+  root.addEventListener('resize',position);
+  if(root.visualViewport){root.visualViewport.addEventListener('resize',position);root.visualViewport.addEventListener('scroll',position);}
+  if(root.MutationObserver)new root.MutationObserver(function(){if(active&&!active.isConnected)close();}).observe(doc.body,{childList:true,subtree:true});
+  root.addEventListener('beforeprint',close);
+ }
+ root.ConsoleMetricHelp={label:label,definition:definition,close:close,definitions:definitions};
+ if(doc){if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',start,{once:true});else start();}
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+<!-- CONSOLE_METRIC_HELP_END -->
 </head>
 <body><!-- CONSOLE_RESPONSE_MOUNT_START -->
 <section id="console-response" aria-labelledby="console-response-title"></section>

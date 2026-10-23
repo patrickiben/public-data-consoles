@@ -217,3 +217,18 @@ independently of the observation/report date and source availability. Keep it st
 reports and lost coverage so those changes remain visible as evidence changes. Change it when the
 user selects another public location/condition or a genuinely different comparison. Never include
 private form fields. Adapters without a key conservatively fall back to context equality.
+
+## Plain-language parameter help
+
+`metric-help.js` and `metric-help.css` are embedded into every console and the field guide by
+`embed_response_plans.py`. `ConsoleMetricHelp.label(id, displayedLabel, contextText)` returns escaped
+inline markup for a canonical parameter and its help button. General meaning and the actual measure
+used in this view remain separate. The help never changes source data, scores, cutoffs or applicability.
+Coastal supplies distinct exercise and public-station explanations, including when a quantity is a
+geometric proxy or cannot be assessed. The inherited free-energy name does not turn a link share into
+a fitted model; the reference CRT implementation documents its BIC proxy.
+
+The entire label supports hover; the button also supports focus and tap. The single floating tooltip
+is hoverable, viewport-bounded, associated through `aria-describedby`, dismissible with Escape or an
+outside tap, and excluded from printing. Help must not toggle a containing summary or acknowledgment.
+Keyboard focus survives an equivalent response-panel redraw; unrelated hover must not override it.
