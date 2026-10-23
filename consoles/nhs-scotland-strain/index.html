@@ -42,6 +42,10 @@ main{display:flex;gap:12px;padding:12px;align-items:flex-start}
 .caveat{color:var(--dim);font-size:10.5px;margin-top:7px}
 select{background:var(--surf2);color:var(--tx);border:1px solid var(--bd2);border-radius:7px;padding:5px 8px;font-size:12px}
 .feeds{display:flex;flex-wrap:wrap;gap:8px}.feeds .f{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);border:1px solid var(--bd);border-radius:7px;padding:4px 8px}
+#nhs-refresh{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;max-width:100%;margin-top:10px;padding:9px 13px;border:1px solid #337b9a;border-radius:8px;background:#102c3d;color:#c8efff;font:inherit;font-size:12px;font-weight:600;line-height:1.35;cursor:pointer;transition:background .15s,border-color .15s}
+#nhs-refresh:hover:not(:disabled){background:#163d52;border-color:#65c8ec}#nhs-refresh:focus-visible{outline:2px solid #92e3ff;outline-offset:3px}#nhs-refresh:disabled{cursor:wait;opacity:.75}
+#nhs-refresh .refresh-icon{display:block;flex:none;width:16px;height:16px}#nhs-refresh[aria-busy=true] .refresh-icon{animation:nhs-refresh-spin 1.2s linear infinite}
+@keyframes nhs-refresh-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){#nhs-refresh{transition:none}#nhs-refresh[aria-busy=true] .refresh-icon{animation:none}}
 details{margin-top:8px;border:1px solid var(--bd);border-radius:8px;padding:8px 10px;background:var(--surf2)}
 details summary{cursor:pointer;font-size:11.5px;color:var(--nhs);font-weight:600}
 details pre{white-space:pre-wrap;font-size:10.5px;color:#bcd2e8;background:#06101a;border:1px solid var(--bd);border-radius:6px;padding:8px;margin:8px 0 0;overflow:auto}
@@ -459,7 +463,7 @@ a{color:var(--nhs)}svg{display:block;width:100%;height:auto}
    <div id="eng"></div></div>
   <div class="card" id="dhcard"><h2>Data health &amp; provenance</h2>
    <div class="feeds" id="feeds"></div>
-   <button id="nhs-refresh" onclick="refreshNHSContext()" style="min-height:44px">Check published reports</button>
+   <button id="nhs-refresh" type="button" onclick="refreshNHSContext()" aria-busy="false"><svg class="refresh-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5M4 17v-5h5M6.1 6.1A8 8 0 0 1 19 8l1 4M4 12l1 4a8 8 0 0 0 12.9 1.9"/></svg><span>Check published reports</span></button>
    <div id="nhs-update-status" class="caveat" role="status"></div>
    <details><summary>Public sources and automatic updates</summary>
    <div style="font-size:11px;color:var(--dim);margin-top:6px">Public Health Scotland reports are checked weekly and published here automatically without a provider key. The page checks the published package on opening, every six visible hours and on return. Each measure retains its own reporting period; a new download does not make old observations current. Failed or incomplete updates preserve the last good reports. Offline copies use their embedded package. Source queries:</div>
@@ -644,6 +648,7 @@ async function refreshNHSContext(){
  if(nhsBusy)return;
  if(location.protocol==='file:'){nhsUpdateStatus='Offline file: using its embedded public reports. Open the hosted console for automatic updates.';render();return;}
  nhsBusy=true;nhsLastAttempt=Date.now();nhsUpdateStatus='Checking published public reports…';render();
+ const button=document.getElementById('nhs-refresh');button.disabled=true;button.setAttribute('aria-busy','true');button.querySelector('span').textContent='Checking reports…';
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
  try{
   const response=await fetch('./data/latest.json',{cache:'no-cache',signal:controller.signal});if(!response.ok)throw new Error('HTTP '+response.status);
@@ -651,7 +656,7 @@ async function refreshNHSContext(){
   const next=validateNHSContext(JSON.parse(text));SNAP=next;
   nhsUpdateStatus='Published reports loaded; checked '+new Date().toISOString()+'. A&E, bed and discharge dates remain those shown.';
  }catch(error){nhsUpdateStatus='Update unavailable or invalid; retained last good reports captured '+SNAP.meta.fetched+'.';}
- finally{clearTimeout(timer);nhsBusy=false;render();tick();}
+ finally{clearTimeout(timer);nhsBusy=false;button.disabled=false;button.setAttribute('aria-busy','false');button.querySelector('span').textContent='Check published reports';render();tick();}
 }
 tick();setInterval(tick,30000);render();refreshNHSContext();
 setInterval(()=>{if(!document.hidden&&Date.now()-nhsLastAttempt>=21600000)refreshNHSContext();},60000);
