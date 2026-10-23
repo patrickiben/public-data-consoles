@@ -1,6 +1,6 @@
 # Public-Data Consoles
 
-A collection of **28 self-contained, browser-only dashboards** built on **live public data feeds**.
+A collection of **32 self-contained, browser-only dashboards** built on **live public data feeds**.
 Every console is a single HTML file: open it (or visit the GitHub Pages URL) and it runs — no install,
 no account, no build step, no server.
 
@@ -8,13 +8,22 @@ These are **descriptive decision-support** tools, not predictions. Each console 
 *measured* (live public API), *modeled* (published estimates, cited), or *demo* (clearly-labeled
 placeholder data). Nothing in this repository contains protected health information or proprietary data.
 
+## Featured: research engineering and systems architecture
+
+**[Coastal Water Resilience — open the console](https://patrickiben.github.io/public-data-consoles/consoles/coastal-water-resilience/)**
+combines live NOAA/NHC/NWS coastal information with a ten-metric diagnostic suite adapted from the
+[contamination-resilient CRT design](https://github.com/patrickiben/crt-design-demo)
+([preprint](https://doi.org/10.5281/zenodo.23486177)) and directed source/sink topology accounting
+informed by [directed-asymmetry contagion research](https://github.com/patrickiben/directed-asymmetry-contagion).
+It demonstrates translating methods across domains, integrating data sources, and building an interactive
+explanation with explicit provenance. The public lift-station network is **synthetic**, calibrated to
+published network-level aggregates; it contains no real station locations. Live observations, archived
+aggregates, synthetic computations and interpretive guidance carry separate labels. The directed component
+is source/sink accounting, not a port of the contagion paper's VAR/FEVD estimation.
+
 ## Live demo
 
-Once GitHub Pages is enabled (Settings → Pages → Deploy from branch → `main` / root), the landing page is at:
-
-```
-https://<your-username>.github.io/public-data-consoles/
-```
+[Open the console catalog](https://patrickiben.github.io/public-data-consoles/).
 
 ## Consoles
 
@@ -71,6 +80,14 @@ https://<your-username>.github.io/public-data-consoles/
 |---|---|---|
 | [Resilience Telemetry](consoles/resilience-telemetry/) | Live + snapshot | Binance.US, Frankfurter FX, embedded equity snapshot |
 
+**Affording Care**
+
+| Console | Data | Sources |
+|---|---|---|
+| [Prescription Savings Finder](consoles/prescription-savings/) | Live + reference | CMS NADAC drug prices and referenced assistance options |
+| [Medical Cost Abroad](consoles/medical-cost-abroad/) | Modeled estimates | Published procedure-price ranges, illustrative flights and lodging |
+| [Medical Debt Assistant](consoles/medical-debt-assistant/) | Reference | FDCPA / FCRA rights and nonprofit-hospital charity-care guidance |
+
 **Get Help**
 
 | Console | Data | Sources |
@@ -103,3 +120,10 @@ gracefully (the console falls back to an embedded snapshot or shows a clear mess
 
 [MIT](LICENSE) for the dashboard code. Underlying data belongs to its respective public providers and is
 subject to their terms.
+
+## Catalog checks
+
+Run `python3 scripts/check_catalog.py` (Python 3.12+ and Node.js required). It checks that
+all console entrypoints appear in both the landing page and README, that their counts agree,
+and that every inline JavaScript program parses. It does not verify external feeds or establish
+medical, legal, financial, or predictive validity. GitHub Actions runs these checks on changes.
