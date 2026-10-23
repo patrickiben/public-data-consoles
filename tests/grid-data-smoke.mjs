@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
-const html = await readFile(new URL('../consoles/us-grid-strain/index.html', import.meta.url), 'utf8');
+// Optional candidate HTML lets maintainers test a freshly refreshed dataset before publishing it.
+const html = await readFile(process.env.GRID_HTML || new URL('../consoles/us-grid-strain/index.html', import.meta.url), 'utf8');
 const origin = 'https://grid-data-smoke.invalid/';
 const embedded = JSON.parse(html.match(/<script type="application\/json" id="grid-snapshot">(.*?)<\/script>/s)[1]);
 const shiftedPeriod = (p, hours) => new Date(Date.parse(p + ':00:00Z') + hours * 3600000).toISOString().slice(0, 13);
@@ -92,7 +93,7 @@ function publicPayload(hours=0) {
 }
 async function publishedScenario(name,options,verify){
  const context=await browser.newContext({serviceWorkers:'block'});const errors=[],requests=[];let calls=0;
- const now=Math.max(Date.now(),Date.parse(embedded.capturedAt)+2*3600000);
+ const now=options.now??Math.max(Date.now(),Date.parse(embedded.capturedAt)+2*3600000);
  try{
   if(options.savedKey)await context.addInitScript(()=>localStorage.setItem('eia_key','old-saved-fixture-key-no-auto-API'));
   await context.route('**/*',async route=>{
@@ -217,15 +218,14 @@ try {
     assert.equal(await page.locator('#lead .row2[data-c="ZZZ"]').count(),1);
     assert.equal(await page.locator('#lead .row2').count(),new Set(embedded.snap.filter(r=>r[1]==='D').map(r=>r[0])).size+1);
   });
-  const expiredPopulation=publicPayload(1),expiredCode='HST';
-  expiredPopulation.historyStart=shiftedPeriod(embedded.snap.find(r=>r[0]===expiredCode&&r[1]==='D')[2],1);
+  // Advance the complete seven-day window beyond the previous reports. Narrowing
+  // it around a particular BA can strand unrelated fuel records outside the window.
+  const expiredPopulation=publicPayload(8*24),expiredCode=embedded.snap.find(r=>r[1]==='D')[0];
   expiredPopulation.snap=expiredPopulation.snap.filter(r=>r[0]!==expiredCode);
   delete expiredPopulation.history[expiredCode];delete expiredPopulation.fuel[expiredCode];
-  for(const rows of Object.values(expiredPopulation.history))rows.splice(0,rows.length,...rows.filter(r=>r[0]>=expiredPopulation.historyStart));
-  expiredPopulation.interchange=expiredPopulation.interchange.filter(r=>r[3]>=expiredPopulation.historyStart);
-  await publishedScenario('reports outside the rolling window may expire',{responses:[{data:expiredPopulation}]},async page=>{
+  await publishedScenario('reports outside the rolling window may expire',{responses:[{data:expiredPopulation}],now:Date.parse(expiredPopulation.capturedAt)+3600000},async page=>{
     assert.equal(await page.evaluate(()=>STATE.mode),'published');
-    assert.equal(await page.locator('#lead .row2[data-c="HST"]').count(),0);
+    assert.equal(await page.locator('#lead .row2[data-c="'+expiredCode+'"]').count(),0);
     assert.equal(await page.evaluate(()=>STATE.interchangeThrough),expiredPopulation.interchangeThrough);
   });
   await publishedScenario('public checks preserve newer explicitly connected personal reports',{responses:[{data:publicPayload(1)},{data:publicPayload(2)}]},async page=>{
