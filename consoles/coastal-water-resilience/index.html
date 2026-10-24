@@ -84,6 +84,27 @@ details.dt{margin-top:10px}details.dt>summary{cursor:pointer;color:var(--sea);fo
 .tmb{padding:2px 12px 12px 46px;font-size:13px;color:var(--ink2)}.tmb p{margin:7px 0}.tmb b{color:var(--ink)}
 .pill{display:inline-block;font:700 10.5px var(--mono);padding:2px 7px;border-radius:999px;background:var(--panel2);color:var(--ink2);margin:0 4px 3px 0}
 .pill.bad{background:rgba(239,83,80,.15);color:#ffb4a8}.pill.ok{background:rgba(52,201,138,.12);color:#86e3bb}
+.timeline-phase{border:1px solid var(--line2);border-radius:11px;padding:14px;margin:12px 0;min-width:0}
+.timeline-phase.sel{border-color:var(--sea);background:rgba(63,169,245,.06)}
+.timeline-phase h3{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0;font-size:15px}
+.timeline-phase h3 small{font-size:12px;color:var(--ink2);font-weight:500}
+.timeline-phase .timeline-decision{margin:8px 0 12px;color:var(--ink2);font-size:13px}
+.timeline-phase h4{font-size:12px;color:var(--ink2);margin:0 0 5px}
+.timeline-metrics{list-style:none;margin:0;padding:0}
+.timeline-metric{padding:10px 0;border-top:1px solid var(--line)}
+.timeline-metric:last-child{padding-bottom:0}
+.timeline-metric-head{display:flex;flex-wrap:wrap;align-items:center;gap:5px 9px;font-size:13px;font-weight:650}
+.timeline-metric-head .cmh-term{flex:1 1 220px;min-width:0}
+.timeline-status{display:inline-block;border-radius:6px;padding:3px 7px;font-size:11px;font-weight:650;background:#24394e;color:#cfdeed;white-space:normal}
+.timeline-status.review{background:#453921;color:#ffe1a0}
+.timeline-status.context{background:#193e50;color:#c2e9fa}
+.timeline-metric p{margin:6px 0 0;font-size:12.5px;color:var(--ink2)}
+.timeline-metric p b{color:var(--ink)}
+.timeline-key{font-size:12px;color:var(--ink2);margin:9px 0;display:grid;gap:5px}
+.timeline-key p{margin:0}
+#timeline{overflow:visible}
+@media(max-width:560px){.timeline-phase{padding:11px}.timeline-metric-head{display:block}.timeline-metric-head .cmh-term{display:block}.timeline-status{margin-top:5px}}
+@media print{.timeline-phase{break-inside:avoid}.timeline-status{border:1px solid}}
 .phases{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
 .ph{border:1px solid var(--line2);background:var(--panel2);color:var(--ink);border-radius:9px;padding:7px 11px;font:650 12.5px var(--sans);cursor:pointer;position:relative}
 .ph[aria-pressed="true"]{background:var(--sea);border-color:var(--sea);color:#06223c}
@@ -196,9 +217,9 @@ section.grid[data-page="inventory"]{grid-template-columns:minmax(0,1.5fr) minmax
  var doc=root.document, tip=null, active=null, pinned=false, timer=null, overTip=false;
  function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
  function definition(id){return definitions.find(function(d){return d.id===Number(id);});}
- function label(id,text,context){
+ function label(id,text,context,contextTitle){
   var d=definition(id);if(!d)return esc(text);
-  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
+  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?' — '+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
  }
  function ensure(){
   if(tip)return tip;
@@ -220,9 +241,13 @@ section.grid[data-page="inventory"]{grid-template-columns:minmax(0,1.5fr) minmax
   var r=active.getBoundingClientRect(),v=root.visualViewport,w=v?v.width:root.innerWidth,h=v?v.height:root.innerHeight,x=v?v.offsetLeft:0,y=v?v.offsetTop:0;
   if(r.bottom<y||r.top>y+h||r.right<x||r.left>x+w){close();return;}
   tip.style.maxWidth=Math.max(0,w-24)+'px';tip.style.maxHeight=Math.max(0,h-24)+'px';
-  var box=tip.getBoundingClientRect(),left=Math.max(x+12,Math.min(r.left,x+w-box.width-12)),top=r.bottom+8;
-  if(top+box.height>y+h-12)top=r.top-box.height-8;
-  top=Math.max(y+12,Math.min(top,y+h-box.height-12));
+  var box=tip.getBoundingClientRect(),below=Math.max(0,y+h-12-r.bottom-8),above=Math.max(0,r.top-y-12-8);
+  // Keep the trigger outside the popup, including while touch focus precedes
+  // click. Otherwise a long explanation can cover its own button mid-tap.
+  var useBelow=box.height<=below||(box.height>above&&below>=above);
+  tip.style.maxHeight=Math.min(h-24,useBelow?below:above)+'px';
+  box=tip.getBoundingClientRect();
+  var left=Math.max(x+12,Math.min(r.left,x+w-box.width-12)),top=useBelow?r.bottom+8:r.top-box.height-8;
   tip.style.left=left+'px';tip.style.top=top+'px';
  }
  function show(button,lock){
@@ -233,7 +258,7 @@ section.grid[data-page="inventory"]{grid-template-columns:minmax(0,1.5fr) minmax
   var el=ensure();el.replaceChildren();
   var title=doc.createElement('strong');title.textContent='#'+d.id+' '+d.name;el.appendChild(title);
   var meaning=doc.createElement('p');meaning.textContent=d.meaning;el.appendChild(meaning);
-  if(button.dataset.metricContext){var context=doc.createElement('p'),lead=doc.createElement('b');lead.textContent='In this view: ';context.append(lead,doc.createTextNode(button.dataset.metricContext));el.appendChild(context);}
+  if(button.dataset.metricContext){var context=doc.createElement('p'),lead=doc.createElement('b');lead.textContent=(button.dataset.metricContextTitle||'In this view')+': ';context.append(lead,doc.createTextNode(button.dataset.metricContext));el.appendChild(context);}
   var hint=doc.createElement('small');hint.textContent=pinned?'Tap ? again or elsewhere to close. Escape also closes.':'Tap ? to keep open. Press Escape to close.';el.appendChild(hint);
   el.hidden=false;button.setAttribute('aria-describedby',el.id);button.setAttribute('aria-expanded','true');position();
  }
@@ -455,8 +480,9 @@ section.grid[data-page="inventory"]{grid-template-columns:minmax(0,1.5fr) minmax
  <div class="col" data-page="plan">
   <div class="card" data-page="plan" id="c-timeline">
    <div class="ch"><h2>Timeline</h2><div class="hbs"><span class="hb ip">INTERPRETIVE · plan</span><span class="hb md">MODELED · dimension status</span></div></div>
-   <div class="sub">Decisions by phase and the metric dimensions each addresses. Chips show each dimension's status at the selected surge level.</div>
-   <div class="tblw" id="timeline"></div>
+   <p class="small">Each parameter is linked to a decision that belongs at that stage of preparation or recovery. <b>Why now</b> explains that link; the <b>?</b> button explains the measure and its use at that phase.</p>
+   <p class="small muted">T marks an assumed storm-impact time for planning. The hour labels are illustrative review windows, not forecast deadlines. All phases show the same current data and scenario; they do not predict how a parameter changes over time. Follow current official instructions.</p>
+   <div id="timeline"></div>
   </div>
   <div class="card" data-page="plan" id="c-findings">
    <div class="ch"><h2>Stations behind this plan</h2><div class="hbs"><span class="hb md">MODELED · public terrain screen</span></div></div>
@@ -903,7 +929,7 @@ var PUBLIC_METRIC_HELP=[
  "Unassessed: the public register provides no verified directed connections, current flow or operating state. Terrain slope and nearby stations cannot establish pumped-flow routes."
 ];
 function metricHelpContext(r,scope){return scope==='synthetic'?'Fictional calibration exercise. '+SYNTHETIC_METRIC_HELP[r.n-1]:'Real public station planning screen. '+PUBLIC_METRIC_HELP[r.n-1]+(r.bad==null?' Currently not assessable. Required inputs: '+(r.requiredInputs||'Applicable verified observations')+'.':'');}
-function metricLabel(id,label,context){var help=window.ConsoleMetricHelp;return help&&typeof help.label==='function'?help.label(id,label,context):esc(label);}
+function metricLabel(id,label,context,contextTitle){var help=window.ConsoleMetricHelp;return help&&typeof help.label==='function'?help.label(id,label,context,contextTitle):esc(label);}
 var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function p2(n){return (n<10?'0':'')+n;}
 function fmtUTC(d){if(!d||isNaN(d))return 'unknown time';d=new Date(d);return MON[d.getUTCMonth()]+' '+d.getUTCDate()+' '+p2(d.getUTCHours())+':'+p2(d.getUTCMinutes())+' UTC';}
@@ -1141,10 +1167,11 @@ function keepFocus(fn){var a=document.activeElement,key=null;
 // Preserve only an already-focused metric help control. Pointer hover never
 // creates a focus request, and a deliberate control/tab selection keeps focus.
 function metricHelpIdentity(button,container){
- var owner=button.closest('[data-cwr-metric]'),item=button.closest('.chk'),detail=button.closest('details.tm'),row=button.closest('tr'),location='';
+ var owner=button.closest('[data-cwr-metric]'),item=button.closest('.chk'),detail=button.closest('details.tm'),phase=button.closest('[data-timeline-phase]'),row=button.closest('tr'),location='';
  if(owner)location='register:'+owner.getAttribute('data-cwr-metric');
  else if(item){var input=item.querySelector('input[type="checkbox"]');location='check:'+(input?input.id:'');}
  else if(detail)location='exercise:'+detail.getAttribute('data-n');
+ else if(phase)location='timeline:'+phase.getAttribute('data-timeline-phase');
  else if(row)location='row:'+row.rowIndex;
  return JSON.stringify([container.id,location,button.getAttribute('data-metric-help'),button.getAttribute('data-metric-context')]);
 }
@@ -1334,10 +1361,144 @@ function renderCheck_(){var register=$('cwr-ten-register'),registerOpen=register
  var mapped={};PHASES.forEach(function(p){p.dims.forEach(function(d){mapped[d]=1;});});var un=bad.filter(function(r){return !mapped[r.n];});
  if(un.length)h+='<div class="grp"><h3>Not tied to a timeline phase</h3><div class="dec">No timeline phase lists these dimensions, so their operational mitigations are collected here.</div>'+un.map(function(r){var id='ck-'+planDataset()+'-'+planTrack+'-any-'+r.n;return planItem(r,id);}).join('')+'</div>';
  var unknown=metrics.filter(function(r){return r.bad==null;});if(unknown.length)h+='<div class="grp"><h3>Verify missing evidence</h3><p>These dimensions remain not assessable. Acknowledge a review of the data requirement; this does not establish safe conditions.</p>'+unknown.map(function(r){return planItem(r,'ck-'+planDataset()+'-'+planTrack+'-verify-'+r.n);}).join('')+'</div>';$('check').innerHTML=h;if(registerOpen)$('cwr-ten-register').open=true;}
+// Each rationale connects the parameter to a planning decision at this phase.
+var TIMELINE_RELEVANCE={
+ "pre": {
+  "2": {
+   "realWhy": "Check the terrain contrast during preparation, while there is time to reconcile low-point records with surveyed asset heights before event-specific decisions.",
+   "exerciseWhy": "Use the fictional elevation contrast to practice identifying which station groups need different preparation questions before selecting a storm scenario.",
+   "publicNext": "Review official flood-risk information; station elevations do not determine your property's risk.",
+   "operatorNext": "Reconcile station identities, terrain dates and surveyed equipment elevations before relying on the screen."
+  },
+  "5": {
+   "realWhy": "Identify near-plane records early, while elevation discrepancies and sensitivity assumptions can be checked without treating a one-foot band as forecast uncertainty.",
+   "exerciseWhy": "Find fictional stations near the chosen plane before the exercise, so participants can see which classifications are sensitive to small changes.",
+   "publicNext": "Review how forecast revisions reach you and when to revisit your local plan.",
+   "operatorNext": "Resolve terrain and equipment-height questions; document the chosen sensitivity band."
+  },
+  "10": {
+   "realWhy": "Verified dependency information takes time to assemble. Identify missing flow links before anyone tries to use this screen for source/sink decisions.",
+   "exerciseWhy": "Review the assumed toy links before the exercise, so later backup scenarios have an explicit dependency story rather than unexplained station counts.",
+   "publicNext": "Keep official utility reporting and advisory channels available; no real backup is inferred here.",
+   "operatorNext": "Check authorized connectivity, operating data and escalation procedures; public inventory alone leaves this parameter unassessed."
+  }
+ },
+ "t120": {
+  "4": {
+   "realWhy": "Early coordination needs a geographic overview. Separated point groups identify areas to check, not confirmed sewer islands or places with shared access.",
+   "exerciseWhy": "Use separated fictional point groups to practice covering several geographic areas before the exercise narrows to particular stations.",
+   "publicNext": "Confirm local alert and communication arrangements for separated areas.",
+   "operatorNext": "Compare the groups with official access information and approved coordination plans; proximity is not road connectivity."
+  }
+ },
+ "t72": {
+  "6": {
+   "realWhy": "Before narrowing to one water-level scenario, inspect which additional public points enter the screen under the declared two-foot increase.",
+   "exerciseWhy": "Compare the toy screened-count ratio at two feet higher to see how quickly the exercise's set of stations could expand.",
+   "publicNext": "Compare official scenario updates; the two-foot increase is an exercise, not a forecast range.",
+   "operatorNext": "Review the changing station IDs against surveyed heights and approved contingency plans."
+  },
+  "8": {
+   "realWhy": "Review the whole declared level range before focusing on one scenario; this summary does not describe the next seventy-two hours.",
+   "exerciseWhy": "Use the full fictional exposure ladder to discuss broad preparedness before concentrating on the exercise's selected water level.",
+   "publicNext": "Use official forecasts for current danger; this integral supports a broader preparedness discussion.",
+   "operatorNext": "Compare the level-range summary with engineering plans; it supplies neither current loading nor a hydraulic forecast."
+  }
+ },
+ "t48": {
+  "5": {
+   "realWhy": "At this preparation stage, prioritize resolving records whose classification changes near the selected plane, rather than assuming the raster equals equipment height.",
+   "exerciseWhy": "Revisit the fictional one-foot margin band as the scenario is refined, and practice explaining why those stations need another check.",
+   "publicNext": "Recheck official updates and your arrangements when the scenario changes.",
+   "operatorNext": "Verify equipment heights and approved protection decisions; the band itself authorizes no field action."
+  },
+  "6": {
+   "realWhy": "Recheck the stations added by the two-foot sensitivity test before plans are finalized; a changed point count is a review question, not a priority ranking.",
+   "exerciseWhy": "Use the higher-plane toy group to rehearse how a changed scenario would alter review needs before final exercise decisions.",
+   "publicNext": "Keep alternatives consistent with current local guidance; do not treat the added ring as a flood boundary.",
+   "operatorNext": "Check the additional IDs against authorized resource and access plans, not an automatic hardening order."
+  }
+ },
+ "t24": {
+  "4": {
+   "realWhy": "Recheck official access information across separated point groups as conditions evolve; the proximity graph cannot tell you which areas will be cut off.",
+   "exerciseWhy": "Return to the fictional geographic groups to rehearse coordination limits, while keeping assumed isolation separate from verified road or utility conditions.",
+   "publicNext": "Follow local access instructions; a component count is not a road-closure notice.",
+   "operatorNext": "Confirm authorized access and communications before field decisions; do not infer isolation from the map."
+  },
+  "9": {
+   "realWhy": "Before the event, identify nearby above-plane records to include in the monitoring plan; they can be missed by a list containing only screened points.",
+   "exerciseWhy": "Use the toy frontier weights to rehearse which above-plane stations sit near the assumed screened group before the scenario's event phase.",
+   "publicNext": "Monitor official notices for nearby areas; the buffer is not a property-risk zone.",
+   "operatorNext": "Cross-check nearby records with actual access and service information; distance supplies no verified flow path."
+  }
+ },
+ "land": {
+  "9": {
+   "realWhy": "During the event phase, nearby-point context can organize review of incoming reports; it cannot show a real flood front or safe response area.",
+   "exerciseWhy": "Practice monitoring the interface between fictional screened and above-plane points, without treating the toy buffer as observed spread.",
+   "publicNext": "Use official alerts and emergency channels; this map gives no field-access permission.",
+   "operatorNext": "Verify incoming conditions in authorized systems; proximity alone cannot trigger deployment."
+  },
+  "10": {
+   "realWhy": "Current propagation questions require timestamped operating data and verified links. Without them, keep this parameter unassessed and use official service reports.",
+   "exerciseWhy": "Follow the assumed toy upstream paths to practice which reported conditions would need confirmation during the event scenario.",
+   "publicNext": "Follow utility advisories and report verified problems through established channels.",
+   "operatorNext": "Use authorized telemetry and emergency procedures; the public screen cannot infer pumping, surcharge or backup."
+  }
+ },
+ "post": {
+  "1": {
+   "realWhy": "As verified impacts arrive, check communication coverage against the geographic resident context; basin population is not a count of customers without service.",
+   "exerciseWhy": "Compare fictional station counts with toy dependent weights during the recovery exercise, showing why equal station counts need not imply equal modeled burden.",
+   "publicNext": "Use utility notices and report community communication gaps; do not infer household outages from basin totals.",
+   "operatorNext": "Reconcile actual service areas and interruption records before using population or flow to set priorities."
+  },
+  "9": {
+   "realWhy": "Review interface-adjacent records against verified post-event reports; a nearby above-plane point may raise a question, but proximity does not establish disruption.",
+   "exerciseWhy": "Use the toy frontier to practice follow-up questions after the exercise event, rather than treating every nearby station as affected.",
+   "publicNext": "Follow official re-entry and utility notices; report verified conditions.",
+   "operatorNext": "Reconcile observations and safe access before any inspection or restoration decision."
+  },
+  "10": {
+   "realWhy": "Restoration sequencing needs verified dependencies and operating conditions. Missing public links call for verification, not an inferred generator or pumping priority.",
+   "exerciseWhy": "Use assumed toy dependencies to rehearse the evidence a restoration sequence would need, without presenting them as real hydraulic routes.",
+   "publicNext": "Track official restoration notices and report service problems through the utility.",
+   "operatorNext": "Follow approved restoration procedures using verified connectivity, capacity, access and operating records."
+  }
+ },
+ "rec": {
+  "1": {
+   "realWhy": "Recovery review asks whether assessments and communication covered the resident footprints represented here; geography cannot establish affected customers or equitable service restoration.",
+   "exerciseWhy": "Debrief how toy dependent weights changed the exercise's apparent burden, and identify what real customer and service data would be needed.",
+   "publicNext": "Discuss documented service impacts and communication gaps with the responsible authority.",
+   "operatorNext": "Compare verified impacts and customer records with the geographic proxy; document discrepancies rather than treating them as losses."
+  },
+  "7": {
+   "realWhy": "Recovery records can support a later dependence-model study; leave VFE unassessed until the model, verified inputs and validation exist.",
+   "exerciseWhy": "Debrief toy edges crossing fictional basin boundaries to discuss coordination assumptions; their share is not fitted VFE or measured propagation.",
+   "publicNext": "Share verified service information through official channels; basin labels do not prove separate or shared impacts.",
+   "operatorNext": "Reconcile cross-basin reports and model requirements; do not compute a dependence score from labels alone."
+  }
+ }
+};
 function renderTimeline(){preserveMetricHelpFocus('timeline',renderTimeline_);}
+function timelineStatus(r){
+ if(r.bad==null)return 'Not assessable';
+ if(planDataset()==='synthetic')return r.bad?'Scenario criterion flagged':'Within scenario criterion';
+ return metricStatusLabel(r);
+}
+function timelineReason(p,r){var why=TIMELINE_RELEVANCE[p.id][r.n];return planDataset()==='synthetic'?why.exerciseWhy:why.realWhy;}
+function timelineHelp(p,r){var why=TIMELINE_RELEVANCE[p.id][r.n];return timelineReason(p,r)+' '+(planTrack==='public'?'Public / local review: '+why.publicNext:'Operator review: '+why.operatorNext)+' '+metricHelpContext(r,planDataset());}
 function renderTimeline_(){var metrics=getPlanMetrics();if(!metrics.length)return;
- $('timeline').innerHTML='<table class="tbl"><thead><tr><th>Phase</th><th>Decision</th><th>Dimensions</th></tr></thead><tbody>'+PHASES.map(function(p){
-  return '<tr'+(p.id===phaseSel?' class="sel"':'')+'><td style="white-space:nowrap;font-weight:650">'+p.label+(p.id===phaseSugg?'<div class="muted" style="font-weight:500">suggested</div>':'')+'</td><td>'+esc(phaseDecision(p))+'</td><td>'+p.dims.map(function(d){var r=metrics[d-1];return '<span class="pill '+(r.bad==null?'unknown':r.bad?'bad':'ok')+'">'+metricLabel(d,'#'+d+' '+(r.bad==null?'?':r.bad?'▲':'·'),metricHelpContext(r,planDataset()))+'</span>';}).join('')+'</td></tr>';}).join('')+'</tbody></table>';}
+ var synthetic=planDataset()==='synthetic';
+ var key='<div class="timeline-key" aria-label="Timeline status meanings">'+(synthetic?
+  '<p><span class="timeline-status review">Scenario criterion flagged</span> The fictional exercise crosses its chosen criterion.</p><p><span class="timeline-status context">Within scenario criterion</span> The fictional criterion is not crossed; this is not a real safety assessment.</p>':
+  '<p><span class="timeline-status review">Planning review</span> The current screen calls for a closer look; it does not confirm a failure.</p><p><span class="timeline-status context">Descriptive context</span> A comparison is available, with no validated operating cutoff or all-clear.</p>')+
+  '<p><span class="timeline-status unknown">Not assessable</span> Required evidence is missing; the phase explains what needs checking.</p></div>';
+ $('timeline').innerHTML=key+PHASES.map(function(p){
+  return '<section class="timeline-phase'+(p.id===phaseSel?' sel':'')+'" data-timeline-phase="'+p.id+'" aria-labelledby="timeline-heading-'+p.id+'"><h3 id="timeline-heading-'+p.id+'">'+p.label+(p.id===phaseSel?'<small>Selected phase</small>':'')+(p.id===phaseSugg?'<small>Suggested phase</small>':'')+'</h3><p class="timeline-decision">'+esc(phaseDecision(p))+'</p><h4>Parameters to review at this phase</h4><ul class="timeline-metrics">'+p.dims.map(function(d){var r=metrics[d-1];return '<li class="timeline-metric" data-timeline-metric="'+d+'"><div class="timeline-metric-head">'+metricLabel(d,'#'+d+' '+r.name,timelineHelp(p,r),'Why at '+p.label)+'<span class="timeline-status '+(r.bad==null?'unknown':r.bad?'review':'context')+'">'+timelineStatus(r)+'</span></div><p><b>Why now:</b> '+esc(timelineReason(p,r))+'</p></li>';}).join('')+'</ul></section>';}).join('')+'<p class="small muted">Density Symmetry (#3) provides geographic context across phases; it remains in the all-ten register rather than being assigned a particular deadline.</p>';
+}
 
 
 

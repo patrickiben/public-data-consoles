@@ -68,6 +68,51 @@ const controlState = (page, selector) => page.locator(selector).evaluate(host =>
   checked: [...host.querySelectorAll('input[type="checkbox"]')].map(el => [el.id, el.checked]),
   selects: [...host.querySelectorAll('select')].map(el => [el.id, el.value]),
 }));
+// These are the actual planning links, not a ten-by-eight Cartesian product.
+// The repeated dimensions must keep their own phase identity and explanation.
+const coastalTimeline = [
+  ['pre', [2, 5, 10]], ['t120', [4]], ['t72', [6, 8]], ['t48', [5, 6]],
+  ['t24', [4, 9]], ['land', [9, 10]], ['post', [1, 9, 10]], ['rec', [1, 7]],
+];
+const coastalReasonPatterns = {
+  'pre:2': /terrain contrast.*surveyed asset heights/i,
+  'pre:5': /near-plane records early.*one-foot band/i,
+  'pre:10': /dependency information takes time.*missing flow links/i,
+  't120:4': /Early coordination.*geographic overview/i,
+  't72:6': /Before narrowing.*additional public points.*two-foot/i,
+  't72:8': /whole declared level range.*not.*seventy-two hours/i,
+  't48:5': /resolving records.*selected plane/i,
+  't48:6': /stations added.*two-foot.*finalized/i,
+  't24:4': /official access.*cannot tell.*cut off/i,
+  't24:9': /Before the event.*monitoring plan.*only screened points/i,
+  'land:9': /During the event.*incoming reports/i,
+  'land:10': /timestamped operating data.*unassessed/i,
+  'post:1': /verified impacts.*communication coverage.*not.*customers/i,
+  'post:9': /post-event reports.*not.*disruption/i,
+  'post:10': /Restoration sequencing.*verification/i,
+  'rec:1': /Recovery review.*resident footprints/i,
+  'rec:7': /Recovery records.*VFE unassessed/i,
+};
+const coastalRow = (page, phase, id) => page.locator('#timeline [data-timeline-phase="' + phase + '"] [data-timeline-metric="' + id + '"]');
+const coastalButton = (page, phase, id) => coastalRow(page, phase, id).locator('[data-metric-help="' + id + '"]');
+const timelineReason = row => row.locator(':scope > p').evaluate(el => el.textContent.replace(/^Why now:\s*/, '').trim());
+async function coastalPlan(page, {selected = true} = {}) {
+  await page.evaluate(() => CWR.setPage('plan'));
+  if (selected) await page.locator('#plan-water-source').selectOption('selected');
+}
+async function phaseHelp(page, phase, id, scopePattern, audiencePattern) {
+  await shown(page, id, scopePattern);
+  const row = coastalRow(page, phase, id), reason = await timelineReason(row);
+  const heading = (await page.locator('#timeline [data-timeline-phase="' + phase + '"] h3').textContent())
+    .replace(/Selected phase|Suggested phase/g, '').trim();
+  const text = await popup(page).textContent();
+  assert.ok(text.includes('Why at ' + heading + ': ' + reason), 'help belongs to ' + phase + '/#' + id + ' and repeats its visible reason');
+  const button = coastalButton(page, phase, id);
+  assert.equal(await button.getAttribute('data-metric-context-title'), 'Why at ' + heading);
+  assert.ok((await button.getAttribute('aria-label')).includes('Why at ' + heading), 'assistive label identifies this phase too');
+  if (audiencePattern) assert.match(text, audiencePattern);
+  return text;
+}
 async function proof(page, name) {
   if (!process.env.METRIC_HELP_PROOF) return;
   await mkdir(process.env.METRIC_HELP_PROOF, {recursive: true});
@@ -224,6 +269,174 @@ try {
     await proof(page, 'coastal-real-320');
     await page.locator('#cwr-plan-revision').tap();
     await popup(page).waitFor({state: 'hidden'});
+  });
+
+  await scenario('Coastal timeline: all seventeen links expose names, literal statuses and specific reasons', {slug: 'coastal-water-resilience'}, async page => {
+    await coastalPlan(page);
+    const plan = await page.evaluate(() => CWR.exportPlan());
+    assert.equal(await page.locator('#timeline [data-timeline-phase]').count(), 8);
+    assert.equal(await page.locator('#timeline [data-timeline-metric]').count(), 17);
+    const reasons = [];
+    for (const [phase, ids] of coastalTimeline) {
+      const section = page.locator('#timeline [data-timeline-phase="' + phase + '"]');
+      assert.equal(await section.isVisible(), true);
+      assert.equal(await section.locator('[data-timeline-metric]').count(), ids.length);
+      for (const id of ids) {
+        const row = coastalRow(page, phase, id), metric = plan.metrics.find(metric => metric.metricId === id);
+        assert.equal(await row.isVisible(), true);
+        assert.equal(await row.locator('.cmh-term > span').textContent(), '#' + id + ' ' + metric.name, 'the full visible name, not a symbol-only pill');
+        const expectedStatus = {unknown: 'Not assessable', review: 'Planning review', context: 'Descriptive context'}[metric.status];
+        assert.equal(await row.locator('.timeline-status').textContent(), expectedStatus);
+        const reason = await timelineReason(row);
+        assert.match(reason, coastalReasonPatterns[phase + ':' + id]);
+        assert.ok(reason.split(/\s+/).length >= 14 && reason.split(/\s+/).length <= 40, 'concise developed rationale for ' + phase + '/#' + id);
+        reasons.push(reason);
+      }
+    }
+    assert.equal(new Set(reasons).size, 17, 'each link explains its own planning decision');
+    for (const phase of ['pre', 'land', 'post']) assert.equal(await coastalRow(page, phase, 10).locator('.timeline-status').textContent(), 'Not assessable');
+    assert.equal(await coastalRow(page, 'rec', 7).locator('.timeline-status').textContent(), 'Not assessable');
+    assert.equal(await page.locator('#timeline [data-timeline-metric="3"]').count(), 0, 'current mapping retained');
+    assert.match(await page.locator('#timeline').textContent(), /Density Symmetry \(#3\).*across phases/);
+    assert.match(await page.locator('#c-timeline').textContent(), /illustrative review windows, not forecast deadlines/);
+    await proof(page, 'coastal-timeline-desktop');
+  });
+
+  await scenario('Coastal timeline: repeated frontier dimension has phase-scoped hover and keyboard explanations', {slug: 'coastal-water-resilience'}, async page => {
+    await coastalPlan(page);
+    const t24 = coastalRow(page, 't24', 9), land = coastalRow(page, 'land', 9), post = coastalRow(page, 'post', 9);
+    const reasons = await Promise.all([t24, land, post].map(timelineReason));
+    assert.equal(new Set(reasons).size, 3);
+    assert.match(reasons[0], /Before the event.*monitoring plan/);
+    assert.match(reasons[1], /During the event.*incoming reports/);
+    assert.match(reasons[2], /post-event reports/);
+    await t24.locator('[data-metric-term] > span').hover();
+    await phaseHelp(page, 't24', 9, /Real public station planning screen/, /Public \/ local review:/);
+    await popup(page).hover();
+    await page.waitForTimeout(240);
+    assert.equal(await popup(page).isVisible(), true, 'phase rationale stays readable when moving into help');
+    await close(page);
+    await page.mouse.move(0, 0);
+    await coastalButton(page, 'land', 9).focus();
+    await phaseHelp(page, 'land', 9, /Real public station planning screen/);
+    await close(page);
+    await coastalButton(page, 'post', 9).focus();
+    await phaseHelp(page, 'post', 9, /Real public station planning screen/);
+    assert.ok(!(await popup(page).textContent()).includes(reasons[0]), 'post-event help must not silently use the first #9 link');
+    await close(page);
+  });
+
+  await scenario('Coastal timeline: keyboard refresh preserves the same phase and metric, without stealing later selections', {slug: 'coastal-water-resilience'}, async page => {
+    await coastalPlan(page);
+    await page.mouse.move(0, 0);
+    await coastalButton(page, 'post', 9).focus();
+    await phaseHelp(page, 'post', 9, /Real public station planning screen/);
+    const before = await controlState(page, '#c-check');
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    assert.deepEqual(await page.evaluate(() => ({
+      phase: document.activeElement.closest('[data-timeline-phase]')?.dataset.timelinePhase,
+      metric: document.activeElement.dataset.metricHelp,
+    })), {phase: 'post', metric: '9'}, 'refresh keeps repeated #9 in its own phase');
+    await phaseHelp(page, 'post', 9, /Real public station planning screen/);
+    assert.deepEqual(await controlState(page, '#c-check'), before);
+    await close(page);
+    await coastalButton(page, 'land', 10).focus();
+    await page.evaluate(() => CWR.setSurge(CWR.state().surgeSel, true));
+    assert.deepEqual(await page.evaluate(() => ({
+      phase: document.activeElement.closest('[data-timeline-phase]')?.dataset.timelinePhase,
+      metric: document.activeElement.dataset.metricHelp,
+    })), {phase: 'land', metric: '10'}, 'same numbered metric in another phase must not win the replacement search');
+    await phaseHelp(page, 'land', 10, /Currently not assessable/);
+    await close(page);
+    await page.locator('#plan-data-scope').focus();
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'plan-data-scope', 'a later deliberate control selection stays focused');
+  });
+
+  await scenario('Coastal timeline: dataset and audience changes replace real unknowns with explicitly fictional criteria', {slug: 'coastal-water-resilience'}, async page => {
+    await coastalPlan(page);
+    await coastalButton(page, 'rec', 7).click();
+    const realReason = await timelineReason(coastalRow(page, 'rec', 7));
+    await phaseHelp(page, 'rec', 7, /Currently not assessable/, /Public \/ local review:/);
+    await page.locator('#plan-data-scope').selectOption('synthetic');
+    await popup(page).waitFor({state: 'hidden'});
+    const exercisePlan = await page.evaluate(() => CWR.exportPlan());
+    assert.equal(await page.locator('#timeline [data-timeline-metric]').count(), 17);
+    for (const [phase, ids] of coastalTimeline) for (const id of ids) {
+      const metric = exercisePlan.metrics.find(metric => metric.metricId === id);
+      assert.equal(await coastalRow(page, phase, id).locator('.timeline-status').textContent(), metric.status === 'unknown'
+        ? 'Not assessable' : metric.status === 'triggered' ? 'Scenario criterion flagged' : 'Within scenario criterion');
+    }
+    assert.notEqual(await timelineReason(coastalRow(page, 'rec', 7)), realReason);
+    await page.locator('#cwr-operator-track').click();
+    await coastalButton(page, 'rec', 7).click();
+    const exerciseHelp = await phaseHelp(page, 'rec', 7, /Fictional calibration exercise/, /Operator review:/);
+    assert.match(exerciseHelp, /toy edges crossing fictional basin boundaries/);
+    assert.doesNotMatch(exerciseHelp, /Public \/ local review:/);
+    await close(page);
+    await page.locator('#plan-data-scope').selectOption('all');
+    assert.equal(await coastalRow(page, 'rec', 7).locator('.timeline-status').textContent(), 'Not assessable');
+    assert.equal(await coastalRow(page, 'post', 10).locator('.timeline-status').textContent(), 'Not assessable');
+    await coastalButton(page, 'post', 10).focus();
+    const realHelp = await phaseHelp(page, 'post', 10, /Real public station planning screen/, /Operator review:/);
+    assert.doesNotMatch(realHelp, /Fictional calibration exercise/);
+    await close(page);
+  });
+
+  await scenario('Coastal timeline: unavailable forecast shows missing evidence rather than an all-clear', {slug: 'coastal-water-resilience'}, async page => {
+    await coastalPlan(page, {selected: false});
+    assert.equal(await page.locator('#plan-water-source').inputValue(), 'ofs');
+    assert.equal(await coastalRow(page, 'pre', 5).locator('.timeline-status').textContent(), 'Not assessable');
+    assert.equal(await coastalRow(page, 't72', 6).locator('.timeline-status').textContent(), 'Not assessable');
+    assert.equal(await coastalRow(page, 't72', 8).locator('.timeline-status').textContent(), 'Descriptive context', 'whole-level-range integral does not substitute a current forecast');
+    await coastalButton(page, 't72', 6).focus();
+    await phaseHelp(page, 't72', 6, /Currently not assessable/);
+    await close(page);
+    await page.locator('#plan-water-source').selectOption('selected');
+    assert.notEqual(await coastalRow(page, 't72', 6).locator('.timeline-status').textContent(), 'Not assessable', 'an explicit scenario supplies the missing level, without manufacturing a forecast');
+    assert.equal(await coastalRow(page, 'pre', 10).locator('.timeline-status').textContent(), 'Not assessable');
+  });
+
+  await scenario('Coastal timeline: all seventeen tap targets and phase explanations fit 320px', {slug: 'coastal-water-resilience', width: 320, touch: true}, async page => {
+    await coastalPlan(page);
+    const before = await controlState(page, '#c-check');
+    for (const [phase, ids] of coastalTimeline) for (const id of ids) {
+      const row = coastalRow(page, phase, id), button = coastalButton(page, phase, id);
+      await row.scrollIntoViewIfNeeded();
+      const rowBox = await row.boundingBox(), box = await button.boundingBox();
+      assert.ok(rowBox.x >= -1 && rowBox.x + rowBox.width <= 321, 'phase card stays within the narrow viewport');
+      assert.ok(box.width >= 44 && box.height >= 44, 'timeline touch help target is at least 44px');
+      await button.tap();
+      try {
+        await popup(page).waitFor({state: 'visible', timeout: 2000});
+      } catch (error) {
+        await proof(page, 'coastal-timeline-failed-' + phase + '-' + id);
+        throw new Error('Tap did not open help for ' + phase + '/#' + id + ': ' + JSON.stringify(await button.evaluate(button => ({
+          top: button.getBoundingClientRect().top, bottom: button.getBoundingClientRect().bottom,
+          expanded: button.getAttribute('aria-expanded'), focused: document.activeElement === button,
+          scrollY, viewport: innerHeight,
+        }))), {cause: error});
+      }
+      await phaseHelp(page, phase, id, /Real public station planning screen/);
+      const trigger = await button.boundingBox(), tipBox = await popup(page).boundingBox();
+      assert.ok(tipBox.y + tipBox.height <= trigger.y - 7 || tipBox.y >= trigger.y + trigger.height + 7,
+        'long help must stay clear of its trigger during a touch click: ' + JSON.stringify({phase, id, trigger, tipBox}));
+      if (phase === 'pre' && id === 2) {
+        await button.tap();
+        await popup(page).waitFor({state: 'hidden'});
+        assert.equal(await button.getAttribute('aria-expanded'), 'false', 'second tap closes the pinned explanation');
+        await button.tap();
+        await phaseHelp(page, phase, id, /Real public station planning screen/);
+      }
+      assert.deepEqual(await controlState(page, '#c-check'), before, 'timeline help must not alter planning inputs or acknowledgments');
+      if (phase === 'post' && id === 9) await proof(page, 'coastal-timeline-320');
+      await close(page);
+    }
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'timeline and tooltip create no horizontal page overflow');
+    await page.locator('#plan-data-scope').selectOption('synthetic');
+    await coastalButton(page, 'land', 9).tap();
+    await phaseHelp(page, 'land', 9, /Fictional calibration exercise/);
+    await close(page);
   });
 
   await scenario('standalone field guide: all ten names have keyboard and narrow-screen help', {guide: true, width: 320, touch: true}, async page => {

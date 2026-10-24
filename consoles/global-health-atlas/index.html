@@ -981,9 +981,9 @@ footer b{color:var(--ink2)}
  var doc=root.document, tip=null, active=null, pinned=false, timer=null, overTip=false;
  function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
  function definition(id){return definitions.find(function(d){return d.id===Number(id);});}
- function label(id,text,context){
+ function label(id,text,context,contextTitle){
   var d=definition(id);if(!d)return esc(text);
-  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
+  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?' — '+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
  }
  function ensure(){
   if(tip)return tip;
@@ -1005,9 +1005,13 @@ footer b{color:var(--ink2)}
   var r=active.getBoundingClientRect(),v=root.visualViewport,w=v?v.width:root.innerWidth,h=v?v.height:root.innerHeight,x=v?v.offsetLeft:0,y=v?v.offsetTop:0;
   if(r.bottom<y||r.top>y+h||r.right<x||r.left>x+w){close();return;}
   tip.style.maxWidth=Math.max(0,w-24)+'px';tip.style.maxHeight=Math.max(0,h-24)+'px';
-  var box=tip.getBoundingClientRect(),left=Math.max(x+12,Math.min(r.left,x+w-box.width-12)),top=r.bottom+8;
-  if(top+box.height>y+h-12)top=r.top-box.height-8;
-  top=Math.max(y+12,Math.min(top,y+h-box.height-12));
+  var box=tip.getBoundingClientRect(),below=Math.max(0,y+h-12-r.bottom-8),above=Math.max(0,r.top-y-12-8);
+  // Keep the trigger outside the popup, including while touch focus precedes
+  // click. Otherwise a long explanation can cover its own button mid-tap.
+  var useBelow=box.height<=below||(box.height>above&&below>=above);
+  tip.style.maxHeight=Math.min(h-24,useBelow?below:above)+'px';
+  box=tip.getBoundingClientRect();
+  var left=Math.max(x+12,Math.min(r.left,x+w-box.width-12)),top=useBelow?r.bottom+8:r.top-box.height-8;
   tip.style.left=left+'px';tip.style.top=top+'px';
  }
  function show(button,lock){
@@ -1018,7 +1022,7 @@ footer b{color:var(--ink2)}
   var el=ensure();el.replaceChildren();
   var title=doc.createElement('strong');title.textContent='#'+d.id+' '+d.name;el.appendChild(title);
   var meaning=doc.createElement('p');meaning.textContent=d.meaning;el.appendChild(meaning);
-  if(button.dataset.metricContext){var context=doc.createElement('p'),lead=doc.createElement('b');lead.textContent='In this view: ';context.append(lead,doc.createTextNode(button.dataset.metricContext));el.appendChild(context);}
+  if(button.dataset.metricContext){var context=doc.createElement('p'),lead=doc.createElement('b');lead.textContent=(button.dataset.metricContextTitle||'In this view')+': ';context.append(lead,doc.createTextNode(button.dataset.metricContext));el.appendChild(context);}
   var hint=doc.createElement('small');hint.textContent=pinned?'Tap ? again or elsewhere to close. Escape also closes.':'Tap ? to keep open. Press Escape to close.';el.appendChild(hint);
   el.hidden=false;button.setAttribute('aria-describedby',el.id);button.setAttribute('aria-expanded','true');position();
  }
