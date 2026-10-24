@@ -91,6 +91,19 @@ operational next steps linked to verify/prepare/respond/review phases. Actions m
 diagnosticIds or canonical metricIds (both are combined). Link the actual conditions that select
 the action, and do not mark unsupported dimensions healthy.
 
+Each existing action-to-parameter link includes `parameterLinks: [{metricId, why, whyNow}]`:
+`why` explains the parameter’s practical role in that action, and `whyNow` explains its place in
+the review sequence. Explicit action copy takes precedence over the pure, domain-specific
+`action-context.js` helper. The core only accepts explanations for parameters already linked by
+`metricIds`/`diagnosticIds`; explanatory metadata never changes eligibility, rank or evidence.
+Source-record and official-notice actions without canonical links show their `decisionBasis`
+instead of assigning a parameter. Preserve source periods, genuine deadlines, modeled/practice
+labels and unknown inputs; do not transfer Coastal’s storm clock to unrelated domains.
+
+Action cards show full parameter names, text statuses and both explanations. Their hover/focus/tap
+help names the review stage. The ten-parameter register links back to applicable actions and
+explains the same relationship. These explanations also remain in the exported plan.
+
 The operator view permits a temporary self-reported “review needed” flag. It creates a verification
 checklist for acquiring inputs/reviewing the dimension, without changing machine evidence or
 activating real incident instructions. No “self-reported safe” option is provided. Flags and local

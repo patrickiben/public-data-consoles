@@ -27,3 +27,11 @@
 
 #console-response .cr-preview-period{display:block;color:#b2c6d3;font-size:11px;margin-top:4px}
 @media(max-width:640px){#console-response .cr-preview-target{font-size:12px}}
+
+#console-response .cr-parameter-links,#console-response .cr-parameter-actions{margin:12px 0;padding:10px 12px;border-left:2px solid #79cbd6;background:#102633;overflow-wrap:anywhere}
+#console-response .cr-parameter-links h5,#console-response .cr-parameter-actions h5{font:650 13px/1.5 system-ui,sans-serif;color:#a7f0f2;margin:0 0 8px}
+#console-response .cr-parameter-links ul,#console-response .cr-parameter-actions ul{list-style:none;padding:0;margin:0}
+#console-response .cr-parameter-links li,#console-response .cr-parameter-actions li{margin:10px 0 0;padding-top:10px;border-top:1px solid #365466}
+#console-response .cr-parameter-links li:first-child,#console-response .cr-parameter-actions li:first-child{margin-top:0;padding-top:0;border-top:0}
+#console-response .cr-parameter-links p,#console-response .cr-parameter-actions p{font-size:13px;margin:6px 0}
+@media(max-width:640px){#console-response .cr-parameter-links,#console-response .cr-parameter-actions{padding:9px}}

@@ -95,6 +95,17 @@
       limitations: Array.isArray(supplied.limitations) ? supplied.limitations.map(text) : ['No source-backed impact estimate is supplied for this selection.'] };
   }
   function diagnosticAssessment(d) { return d.status === 'unknown' ? 'UNKNOWN' : d.status === 'triggered' ? 'REVIEW' : 'CONTEXT · condition not met'; }
+  var phaseNames = { verify: 'Verify inputs', prepare: 'Prepare options', respond: 'Review the response', review: 'Review and follow up' };
+  function parameterLinks(action, diagnostics, slug) {
+    var supplied = Array.isArray(action.parameterLinks) ? action.parameterLinks : [];
+    var context = root.ConsoleResponse && root.ConsoleResponse.actionContext;
+    return diagnostics.filter(function (d) { return d.metricId && action.diagnosticIds.includes(d.id); }).map(function (d) {
+      var matches = supplied.filter(function (link) { return link && Number(link.metricId) === d.metricId; });
+      var link = matches.length === 1 && text(matches[0].why).trim() && text(matches[0].whyNow).trim() ? matches[0] :
+        context && context.forMetric({ slug: slug, metricId: d.metricId, phase: action.phase, when: action.when, track: action.track, diagnostic: d, row: action });
+      return link ? { metricId: d.metricId, why: text(link.why), whyNow: text(link.whyNow) } : null;
+    }).filter(Boolean);
+  }
   function evaluate(input) {
     input = input || {};
     var facts = (Array.isArray(input.evidence) ? input.evidence : []).map(function (fact) {
@@ -159,6 +170,7 @@
       a.withheld = a.phase === 'respond' && a.when !== 'always' && !a.practice && !relevant.some(function (d) { return d.status === 'triggered' && d.current; });
       if (a.withheld) a.selected = false;
       a.diagnosticIds = ids; a.authorityUrl = url(a.authorityUrl);
+      a.parameterLinks = parameterLinks(a, diagnostics, input.slug);
       if (a.featured) {
         a.evidenceIds = Array.isArray(a.evidenceIds) ? Array.from(new Set(a.evidenceIds)) : [];
         var linked = a.evidenceIds.map(function (id) { return byFact.get(id); });
@@ -199,10 +211,40 @@
   function scrollToSection(el) {
     el.scrollIntoView({ behavior: root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   }
-  function metricLabel(d, label) {
+  function metricLabel(d, label, actionContext, contextTitle) {
     var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.canonicalLabel || d.label);
     var context = d.label + (d.status === 'unknown' ? ' — not assessable with the available inputs.' : d.scope === 'planning' ? ' — planning comparison.' : '');
-    return d.metricId && root.ConsoleMetricHelp ? root.ConsoleMetricHelp.label(d.metricId, value, context) : esc(value);
+    return d.metricId && root.ConsoleMetricHelp ? root.ConsoleMetricHelp.label(d.metricId, value, actionContext || context, contextTitle) : esc(value);
+  }
+  function withheldExplanation(a) {
+    return a.withheld ? a.withheldReasons && a.withheldReasons.length ? a.withheldReasons.join(' ') : 'A current, applicable triggering observation is required for this response step.' : '';
+  }
+  function parameterContext(a, link) {
+    return link.whyNow + ' ' + link.why + ' Plan step: ' + a.title + '.' + (a.timing ? ' Timing: ' + a.timing : '') + (a.withheld ? ' Unavailable because: ' + withheldExplanation(a) : '');
+  }
+  function actionParameters(plan, a) {
+    var links = a.parameterLinks || [];
+    if (!links.length) return a.featured ? '<p class="cr-note" data-cr-decision-basis><b>Basis for this step:</b> ' + esc(a.decisionBasis || 'This step follows the selected public record or source check, rather than a ten-parameter score.') + '</p>' : '';
+    return '<div class="cr-parameter-links"><h5>Why these parameters inform this step</h5><ul>' + links.map(function (link) {
+      var d = plan.diagnostics.find(function (item) { return item.metricId === link.metricId; });
+      var status = d.status === 'unknown' ? 'Not assessable' : d.status === 'triggered' ? 'Planning review' : 'Descriptive context';
+      return '<li data-cr-action-metric="' + d.metricId + '"><div>' + metricLabel(d, null, parameterContext(a, link), 'Why at this stage: ' + phaseNames[a.phase]) + ' <span class="cr-badge">' + status + '</span></div><p><b>Why this parameter:</b> ' + esc(link.why) + '</p><p><b>Why at this stage:</b> ' + esc(link.whyNow) + '</p></li>';
+    }).join('') + '</ul></div>';
+  }
+  function explanatoryActions(actions) {
+    var selected = actions.filter(function (a) { return a.selected; });
+    return selected.length ? selected : actions.filter(function (a) { return a.when !== 'unknown'; });
+  }
+  function actionAvailability(a) {
+    return a.selected ? '' : a.withheld ? ' · unavailable with the current evidence' : ' · condition not met';
+  }
+  function diagnosticActions(d, actions) {
+    var relevant = explanatoryActions(actions);
+    if (!relevant.length) return '<p><b>Planning role:</b> Verify the required inputs and local applicability before linking this parameter to a response.</p>';
+    return '<div class="cr-parameter-actions"><h5>How this parameter informs the plan</h5><ul>' + relevant.map(function (a) {
+      var link = (a.parameterLinks || []).find(function (item) { return item.metricId === d.metricId; });
+      return '<li><b>' + esc(a.title) + '</b> · ' + esc(phaseNames[a.phase]) + actionAvailability(a) + (a.withheld ? '<p><b>Unavailable because:</b> ' + esc(withheldExplanation(a)) + '</p>' : '') + (link ? '<p><b>Why this parameter:</b> ' + esc(link.why) + '</p><p><b>Why at this stage:</b> ' + esc(link.whyNow) + '</p>' : '') + '<p><b>Next:</b> ' + esc(a.nextStep) + '</p></li>';
+    }).join('') + '</ul></div>';
   }
   function focusKey(el) {
     if (!el) return '';
@@ -283,11 +325,13 @@
     manualReview.forEach(function (n) {
       var d = plan.diagnostics.find(function (item) { return item.metricId === n; }); if (!d) return;
       var authority = plan.actions.find(function (a) { return a.track === 'operator' && a.diagnosticIds.includes(d.id) && a.authorityUrl; });
-      plan.actions.push({ id: 'manual-review-' + n, track: 'operator', phase: 'verify', when: 'always', selected: true, practice: false,
+      var action = { id: 'manual-review-' + n, track: 'operator', phase: 'verify', when: 'always', selected: true, practice: false,
         diagnosticIds: [d.id], title: 'Self-reported review needed: #' + n + ' ' + d.canonicalLabel,
         nextStep: d.analyticalMitigation + ' Required inputs: ' + text(d.requiredInputs),
         escalateWhen: 'A local planning flag is not a measured incident. Review with your designated lead and verified SOP before taking operational action.',
-        authorityUrl: authority ? authority.authorityUrl : '', selfReported: true });
+        authorityUrl: authority ? authority.authorityUrl : '', selfReported: true };
+      action.parameterLinks = parameterLinks(action, plan.diagnostics, plan.slug);
+      plan.actions.push(action);
     });
     plan.manualAssessments = Array.from(manualReview).sort(function (a, b) { return a - b; }).map(function (n) { return { metricId: n, assessment: 'review needed', basis: 'self-reported local planning' }; });
     return plan;
@@ -342,17 +386,17 @@
       actionHTML += '<h3>Prioritized live action checklist</h3><p class="cr-note">Ordered for this selection and audience. Timing is an interpretive review prompt unless attributed to a current official notice. Source periods remain visible; older reports support planning.</p><ol class="cr-priority-list">';
       featured.forEach(function (a) {
         var priorityLabel = a.practice ? 'Practice / planning' : { immediate: 'Current official warning · check now', next: 'Next check', planned: 'Planning review', routine: 'Follow-up' }[a.priority];
-        actionHTML += '<li><article class="cr-action cr-priority" data-cr-action="' + esc(a.id) + '" data-cr-priority="' + esc(a.priority) + '"><div class="cr-priority-head"><span class="cr-priority-number" aria-label="Priority ' + a.position + '">' + a.position + '</span><div><span class="cr-badge">' + esc(priorityLabel) + '</span><h4>' + esc(a.title) + '</h4></div></div><p class="cr-priority-target"><b>Where / record:</b> ' + esc(a.target) + '</p><p><b>Why this is prioritized:</b> ' + esc(a.reason) + '</p><p class="cr-timing"><b>When:</b> ' + esc(a.timing) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><div class="cr-escalation"><p><b>Escalate if:</b> ' + esc(a.escalateWhen) + '</p><p><b>Escalate to:</b> ' + esc(a.escalateTo) + '</p></div><p><b>Recheck:</b> ' + esc(a.reviewAfter) + '</p>' + (a.validUntil ? '<p class="cr-note">Evidence valid until: ' + esc(a.validUntil) + '</p>' : '') + (a.diagnosticIds.length ? '<p class="cr-note">Checklist dimensions: ' + a.diagnosticIds.map(function (id) { var d = plan.diagnostics.find(function (item) { return item.id === id; }); return d ? metricLabel(d, (d.metricId ? '#' + d.metricId + ' ' : '') + d.label) : esc(id); }).join('; ') + '</p>' : '') + impactSources(a) + '<p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article></li>';
+        actionHTML += '<li><article class="cr-action cr-priority" data-cr-action="' + esc(a.id) + '" data-cr-priority="' + esc(a.priority) + '"><div class="cr-priority-head"><span class="cr-priority-number" aria-label="Priority ' + a.position + '">' + a.position + '</span><div><span class="cr-badge">' + esc(priorityLabel) + '</span><h4>' + esc(a.title) + '</h4></div></div><p class="cr-priority-target"><b>Where / record:</b> ' + esc(a.target) + '</p><p><b>Why this is prioritized:</b> ' + esc(a.reason) + '</p><p class="cr-timing"><b>When:</b> ' + esc(a.timing) + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><div class="cr-escalation"><p><b>Escalate if:</b> ' + esc(a.escalateWhen) + '</p><p><b>Escalate to:</b> ' + esc(a.escalateTo) + '</p></div><p><b>Recheck:</b> ' + esc(a.reviewAfter) + '</p>' + (a.validUntil ? '<p class="cr-note">Evidence valid until: ' + esc(a.validUntil) + '</p>' : '') + actionParameters(plan, a) + impactSources(a) + '<p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article></li>';
       });
       actionHTML += '</ol>';
     }
     var followupHTML = '';
     ['verify', 'prepare', 'respond', 'review'].forEach(function (phase) {
       var list = selected.filter(function (a) { return !a.featured && a.phase === phase; }); if (!list.length) return;
-      followupHTML += '<h3>' + phase.charAt(0).toUpperCase() + phase.slice(1) + '</h3>';
+      followupHTML += '<h3>' + phaseNames[phase] + '</h3>';
       list.forEach(function (a) {
         var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
-        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc(a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return metricLabel(d, (d.metricId ? '#' + d.metricId + ' ' : '') + d.label) + esc(' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : '')); }).join('; ') || 'Evidence is incomplete; verify before deciding.') + '</p><p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc(a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return esc((d.metricId ? '#' + d.metricId + ' ' : '') + d.label) + esc(' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : '')); }).join('; ') || 'Evidence is incomplete; verify before deciding.') + '</p>' + actionParameters(plan, a) + '<p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
       });
     });
     actionHTML += featured.length ? section('followup', 'Dimension-by-dimension follow-up', followupHTML, 'interpretive') : followupHTML;
@@ -366,8 +410,13 @@
       var ds = plan.diagnostics.filter(function (d) { return d.pillar === pillar; });
       return '<h3>' + ({ comparison: 'Comparison and balance', structure: 'Structure and coverage', spillover: 'Spillover and dependence' })[pillar] + '</h3>' + (ds.length ? ds.map(function (d) {
         var related = plan.actions.filter(function (a) { return a.track === track && a.diagnosticIds.includes(d.id); });
+        var contextActions = explanatoryActions(related);
+        var helpContext = contextActions.map(function (a) {
+          var link = (a.parameterLinks || []).find(function (item) { return item.metricId === d.metricId; });
+          return link ? (a.selected ? '' : 'Potential step' + actionAvailability(a) + '. ') + parameterContext(a, link) : '';
+        }).filter(Boolean).join(' ');
         var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
-        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + metricLabel(d) + ' — ' + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p><p><b>Operational step → phase:</b> ' + esc(related.length ? related.map(function (a) { return a.nextStep + ' → ' + a.phase + (a.selected ? ' (applicable)' : ' (condition not met)'); }).join(' ') : d.operationalMitigation || 'Obtain the missing evidence and review applicability with the responsible authority → verify.') + '</p>' + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + metricLabel(d, null, helpContext) + ' — ' + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p>' + diagnosticActions(d, related) + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
       }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
     }).join('');
     h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');

@@ -71,6 +71,7 @@
   }
 ];
  var doc=root.document, tip=null, active=null, pinned=false, timer=null, overTip=false;
+ var hoverDismissed=false, pointerX=null, pointerY=null;
  function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
  function definition(id){return definitions.find(function(d){return d.id===Number(id);});}
  function label(id,text,context,contextTitle){
@@ -122,10 +123,16 @@
   root.clearTimeout(timer);timer=root.setTimeout(function(){if(!pinned&&!overTip&&doc.activeElement!==active)close();},160);
  }
  function termButton(target){var term=target&&target.closest&&target.closest('[data-metric-term]');return term&&term.querySelector('[data-metric-help]');}
+ function pointerMoved(e){var moved=pointerX===null||e.clientX!==pointerX||e.clientY!==pointerY;pointerX=e.clientX;pointerY=e.clientY;return moved;}
+ function hover(button){if(!button||active&&button!==active&&(pinned||doc.activeElement===active))return;show(button,false);}
  function start(){
   doc.querySelectorAll('[data-metric-name]').forEach(function(el){el.innerHTML=label(el.dataset.metricName,el.textContent,el.dataset.metricContext);});
   ensure();
-  doc.addEventListener('pointerover',function(e){if(e.pointerType==='touch')return;var b=termButton(e.target);if(b&&termButton(e.relatedTarget)!==b){if(active&&b!==active&&(pinned||doc.activeElement===active))return;show(b,false);}});
+  doc.addEventListener('pointerover',function(e){if(e.pointerType==='touch')return;var moved=pointerMoved(e);if(hoverDismissed){if(!moved)return;hoverDismissed=false;}var b=termButton(e.target);if(b&&termButton(e.relatedTarget)!==b)hover(b);});
+  // Escape can uncover a label under a stationary pointer. Ignore that layout
+  // reentry until coordinates change; movement inside the same label restores
+  // hover too, without requiring a new pointerover. Focus and clicks stay usable.
+  doc.addEventListener('pointermove',function(e){if(e.pointerType==='touch')return;var moved=pointerMoved(e);if(!hoverDismissed||!moved)return;hoverDismissed=false;hover(termButton(e.target));});
   doc.addEventListener('pointerout',function(e){var b=termButton(e.target);if(b&&termButton(e.relatedTarget)!==b&&!tip.contains(e.relatedTarget))schedule();});
   doc.addEventListener('focusin',function(e){if(e.target.matches('[data-metric-help]'))show(e.target,false);});
   doc.addEventListener('focusout',function(e){if(e.target===active){pinned=false;schedule();}});
@@ -135,7 +142,7 @@
    if(b){e.preventDefault();e.stopPropagation();if(active===b&&pinned)close();else show(b,true);return;}
    if(!tip.contains(e.target))close();
   },true);
-  doc.addEventListener('keydown',function(e){if(e.key==='Escape'&&active){close();e.preventDefault();e.stopPropagation();}},true);
+  doc.addEventListener('keydown',function(e){if(e.key==='Escape'&&active){hoverDismissed=true;close();e.preventDefault();e.stopPropagation();}},true);
   doc.addEventListener('scroll',function(e){if(e.target!==tip)position();},true);
   root.addEventListener('resize',position);
   if(root.visualViewport){root.visualViewport.addEventListener('resize',position);root.visualViewport.addEventListener('scroll',position);}

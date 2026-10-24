@@ -70,7 +70,7 @@ class ResponseEmbedding(unittest.TestCase):
             good = root / "consoles/a/index.html"
             good.write_text("<head></head><body>Keep me</body>")
             (root / "consoles/b/index.html").write_text("<head></head><body>Broken")
-            for name in ("core.js", "domain-helpers.js", "observed-series.js", "style.css", "metric-help.js", "metric-help.css"):
+            for name in ("core.js", "action-context.js", "domain-helpers.js", "observed-series.js", "style.css", "metric-help.js", "metric-help.css"):
                 (root / "response-plans" / name).write_text("")
             (root / "response-plans/manifest.json").write_text(json.dumps({"consoles": [{"slug": slug, "method": "test"} for slug in ("a", "b")]}))
             with self.assertRaises(ValueError):
@@ -86,7 +86,7 @@ class ResponseEmbedding(unittest.TestCase):
             (root / "consoles/a").mkdir(parents=True)
             page = root / "consoles/a/index.html"
             page.write_text("<head></head><body>Original</body>")
-            for name in ("core.js", "domain-helpers.js", "observed-series.js", "style.css", "metric-help.js", "metric-help.css"):
+            for name in ("core.js", "action-context.js", "domain-helpers.js", "observed-series.js", "style.css", "metric-help.js", "metric-help.css"):
                 (source / name).write_text("")
             (source / "adapters/a.js").write_text("window.adapter=1;")
             priority = source / "priorities/tools.js"

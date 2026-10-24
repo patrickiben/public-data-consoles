@@ -50,7 +50,13 @@
       return {
         id: 'health-priority-' + input.slug + '-' + c.key + '-' + track,
         track, phase: practice ? 'review' : c.phase, when: 'always', evidenceIds: c.evidenceIds,
-        metricIds: c.metricIds || [], title: (practice ? 'Practice: ' : '') + c.title,
+        metricIds: c.metricIds || [], parameterLinks: c.parameterLinks || [],
+        decisionBasis: (c.parameterLinks || []).length ? undefined : practice
+          ? 'This is a practice review, not a real-world ten-parameter alarm.'
+          : c.signal === 'data-gap'
+            ? 'This step resolves a public-source gap; no parameter score establishes an all-clear.'
+            : 'This step reviews the selected public record and reporting period, not a ten-parameter score.',
+        title: (practice ? 'Practice: ' : '') + c.title,
         target: c.target, reason: c.reason, nextStep: track === 'public' ? c.publicStep : c.operatorStep,
         priority: practice ? 'planned' : c.priority, rank: index + 1,
         timing: c.timing || 'Before the next planning review or use of these figures',
@@ -215,6 +221,9 @@
     if (current(coverage) && current(disagreement) && numeric(coverage.value) && coverage.value > 0 && numeric(disagreement.value) && coverage.measuredAt === disagreement.measuredAt) {
       groups.push(concept('direction-coverage', {title: 'Review where the reporting subset changes direction', target: scope + ' · matched geographic direction',
         evidenceIds: ids([coverage, disagreement]), metricIds: [6], signal: 'observed-condition', priority: 'next', requiresCurrent: true,
+        parameterLinks: [{metricId: 6,
+          why: 'This scale-stability adaptation checks whether the reporting subset changes the overall direction; it does not measure geographic spread.',
+          whyNow: 'Check source coverage first, then review local differences before interpreting the aggregate direction; the next release can change both.'}],
         validUntil: surveillanceExpiry(coverage.measuredAt, respiratory),
         reason: fmt(disagreement.value) + '% direction disagreement among ' + fmt(coverage.value) + ' ' + coverage.unit + ' at ' + coverage.measuredAt +
           '. ' + (respiratory ? 'Derived ordinal site-category means are not concentration, prevalence or official national WVAL.' : 'Rolling-year directions are not causal spillover or present-month incidents.') + ' Agreement in a partial reporting subset does not establish an all-clear.',

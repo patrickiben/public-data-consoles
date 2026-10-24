@@ -353,6 +353,33 @@ try {
     assert.equal(await page.evaluate(() => document.activeElement.id), 'plan-data-scope', 'a later deliberate control selection stays focused');
   });
 
+  await scenario('Coastal timeline: Escape dismissal survives stationary hover reentry and restores real movement and keyboard access', {slug: 'coastal-water-resilience'}, async page => {
+    await coastalPlan(page);
+    const term = coastalRow(page, 'post', 9).locator('[data-metric-term] > span');
+    await term.hover();
+    const box = await term.boundingBox(), point = {x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2)};
+    await page.mouse.move(point.x, point.y);
+    await coastalButton(page, 'post', 10).focus();
+    await phaseHelp(page, 'post', 10, /Currently not assessable/);
+    await close(page);
+    // Hiding a tooltip can uncover a label beneath a stationary pointer. This
+    // pointerover has unchanged coordinates; it must not undo Escape dismissal.
+    await term.dispatchEvent('pointerover', {pointerType: 'mouse', clientX: point.x, clientY: point.y});
+    assert.equal(await popup(page).isVisible(), false, 'stationary hover reentry must not reopen dismissed help');
+    assert.equal(await coastalButton(page, 'post', 10).getAttribute('aria-expanded'), 'false');
+    // A real movement inside the already-hovered label must restore hover even
+    // if it does not cause a new pointerover or leave/re-enter the label.
+    await page.mouse.move(point.x + 1, point.y);
+    await phaseHelp(page, 'post', 9, /Real public station planning screen/);
+    await close(page);
+    await coastalButton(page, 'rec', 7).focus();
+    await phaseHelp(page, 'rec', 7, /Currently not assessable/);
+    await close(page);
+    await coastalButton(page, 'post', 10).click();
+    await phaseHelp(page, 'post', 10, /Currently not assessable/);
+    await close(page);
+  });
+
   await scenario('Coastal timeline: dataset and audience changes replace real unknowns with explicitly fictional criteria', {slug: 'coastal-water-resilience'}, async page => {
     await coastalPlan(page);
     await coastalButton(page, 'rec', 7).click();

@@ -72,7 +72,7 @@ try{
     const exported=await page.evaluate(()=>ConsoleResponse.exportPlan());
     assert.equal(exported.plan.manualAssessments[0].metricId,2);
     assert.equal(exported.plan.actions.find(a=>a.id==='manual-review-2').phase,'verify');
-    assert.match(await page.locator('[data-cr-metric="2"]').textContent(),/Required inputs:.*Analytical mitigation:.*Operational step/s);
+    assert.match(await page.locator('[data-cr-metric="2"]').textContent(),/Required inputs:.*Analytical mitigation:.*How this parameter informs the plan.*Verify inputs.*Next:/s);
   });
   await fixture('acknowledgments survive check-only updates and reset for evidence/context changes',async page=>{
     await page.locator('[data-cr-ack="watch"]').check();

@@ -23,6 +23,8 @@
         timing:'Before using this public-data screen for a decision.',escalateWhen:'A current official instruction or verified local condition requires review.',escalateTo:track==='public'?'The responsible local public authority.':'The responsible duty officer under the approved local SOP.',reviewAfter:'Recheck when the selection or source report changes.',...options,...side};
       delete a.public;delete a.operator;a.target=a.target||m.context;a.evidenceIds=[...new Set(a.evidenceIds||[])];a._score=numeric(options._score)?options._score:0;
       if(m.input.scenario||a.evidenceIds.some(id=>m.get(id)?.basis==='demo')){a.signal='scenario';a.priority='planned';a.requiresCurrent=false;a.phase='review';a.timing='During this practice review; no real incident response is activated.';}
+      a.parameterLinks=Array.isArray(a.parameterLinks)?a.parameterLinks:[];
+      if(!a.parameterLinks.length)a.decisionBasis=a.signal==='official-warning'?'This step follows the current official notice, not a ten-parameter score.':a.signal==='forecast'?'This step reviews a source-issued forecast and its validity, not a ten-parameter score.':a.signal==='observed-condition'?'This step follows the selected public observation, not a ten-parameter score.':a.signal==='data-gap'?'This step resolves missing or expired public evidence; no parameter score establishes an all-clear.':a.signal==='scenario'?'This is a practice review, not a real-world ten-parameter alarm.':'This step checks the selected public source and scope, not a ten-parameter score.';
       m.actions.push(a);
     }
   }
