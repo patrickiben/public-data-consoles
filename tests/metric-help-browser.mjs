@@ -358,8 +358,20 @@ try {
     await coastalButton(page, 'rec', 7).click();
     const realReason = await timelineReason(coastalRow(page, 'rec', 7));
     await phaseHelp(page, 'rec', 7, /Currently not assessable/, /Public \/ local review:/);
-    await page.locator('#plan-data-scope').selectOption('synthetic');
+    const dataset = page.locator('#plan-data-scope');
+    // selectOption alone does not move the pointer or focus like opening this
+    // control. A layout change under the old metric pointer may legitimately
+    // open newly scoped hover help, so model the actual control interaction.
+    await dataset.hover();
+    await dataset.focus();
+    await dataset.selectOption('synthetic');
     await popup(page).waitFor({state: 'hidden'});
+    // A post-render pointer event must describe the replacement dataset, not
+    // retain the formerly pinned real/unknown explanation.
+    await coastalRow(page, 'rec', 7).locator('[data-metric-term] > span').hover();
+    const replacementHelp = await phaseHelp(page, 'rec', 7, /Fictional calibration exercise/, /Public \/ local review:/);
+    assert.doesNotMatch(replacementHelp, /Real public station planning screen/);
+    await close(page);
     const exercisePlan = await page.evaluate(() => CWR.exportPlan());
     assert.equal(await page.locator('#timeline [data-timeline-metric]').count(), 17);
     for (const [phase, ids] of coastalTimeline) for (const id of ids) {
