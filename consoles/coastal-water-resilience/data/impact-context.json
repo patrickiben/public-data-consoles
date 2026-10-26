@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-10-23T20:25:58.468804Z",
+  "capturedAt": "2026-10-26T13:26:47.002825Z",
   "refreshEveryHours": 168,
   "inventoryFingerprint": {
-    "capturedAt": "2026-10-23T20:25:58Z",
-    "sha256": "bc65e435301a35f8e301b1e1f9b9ad83c4f4d60f5585e7d6ae04953ce3ae5e99"
+    "capturedAt": "2026-10-26T13:26:47Z",
+    "sha256": "51f3f0bc9f761f75837188e326a327461e8df371f748d4a89df372710d02778d"
   },
   "sources": [
     {
@@ -12,7 +12,7 @@
       "url": "https://services2.arcgis.com/9qPLjNtocjo438CJ/arcgis/rest/services/PublicWastewater/FeatureServer/9",
       "title": "City of St. Petersburg PublicWastewater \u00b7 Sewer Sub Basin",
       "referencePeriod": "Current public GIS inventory; not operational telemetry",
-      "retrievedAt": "2026-10-23T20:25:58Z",
+      "retrievedAt": "2026-10-26T13:26:47Z",
       "sha256": "980eebeb2c41c1148eec0bae1dbcb90bc3c863ff6601c073eb360d4cfe94142f",
       "hashBasis": "SHA256 of canonical JSON capture manifest (URL, response SHA256 and byte length)",
       "captures": [
@@ -50,7 +50,7 @@
       "url": "https://tigerweb.geo.census.gov/arcgis/rest/services/Census2020/tigerWMS_Census2020/MapServer/10",
       "title": "U.S. Census Bureau TIGERweb \u00b7 2020 Census Blocks \u00b7 POP100/HU100",
       "referencePeriod": "2020 Census population/housing counts; January 1, 2020 geographic vintage",
-      "retrievedAt": "2026-10-23T20:25:58Z",
+      "retrievedAt": "2026-10-26T13:26:47Z",
       "sha256": "9ba36035231c33768755b8aa27f485bfd6d267a0af8879f093e5f5a493cb9055",
       "hashBasis": "SHA256 of canonical JSON capture manifest (URL, response SHA256 and byte length)",
       "captures": [
@@ -108,15 +108,15 @@
       "url": "https://services2.arcgis.com/9qPLjNtocjo438CJ/arcgis/rest/services/PublicWastewater/FeatureServer/1",
       "title": "City publicly published station basin labels",
       "referencePeriod": "Public GIS asset register; not service/customer measurements",
-      "retrievedAt": "2026-10-23T20:25:58Z",
-      "sha256": "bc65e435301a35f8e301b1e1f9b9ad83c4f4d60f5585e7d6ae04953ce3ae5e99",
+      "retrievedAt": "2026-10-26T13:26:47Z",
+      "sha256": "51f3f0bc9f761f75837188e326a327461e8df371f748d4a89df372710d02778d",
       "hashBasis": "SHA256 of canonical JSON parsed public-stations.json input"
     },
     {
       "id": "fdep-reuse-listing",
       "url": "https://floridadep.gov/water/domestic-wastewater/content/reuse-inventory-database-and-annual-report",
       "title": "FDEP annual reuse inventory listing",
-      "retrievedAt": "2026-10-23T20:25:58.468804Z",
+      "retrievedAt": "2026-10-26T13:26:47.002825Z",
       "sha256": "d2a7a93ae90a2b8b9199765e07514dd0618797a12669b4f9752203b23834b629",
       "reportYear": 2025,
       "period": "2024-10-01 to 2025-09-30 (FDEP 2025 annual average)",
@@ -129,7 +129,7 @@
       "id": "fdep-reuse-2025-document",
       "url": "https://floridadep.gov/water/domestic-wastewater/documents/2025-reuse-inventory-report-appendices",
       "title": "FDEP 2025 reuse appendix document",
-      "retrievedAt": "2026-10-23T20:25:58.468804Z",
+      "retrievedAt": "2026-10-26T13:26:47.002825Z",
       "sha256": "348e2eca169d8cd6b15eb0f5505e1fb229cca4937ba72507de79de6d4a7ada17",
       "reportYear": 2025,
       "period": "2024-10-01 to 2025-09-30 (FDEP 2025 annual average)",
@@ -142,7 +142,7 @@
       "id": "fdep-reuse-2025-workbook",
       "url": "https://floridadep.gov/sites/default/files/2025%20Reuse%20Inventory%20Report%20Appendices_0.xlsx",
       "title": "FDEP 2025 Reuse Inventory Report Appendices",
-      "retrievedAt": "2026-10-23T20:25:58.468804Z",
+      "retrievedAt": "2026-10-26T13:26:47.002825Z",
       "sha256": "7da6d2747157977ac3bd4e723b1c5eacee119364588e514136234d21fe04ddbb",
       "reportYear": 2025,
       "period": "2024-10-01 to 2025-09-30 (FDEP 2025 annual average)",

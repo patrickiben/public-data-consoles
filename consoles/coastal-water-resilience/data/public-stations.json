@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-10-23T20:25:58Z",
+  "capturedAt": "2026-10-26T13:26:47Z",
   "title": "Official publicly published lift-station register",
   "coverage": "131 agency-published Current-register lift stations: 82 City-owned and 49 privately owned. Default City-only view is an ownership filter, not a city-limit or service-area boundary.",
   "sources": [
@@ -8,7 +8,7 @@
       "id": "city-stations",
       "title": "City of St. Petersburg Water Resources \u00b7 PublicWastewater \u00b7 Sewer Lift Station",
       "url": "https://services2.arcgis.com/9qPLjNtocjo438CJ/arcgis/rest/services/PublicWastewater/FeatureServer/1",
-      "retrievedAt": "2026-10-23T20:25:58Z",
+      "retrievedAt": "2026-10-26T13:26:47Z",
       "sha256": "42cc74295afa51f829ba2304b4c5f868d806d8f02a299a4a40ee87cf64a935da",
       "hashBasis": "SHA256 of canonical URL/response-hash capture manifest",
       "captures": [
@@ -51,8 +51,8 @@
       "id": "county-evacuation-zones",
       "title": "Pinellas County \u00b7 public Know Your Zone parcel evacuation-zone layer",
       "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0",
-      "retrievedAt": "2026-10-23T20:25:58Z",
-      "sha256": "71c186a34050a10ded0b642c2277e1ff35c3c17557cd0f08c939abd832740b76",
+      "retrievedAt": "2026-10-26T13:26:47Z",
+      "sha256": "b31d99ad77c8e1395d72d88d46d76fcea20d8b5a1ee83ecdfe8e2cec2ad64ac5",
       "hashBasis": "SHA256 of canonical URL/response-hash capture manifest",
       "captures": [
         {
@@ -67,7 +67,7 @@
         },
         {
           "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.63997706%2C27.84438848%5D%2C%5B-82.64327117%2C27.84463285%5D%2C%5B-82.71625391%2C27.76656573%5D%2C%5B-82.64675963%2C27.7313401%5D%2C%5B-82.66223943%2C27.7837154%5D%2C%5B-82.64632812%2C27.84347682%5D%2C%5B-82.65884516%2C27.70227823%5D%2C%5B-82.66440428%2C27.88156097%5D%2C%5B-82.68651373%2C27.71651137%5D%2C%5B-82.63786383%2C27.85548451%5D%2C%5B-82.71787264%2C27.7064871%5D%2C%5B-82.64345659%2C27.77326784%5D%2C%5B-82.63013088%2C27.74624328%5D%2C%5B-82.68879536%2C27.74812877%5D%2C%5B-82.66518429%2C27.79388065%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
-          "sha256": "13ec22f990c0db533c65e717547687f6bdd1b378df5d760751f959e904231800",
+          "sha256": "1dc5d3baa33f8a0e1358affcea8b4f8b5b27cafa4966868e13e2f687935e2651",
           "bytes": 385
         },
         {
@@ -87,7 +87,7 @@
         },
         {
           "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.64397673%2C27.86499041%5D%2C%5B-82.67579876%2C27.74090392%5D%2C%5B-82.67127892%2C27.87943559%5D%2C%5B-82.66649868%2C27.88772205%5D%2C%5B-82.74051577%2C27.76523308%5D%2C%5B-82.62330083%2C27.80010621%5D%2C%5B-82.6602778%2C27.74229357%5D%2C%5B-82.67414353%2C27.76144962%5D%2C%5B-82.62659893%2C27.86447484%5D%2C%5B-82.67966695%2C27.70768896%5D%2C%5B-82.74755611%2C27.80575048%5D%2C%5B-82.5962958%2C27.81846459%5D%2C%5B-82.64925174%2C27.87694619%5D%2C%5B-82.74709364%2C27.77072872%5D%2C%5B-82.74707786%2C27.77066431%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
-          "sha256": "3765639be628db977e7833ac7036e91fbe5bfd9351a949ebcda7e24df450536c",
+          "sha256": "278f774c14e06cfc93e3b450e9b7dcf5e4c4b9027f386ececceffef77435df77",
           "bytes": 226
         },
         {
@@ -107,7 +107,7 @@
         },
         {
           "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.61078003%2C27.83541199%5D%2C%5B-82.74113475%2C27.78656586%5D%2C%5B-82.63471342%2C27.87584203%5D%2C%5B-82.61424498%2C27.8364963%5D%2C%5B-82.67270488%2C27.71466756%5D%2C%5B-82.68585426%2C27.79942887%5D%2C%5B-82.67392256%2C27.74214592%5D%2C%5B-82.63574116%2C27.7338262%5D%2C%5B-82.64884232%2C27.72513198%5D%2C%5B-82.72707689%2C27.67400053%5D%2C%5B-82.72029388%2C27.80240512%5D%2C%5B-82.68557176%2C27.73730286%5D%2C%5B-82.65108912%2C27.84776339%5D%2C%5B-82.62740732%2C27.80396749%5D%2C%5B-82.63691725%2C27.86678174%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
-          "sha256": "1645bb3f91dfb849aa627f2a3a21fcf2a4ee38afb6ca3980c7f357ac47d3db5f",
+          "sha256": "7b8460c7cf4e66589eaa0cfa22acfacd4d5531ea69c1a99569203f2371b1f15c",
           "bytes": 1719
         },
         {
@@ -132,7 +132,7 @@
         },
         {
           "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.73289623%2C27.80723779%5D%2C%5B-82.65529639%2C27.84731274%5D%2C%5B-82.63562497%2C27.74239255%5D%2C%5B-82.63752121%2C27.73038325%5D%2C%5B-82.6563235%2C27.85317192%5D%2C%5B-82.65027496%2C27.85500537%5D%2C%5B-82.75069091%2C27.7606542%5D%2C%5B-82.75430411%2C27.75168043%5D%2C%5B-82.6273912%2C27.8461534%5D%2C%5B-82.71091565%2C27.77371462%5D%2C%5B-82.61377933%2C27.82135195%5D%2C%5B-82.65190178%2C27.72776706%5D%2C%5B-82.65257182%2C27.77148377%5D%2C%5B-82.70004062%2C27.71667654%5D%2C%5B-82.63841675%2C27.86879533%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
-          "sha256": "2ccedd23a714f4a8d490bdacc70d94043b45ae59ccaff714de1620a405b4ebb0",
+          "sha256": "0d00cd7251227aed2af0190bdb6e58c1a575b01709d92ca0a97d2806e8334b9d",
           "bytes": 188
         },
         {
@@ -152,7 +152,7 @@
         },
         {
           "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.66035715%2C27.88826573%5D%2C%5B-82.71372612%2C27.71121307%5D%2C%5B-82.67545334%2C27.77357472%5D%2C%5B-82.65667351%2C27.86808778%5D%2C%5B-82.63842692%2C27.71823804%5D%2C%5B-82.62702077%2C27.83381645%5D%2C%5B-82.61240812%2C27.80375889%5D%2C%5B-82.6979859%2C27.7093217%5D%2C%5B-82.62511281%2C27.87291357%5D%2C%5B-82.66232371%2C27.88573781%5D%2C%5B-82.6591475%2C27.83676225%5D%2C%5B-82.64112951%2C27.8666768%5D%2C%5B-82.63294602%2C27.75742761%5D%2C%5B-82.72949109%2C27.8062229%5D%2C%5B-82.62700032%2C27.85975326%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
-          "sha256": "9b01503f915bef5cb53942d43036d2a45052594881c037902d1d7ff040f6b51a",
+          "sha256": "ada44ab5a3025bdd452c123583268c7b6bd4fd6dee1f9b6d04ce3b35523b9886",
           "bytes": 128
         },
         {
@@ -172,7 +172,7 @@
         },
         {
           "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.65184429%2C27.83552415%5D%2C%5B-82.66470142%2C27.79738127%5D%2C%5B-82.6784886%2C27.69799069%5D%2C%5B-82.68339095%2C27.71929168%5D%2C%5B-82.63099888%2C27.75694348%5D%2C%5B-82.6558043%2C27.84375704%5D%2C%5B-82.63831894%2C27.8654214%5D%2C%5B-82.63114988%2C27.75804878%5D%2C%5B-82.65198769%2C27.87308952%5D%2C%5B-82.66690283%2C27.70462181%5D%2C%5B-82.75377468%2C27.78840488%5D%2C%5B-82.7331033%2C27.7694732%5D%2C%5B-82.68986462%2C27.73747222%5D%2C%5B-82.67832113%2C27.77029578%5D%2C%5B-82.62565836%2C27.83283252%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
-          "sha256": "a4fba49c040bf85d781176baac5b14f85cb16ba19224bc1abb0dbd4e49cd2936",
+          "sha256": "dceaadf661bdd2309021873cb982c91317edfd00a3b95e536243b647f00445bd",
           "bytes": 201
         },
         {
@@ -192,7 +192,7 @@
         },
         {
           "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.71893058%2C27.78894966%5D%2C%5B-82.72044862%2C27.79262931%5D%2C%5B-82.6284799%2C27.72354525%5D%2C%5B-82.62147206%2C27.7963671%5D%2C%5B-82.64731757%2C27.85826712%5D%2C%5B-82.67720237%2C27.78114762%5D%2C%5B-82.63232451%2C27.75797293%5D%2C%5B-82.67747602%2C27.7881986%5D%2C%5B-82.59173994%2C27.81702686%5D%2C%5B-82.65962613%2C27.84219014%5D%2C%5B-82.65966503%2C27.84466378%5D%2C%5B-82.6959779%2C27.71952751%5D%2C%5B-82.69289401%2C27.72143683%5D%2C%5B-82.62217094%2C27.87030907%5D%2C%5B-82.66962178%2C27.8877961%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
-          "sha256": "90661f8f8db125f45a9b1b989982c49fbc2e754335325ed8049fa9d3f61f992c",
+          "sha256": "1b639afdc62519854dd3297e6c581846bb0d979ab8aa8fa5bf5448471a1dab10",
           "bytes": 205
         },
         {
@@ -212,7 +212,7 @@
         },
         {
           "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.65096848%2C27.80219178%5D%2C%5B-82.62943788%2C27.84772228%5D%2C%5B-82.62642542%2C27.76755037%5D%2C%5B-82.62835124%2C27.76662061%5D%2C%5B-82.62882374%2C27.77779785%5D%2C%5B-82.67125041%2C27.85739837%5D%2C%5B-82.65896308%2C27.84402531%5D%2C%5B-82.67642599%2C27.73835403%5D%2C%5B-82.7211189%2C27.81521633%5D%2C%5B-82.62722106%2C27.76266734%5D%2C%5B-82.60726905%2C27.81756016%5D%2C%5B-82.69672139%2C27.71210818%5D%2C%5B-82.69011098%2C27.73357582%5D%2C%5B-82.63250389%2C27.76201818%5D%2C%5B-82.66379659%2C27.74092461%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
-          "sha256": "f1ec659a6b76aaf7db0661508de7109d0b6257d70b21bc4618a9331aa9d7945d",
+          "sha256": "1228b0591a43aa0236c701c54e20186df17bf242d7e177c51b5e3194a7eebcc6",
           "bytes": 248
         },
         {
@@ -232,7 +232,7 @@
         },
         {
           "url": "https://services.arcgis.com/f5HgUpxURgEzTccH/arcgis/rest/services/KYZ_EvacuationZones_view/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryMultipoint&geometry=%7B%22points%22%3A%5B%5B-82.64744816%2C27.87062337%5D%2C%5B-82.62978961%2C27.83547458%5D%2C%5B-82.62255278%2C27.77357838%5D%2C%5B-82.67515575%2C27.76196687%5D%2C%5B-82.62703365%2C27.77778398%5D%2C%5B-82.62699272%2C27.77935381%5D%2C%5B-82.67733362%2C27.77035926%5D%2C%5B-82.62886083%2C27.7620144%5D%2C%5B-82.62814752%2C27.76203627%5D%2C%5B-82.6913235%2C27.76322208%5D%2C%5B-82.64734726%2C27.80994542%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&returnIdsOnly=true",
-          "sha256": "cb9ee6ef002d3f07fe88901cd54582e0534e0c461646eaa0f937e41583cf4cc0",
+          "sha256": "2304058d00ae59cc294fa04237e73de9bcd1a5014103b84c741aad3ea3b7ed84",
           "bytes": 276
         },
         {
