@@ -6,7 +6,7 @@ import vm from 'node:vm';
 // native page, private form, clock timer, provider or generated block is read.
 const root=new URL('../',import.meta.url),read=p=>readFile(new URL(p,root),'utf8');
 const core=await read('response-plans/core.js'),helpers=await read('response-plans/domain-helpers.js');
-const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain'];
+const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain','free-clinic-finder'];
 const adapters=Object.fromEntries(await Promise.all(slugs.map(async slug=>[slug,await read('response-plans/adapters/'+slug+'.js')])));
 const now=Date.parse('2026-10-23T16:00:00Z');
 class Clock extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}

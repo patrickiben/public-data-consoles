@@ -1,6 +1,6 @@
 # Public-Data Consoles
 
-A collection of **32 self-contained, browser-only dashboards** built on **public data feeds and dated snapshots**.
+A collection of **33 self-contained, browser-only dashboards** built on **public data feeds and dated snapshots**.
 Every console is a single HTML file: open it (or visit the GitHub Pages URL) and it runs — no install,
 no account, no build step or server setup for visitors. Grid, Coastal, NHS Scotland and Resilience Telemetry also check published data files for
 automatic updates; embedded measurements remain available offline. See the
@@ -54,7 +54,7 @@ Each dimension shows the domain condition or numerical proxy, required inputs, a
 and practical next steps. Public and professional-operator tracks use the same evidence with different
 responsibilities, escalation routes and verify/prepare/respond/review phases.
 
-A **Do next** preview now leads to a ranked live action checklist on all 31 shared consoles.
+A **Do next** preview now leads to a ranked live action checklist on all 32 shared consoles.
 Each step identifies the selected place or record, the data behind its priority, timing, escalation
 trigger and responsible contact, and when to recheck. Public and operator priorities update with
 selection, evidence and expiry. Current official warnings can lead; historical reports support
@@ -143,6 +143,7 @@ See the [field guide](https://patrickiben.github.io/public-data-consoles/respons
 
 | Console | Data | Sources |
 |---|---|---|
+| [Free Clinic Finder](consoles/free-clinic-finder/) | Live listings | HRSA health center sites (sliding fee, not necessarily free, with the HRSA data load date), OpenStreetMap clinics via Overpass (partial coverage; "free" only where tagged fee=no; clinics whose name says free are shown as not confirmed) |
 | [Human Trafficking — Get Help](consoles/human-trafficking/) | Reference | Verified hotlines + Polaris / UNODC / ILO–Walk Free / CTDC (badge-framed) |
 
 ## No visitor API keys
@@ -187,7 +188,7 @@ medical, legal, financial, or predictive validity. GitHub Actions runs these che
 
 Run `python3 -m unittest discover -s tests -v` for source/credential regressions and snapshot checks.
 For browser checks, run `npm ci`, `npx playwright install --only-shell chromium`, then `npm test`.
-These exercise keyless startup, public-data fixtures, all 32 response plans and unavailable map/feed states. External requests
+These exercise keyless startup, public-data fixtures, all 33 response plans and unavailable map/feed states. External requests
 are intercepted; automated tests do not download OpenStreetMap tiles. Normal interactive maps follow
 the [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/).
 
@@ -328,7 +329,7 @@ still required because medication selection is a personal input.
 River plans now use NOAA's local stage thresholds and published impact statements where supplied,
 with observation/forecast basis and times. Earthquake plans include official USGS PAGER modeled
 population exposure. Those products do not establish actual outages, losses or casualties. The
-[update guide](https://patrickiben.github.io/public-data-consoles/data-updates.html) covers all 32 consoles,
+[update guide](https://patrickiben.github.io/public-data-consoles/data-updates.html) covers all 33 consoles,
 including public-reference and synthetic modules that cannot obtain real operational or personal inputs.
 
 ## Automatic macro updates and manual FRED replay

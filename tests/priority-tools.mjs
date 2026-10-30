@@ -5,7 +5,7 @@ import test from 'node:test';
 
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
 const core=await read('response-plans/core.js'),priority=await read('response-plans/priorities/tools.js'),helpers=await read('response-plans/domain-helpers.js'),series=await read('response-plans/observed-series.js');
-const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain'];
+const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain','free-clinic-finder'];
 const adapters=Object.fromEntries(await Promise.all(slugs.map(async s=>[s,await read('response-plans/adapters/'+s+'.js')])));
 const source=await read('consoles/usaid-consequence/index.html'),agency=JSON.parse(source.match(/const SNAP = (\{[^\n]+\});/)[1]);
 let now=Math.max(Date.parse('2026-10-24T00:00:00Z'),Date.parse(agency.publicFinance.capturedAt)+3600000);
@@ -24,10 +24,16 @@ const featured=(p,track='public')=>p.actions.filter(a=>a.featured&&a.selected&&a
 const plain=x=>JSON.parse(JSON.stringify(x));
 function freeze(x){if(x&&typeof x==='object'){Object.values(x).forEach(freeze);Object.freeze(x);}return x;}
 function raw(f,slug,input){return plain(f.handlers.get(slug)(input));}
+function clinicBridge(){
+ return {version:1,slug:'free-clinic-finder',selectionId:1,state:'settled',locationType:'zip',checkedAt:checked,sources:{geocoder:{status:'ok',reason:null,checkedAt:checked},
+  hrsa:{status:'ok',count:12,radiusMi:25,nearestMi:3.4,dataDate:'2026-10-30',partial:false,reason:null,checkedAt:checked,lookalikeCount:1,mobileOrSeasonalCount:0},
+  osm:{status:'failed',count:null,radiusMi:null,nearestMi:null,dataDate:null,partial:false,reason:'timeout',checkedAt:checked,freeCount:null,conditionalCount:null,nameCount:null}}};
+}
 function publicPayload(f,slug){
  const context=f.context;
  const globals={
   'us-grid-strain':{STATE:{capturedAt:checked,demandThrough:hour.slice(0,13),ba:{A:{code:'A',name:'Public A',D:100,DF:90,TI:-5,period:hour.slice(0,13)}}},AGG:new Set(),GridResponseSelection:'A'},
+  'free-clinic-finder':{ClinicResponse:clinicBridge()},
   'resilience-telemetry':{NETSTATE:null,ASSET_IDS:[],STORE:{},L_LAG:4,SCEN:'none',SURR:false,DATA_VER:1,MODE:'live',SEL:'SPY',W_IND:252,MACRO:{UNRATE:{name:'Unemployment rate',unit:'pct',d:[Math.floor((now-86400000-Date.UTC(2000,0,1))/86400000)],v:[0]}},FRED_META:{capturedAt:checked,retrieved_on:checked.slice(0,10)}},
   'usaid-consequence':{DATA:structuredClone(agency),budgetPublicRecords:structuredClone(agency.publicFinance.records),budgetPublicStatus:structuredClone(agency.publicFinance.status),budgetDownloadedAt:null,budgetCheckedAt:null,feedStatus:{USAspending:'unavailable'}},
   'prescription-savings':{NADAC_DS:'public-dataset'},
@@ -123,4 +129,15 @@ test('guidance steps remain reference-only, avoid invented deadlines and differ 
 test('VA numerical targets remain drills and disappear with withheld local overrides',()=>{
  const f=load(),input=publicPayload(f,'va-strain');f.install();let p=f.evaluate(input),rows=featured(p,'operator');assert.ok(rows.every(a=>a.practice&&a.priority==='planned'&&a.signal==='scenario'));assert.match(rows[1].reason,/Synthetic value/);assert.match(rows[1].target,/within 5 points/);
  input.evidence=input.evidence.map(x=>['balance','margin','scale'].includes(x.id)?{...x,value:null,quality:'missing'}:x);p=f.evaluate(input);rows=featured(p,'operator');assert.match(rows[0].reason,/overrides are withheld/);assert.match(rows[1].title,/authorized inputs needed/);assert.doesNotMatch(JSON.stringify(rows),/secret census|987654/);
+});
+test('clinic: a failed OpenStreetMap source is a data gap, HRSA is not called free, and no place text enters the payload',()=>{
+ const f=load(),input=publicPayload(f,'free-clinic-finder');f.install();
+ assert.doesNotMatch(JSON.stringify(input),/"(lat|lon|q|address|displayName)"/);
+ const hrsa=input.evidence.find(x=>x.id==='hrsa-count'),osm=input.evidence.find(x=>x.id==='osm-count');
+ assert.equal(hrsa.value,12);assert.equal(osm.value,null);assert.equal(osm.sourceStatus,'failed');
+ const rows=featured(f.evaluate(input));
+ assert.equal(rows[0].signal,'data-gap');assert.match(rows[0].id,/clinic-gap/);assert.match(rows[0].reason,/OpenStreetMap clinics listed as free or possibly free \(failed\)/);
+ for(const a of rows)assert.doesNotMatch(a.reason,/\bnone\b/i);
+ const confirm=rows.find(a=>a.id.includes('clinic-confirm'));assert.match(confirm.reason,/not necessarily free/);
+ const idle=featured(f.evaluate(base('free-clinic-finder')));assert.ok(idle.length>=2);
 });
