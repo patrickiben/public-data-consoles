@@ -5,7 +5,7 @@ import test from 'node:test';
 
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
 const core=await read('response-plans/core.js'),priority=await read('response-plans/priorities/tools.js'),helpers=await read('response-plans/domain-helpers.js'),series=await read('response-plans/observed-series.js');
-const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain'];
+const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain','food-desert-oases'];
 const adapters=Object.fromEntries(await Promise.all(slugs.map(async s=>[s,await read('response-plans/adapters/'+s+'.js')])));
 const source=await read('consoles/usaid-consequence/index.html'),agency=JSON.parse(source.match(/const SNAP = (\{[^\n]+\});/)[1]);
 let now=Math.max(Date.parse('2026-10-24T00:00:00Z'),Date.parse(agency.publicFinance.capturedAt)+3600000);
@@ -24,6 +24,12 @@ const featured=(p,track='public')=>p.actions.filter(a=>a.featured&&a.selected&&a
 const plain=x=>JSON.parse(JSON.stringify(x));
 function freeze(x){if(x&&typeof x==='object'){Object.values(x).forEach(freeze);Object.freeze(x);}return x;}
 function raw(f,slug,input){return plain(f.handlers.get(slug)(input));}
+function foodBridge(){
+ return {version:1,slug:'food-desert-oases',selectionId:1,state:'settled',context:'Census tract 12103024500 (2025 SNAP-authorized Retailer Access Map)',
+  tract:{status:'ok',geoid:'12103024500',urban:1,vintage:'2025 SNAP-authorized Retailer Access Map, released July 2026',flags:{lowIncome:1,la1and10:1,lila1and10:1,urban:1},checkedAt:checked},
+  tract2019:{status:'ok',geoid:'12103024500',flags:{lila1and10:0},checkedAt:checked},
+  sources:{snap:{status:'ok',count:3,nearestMi:0.8,radiusMi:5,dataDate:'October 21, 2026',partial:false,checkedAt:checked},markets:{status:'failed',count:null,reason:'HTTP 503',partial:false,checkedAt:checked},foodbanks:{status:'empty',count:0,radiusMi:31,nearestMi:null,dataDate:'2026-10-23T08:00:00Z',partial:false,checkedAt:checked}}};
+}
 function publicPayload(f,slug){
  const context=f.context;
  const globals={
@@ -32,6 +38,7 @@ function publicPayload(f,slug){
   'usaid-consequence':{DATA:structuredClone(agency),budgetPublicRecords:structuredClone(agency.publicFinance.records),budgetPublicStatus:structuredClone(agency.publicFinance.status),budgetDownloadedAt:null,budgetCheckedAt:null,feedStatus:{USAspending:'unavailable'}},
   'prescription-savings':{NADAC_DS:'public-dataset'},
   'medical-cost-abroad':{},'medical-debt-assistant':{},'human-trafficking':{},
+  'food-desert-oases':{FoodAccessResponse:foodBridge()},
   'va-strain':{STATUS_OVERRIDE:{},FACILITY:'Synthetic training facility',SCEN:'baseline',deepUnits:()=>({u:[{cap:10,census:10,rnAct:1,rnTgt:2},{cap:10,census:9,rnAct:2,rnTgt:2}]})}
  }[slug];
  Object.assign(context,globals);context.ConsoleResponse.connect=reader=>{context.publicReader=reader;};vm.runInContext(adapters[slug],context,{filename:slug+'.js'});return plain(context.publicReader());
@@ -49,6 +56,30 @@ for(const slug of slugs)test(slug+': actual public adapter payload produces comp
   for(const a of rows){for(const key of ['id','title','target','reason','nextStep','timing','escalateWhen','escalateTo','authorityUrl','reviewAfter'])assert.ok(typeof a[key]==='string'&&a[key].trim(),key);assert.ok(Number.isInteger(a.rank)&&a.rank>0);assert.notEqual(a.priority,'immediate');assert.notEqual(a.phase,'respond');assert.equal(a.withheldReasons.length,0);assert.match(a.authorityUrl,/^https:\/\//);}
  }
  assert.notEqual(featured(after,'public')[0].nextStep,featured(after,'operator')[0].nextStep,'audiences need different responsibilities');
+});
+test('food: a failed source is a data gap first, a successful zero stays zero, and the tract step needs usable tract evidence',()=>{
+ const f=load(),input=publicPayload(f,'food-desert-oases');f.install();
+ assert.doesNotMatch(JSON.stringify(input),/"(lat|lon|q|address|displayName)"/);
+ let p=f.evaluate(input),rows=featured(p);
+ assert.equal(rows[0].signal,'data-gap');assert.match(rows[0].id,/food-gap/);assert.match(rows[0].reason,/SNAP-authorized farmers markets/);assert.deepEqual(plain(rows[0].evidenceIds),['markets-count']);
+ for(const track of ['public','operator'])for(const a of featured(p,track)){assert.doesNotMatch(a.reason,/\bnone\b/i);assert.match(a.authorityUrl,/^https:\/\//);}
+ const zero=input.evidence.find(x=>x.id==='foodbanks-count');assert.equal(zero.value,0);assert.equal(zero.quality,'current');
+ const confirm=rows.find(a=>a.id.includes('food-confirm'));assert.match(confirm.reason,/OpenStreetMap food banks: 0 listed within 31 mi/);assert.match(confirm.reason,/SNAP-authorized farmers markets: unavailable/);assert.match(confirm.reason,/SNAP-authorized stores: 3 listed within 5 mi, data 2026-10-21/);
+ const item=id=>p.impacts.items.find(x=>x.id===id);
+ assert.equal(item('foodbanks-listed').value,0);assert.equal(item('foodbanks-listed').status,'available');
+ assert.equal(item('markets-listed').value,null);assert.equal(item('markets-listed').status,'unknown');
+ assert.equal(item('snap-listed').value,3);assert.equal(item('snap-nearest-distance').value,0.8);
+ assert.equal(p.diagnostics.find(d=>d.metricId===3).status,'triggered');assert.equal(p.diagnostics.find(d=>d.metricId===9).status,'clear');
+ assert.ok(rows.some(a=>a.id.includes('food-tract')));
+ rows=featured(f.evaluate({...input,evidence:input.evidence.map(x=>x.id==='tract-lila'?{...x,quality:'missing'}:x)}));
+ assert.ok(!rows.some(a=>a.id.includes('food-tract')));assert.match(rows[0].reason,/2025 Atlas tract flag/);
+ const ok=input.evidence.map(x=>x.id==='markets-count'?{...x,value:2,quality:'current',measuredAt:'2026-10-21'}:x);
+ rows=featured(f.evaluate({...input,evidence:ok}));assert.ok(!rows.some(a=>a.signal==='data-gap'),'all sources usable: no gap step');
+ rows=featured(f.evaluate({...input,evidence:ok.map(x=>x.id==='snap-count'?{...x,partial:true}:x)}));assert.equal(rows[0].signal,'data-gap');assert.deepEqual(plain(rows[0].evidenceIds),['snap-count']);
+ const startRows=featured(f.evaluate({...base('food-desert-oases'),context:'No search yet'}));assert.match(startRows[0].id,/food-start/);assert.ok(!startRows.some(a=>a.id.includes('food-gap')),'no source gap before a search');
+ const territory=input.evidence.map(x=>x.id==='tract-lila'?{...x,value:null,quality:'missing',sourceStatus:'not-covered'}:x);rows=featured(f.evaluate({...input,evidence:territory}));
+ assert.ok(rows.some(a=>a.id.includes('food-coverage')));assert.doesNotMatch(rows.find(a=>a.id.includes('food-gap')).reason,/2025 Atlas tract flag/);assert.match(rows.find(a=>a.id.includes('food-gap')).reason,/SNAP-authorized farmers markets \(failed\)/);
+ const idle=f.evaluate(base('food-desert-oases'));for(const track of ['public','operator']){const r=featured(idle,track);assert.ok(r.length>=2);assert.equal(r[0].signal,'data-gap');assert.ok(!r.some(a=>a.id.includes('food-tract')));}
 });
 test('grid ranks signed forecast differences by absolute MW within one exact source hour and responds to selection',()=>{
  const f=load();f.install();let input=base('us-grid-strain',[...ba('A',-30),...ba('B',20),...ba('OLD',95,-90,old)]),p=f.evaluate(input);

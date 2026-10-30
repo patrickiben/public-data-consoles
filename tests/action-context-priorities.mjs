@@ -50,8 +50,8 @@ function assertLinks(action, expected) {
   }
 }
 
-test('all31 shared selectors identify direct-record decisions without forcing canonical links', () => {
-  assert.equal(active.handlers.size, 31);
+test('all32 shared selectors identify direct-record decisions without forcing canonical links', () => {
+  assert.equal(active.handlers.size, 32);
   for (const {slug, native} of manifest.consoles) if (!native) {
     const data = input(slug), before = JSON.stringify(data), rows = raw(data);
     assert.equal(JSON.stringify(data), before, slug + ': no input mutation');
