@@ -1,6 +1,6 @@
 # Public-Data Consoles
 
-A collection of **32 self-contained, browser-only dashboards** built on **public data feeds and dated snapshots**.
+A collection of **33 self-contained, browser-only dashboards** built on **public data feeds and dated snapshots**.
 Every console is a single HTML file: open it (or visit the GitHub Pages URL) and it runs — no install,
 no account, no build step or server setup for visitors. Grid, Coastal, NHS Scotland and Resilience Telemetry also check published data files for
 automatic updates; embedded measurements remain available offline. See the
@@ -54,7 +54,7 @@ Each dimension shows the domain condition or numerical proxy, required inputs, a
 and practical next steps. Public and professional-operator tracks use the same evidence with different
 responsibilities, escalation routes and verify/prepare/respond/review phases.
 
-A **Do next** preview now leads to a ranked live action checklist on all 31 shared consoles.
+A **Do next** preview now leads to a ranked live action checklist on all 32 shared consoles.
 Each step identifies the selected place or record, the data behind its priority, timing, escalation
 trigger and responsible contact, and when to recheck. Public and operator priorities update with
 selection, evidence and expiry. Current official warnings can lead; historical reports support
@@ -144,6 +144,7 @@ See the [field guide](https://patrickiben.github.io/public-data-consoles/respons
 | Console | Data | Sources |
 |---|---|---|
 | [Human Trafficking — Get Help](consoles/human-trafficking/) | Reference | Verified hotlines + Polaris / UNODC / ILO–Walk Free / CTDC (badge-framed) |
+| [Free Public Bathroom Finder](consoles/public-bathroom-finder/) | Live listings | Refuge Restrooms (crowd-sourced listings, each with its date), OpenStreetMap amenity=toilets via Overpass (partial coverage; "free" only where tagged fee=no) |
 
 ## No visitor API keys
 
@@ -155,6 +156,7 @@ on embedded EIA measurements and checks a same-origin public data file for updat
 checks EIA's keyless downloads every six hours; an open, visible dashboard checks the published file
 every 15 minutes. Neither visitors nor the scheduled job need an EIA key. These are **delayed public
 reports**, with measurement dates shown, rather than a real-time operational feed.
+Free Public Bathroom Finder uses the keyless Refuge Restrooms API and OpenStreetMap Nominatim and Overpass queries; each result shows its source and data date, and a failed source is shown as unavailable, never as zero.
 
 ## How they work
 
@@ -187,7 +189,7 @@ medical, legal, financial, or predictive validity. GitHub Actions runs these che
 
 Run `python3 -m unittest discover -s tests -v` for source/credential regressions and snapshot checks.
 For browser checks, run `npm ci`, `npx playwright install --only-shell chromium`, then `npm test`.
-These exercise keyless startup, public-data fixtures, all 32 response plans and unavailable map/feed states. External requests
+These exercise keyless startup, public-data fixtures, all 33 response plans and unavailable map/feed states. External requests
 are intercepted; automated tests do not download OpenStreetMap tiles. Normal interactive maps follow
 the [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/).
 
@@ -328,7 +330,7 @@ still required because medication selection is a personal input.
 River plans now use NOAA's local stage thresholds and published impact statements where supplied,
 with observation/forecast basis and times. Earthquake plans include official USGS PAGER modeled
 population exposure. Those products do not establish actual outages, losses or casualties. The
-[update guide](https://patrickiben.github.io/public-data-consoles/data-updates.html) covers all 32 consoles,
+[update guide](https://patrickiben.github.io/public-data-consoles/data-updates.html) covers all 33 consoles,
 including public-reference and synthetic modules that cannot obtain real operational or personal inputs.
 
 ## Automatic macro updates and manual FRED replay

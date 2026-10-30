@@ -5,7 +5,7 @@ import test from 'node:test';
 
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
 const core=await read('response-plans/core.js'),priority=await read('response-plans/priorities/tools.js'),helpers=await read('response-plans/domain-helpers.js'),series=await read('response-plans/observed-series.js');
-const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain'];
+const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain','public-bathroom-finder'];
 const adapters=Object.fromEntries(await Promise.all(slugs.map(async s=>[s,await read('response-plans/adapters/'+s+'.js')])));
 const source=await read('consoles/usaid-consequence/index.html'),agency=JSON.parse(source.match(/const SNAP = (\{[^\n]+\});/)[1]);
 let now=Math.max(Date.parse('2026-10-24T00:00:00Z'),Date.parse(agency.publicFinance.capturedAt)+3600000);
@@ -30,6 +30,7 @@ function publicPayload(f,slug){
   'us-grid-strain':{STATE:{capturedAt:checked,demandThrough:hour.slice(0,13),ba:{A:{code:'A',name:'Public A',D:100,DF:90,TI:-5,period:hour.slice(0,13)}}},AGG:new Set(),GridResponseSelection:'A'},
   'resilience-telemetry':{NETSTATE:null,ASSET_IDS:[],STORE:{},L_LAG:4,SCEN:'none',SURR:false,DATA_VER:1,MODE:'live',SEL:'SPY',W_IND:252,MACRO:{UNRATE:{name:'Unemployment rate',unit:'pct',d:[Math.floor((now-86400000-Date.UTC(2000,0,1))/86400000)],v:[0]}},FRED_META:{capturedAt:checked,retrieved_on:checked.slice(0,10)}},
   'usaid-consequence':{DATA:structuredClone(agency),budgetPublicRecords:structuredClone(agency.publicFinance.records),budgetPublicStatus:structuredClone(agency.publicFinance.status),budgetDownloadedAt:null,budgetCheckedAt:null,feedStatus:{USAspending:'unavailable'}},
+  'public-bathroom-finder':{},
   'prescription-savings':{NADAC_DS:'public-dataset'},
   'medical-cost-abroad':{},'medical-debt-assistant':{},'human-trafficking':{},
   'va-strain':{STATUS_OVERRIDE:{},FACILITY:'Synthetic training facility',SCEN:'baseline',deepUnits:()=>({u:[{cap:10,census:10,rnAct:1,rnTgt:2},{cap:10,census:9,rnAct:2,rnTgt:2}]})}

@@ -142,6 +142,8 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
   var basisNames = { measured: 'MEASURED', modeled: 'MODELED', interpretive: 'INTERPRETIVE', demo: 'DEMO · practice only' };
   function text(value) { return value == null ? '' : String(value); }
   function esc(value) { return text(value).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  // Label separator: a console page may set <html data-cr-separator=": ">; otherwise the long-standing spaced dash is kept.
+  function separator() { var value = doc && doc.documentElement ? doc.documentElement.getAttribute('data-cr-separator') : null; return value ? value : ' \u2014 '; }
   function url(value) { return /^https?:\/\/[^\s]+$/i.test(text(value)) ? text(value) : ''; }
   function canonical(value) {
     if (Array.isArray(value)) return value.map(canonical);
@@ -323,7 +325,7 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
   }
   function metricLabel(d, label, actionContext, contextTitle) {
     var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.canonicalLabel || d.label);
-    var context = d.label + (d.status === 'unknown' ? ' — not assessable with the available inputs.' : d.scope === 'planning' ? ' — planning comparison.' : '');
+    var context = d.label + (d.status === 'unknown' ? separator() + 'not assessable with the available inputs.' : d.scope === 'planning' ? separator() + 'planning comparison.' : '');
     return d.metricId && root.ConsoleMetricHelp ? root.ConsoleMetricHelp.label(d.metricId, value, actionContext || context, contextTitle) : esc(value);
   }
   function withheldExplanation(a) {
@@ -506,7 +508,7 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
       followupHTML += '<h3>' + phaseNames[phase] + '</h3>';
       list.forEach(function (a) {
         var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
-        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc(a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return esc((d.metricId ? '#' + d.metricId + ' ' : '') + d.label) + esc(' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : '')); }).join('; ') || 'Evidence is incomplete; verify before deciding.') + '</p>' + actionParameters(plan, a) + '<p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc(a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return esc((d.metricId ? '#' + d.metricId + ' ' : '') + d.label) + esc(separator() + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : '')); }).join('; ') || 'Evidence is incomplete; verify before deciding.') + '</p>' + actionParameters(plan, a) + '<p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
       });
     });
     actionHTML += featured.length ? section('followup', 'Dimension-by-dimension follow-up', followupHTML, 'interpretive') : followupHTML;
@@ -526,7 +528,7 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
           return link ? (a.selected ? '' : 'Potential step' + actionAvailability(a) + '. ') + parameterContext(a, link) : '';
         }).filter(Boolean).join(' ');
         var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
-        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + metricLabel(d, null, helpContext) + ' — ' + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p>' + diagnosticActions(d, related) + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + metricLabel(d, null, helpContext) + esc(separator()) + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p>' + diagnosticActions(d, related) + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
       }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
     }).join('');
     h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');
@@ -663,6 +665,7 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
   if (!R) return;
 
   const families = Object.freeze({
+    'public-bathroom-finder': 'restroom',
     'global-air-pollution': 'annual', 'global-demographic-transition': 'annual',
     'global-health-atlas': 'annual', 'global-health-systems': 'annual',
     'global-hiv-tb-malaria': 'annual', 'global-immunization': 'annual',
@@ -679,6 +682,7 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
     'medical-debt-assistant': 'reference', 'human-trafficking': 'reference', 'va-strain': 'va'
   });
   const subjects = Object.freeze({
+    'public-bathroom-finder': 'the nearby restroom listings',
     'global-air-pollution': 'air-quality indicators',
     'global-demographic-transition': 'population and demographic indicators',
     'global-health-atlas': 'the selected health indicator',
@@ -701,6 +705,18 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
   // Entries explain the maintained adapter's actual estimand or input gap. They do
   // not transfer Coastal thresholds, claim a fitted CRT model, or select actions.
   const reasons = {
+    restroom: [
+      'Counts in {subject} come from two sources around one searched point; they show where restrooms are listed, not how many people need one or who may use them.',
+      'A distance comparison for {subject} needs lists from the same source and search distance; Refuge Restrooms entries and OpenStreetMap entries are not samples of one distribution.',
+      'Counts in {subject} depend on the search distance and on volunteer coverage, so a low count is not a measured shortage of public restrooms.',
+      'Only the searched area is read for {subject}; describing a gap between listed restrooms needs complete local data and a defined walking network.',
+      'Each listing in {subject} carries its own update or last-edit date; an old entry may describe a restroom that has moved, closed or changed its access rules.',
+      'Counts for {subject} change with the distance each source was searched, so counts at different distances are not comparable densities.',
+      'No model of opening hours, access rules, cost or cleanliness is fitted for {subject}; a listing and a straight-line distance are not a measure of practical access.',
+      'Coverage of {subject} differs by source: Refuge Restrooms entries are crowd-sourced and OpenStreetMap restroom tags are partial, so a missing listing is not proof that none exist.',
+      'Straight-line distance to the nearest place in {subject} is not walking distance or travel time, and a failed source stays unknown rather than counting as none nearby.',
+      'Sending someone to a place in {subject} needs a confirmed location, hours and access rules; a list of places is not an observed network of who can use which restroom.'
+    ],
     annual: [
       'Country counts can overrepresent small populations in comparisons of {subject}; same-year resident totals clarify who the comparison represents, not who needs a service.',
       'The same-year income-group distribution shows whether {subject} differs beyond one country average; the empirical W1 does not identify a cause or a clinical cutoff.',
@@ -874,6 +890,18 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
   // Why this particular comparison belongs before the next decision. These are
   // review dependencies, not source-derived response deadlines.
   const sequence = {
+    restroom: [
+      'Check who each listed restroom serves before describing local need.',
+      'Keep each source list separate before comparing distances between places.',
+      'Read the distance searched with each count before describing local availability.',
+      'Check the area beyond the searched point before drawing a service boundary.',
+      'Note each listing update or last-edit date before relying on an older entry.',
+      'Note the distance each source was searched before comparing one place with another.',
+      'Check hours, access rules and cost separately before treating a listing as usable.',
+      'Cross-check partial listings with the venue before sharing a list.',
+      'Confirm that both sources answered before reading the nearest restroom distance.',
+      'Confirm access and hours with each place before recommending it to someone.'
+    ],
     annual: [
       'Establish the resident denominator before prioritizing comparison groups.',
       'Inspect the full same-year distribution before treating one national average as typical.',
@@ -1307,10 +1335,12 @@ footer .note{background:var(--panel);border:1px solid var(--line);border-left:3p
  var doc=root.document, tip=null, active=null, pinned=false, timer=null, overTip=false;
  var hoverDismissed=false, pointerX=null, pointerY=null;
  function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+ // Same per-page separator as the response panel; the default spaced dash is unchanged.
+ function separator(){var value=doc&&doc.documentElement?doc.documentElement.getAttribute('data-cr-separator'):null;return value?value:' \u2014 ';}
  function definition(id){return definitions.find(function(d){return d.id===Number(id);});}
  function label(id,text,context,contextTitle){
   var d=definition(id);if(!d)return esc(text);
-  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?' — '+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
+  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?esc(separator())+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
  }
  function ensure(){
   if(tip)return tip;
@@ -2549,6 +2579,27 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshPub
     const limits=[];for(const f of rows){const report=date(f.measuredAt),capture=date(f.checkedAt);if(report!=null)limits.push(report+reportHours*3600000);if(capture!=null)limits.push(capture+captureHours*3600000);}
     return limits.length?iso(Math.min(...limits)):undefined;
   }
+  function restroom(input){
+    // A failed, idle or incomplete source is a data gap. A successful zero stays a real zero.
+    const e=facts(input),links={refuge:'https://www.refugerestrooms.org/',osm:'https://wiki.openstreetmap.org/wiki/Tag:amenity%3Dtoilets',help:'https://www.211.org/'},groups=[];
+    const names={'refuge-count':'Refuge Restrooms (crowd-sourced)','osm-count':'OpenStreetMap public toilets'},keys=Object.keys(names);
+    const gaps=keys.filter(id=>{const f=byId(e,id);return !usable(f)||f.partial===true;});
+    // A search that ended before any listing source ran (place search failed, no match, no usable location) is not the neutral "no search yet" state.
+    const failed=input.context==='Place search unavailable',nomatch=input.context==='No place found for the search',nolocation=input.context==='No location was available for the search',noPlace=failed||nomatch||nolocation;
+    const idle=!noPlace&&(input.context==='No search yet'||keys.every(id=>{const f=byId(e,id);return !!f&&f.sourceStatus==='idle';}));
+    const why={failed:'failed',loading:'still loading',partial:'returned a partial list',idle:'not searched yet'};
+    const gapWhy=id=>{const f=byId(e,id),st=f&&f.partial===true?'partial':f&&f.sourceStatus;return why[st]||'not searched yet, still loading, failed or partial';};
+    const lists=keys.map(id=>byId(e,id)),ok=lists.filter(f=>usable(f));
+    if(noPlace){
+      groups.push(pair('restroom-place',track=>({title:failed?'The place search is unavailable: try again':nomatch?'No place matched the search: try again':'No location was available: try again',target:input.context,reason:failed?'The place search (OpenStreetMap Nominatim) did not answer, so no location was found and no restroom source was checked. Nothing here is a result.':nomatch?'The place search found no match for the text entered, so no restroom source was checked. Nothing here is a result.':'The last search ended before any location was found (an invalid ZIP code, or no device location), so no restroom source was checked. Nothing here is a result.',evidenceIds:ids([byId(e,'restroom-method')]),signal:'data-gap',priority:'next',timing:'Now, before using this page',authorityUrl:links.help,nextStep:track==='operator'?(failed?'Try the search again in a moment or use Use my location; meanwhile refer people to 211 or the venue.':nomatch?'Add a city and state or try a 5-digit ZIP code, then read each source status before using the lists.':'Enter a street address, city or 5-digit ZIP code, or allow location access, then read each source status before using the lists.'):(failed?'Try again in a moment, or press Use my location. If you need a restroom now, ask a nearby business, library or transit staff.':nomatch?'Check the spelling, add a city and state, or try a 5-digit ZIP code. You can also press Use my location.':'Type a street address, city or 5-digit ZIP code, or allow location access in your browser and press Use my location again.'),escalateWhen:'Someone needs a restroom urgently.',escalateTo:'The venue or a local information line (211)',reviewAfter:'Recheck after the next search.'})));
+    }else if(idle){
+      groups.push(pair('restroom-start',track=>({title:'Search for a place to begin',target:'No search yet',reason:'No place has been searched, so no source has been checked and nothing here is a result yet. After a search, each source shows its own status and data date.',evidenceIds:ids([byId(e,'restroom-method')]),signal:'planning',priority:'planned',timing:'When you are ready to search',authorityUrl:links.refuge,nextStep:track==='operator'?'Search the address, city or ZIP code you are planning for, then read each source status before using the lists.':'Type an address, city or ZIP code, or use your location. A ZIP code or a nearby intersection works if you prefer not to type a home address.',escalateWhen:'Someone needs a restroom urgently.',escalateTo:'The venue or a local information line (211)',reviewAfter:'Recheck after the first search.'})));
+    }else if(gaps.length)groups.push(pair('restroom-gap',track=>({title:'Some lists are incomplete: check the sources directly',target:input.context||'Searched location',reason:gaps.length+' of '+keys.length+' public sources have no complete result in this view: '+gaps.map(id=>names[id]+' ('+gapWhy(id)+')').join(', ')+'. An unavailable source is unknown, not zero nearby.',evidenceIds:ids(gaps.map(id=>byId(e,id))),signal:'data-gap',priority:'next',timing:'Before relying on the lists on this page',authorityUrl:links.refuge,nextStep:track==='operator'?'Record which sources failed and when, try the search again later, and ask the venue or 211 in the meantime.':'Try again later, or check the source sites directly. A missing list here does not mean there are no restrooms nearby.',escalateWhen:'Someone needs a restroom urgently and the lists here are unavailable or incomplete.',escalateTo:'The venue or a local information line (211)',reviewAfter:'Recheck after Try again succeeds or on the next search.'})));
+    const summary=lists.map((f,i)=>{const label=names[keys[i]];return usable(f)?label+': '+fmt(f.value)+' '+(f.unit||'listed')+(f.partial?' (partial)':'')+', data '+f.measuredAt:label+': unavailable';}).join('; ');
+    if(!idle&&!noPlace)groups.push(pair('restroom-confirm',track=>({title:'Confirm access, hours and cost before you go',target:'Listed restrooms from the usable sources',reason:(ok.length?summary+'. ':'No listing source has a usable result in this view. ')+'Listings can be outdated or incomplete, Refuge Restrooms records no cost or hours, free is shown only where fee=no is tagged, and distances are straight-line, not walking distance.',evidenceIds:ids(ok),signal:ok.length?'planning':'data-gap',priority:'planned',timing:'Before you travel to a listed restroom',authorityUrl:links.osm,nextStep:track==='operator'?'Verify access rules, hours and cost with each venue before adding it to a referral sheet.':'Check the venue or call ahead before you travel; customer-only restrooms may need a purchase.',escalateWhen:'A listed restroom is closed, moved or not open to the person.',escalateTo:'The venue',reviewAfter:'Recheck on each new search or when a place changes its hours.'})));
+    groups.push(pair('restroom-help',track=>({title:'Ask the venue or 211 for restrooms that are not listed',target:'Local restroom referral',reason:'Neither source is a complete list. Refuge Restrooms entries are crowd-sourced and unverified, and OpenStreetMap tags are volunteer-edited, so restrooms in businesses, libraries, parks and transit stations may be missing.',evidenceIds:ids([byId(e,'restroom-method')]),signal:'reference',priority:'planned',timing:'Whenever a restroom is needed and the lists here are thin',authorityUrl:links.help,nextStep:track==='operator'?'Refer through 211 or the venue, and keep this page as a dated starting list only.':'Ask a nearby library, transit staff or business, or dial 2-1-1 or visit 211.org for local help.',escalateWhen:'Someone has no safe restroom option nearby.',escalateTo:'211 or a local information line',reviewAfter:'Recheck when circumstances or local facilities change.'})));
+    return ranked(groups);
+  }
   function grid(input){
     const e=facts(input),groups=[],reports=e.filter(f=>f.id.startsWith('demand-')),bad=e.filter(f=>/^(demand|forecast|gap|interchange)-/.test(f.id)&&!current(f));
     const eligible=e.filter(f=>f.id.startsWith('gap-')&&current(f)&&numeric(f.value)&&f.unit==='MW').map(g=>{
@@ -2637,6 +2688,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshPub
   R.registerPrioritizer('us-grid-strain',grid);
   R.registerPrioritizer('resilience-telemetry',market);
   R.registerPrioritizer('usaid-consequence',agency);
+  R.registerPrioritizer('public-bathroom-finder',restroom);
   R.registerPrioritizer('prescription-savings',prescriptions);
   Object.keys(references).forEach(slug=>R.registerPrioritizer(slug,input=>reference(input,references[slug])));
   R.registerPrioritizer('va-strain',va);

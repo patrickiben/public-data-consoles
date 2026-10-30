@@ -154,6 +154,13 @@
       "prioritySource": "priorities/tools.js"
     },
     {
+      "slug": "public-bathroom-finder",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; restroom listing counts supply no observed network topology, so source/sink accounting is withheld.",
+      "impactMethod": "Listing counts keep their source, radius and data date. A failed source stays unknown, never zero. The typed address and coordinates are excluded.",
+      "prioritySource": "priorities/tools.js"
+    },
+    {
       "slug": "quake-consequence",
       "native": false,
       "method": "Model or association graph supports labeled scenarios, not verified causal transmission or intervention benefit.",

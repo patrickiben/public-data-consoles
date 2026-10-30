@@ -56,10 +56,12 @@
  var doc=root.document, tip=null, active=null, pinned=false, timer=null, overTip=false;
  var hoverDismissed=false, pointerX=null, pointerY=null;
  function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+ // Same per-page separator as the response panel; the default spaced dash is unchanged.
+ function separator(){var value=doc&&doc.documentElement?doc.documentElement.getAttribute('data-cr-separator'):null;return value?value:' \u2014 ';}
  function definition(id){return definitions.find(function(d){return d.id===Number(id);});}
  function label(id,text,context,contextTitle){
   var d=definition(id);if(!d)return esc(text);
-  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?' — '+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
+  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?esc(separator())+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
  }
  function ensure(){
   if(tip)return tip;
