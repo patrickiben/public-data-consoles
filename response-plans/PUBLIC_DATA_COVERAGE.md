@@ -1,6 +1,6 @@
 # Public-data impacts and ten-parameter planning coverage
 
-All 31 shared response panels use the same evidence rules as the native Coastal plan: show supported
+All 32 shared response panels use the same evidence rules as the native Coastal plan: show supported
 public quantities, preserve source records/periods, and leave unsupported outcomes unestimated.
 Use **Review impacts and source records** in a console. Selection and source refresh update the view;
 local JSON export includes methods, source identities, reporting periods and input gaps.
@@ -19,6 +19,7 @@ local JSON export includes methods, source identities, reporting periods and inp
 | Global Outbreak Tracker | Source-covered country reports and their reported periods | Cumulative counts are not active cases or present transmission; curated historical watch context remains dated. |
 | USAID Consequence | USAspending agency fiscal-year resources, obligations/outlays and current public fiscal-period status | All-null future placeholder years are excluded; valid fiscal records retain dates. Agency finances do not establish a country/program cut, beneficiary loss or mortality effect. |
 | Prescription Savings; Medical Cost Abroad; Medical Debt Assistant; Human Trafficking | Dated official methodology/guidance and public dataset-release metadata where available | No private query, medicine, bill, travel choice or personal situation is copied into the response plan/export. Individual savings, clinical outcomes, debt relief and safeguarding outcomes remain unknown. |
+| Free Public Bathroom Finder | Counts and straight-line distances of nearby restroom listings from Refuge Restrooms (crowd-sourced) and OpenStreetMap amenity=toilets, with each source's data date | Listings can be outdated or incomplete and say nothing about current access, cleanliness or cost unless tagged; "free" only where fee=no. A failed source is unknown, never zero; a successful zero stays zero within its radius. The searched address and coordinates are excluded. |
 | VA Strain | Official public care-pathway guidance alongside the explicitly labeled synthetic capacity drill | Public guidance does not supply real-time census, staff or acute-care availability. Private operational overrides remain excluded. |
 
 The canonical ten dimensions stay visible. A dimension is assessed only when its declared inputs and
@@ -32,12 +33,12 @@ identities and provider failures are covered by automated checks. Numeric zero i
 is a real supported observation. Unknown conclusions are withheld from both display and export.
 
 See the [field guide](guide.html), [integration contract](CONTRACT.md), and
-[automatic update guide](../data-updates.html). Public-data and offline fixtures exercise all 32 actual
+[automatic update guide](../data-updates.html). Public-data and offline fixtures exercise all 33 actual
 entrypoints, including the unchanged native Coastal implementation.
 
 ## Priority and escalation layer
 
-All 31 shared consoles derive audience-specific ordered actions from the same public evidence as
+All 32 shared consoles derive audience-specific ordered actions from the same public evidence as
 their impacts. The native Coastal checklist remains separate. Ranking uses source-specific meaning:
 NOAA categories and valid forecasts, actual unexpired NWS notices, same-hour EIA reports, same-week
 NHS service counts, matched-year health service gaps, and dated fiscal/reference records. A source
@@ -46,4 +47,4 @@ check comes first when applicable data is missing. Scenario inputs stay practice
 Each card names its target, evidence reason, timing, next step, escalation condition/recipient and
 recheck point. Historical records support planning, not current incident activation. Sources and
 periods remain in print/export. Core validity guards and domain fixtures cover selection changes,
-ranking changes, expiry, stale/duplicate/missing evidence, both audiences, and all 32 offline pages.
+ranking changes, expiry, stale/duplicate/missing evidence, both audiences, and all 33 offline pages.

@@ -5,6 +5,7 @@
   if (!R) return;
 
   const families = Object.freeze({
+    'public-bathroom-finder': 'restroom',
     'global-air-pollution': 'annual', 'global-demographic-transition': 'annual',
     'global-health-atlas': 'annual', 'global-health-systems': 'annual',
     'global-hiv-tb-malaria': 'annual', 'global-immunization': 'annual',
@@ -21,6 +22,7 @@
     'medical-debt-assistant': 'reference', 'human-trafficking': 'reference', 'va-strain': 'va'
   });
   const subjects = Object.freeze({
+    'public-bathroom-finder': 'the nearby restroom listings',
     'global-air-pollution': 'air-quality indicators',
     'global-demographic-transition': 'population and demographic indicators',
     'global-health-atlas': 'the selected health indicator',
@@ -43,6 +45,18 @@
   // Entries explain the maintained adapter's actual estimand or input gap. They do
   // not transfer Coastal thresholds, claim a fitted CRT model, or select actions.
   const reasons = {
+    restroom: [
+      'Counts in {subject} come from two sources around one searched point; they show where restrooms are listed, not how many people need one or who may use them.',
+      'A distance comparison for {subject} needs lists from the same source and search distance; Refuge Restrooms entries and OpenStreetMap entries are not samples of one distribution.',
+      'Counts in {subject} depend on the search distance and on volunteer coverage, so a low count is not a measured shortage of public restrooms.',
+      'Only the searched area is read for {subject}; describing a gap between listed restrooms needs complete local data and a defined walking network.',
+      'Each listing in {subject} carries its own update or last-edit date; an old entry may describe a restroom that has moved, closed or changed its access rules.',
+      'Counts for {subject} change with the distance each source was searched, so counts at different distances are not comparable densities.',
+      'No model of opening hours, access rules, cost or cleanliness is fitted for {subject}; a listing and a straight-line distance are not a measure of practical access.',
+      'Coverage of {subject} differs by source: Refuge Restrooms entries are crowd-sourced and OpenStreetMap restroom tags are partial, so a missing listing is not proof that none exist.',
+      'Straight-line distance to the nearest place in {subject} is not walking distance or travel time, and a failed source stays unknown rather than counting as none nearby.',
+      'Sending someone to a place in {subject} needs a confirmed location, hours and access rules; a list of places is not an observed network of who can use which restroom.'
+    ],
     annual: [
       'Country counts can overrepresent small populations in comparisons of {subject}; same-year resident totals clarify who the comparison represents, not who needs a service.',
       'The same-year income-group distribution shows whether {subject} differs beyond one country average; the empirical W1 does not identify a cause or a clinical cutoff.',
@@ -216,6 +230,18 @@
   // Why this particular comparison belongs before the next decision. These are
   // review dependencies, not source-derived response deadlines.
   const sequence = {
+    restroom: [
+      'Check who each listed restroom serves before describing local need.',
+      'Keep each source list separate before comparing distances between places.',
+      'Read the distance searched with each count before describing local availability.',
+      'Check the area beyond the searched point before drawing a service boundary.',
+      'Note each listing update or last-edit date before relying on an older entry.',
+      'Note the distance each source was searched before comparing one place with another.',
+      'Check hours, access rules and cost separately before treating a listing as usable.',
+      'Cross-check partial listings with the venue before sharing a list.',
+      'Confirm that both sources answered before reading the nearest restroom distance.',
+      'Confirm access and hours with each place before recommending it to someone.'
+    ],
     annual: [
       'Establish the resident denominator before prioritizing comparison groups.',
       'Inspect the full same-year distribution before treating one national average as typical.',
