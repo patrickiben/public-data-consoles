@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
-const sandbox={window:{}};vm.createContext(sandbox);
+const sandbox={window:{},setTimeout,clearTimeout,AbortController,URL};vm.createContext(sandbox);
 vm.runInContext(await read('../public-data-runtime/coastal-planning.js'),sandbox);
 vm.runInContext(await read('../public-data-runtime/community-resilience-engine.js'),sandbox);
 const E=sandbox.window.CREngine,{analyze}=sandbox.window.CWRPublicPlanning,plain=v=>JSON.parse(JSON.stringify(v));
@@ -222,7 +222,8 @@ check('buildPlan with a Flood Watch: watch phase until the alert ends, real aler
  const warn=E.buildPlan({place:tucson,ranking,results:{...results,nwsAlerts:alertsResult([floodWatch,{...floodWatch,id:'ffw',event:'Flash Flood Warning',ends:'2026-10-31T02:00:00-07:00'}])},track:'public',now:NOW});assert.equal(warn.phase.id,'warning');assert.equal(warn.phase.until,'2026-10-31T09:00:00.000Z');
  const other=E.buildPlan({place:tucson,ranking:pimaRanking,results:{...baseResults(),nwsAlerts:alertsResult([{...floodWatch,id:'ws',event:'Winter Storm Warning'}])},track:'public',now:NOW});
  assert.equal(other.phase.id,'prepare','alerts for non-leading hazards do not set the phase');assert.match(other.phase.basis,/Winter Storm Warning/);
- const down=E.buildPlan({place:tucson,ranking:pimaRanking,results:{nwsAlerts:{status:'unavailable',title:'NWS active alerts',message:'HTTP 503.'}},track:'public',now:NOW});assert.equal(down.phase.id,'prepare');assert.match(down.phase.basis,/not available right now/);
+ const down=E.buildPlan({place:tucson,ranking:pimaRanking,results:{nwsAlerts:{status:'unavailable',title:'NWS active alerts',message:'HTTP 503.'}},track:'public',now:NOW});assert.equal(down.phase.id,'unknown','failed alerts never read as Prepare');assert.equal(down.phase.label,'Phase not set: NWS alerts unavailable');assert.match(down.phase.basis,/may be in effect/);
+ const loading=E.buildPlan({place:tucson,ranking:pimaRanking,results:{},track:'public',now:NOW});assert.equal(loading.phase.id,'unknown','pending alerts never read as Prepare');assert.equal(loading.phase.label,'Phase not set: NWS alerts loading');assert.match(loading.phase.basis,/still loading/);
 });
 check('buildPlan: advisories and statements do not set Watch; a missing ranking sets no phase; tide flood levels are converted to MLLW',()=>{
  for(const event of ['Flood Advisory','Flood Statement','Heat Advisory']){
@@ -270,4 +271,25 @@ check('format helpers, distanceKm and nearest',()=>{
  const d=E.distanceKm({lat:27.7606,lon:-82.6269},{lat:27.773,lon:-82.64});assert.ok(d>1.8&&d<1.9);assert.equal(E.distanceKm({lat:null,lon:0},{lat:0,lon:0}),null);
  const list=E.nearest([{id:'far',lat:28,lon:-82.6},{id:'none'},{id:'near',lat:27.77,lon:-82.63}],{lat:27.7606,lon:-82.6269});assert.deepEqual(Array.from(list,x=>x.id),['near','far','none']);assert.equal(list[2].distanceKm,null);
 });
+/* Round 2 (A2-01): Galveston tide stations must not drive the river-flood action. Replays the live NWPS gauge list recorded
+   2026-10-30 (tests/fixtures/community-resilience/round2.json) through the sources runtime, then into buildPlan. */
+{
+ vm.runInContext(await read('../public-data-runtime/community-resilience-sources.js'),sandbox);
+ const R2=JSON.parse(await read('./fixtures/community-resilience/round2.json')),nwps=R2.responses.find(e=>e.key==='NWPS galveston').text;
+ const respond=(status,text)=>({ok:status<300,status,text:async()=>text,headers:{get:()=>null}});
+ const src=sandbox.window.CRSources.create({fetch:async url=>url.includes('/nwps/')?respond(200,nwps):respond(200,'{"features":[]}'),now:()=>NOW});
+ const gauges=await src.riverGauges(29.1863,-94.9658);
+ check('Galveston: tide stations (name or SHEF HM code) are left out of the river gauges and the plan names HGLT2',()=>{
+  assert.equal(gauges.status,'ok',gauges.error);const lids=Array.from(gauges.data.items,i=>i.lid);
+  assert.ok(lids.includes('HGLT2'),lids.join());for(const t of ['GRRT2','GTOT2','GNJT2','EPTT2'])assert.ok(!lids.includes(t),t+' is a tide station');
+  assert.ok(gauges.data.tidalLeftOut>=2);assert.match(gauges.message,/tide stations? left out/);
+  const results={nwsAlerts:alertsResult([]),riverGauges:gauges},modules=E.moduleStatus({ranking:pimaRanking,place:tucson,results});
+  const plan=E.buildPlan({place:tucson,ranking:pimaRanking,modules,results,track:'public',now:NOW}),text=plan.actions.map(a=>a.text).join(' ');
+  assert.match(text,/HGLT2/);assert.doesNotMatch(text,/GRRT2|Tide Station/);
+ });
+ check('floodLevelsMllw converts station-datum flood levels with the station MLLW value',()=>{
+  const c=E.floodLevelsMllw({nwsMinor:8.33,nwsModerate:10.63,nwsMajor:11.63,mllwInStationDatum:3.37});assert.deepEqual([c.nwsMinor,c.nwsModerate,c.nwsMajor],[4.96,7.26,8.26]);
+  assert.equal(E.floodLevelsMllw({nwsMinor:8.33}).available,false);
+ });
+}
 console.log('PASS '+passed+' Community Resilience engine regression groups');

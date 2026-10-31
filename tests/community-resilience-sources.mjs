@@ -42,7 +42,7 @@ function shape(r,label){
  assert.ok(r.coverage&&r.link&&r.owner,label+' missing coverage, link or owner');
  assert.ok(!/—/.test(r.message+r.coverage+r.dataDateText+r.title),label+' has an em dash');
  if(r.status==='unavailable'){assert.ok(r.error,label+' unavailable without error');assert.equal(r.data,null);assert.equal(r.dataDate,null);}
- if(r.status==='ok')assert.ok(r.dataDate||r.dataDateText===S.NO_DATE||/^(Elevation source acquired|Boundaries vintage)/.test(r.dataDateText),label+' ok without a data date statement');
+ if(r.status==='ok')assert.ok(r.dataDate||r.dataDateText===S.NO_DATE||/^(Elevation source acquired|Boundaries vintage|Acquisition date not stated|Data date unavailable)/.test(r.dataDateText),label+' ok without a data date statement');
  return r;
 }
 const sortedNear=items=>items.every((x,i)=>typeof x.distanceKm==='number'&&(i===0||items[i-1].distanceKm<=x.distanceKm));
@@ -50,6 +50,8 @@ const sortedNear=items=>items.every((x,i)=>typeof x.distanceKm==='number'&&(i===
 // ---------- parseQuery ----------
 await check('parseQuery',()=>{
  const q=S.parseQuery;
+ for(const [t,name,st] of [['Fort Washington','Fort','WA'],['Port Washington','Port','WA'],['West Virginia','West','VA']]){const r=q(t);assert.deepEqual([r.name,r.stateAbbr,r.unsplit],[name,st,t],t+' keeps the whole text for the retry');}
+ assert.equal(q('Moore, OK').unsplit,undefined,'a comma split is not retried');
  assert.deepEqual([q('33701').kind,q('33701').zip],['zip','33701']);
  assert.deepEqual([q('33701-1234').kind,q('33701-1234').zip],['zip','33701']);
  assert.equal(q('1234').kind,'zip-invalid');assert.equal(q('1234').message,'A ZIP code has 5 digits');
@@ -288,13 +290,34 @@ await check('riverGauges leaves tidal gauges out, caches answers and names the N
  const gauge=(lid,name,dlat)=>({lid,name,latitude:27.77+dlat,longitude:-82.64,status:{observed:{primary:0.6,primaryUnit:'ft',validTime:'2026-10-30T17:00:00Z',floodCategory:'no_flooding'}}});
  let nwps=0;const s=make(async url=>{if(url.includes('water.noaa.gov')||url.includes('/nwps/')||url.includes('gauges?')){nwps++;return respond(200,JSON.stringify({gauges:[gauge('SAPF1','Tide Gauge at St. Petersburg (in MHHW)',0.01),gauge('XXXF1','Some Creek at Main St',0.02)]}));}return respond(200,JSON.stringify({features:[]}));});
  const r=shape(await s.riverGauges(27.77,-82.64),'gauges tidal');
- assert.equal(r.status,'ok');assert.deepEqual(r.data.items.map(i=>i.lid),['XXXF1']);assert.equal(r.data.tidalLeftOut,1);assert.match(r.message,/1 tidal gauge left out/);
+ assert.equal(r.status,'ok');assert.deepEqual(r.data.items.map(i=>i.lid),['XXXF1']);assert.equal(r.data.tidalLeftOut,1);assert.match(r.message,/1 tide station left out/);
  await s.riverGauges(27.77,-82.64);assert.equal(nwps,1,'a repeat search is served from the session cache');
  let calls=0;const down=make(async url=>{if(url.includes('gauges?')){calls++;throw new TypeError('Failed to fetch');}return respond(200,JSON.stringify({features:[]}));});
  const first=await down.riverGauges(27.77,-82.64);assert.equal(first.status,'unavailable');assert.doesNotMatch(first.message,/10 requests/);
  const second=await down.riverGauges(29.3,-94.8);assert.equal(second.status,'unavailable');assert.match(second.message,/about 10 requests per 5 minutes/);assert.equal(calls,2);
 });
 
+// ---------- round 2 ----------
+const R2=JSON.parse(fs.readFileSync(path.join(repo,'tests/fixtures/community-resilience/round2.json'),'utf8'));
+const r2=new Map(R2.responses.map(e=>[e.key,e]));
+await check('populationCenter measures Anchorage and Tucson from where people live (recorded TIGERweb 2020 tracts)',async()=>{
+ const s=make(async(url,o={})=>{const e=r2.get(key(url,o));if(!e)throw new Error('unrecorded '+key(url,o).slice(0,120));return respond(e.status,e.text);});
+ const anc=shape(await s.populationCenter({geoid:'0203000',type:'incorporated',name:'Anchorage municipality'}),'pop anchorage');
+ assert.equal(anc.status,'ok');assert.ok(anc.data.lon<-149.6&&anc.data.lon>-149.95&&anc.data.lat>61.1&&anc.data.lat<61.25,'Anchorage bowl, not the Chugach ('+anc.data.lat+','+anc.data.lon+')');
+ assert.ok(anc.data.population>250000);assert.match(anc.message,/Population-weighted center of \d+ 2020 census tracts/);assert.match(anc.dataDateText,/2020 Census/);
+ const tuc=shape(await s.populationCenter({geoid:'0477000',type:'incorporated',name:'Tucson city'}),'pop tucson');
+ assert.equal(tuc.status,'ok');assert.ok(tuc.data.lat>32.19,'north of the Davis-Monthan Air Force Base tract ('+tuc.data.lat+')');
+ const down=await make(async()=>respond(500,'no')).populationCenter({geoid:'0203000',type:'incorporated'});assert.equal(down.status,'unavailable');
+ const bad=await make(noNetwork).populationCenter({geoid:'x',type:'incorporated'});assert.equal(bad.status,'unavailable');
+});
+await check('riverGauges leaves out inundation sensors (in AGL); elevation dates and water wording',async()=>{
+ const g=(lid,name)=>({lid,name,latitude:27.78,longitude:-82.64,status:{observed:{primary:0.6,primaryUnit:'ft',validTime:'2026-10-30T17:00:00Z'}}});
+ const s=make(async url=>url.includes('gauges?')?respond(200,JSON.stringify({gauges:[g('BCMF1','Inundation Sensor at Boca Ciega Millenium Park (in AGL)'),g('XXXF1','Some Creek at Main St'),{...g('NOSF1','Gauge at Pier'),pedts:{observed:'HMIRG'}}]})):respond(200,'{"features":[]}'));
+ const r=await s.riverGauges(27.77,-82.64);assert.deepEqual(r.data.items.map(i=>i.lid),['XXXF1']);assert.equal(r.data.aboveGroundLeftOut,1);assert.equal(r.data.tidalLeftOut,1);assert.match(r.message,/1 inundation sensor left out/);
+ const elev=acq=>make(async()=>respond(200,JSON.stringify({value:12.3,resolution:1,attributes:{AcquisitionDate:acq}}))).elevation(29.3,-94.8);
+ assert.equal((await elev('0/5/2025')).dataDateText,'Acquisition date not stated in a valid form by USGS');
+ assert.equal((await elev('3/5/2025')).dataDateText,'Elevation source acquired 3/5/2025 (as published by USGS)');
+});
 await check('communityContext (Puerto Rico) reads the ACS years from the service copyright, or says they are not stated',async()=>{
  const row={GEOID:'72127',NAME:'San Juan Municipio, Puerto Rico',B01001_001E:342259,B01001_calc_pctGE65E:22.1};
  const ctx=copy=>make(async url=>{if(url.includes('/query?'))return respond(200,JSON.stringify({features:[{attributes:row}]}));if(url.includes('FeatureServer/1?'))return respond(200,JSON.stringify({copyrightText:''}));if(url.includes('FeatureServer?'))return respond(200,JSON.stringify({copyrightText:copy}));throw new Error('unexpected '+url);});
@@ -323,7 +346,13 @@ for(const [label,fetch] of Object.entries(failing)){
 await check('timeout message and slow surge timeout',async()=>{
  const slow=async()=>{await new Promise(r=>setTimeout(r,45));return respond(200,'{"results":[]}');};
  const s=make(slow,{timeoutMs:30});
- const flood=await s.floodZone(...P.galveston);assert.equal(flood.status,'unavailable');assert.match(flood.error,/Timed out after 0\.03 s/);
+ const flood=await s.floodZone(...P.galveston);assert.equal(flood.status,'unavailable');assert.match(flood.error,/Missing feature list/,'NFHL is retried once with the slow timeout, which this answer beats');
+ let calls=0;const stuck=make(async()=>{calls++;return new Promise(()=>{});},{timeoutMs:30});
+ const stalled=await stuck.floodZone(...P.galveston);assert.equal(stalled.status,'unavailable');assert.match(stalled.error,/Timed out after 0\.06 s/);assert.equal(calls,2,'one automatic retry after a timeout');
+ let n=0;const once=make(async url=>{n++;if(n===1)return new Promise(()=>{});return respond(200,url.includes('/28/')?JSON.stringify({features:[{attributes:{FLD_ZONE:'VE',SFHA_TF:'T'}}]}):'{"features":[]}');},{timeoutMs:30});
+ const retried=await once.floodZone(...P.galveston);assert.equal(retried.status,'ok');assert.equal(retried.data.zone,'VE');
+ const panelDown=make(async url=>url.includes('/3/')?respond(500,'no'):respond(200,JSON.stringify({features:[{attributes:{FLD_ZONE:'X',SFHA_TF:'F'}}]})));
+ const pd=await panelDown.floodZone(...P.galveston);assert.equal(pd.status,'ok');assert.equal(pd.dataDateText,'Data date unavailable: the FIRM panel lookup did not answer');assert.equal(pd.dataDateBasis,'failed');
  const surge=await s.surge(...P.galveston);assert.equal(surge.status,'empty','surge uses the longer timeout');
 });
 

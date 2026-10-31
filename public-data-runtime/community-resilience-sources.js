@@ -12,6 +12,7 @@
  const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
  const TIGER='https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer';
+ const TIGER2020='https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer';
  const NRI_COUNTY='https://services.arcgis.com/XG15cJAlne2vxtgt/arcgis/rest/services/National_Risk_Index_Counties/FeatureServer/0';
  const NRI_TRACT='https://services.arcgis.com/XG15cJAlne2vxtgt/arcgis/rest/services/National_Risk_Index_Census_Tracts/FeatureServer/0';
  const OPENFEMA='https://www.fema.gov/api/open';
@@ -56,7 +57,10 @@
  const NRI_FIELDS=['STCOFIPS','COUNTY','STATE','STATEABBRV','NRI_VER','POPULATION','BUILDVALUE','RISK_SCORE','RISK_RATNG','EAL_VALT','EAL_RATNG','SOVI_SCORE','SOVI_RATNG','RESL_SCORE','RESL_RATNG'].concat(...NRI_HAZARDS.map(h=>[h+'_EALT',h+'_RISKS',h+'_RISKR']));
  const SPC_RANK={TSTM:1,MRGL:2,SLGT:3,ENH:4,MDT:5,HIGH:6};
  const SEVERITY={Extreme:4,Severe:3,Moderate:2,Minor:1};
- const TIDAL_GAUGE=/tide gauge|\b(?:in )?(?:MHHW|MLLW)\b/i;
+ const TIDAL_GAUGE=/\btid(?:e|al)\b|\bNOS station\b|\b(?:in )?(?:MHHW|MLLW|MSL|STND)\b/i;
+ // NWPS pedts.observed is a SHEF code: HM* is a tide height (tidal datum), not a river stage.
+ const isTidalGauge=g=>TIDAL_GAUGE.test(String(g&&g.name||''))||/^HM/i.test(String(g&&g.pedts&&g.pedts.observed||''));
+ const ABOVE_GROUND=/\(in AGL\)|\binundation sensor\b/i;
  const VOLCANO_OBSERVATORIES={AK:['avo'],HI:['hvo'],AS:['hvo'],WA:['cvo'],OR:['cvo'],CA:['calvo'],NV:['calvo'],ID:['yvo'],MT:['yvo'],WY:['yvo'],UT:['yvo'],CO:['yvo'],NM:['yvo'],AZ:['yvo'],MP:['nmi'],GU:['nmi']};
  const ODIN_STATES_2026_10=['Arizona','California','Colorado','Delaware','Florida','Idaho','Indiana','Iowa','Kansas','Louisiana','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Montana','New Jersey','New Mexico','New York','North Carolina','Ohio','Oklahoma','Oregon','Pennsylvania','South Carolina','South Dakota','Tennessee','Texas','Utah','Virginia','Washington','West Virginia','Wyoming'];
  const WATER_SOURCES={GW:'Groundwater',GWP:'Purchased groundwater',SW:'Surface water',SWP:'Purchased surface water',GU:'Groundwater under the influence of surface water',GUP:'Purchased groundwater under the influence of surface water'};
@@ -74,6 +78,7 @@
  source('zcta','Census ZIP Code Tabulation Areas (TIGERweb)','U.S. Census Bureau','https://tigerweb.geo.census.gov/','ZIP Code Tabulation Areas approximate USPS ZIP codes as of the 2020 Census; PO box and newer ZIP codes may be missing.');
  source('zcta-overlap','Counties and places in this ZIP area (TIGERweb)','U.S. Census Bureau','https://tigerweb.geo.census.gov/','A ZIP area can cross county and city lines; this lists areas that share land with it, not mail delivery or service areas.');
  source('places','Census places and county subdivisions (TIGERweb)','U.S. Census Bureau','https://tigerweb.geo.census.gov/','Lists incorporated places, census designated places and county subdivisions with that name; neighborhoods and informal names are not included.');
+ source('pop-center','Where people live in this place (2020 Census tracts, TIGERweb)','U.S. Census Bureau','https://tigerweb.geo.census.gov/','The 2020 population-weighted center of the census tracts inside the place, from a generalized boundary; it is a reference point for distances, not a street address, and it can sit in a park or on water.');
  source('nominatim','Address search (Nominatim, OpenStreetMap)','OpenStreetMap contributors',NOMINATIM_POLICY,'Street addresses only, matched against volunteer OpenStreetMap data, so a match can be missing or approximate; ZIP codes are never sent here.');
  source('point-geography','Census geography at this point (TIGERweb, FCC Area API fallback)','U.S. Census Bureau','https://tigerweb.geo.census.gov/','Names the state, county, city, county subdivision and census tract that contain the point; it carries no hazard values.');
  source('nri-county','FEMA National Risk Index, county','FEMA','https://hazards.fema.gov/nri/','Modeled long-term averages for 18 natural hazards, not a forecast or a record of any one event; Puerto Rico has expected loss figures but no ratings.');
@@ -142,6 +147,8 @@
  const plural=(n,one,many)=>n+' '+(n===1?one:(many||one+'s'));
  const noData=e=>/no data|not found|no .*available/i.test(String(e&&e.message||e||''));
  function coopsTime(t){const m=/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/.exec(String(t??''));return m?Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5]):NaN;}
+ /* USGS EPQS AcquisitionDate is M/D/YYYY text; month 0 or day 0 is not a date. */
+ function validAcq(t){const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(t).trim());if(!m)return /^\d{4}(-\d{2}(-\d{2})?)?$/.test(String(t).trim());const mo=+m[1],d=+m[2];return mo>=1&&mo<=12&&d>=1&&d<=31;}
  function ymd(ms){const d=new Date(ms);return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate());}
 
  /* AirNow rows carry local time with a zone label. Alaska rows use ADT/AST for Alaska time, not Atlantic time. */
@@ -177,7 +184,8 @@
    if(k===1&&tail.length===2&&tail===tail.toLowerCase()&&LOWER_WORDS.has(tail))continue;
    if(k===1&&tail.length===2&&!/^[A-Za-z]{2}$/.test(tail))continue;
    const state=stateOf(tail);
-   if(state)return {kind:'name',name:words.slice(0,-k).join(' '),stateAbbr:state.abbr,raw};
+   // unsplit: "Fort Washington" or "West Virginia" may be a whole place name; the page retries it when the split finds nothing.
+   if(state)return {kind:'name',name:words.slice(0,-k).join(' '),stateAbbr:state.abbr,unsplit:t,raw};
   }
   return {kind:'name',name:t,raw};
  }
@@ -375,6 +383,31 @@
     if(!items.length&&failed.length)throw new SourceError('Some place layers failed: '+failed.join(', '));
     if(!items.length)return {status:'empty',message:'No Census place or county subdivision named '+n+where2+' is listed in this source.',data:{items:[],failed},...metaDate(meta)};
     return {status:'ok',message:plural(items.length,'Census area')+' named '+n+where2+' found.'+(failed.length?' Not checked: '+failed.join(', ')+'.':''),data:{items,failed},...metaDate(meta)};
+   });
+  }
+  /* Population-weighted center of a place: the 2020 tracts whose internal point falls inside the place's generalized
+     boundary, weighted by POP100 (2020 count). The Census internal point of a big place can sit in mountains or on a base;
+     this point is where people live. If the mean falls outside the boundary (a bay or a split city), the internal point of
+     the populated tract nearest to it is used instead. */
+  const CENSUS2020={dataDate:iso(Date.UTC(2020,3,1)),dataDateText:'2020 Census counts (April 1, 2020)',dataDateBasis:'POP100 (2020 Census count)'};
+  const PLACE_LAYER={incorporated:28,cdp:30,'county-subdivision':22,municipio:82};
+  function populationCenter(item){
+   return run('pop-center',async()=>{
+    const geoid=String(item&&item.geoid||''),layer=PLACE_LAYER[item&&item.type];
+    if(!/^\d{5,10}$/.test(geoid)||!layer)throw new SourceError('Invalid place');
+    const pj=await arcQuery(TIGER+'/'+layer,{where:'GEOID='+sql(geoid),outFields:'GEOID',returnGeometry:'true',outSR:'4326',maxAllowableOffset:'0.002',geometryPrecision:'4'});
+    const rings=pj.features[0]&&pj.features[0].geometry&&pj.features[0].geometry.rings;
+    if(!Array.isArray(rings)||!rings.length)throw new SourceError('No boundary for this place');
+    const tj=await arcPost(TIGER2020+'/6',{geometry:JSON.stringify({rings,spatialReference:{wkid:4326}}),geometryType:'esriGeometryPolygon',inSR:'4326',spatialRel:'esriSpatialRelIntersects',outFields:'GEOID,POP100,INTPTLAT,INTPTLON',returnGeometry:'false',resultRecordCount:'3000'});
+    const geom={rings},tracts=[];
+    for(const f of tj){const a=f&&f.attributes||{},lat=num(a.INTPTLAT),lon=num(a.INTPTLON),pop=num(a.POP100);
+     if(lat==null||lon==null||!(pop>0))continue;if(!pointInGeometry(geom,lat,lon))continue;tracts.push({geoid:String(a.GEOID||''),lat,lon,pop});}
+    if(!tracts.length)return {status:'empty',message:'No populated 2020 census tract has its internal point inside '+(item.name||'this place')+'.',data:null,...CENSUS2020};
+    const total=tracts.reduce((t,x)=>t+x.pop,0);
+    let lat=tracts.reduce((t,x)=>t+x.lat*x.pop,0)/total,lon=tracts.reduce((t,x)=>t+x.lon*x.pop,0)/total,method='mean';
+    if(!pointInGeometry(geom,lat,lon)){const o={lat,lon},n=tracts.slice().sort((a,b)=>distanceKm(o,a)-distanceKm(o,b))[0];lat=n.lat;lon=n.lon;method='nearest-tract';}
+    const data={lat:round(lat,5),lon:round(lon,5),method,tracts:tracts.length,population:total};
+    return {status:'ok',message:'Population-weighted center of '+plural(tracts.length,'2020 census tract')+' ('+total.toLocaleString('en-US')+' people in 2020) inside '+(item.name||'this place')+(method==='nearest-tract'?'; the center fell outside the boundary, so the nearest populated tract\'s internal point is used':'')+'.',data,...CENSUS2020};
    });
   }
   function geocodeAddress(input,opts={}){
@@ -674,20 +707,22 @@
     const levels=new Map();
     for(const f of thresholds?thresholds.features:[]){const a=f&&f.attributes||{};if(a.gaugelid)levels.set(String(a.gaugelid).toUpperCase(),a);}
     const reading=s=>{const v=num(s&&s.primary),t=Date.parse(s&&s.validTime||'');return s&&s.primaryUnit==='ft'&&v!=null&&v>-999&&finite(t)&&t>0?{v,t:iso(t)}:{v:null,t:null};};
-    const items=[];let tidal=0;
+    const items=[];let tidal=0,agl=0;
     for(const g of json.gauges){const lid=text(g&&g.lid),glat=num(g&&g.latitude),glon=num(g&&g.longitude);if(!lid||glat==null||glon==null)continue;
      const d=km(origin,glat,glon);if(d>25)continue;
      // Tide gauges report in a tidal datum (MHHW or MLLW); they are not river gauges and belong with the coastal water level.
-     if(TIDAL_GAUGE.test(text(g.name)||'')){tidal++;continue;}
+     if(isTidalGauge(g)){tidal++;continue;}
+     // Inundation sensors report water depth above ground (AGL), not a river stage against flood stages.
+     if(ABOVE_GROUND.test(String(g.name||''))){agl++;continue;}
      const st=g.status||{},ob=reading(st.observed),fc=reading(st.forecast),lv=levels.get(lid.toUpperCase())||{},ft=lv.units==null||lv.units==='ft';
      items.push({lid,name:text(g.name),category:text(st.observed&&st.observed.floodCategory),observedFt:ob.v,observedTime:ob.t,forecastFt:fc.v,forecastTime:fc.t,
       action:ft?num(lv.action):null,minor:ft?num(lv.flood):null,moderate:ft?num(lv.moderate):null,major:ft?num(lv.major):null,lat:glat,lon:glon,distanceKm:d,link:'https://water.noaa.gov/gauges/'+encodeURIComponent(lid.toLowerCase())});}
     nearestFirst(items);
     const newest=Math.max(...items.map(i=>Date.parse(i.observedTime||'')).filter(finite),-Infinity);
     const date=finite(newest)?fed(newest,'newest observed validTime among listed gauges','Newest reading'):undated('No gauge reading time in range');
-    const note=(thresholds?'':' Flood thresholds were unavailable.')+(tidal?' '+plural(tidal,'tidal gauge')+' left out (tide levels use a tidal datum and are not river stages).':'');
-    if(!items.length)return {status:'empty',message:'No NOAA river gauge within 25 km is listed in this source.'+note,data:{items:[],tidalLeftOut:tidal},...date};
-    return {status:'ok',message:plural(items.length,'NOAA river gauge')+' within 25 km.'+note,data:{items,thresholdsAvailable:!!thresholds,tidalLeftOut:tidal},...date};
+    const note=(thresholds?'':' Flood thresholds were unavailable.')+(tidal?' '+plural(tidal,'tide station')+' left out (tide levels use a tidal datum and are not river stages).':'')+(agl?' '+plural(agl,'inundation sensor')+' left out (they report depth above ground, not river stage).':'');
+    if(!items.length)return {status:'empty',message:'No NOAA river gauge within 25 km is listed in this source.'+note,data:{items:[],tidalLeftOut:tidal,aboveGroundLeftOut:agl},...date};
+    return {status:'ok',message:plural(items.length,'NOAA river gauge')+' within 25 km.'+note,data:{items,thresholdsAvailable:!!thresholds,tidalLeftOut:tidal,aboveGroundLeftOut:agl},...date};
    });
   }
   function coopsStations(){
@@ -719,7 +754,7 @@
     const mllw=datumR&&Array.isArray(datumR.datums)?num((datumR.datums.find(d=>d&&d.name==='MLLW')||{}).value):null;
     const fl=floodR||{};
     const floodLevels={nosMinor:num(fl.nos_minor),nosModerate:num(fl.nos_moderate),nosMajor:num(fl.nos_major),nwsMinor:num(fl.nws_minor),nwsModerate:num(fl.nws_moderate),nwsMajor:num(fl.nws_major),action:num(fl.action),
-     datumNote:'NOAA publishes these flood levels without naming a datum. They appear to be in station datum (STND); subtracting mllwInStationDatum gives an approximate MLLW value (inferred, not stated by NOAA).',mllwInStationDatum:mllw,available:!!floodR};
+     datumNote:'NOAA publishes these flood levels without naming a datum. They appear to be in station datum (STND); subtracting the station\'s MLLW value gives an approximate MLLW value (inferred, not stated by NOAA).',mllwInStationDatum:mllw,available:!!floodR};
     const data={station:{id:station.id,name:station.name,state:station.state,lat:station.lat,lon:station.lon,distanceKm:dist},latest,floodLevels};
     if(!latest)return {status:'empty',message:'No recent water level reading from NOAA station '+station.id+' ('+(station.name||'unnamed')+').',data,...undated('No reading returned')};
     return {status:'ok',message:'NOAA station '+station.id+' ('+(station.name||'unnamed')+') read '+v+' ft MLLW.'+(latest.ageMinutes>60?' The reading is more than an hour old.':''),data,...fed(t,'water_level latest t (GMT)','Reading at')};
@@ -748,14 +783,17 @@
   function floodZone(lat,lon){
    return run('flood-zone',async()=>{
     checkPoint(lat,lon);
-    const j=await arcQuery(NFHL+'/28',{...pointParams(lat,lon),outFields:'FLD_ZONE,SFHA_TF,ZONE_SUBTY,DFIRM_ID,STATIC_BFE'});
+    // NFHL sometimes stalls for one request and answers the next in under a second: retry once after a timeout or network failure, with the slow timeout.
+    const zoneParams={...pointParams(lat,lon),outFields:'FLD_ZONE,SFHA_TF,ZONE_SUBTY,DFIRM_ID,STATIC_BFE'};
+    const j=await arcQuery(NFHL+'/28',zoneParams).catch(e=>{if(e&&e.status)throw e;return arcQuery(NFHL+'/28',zoneParams,{timeout:slowTimeoutMs});});
     const a=j.features[0]&&j.features[0].attributes;
     if(!a||!a.FLD_ZONE)return {status:'empty',message:'FEMA has no flood map at this point. Unmapped does not mean safe.',data:{unmapped:true},...undated('No flood map feature at this point')};
-    let panel=null,effective=null;
-    try{const p=await arcQuery(NFHL+'/3',{...pointParams(lat,lon),outFields:'FIRM_PAN,EFF_DATE,DFIRM_ID'});const pa=p.features[0]&&p.features[0].attributes;if(pa){panel=text(pa.FIRM_PAN);effective=num(pa.EFF_DATE);}}catch(e){}
+    let panel=null,effective=null,panelFailed=false;
+    try{const p=await arcQuery(NFHL+'/3',{...pointParams(lat,lon),outFields:'FIRM_PAN,EFF_DATE,DFIRM_ID'});const pa=p.features[0]&&p.features[0].attributes;if(pa){panel=text(pa.FIRM_PAN);effective=num(pa.EFF_DATE);}}catch(e){panelFailed=true;}
     const bfe=num(a.STATIC_BFE),subtype=text(a.ZONE_SUBTY);
     const data={zone:String(a.FLD_ZONE),subtype,sfha:a.SFHA_TF==='T',bfe:bfe!=null&&bfe>-9000?bfe:null,panel,effectiveDate:finite(effective)?iso(effective).slice(0,10):null,dfirmId:text(a.DFIRM_ID)};
-    const date=finite(effective)?dated(effective,'FIRM panel '+(panel||'')+' effective','FIRM panel EFF_DATE'):undated('No FIRM panel date at this point');
+    // A failed panel lookup is not a claim about the source: NFHL does publish panel dates.
+    const date=finite(effective)?dated(effective,'FIRM panel '+(panel||'')+' effective','FIRM panel EFF_DATE'):panelFailed?{dataDate:null,dataDateText:'Data date unavailable: the FIRM panel lookup did not answer',dataDateBasis:'failed'}:undated('No FIRM panel date at this point');
     return {status:'ok',message:'FEMA flood zone '+data.zone+(subtype?' ('+subtype.toLowerCase()+')':'')+(data.sfha?', a Special Flood Hazard Area':'')+' at this point.',data,...date};
    });
   }
@@ -764,7 +802,7 @@
     checkPoint(lat,lon);
     const {json}=await request(EPQS+'?'+qs({x:String(lon),y:String(lat),wkid:'4326',units:'Feet',includeDate:'true'}));
     const v=num(json&&json.value),acq=text(json&&json.attributes&&json.attributes.AcquisitionDate);
-    const date=acq?{dataDate:null,dataDateText:'Elevation source acquired '+acq+' (as published by USGS)',dataDateBasis:'attributes.AcquisitionDate'}:undated('No acquisition date in the response');
+    const date=acq?(validAcq(acq)?{dataDate:null,dataDateText:'Elevation source acquired '+acq+' (as published by USGS)',dataDateBasis:'attributes.AcquisitionDate'}:{dataDate:null,dataDateText:'Acquisition date not stated in a valid form by USGS',dataDateBasis:'attributes.AcquisitionDate (invalid: '+acq.slice(0,40)+')'}):undated('No acquisition date in the response');
     if(v==null||v<-1e5)return {status:'empty',message:'USGS has no ground elevation value at this point.',data:null,...date};
     return {status:'ok',message:'Ground elevation about '+round(v,1)+' ft.',data:{feet:round(v,2),resolution:num(json.resolution),acquisitionDate:acq},...date};
    });
@@ -825,7 +863,7 @@
     // With one of the two lookups unanswered, an empty list cannot be read as "none listed".
     if(!items.length&&failed)throw Object.assign(new SourceError('One of two SDWIS lookups failed and the other matched nothing'),{userMessage:'EPA SDWIS could not match this county: one of its two lookups did not answer and the other listed nothing. Nothing is shown in its place; check the source directly.'});
     if(!items.length)return {status:'empty',message:'No active community water system listing this county is in this source.',data,...date};
-    return {status:'ok',message:plural(items.length,'active community water system')+' list '+countyName+'. Population served is a record, not live status.'+(failed?' One of the two EPA lookups did not answer, so systems listed only that way may be missing.':''),data,...date};
+    return {status:'ok',message:plural(items.length,'active community water system')+(items.length===1?' lists ':' list ')+countyName+'. Population served is a record, not live status.'+(failed?' One of the two EPA lookups did not answer, so systems listed only that way may be missing.':''),data,...date};
    });
   }
   function odinStates(){
@@ -1055,7 +1093,7 @@
    });
   }
 
-  return {zcta,zctaOverlap,placesByName,geocodeAddress,pointGeography,nriCounty,nriTract,femaDeclarations,
+  return {zcta,zctaOverlap,placesByName,populationCenter,geocodeAddress,pointGeography,nriCounty,nriTract,femaDeclarations,
    nwsAlerts,nwsPoint,spcOutlook,heatRisk,drought,wildfires,airQuality,tropical,earthquakes,volcanoes,riverGauges,tideStation,ofsForecast,
    floodZone,elevation,surge,seismicDesign,waterSystems,outages,powerPlants,hospitalsUSGS,hospitalsCMS,healthCenters,shelters,bridges,
    communityContext,screenFloodZones,screenSeismic,screenNriTract,screenHeatRisk,loadLocal};

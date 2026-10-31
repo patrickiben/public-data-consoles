@@ -24,7 +24,9 @@ const DETERMINISTIC=new Set(['api.tidesandcurrents.noaa.gov','api.weather.gov','
 /* Recorded responses, keyed the way the sources test keys them (method, normalized URL, body hash). */
 const sha1=s=>crypto.createHash('sha1').update(String(s)).digest('hex');
 const normal=u=>{try{return new URL(u).href;}catch(e){return u;}};
-const recorded=new Map(RECORDED.responses.map(e=>{const m=/^(\w+) (\S+)(?: #(\w+))?$/.exec(e.key);return [m[1]+' '+normal(m[2])+(m[3]?' #'+m[3]:''),e];}));
+// Round 2 recordings: TIGERweb place boundaries and 2020 tracts for the population-weighted search point.
+const ROUND2=JSON.parse(await read('tests/fixtures/community-resilience/round2.json')).responses.filter(e=>/^(GET|POST) /.test(e.key));
+const recorded=new Map(RECORDED.responses.concat(ROUND2).map(e=>{const m=/^(\w+) (\S+)(?: #(\w+))?$/.exec(e.key);return [m[1]+' '+normal(m[2])+(m[3]?' #'+m[3]:''),e];}));
 
 /* Synthetic Census geography: the area that contains a point decides every TIGERweb point answer. */
 const AREAS=[
@@ -396,7 +398,10 @@ try{
   await settled(page);
   const ranking=await text(page,'#rs-ranking');
   assert.match(ranking,/Unavailable \(NWS alerts did not answer\)/);assert.doesNotMatch(ranking,/None listed/);
-  assert.match(await text(page,'#rs-plan'),/NWS alerts are not available right now/);
+  const plan=await text(page,'#rs-plan');assert.match(plan,/Phase not set: NWS alerts unavailable/);assert.doesNotMatch(plan,/Phase: Prepare/);
+  assert.equal(await page.locator('#rs-plan .rs-phase.rs-p-unknown').count(),1,'neutral badge while alerts are unknown');
+  assert.match(await text(page,'#rs-geo'),/population-weighted center of its \d+ 2020 census tracts/);
+  const pt=await page.evaluate(()=>[window.CRPage.state.place.lat,window.CRPage.state.place.lon]);assert.ok(pt[0]>32.19,'Tucson is measured from where people live, not the Davis-Monthan tract: '+pt);
  });
 
  await scenario('keyboard: the chooser takes focus, and the hint uses a listed state',{width:390},async page=>{
