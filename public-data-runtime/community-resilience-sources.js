@@ -40,6 +40,7 @@
  const CMS_HOSPITALS='https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Medicare_Hospitals/FeatureServer/0';
  const HRSA='https://gisportal.hrsa.gov/server/rest/services/HealthCareFacilities/PrimaryHealthCareFacilities_FS/MapServer/0';
  const SHELTERS='https://gis.fema.gov/arcgis/rest/services/NSS/OpenShelters/MapServer/0';
+ const SHELTER_RADIUS_MI=250;
  const NBI='https://services.arcgis.com/xOi1kZaI0eWDREZv/arcgis/rest/services/NTAD_National_Bridge_Inventory/FeatureServer/0';
  const SVI='https://services3.arcgis.com/ZvidGQkLaDJxRSJ2/arcgis/rest/services/CDC_ATSDR_Social_Vulnerability_Index_2022_USA/FeatureServer/';
  const ACS='https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/ACS_Highlights_Emergency_Response_Boundaries/FeatureServer/';
@@ -954,13 +955,17 @@
    return run('shelters',async()=>{
     checkPoint(lat,lon);
     const origin={lat,lon};
-    const j=await arcQuery(SHELTERS,{where:'1=1',outFields:'shelter_id,shelter_name,address,city,state,zip,shelter_status,evacuation_capacity,post_impact_capacity,total_population,org_name,pet_accommodations_code,ada_compliant,wheelchair_accessible',returnGeometry:'true',outSR:'4326',resultRecordCount:'2000'});
+    // Open shelters within 250 miles of the point, nearest first; the national open count is kept as context.
+    const [j,national]=await Promise.all([
+     arcQuery(SHELTERS,{where:'1=1',...nearParams(lat,lon,SHELTER_RADIUS_MI*1609.344),outFields:'shelter_id,shelter_name,address,city,state,zip,shelter_status,evacuation_capacity,post_impact_capacity,total_population,org_name,pet_accommodations_code,ada_compliant,wheelchair_accessible',resultRecordCount:'2000'}),
+     request(SHELTERS+'/query?'+qs({where:'1=1',returnCountOnly:'true',f:'json'})).then(({json})=>num(json&&json.count)).catch(()=>null)]);
     const items=nearestFirst(j.features.map(f=>{const a=f&&f.attributes||{},p=xy(f);
      return {id:text(a.shelter_id),name:text(a.shelter_name),address:text(a.address),city:text(a.city),state:text(a.state),zip:text(a.zip),status:text(a.shelter_status),evacuationCapacity:num(a.evacuation_capacity),postImpactCapacity:num(a.post_impact_capacity),population:num(a.total_population),organization:text(a.org_name),pets:text(a.pet_accommodations_code),ada:text(a.ada_compliant),wheelchair:text(a.wheelchair_accessible),lat:p.lat,lon:p.lon,distanceKm:km(origin,p.lat,p.lon)};}));
     const date=undated('The shelter layer publishes no edit date; FEMA states it synchronizes each morning with the American Red Cross shelter database');
     const cut=!!j.exceededTransferLimit,cutNote=cut?' The service stopped at its record limit, so nearer shelters may be missing from this list.':'';
-    if(!items.length)return {status:cut?'unavailable':'empty',message:cut?'The FEMA shelter list was cut off at its record limit, so it cannot be read as empty.':'No open shelters are listed in the FEMA National Shelter System right now.',data:cut?null:{items,total:0},...date,...(cut?{error:'exceededTransferLimit'}:{})};
-    return {status:'ok',message:plural(items.length,'open shelter')+' listed nationally; the nearest is about '+miKm(items[0].distanceKm)+' away.'+cutNote,data:{items,total:items.length,truncated:cut},...date};
+    const nat=national!=null?' '+plural(national,'open shelter')+(national===1?' is':' are')+' listed nationally.':'';
+    if(!items.length)return {status:cut?'unavailable':'empty',message:cut?'The FEMA shelter list was cut off at its record limit, so it cannot be read as empty.':'No open shelter within '+SHELTER_RADIUS_MI+' miles is listed in the FEMA National Shelter System right now.'+nat,data:cut?null:{items,total:0,radiusMi:SHELTER_RADIUS_MI,nationalOpen:national},...date,...(cut?{error:'exceededTransferLimit'}:{})};
+    return {status:'ok',message:plural(items.length,'open shelter')+' within '+SHELTER_RADIUS_MI+' miles; the nearest is about '+miKm(items[0].distanceKm)+' away.'+nat+cutNote,data:{items,total:items.length,truncated:cut,radiusMi:SHELTER_RADIUS_MI,nationalOpen:national},...date};
    });
   }
   function bridges(lat,lon,radiusKm){

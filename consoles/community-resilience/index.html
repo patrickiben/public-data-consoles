@@ -67,6 +67,11 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
 #rs-locate:hover,#rs-theme:hover{background:var(--btn2-hover)}
 #rs-search:focus-visible,#rs-locate:focus-visible,#rs-theme:focus-visible,.rs-privacy summary:focus-visible,.rs-emerg a:focus-visible,.rs-btn:focus-visible,.rs-chip:focus-visible,.rs-card summary:focus-visible,.rs-wrap select:focus-visible,.rs-wrap a:focus-visible{outline:3px solid var(--watch);outline-offset:2px}
 .rs-attrib{font-size:12px;color:var(--dim);margin:7px 4px 0}
+main.rs-idle .rs-needs-place{display:none}
+.rs-noplace{display:none}main.rs-idle .rs-noplace{display:block}
+.rs-fold>summary{cursor:pointer;font-weight:650;min-height:44px;display:list-item;padding-top:10px}
+#rs-examples-box>summary{font-weight:600}
+.rs-chips-st{list-style:none;margin:6px 0;padding:0;font-size:13px;display:grid;gap:4px}
 .rs-examples{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 4px 0;font-size:12.5px;color:var(--ink2)}
 .rs-privacy{font-size:12.5px;color:var(--ink2);margin:10px 4px 0;line-height:1.5}
 .rs-privacy p{margin:0}
@@ -390,6 +395,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
       <div id="rs-place" role="status" aria-live="polite" tabindex="-1"><span class="rs-muted">Search for a place to begin.</span></div>
       <div id="rs-summary" class="rs-summary" hidden></div>
       <p class="rs-attrib">Address search: &copy; OpenStreetMap contributors, via Nominatim (<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">usage policy</a>). Used for street addresses only, only when you press Search, at most once a second. ZIP codes and place names are looked up in Census data.</p>
+      <details id="rs-examples-box" class="rs-privacy" open><summary>Example searches</summary>
       <div class="rs-examples" role="group" aria-label="Example searches"><span>Examples:</span>
         <button type="button" class="rs-chip" data-example="33701">33701</button>
         <button type="button" class="rs-chip" data-example="Tucson, AZ">Tucson, AZ</button>
@@ -397,6 +403,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
         <button type="button" class="rs-chip" data-example="Springfield">Springfield</button>
         <button type="button" class="rs-chip" data-example="175 5th St N, St. Petersburg, FL">175 5th St N, St. Petersburg, FL</button>
       </div>
+      </details>
       <div id="rs-privacy" class="rs-privacy">
         <p><b>Privacy:</b> This page has no server. Your location stays in this browser: nothing is saved (no cookies or browser storage), put in the page address, or sent to this site. Only the queries go to the public services listed under Sources.</p>
         <details><summary>What is sent, and to whom</summary>
@@ -405,6 +412,8 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
     </form>
   </header>
   <main id="rs-main">
+
+  <div id="rs-noplace" class="rs-section rs-noplace" role="status"></div>
 
   <section id="rs-chooser" class="rs-section" aria-labelledby="rs-chooser-title" hidden>
     <h2 id="rs-chooser-title" tabindex="-1">Which place did you mean?</h2>
@@ -425,37 +434,37 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
     </section>
   </div>
 
-  <section id="rs-ranking" class="rs-section" aria-labelledby="rs-ranking-title">
+  <section id="rs-ranking" class="rs-section rs-needs-place" aria-labelledby="rs-ranking-title">
     <h2 id="rs-ranking-title">Hazards that matter here</h2>
     <p class="rs-lede">Ranked by FEMA National Risk Index expected annual loss (dollars per year), with the NRI rating beside it.</p>
     <div id="rs-ranking-body"></div>
   </section>
 
-  <section id="rs-live" class="rs-section" aria-labelledby="rs-live-title">
+  <section id="rs-live" class="rs-section rs-needs-place" aria-labelledby="rs-live-title">
     <h2 id="rs-live-title">Live now</h2>
     <p class="rs-lede">Active National Weather Service alerts and the live feeds for the leading hazards, each with its source and time.</p>
     <div id="rs-live-body"></div>
   </section>
 
-  <section id="rs-modules" class="rs-section" aria-labelledby="rs-modules-title">
+  <section id="rs-modules" class="rs-section rs-needs-place" aria-labelledby="rs-modules-title">
     <h2 id="rs-modules-title">Hazard modules</h2>
     <p class="rs-lede">Leading hazards first and open; open any other card to load its data. Each card shows national data, local data when a place configuration adds it, and the lifelines the hazard would strain.</p>
     <div id="rs-modules-body"></div>
   </section>
 
-  <section id="rs-local" class="rs-section" aria-labelledby="rs-local-title">
+  <section id="rs-local" class="rs-section rs-needs-place" aria-labelledby="rs-local-title">
     <h2 id="rs-local-title">Local data for this place</h2>
     <p class="rs-lede">Asset data that a place configuration adds on top of the national tier.</p>
     <div id="rs-local-body"></div>
   </section>
 
-  <section id="rs-lifelines" class="rs-section" aria-labelledby="rs-lifelines-title">
+  <section id="rs-lifelines" class="rs-section rs-needs-place" aria-labelledby="rs-lifelines-title">
     <h2 id="rs-lifelines-title">What these hazards would strain</h2>
     <p class="rs-lede">Six community lifelines, nearest listed facility first. A listing is a record, not live operating condition.</p>
     <div id="rs-lifelines-body"></div>
   </section>
 
-  <section id="rs-context" class="rs-section" aria-labelledby="rs-context-title">
+  <section id="rs-context" class="rs-section rs-needs-place" aria-labelledby="rs-context-title">
     <h2 id="rs-context-title">Community context</h2>
     <p class="rs-lede">Who lives here, from Census survey estimates, for the county and the census tract.</p>
     <div id="rs-context-body"></div>
@@ -463,6 +472,8 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
 
   <section id="rs-metrics" class="rs-section" aria-labelledby="rs-metrics-title">
     <h2 id="rs-metrics-title">Diagnostics: ten metrics</h2>
+    <p id="rs-metrics-line" class="rs-note" role="status"></p>
+    <details id="rs-metrics-fold" class="rs-fold"><summary>Show the diagnostics: asset set, hazard screen and the ten metrics</summary>
     <p class="rs-lede">Pick a set of assets and a hazard screen, then press Run. Screens query public services only when you press Run.</p>
     <div class="rs-controls">
       <div><label for="rs-asset-set">Asset set</label><select id="rs-asset-set"></select></div>
@@ -470,6 +481,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
       <div><button id="rs-run" type="button" class="rs-btn">Run</button></div>
     </div>
     <div id="rs-metrics-body"></div>
+    </details>
   </section>
 
   <section id="rs-plan" class="rs-section" aria-labelledby="rs-plan-title">
@@ -492,6 +504,8 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
 
   <section id="rs-about" class="rs-section rs-about" aria-labelledby="rs-about-title">
     <h2 id="rs-about-title">About and limits</h2>
+    <p class="rs-note">An unofficial planning view from public federal data, not a warning. Empty means none listed in a source; asset records are not live operating condition.</p>
+    <details id="rs-about-fold" class="rs-fold"><summary>Show the method, what this page does not cover, privacy, attribution and how to extend it</summary>
     <div id="rs-about-body"><h3>Method</h3>
       <p class="rs-note">The page finds the census geography for your search (Census TIGERweb), then ranks the 18 natural hazards in the FEMA National Risk Index by county expected annual loss, the long-term average dollar loss a year to buildings, people and agriculture. The NRI rating beside each hazard is its percentile class among U.S. counties. Tract figures are shown as local detail and never replace county figures. Puerto Rico has expected annual loss but no NRI ratings, so it is ranked by loss alone. The top five hazards with expected loss above zero lead; an active National Weather Service alert moves its hazard to the top. Live feeds load for the leading hazards; open any other card to load its feeds. The ten diagnostics compare asset records against an exposure screen you choose, using the same hazard-neutral formulas as the Coastal Water Resilience console. The response plan sets its phase from active NWS alerts for the leading hazards only and lists actions from records found for this place, with general guidance labeled as such.</p>
       <h3>What this page does not cover</h3>
@@ -512,6 +526,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
       <p class="rs-note">Add a JSON file under <code>consoles/community-resilience/places/</code> (see <code>st-petersburg-fl.json</code>): <code>match.placeGeoid</code> (the Census place GEOID), optional <code>pins</code> for a shared NWS alert point and NOAA station, <code>files</code> naming same-origin published data, <code>links</code>, <code>modules</code> (the local modules, with their datum, ladder and scopes) and <code>moduleFacts</code> (dated local facts per hazard module). Then run <code>python3 scripts/embed_community_resilience.py</code>, which embeds every place file into this page; <code>--check</code> fails when the page is out of date.</p>
       <h3>How to add a hazard module</h3>
       <p class="rs-note">Add an entry to <code>CREngine.MODULES</code> in <code>public-data-runtime/community-resilience-engine.js</code> with its NRI hazard codes, the lifelines it strains, its live and static source method names, its screens and any coverage limits. If it needs a new feed, add an adapter to <code>public-data-runtime/community-resilience-sources.js</code> that resolves to one SourceResult, then re-run the embed script. The page renders cards, status rows and plan actions from these registries.</p></div>
+    </details>
   </section>
 
   <div id="rs-foot">An unofficial, volunteer tool. It reads public data for the place you search, in your browser. It is not a warning service and it does not know whether any facility is open. In an emergency, call 911.</div>
@@ -922,6 +937,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
  const CMS_HOSPITALS='https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Medicare_Hospitals/FeatureServer/0';
  const HRSA='https://gisportal.hrsa.gov/server/rest/services/HealthCareFacilities/PrimaryHealthCareFacilities_FS/MapServer/0';
  const SHELTERS='https://gis.fema.gov/arcgis/rest/services/NSS/OpenShelters/MapServer/0';
+ const SHELTER_RADIUS_MI=250;
  const NBI='https://services.arcgis.com/xOi1kZaI0eWDREZv/arcgis/rest/services/NTAD_National_Bridge_Inventory/FeatureServer/0';
  const SVI='https://services3.arcgis.com/ZvidGQkLaDJxRSJ2/arcgis/rest/services/CDC_ATSDR_Social_Vulnerability_Index_2022_USA/FeatureServer/';
  const ACS='https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/ACS_Highlights_Emergency_Response_Boundaries/FeatureServer/';
@@ -1836,13 +1852,17 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
    return run('shelters',async()=>{
     checkPoint(lat,lon);
     const origin={lat,lon};
-    const j=await arcQuery(SHELTERS,{where:'1=1',outFields:'shelter_id,shelter_name,address,city,state,zip,shelter_status,evacuation_capacity,post_impact_capacity,total_population,org_name,pet_accommodations_code,ada_compliant,wheelchair_accessible',returnGeometry:'true',outSR:'4326',resultRecordCount:'2000'});
+    // Open shelters within 250 miles of the point, nearest first; the national open count is kept as context.
+    const [j,national]=await Promise.all([
+     arcQuery(SHELTERS,{where:'1=1',...nearParams(lat,lon,SHELTER_RADIUS_MI*1609.344),outFields:'shelter_id,shelter_name,address,city,state,zip,shelter_status,evacuation_capacity,post_impact_capacity,total_population,org_name,pet_accommodations_code,ada_compliant,wheelchair_accessible',resultRecordCount:'2000'}),
+     request(SHELTERS+'/query?'+qs({where:'1=1',returnCountOnly:'true',f:'json'})).then(({json})=>num(json&&json.count)).catch(()=>null)]);
     const items=nearestFirst(j.features.map(f=>{const a=f&&f.attributes||{},p=xy(f);
      return {id:text(a.shelter_id),name:text(a.shelter_name),address:text(a.address),city:text(a.city),state:text(a.state),zip:text(a.zip),status:text(a.shelter_status),evacuationCapacity:num(a.evacuation_capacity),postImpactCapacity:num(a.post_impact_capacity),population:num(a.total_population),organization:text(a.org_name),pets:text(a.pet_accommodations_code),ada:text(a.ada_compliant),wheelchair:text(a.wheelchair_accessible),lat:p.lat,lon:p.lon,distanceKm:km(origin,p.lat,p.lon)};}));
     const date=undated('The shelter layer publishes no edit date; FEMA states it synchronizes each morning with the American Red Cross shelter database');
     const cut=!!j.exceededTransferLimit,cutNote=cut?' The service stopped at its record limit, so nearer shelters may be missing from this list.':'';
-    if(!items.length)return {status:cut?'unavailable':'empty',message:cut?'The FEMA shelter list was cut off at its record limit, so it cannot be read as empty.':'No open shelters are listed in the FEMA National Shelter System right now.',data:cut?null:{items,total:0},...date,...(cut?{error:'exceededTransferLimit'}:{})};
-    return {status:'ok',message:plural(items.length,'open shelter')+' listed nationally; the nearest is about '+miKm(items[0].distanceKm)+' away.'+cutNote,data:{items,total:items.length,truncated:cut},...date};
+    const nat=national!=null?' '+plural(national,'open shelter')+(national===1?' is':' are')+' listed nationally.':'';
+    if(!items.length)return {status:cut?'unavailable':'empty',message:cut?'The FEMA shelter list was cut off at its record limit, so it cannot be read as empty.':'No open shelter within '+SHELTER_RADIUS_MI+' miles is listed in the FEMA National Shelter System right now.'+nat,data:cut?null:{items,total:0,radiusMi:SHELTER_RADIUS_MI,nationalOpen:national},...date,...(cut?{error:'exceededTransferLimit'}:{})};
+    return {status:'ok',message:plural(items.length,'open shelter')+' within '+SHELTER_RADIUS_MI+' miles; the nearest is about '+miKm(items[0].distanceKm)+' away.'+nat+cutNote,data:{items,total:items.length,truncated:cut,radiusMi:SHELTER_RADIUS_MI,nationalOpen:national},...date};
    });
   }
   function bridges(lat,lon,radiusKm){
@@ -2107,6 +2127,8 @@ const plural=(n,one,many)=>n+' '+(n===1?one:(many||one+'s'));
 const fmt=E.format;
 const dist=km=>fmt.distance(km);
 // Place-specific times use the place's own time zone (from the NWS points lookup) once it is known.
+// States and territories that lie in a single time zone (AZ is left out: the Navajo Nation observes daylight time).
+const STATE_TZ={AL:'America/Chicago',AR:'America/Chicago',CA:'America/Los_Angeles',CO:'America/Denver',CT:'America/New_York',DE:'America/New_York',DC:'America/New_York',GA:'America/New_York',HI:'Pacific/Honolulu',IL:'America/Chicago',IA:'America/Chicago',LA:'America/Chicago',ME:'America/New_York',MD:'America/New_York',MA:'America/New_York',MN:'America/Chicago',MS:'America/Chicago',MO:'America/Chicago',MT:'America/Denver',NH:'America/New_York',NJ:'America/New_York',NM:'America/Denver',NY:'America/New_York',NC:'America/New_York',OH:'America/New_York',OK:'America/Chicago',PA:'America/New_York',RI:'America/New_York',SC:'America/New_York',UT:'America/Denver',VT:'America/New_York',VA:'America/New_York',WA:'America/Los_Angeles',WV:'America/New_York',WI:'America/Chicago',WY:'America/Denver',PR:'America/Puerto_Rico',VI:'America/St_Thomas',GU:'Pacific/Guam',AS:'Pacific/Pago_Pago',MP:'Pacific/Saipan'};
 const placeTz=()=>state&&state.place&&state.place.timeZone||undefined;
 const when=v=>fmt.date(v,placeTz());
 const num=(v,d)=>finite(v)?v.toLocaleString('en-US',{maximumFractionDigits:d==null?0:d}):'Not listed';
@@ -2250,6 +2272,7 @@ const reduceMotion=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: r
 // Bring the place status into view (it sits right under the search bar) and focus it after a chooser pick.
 function focusPlace(){const el=$('rs-place');el.focus({preventScroll:true});el.scrollIntoView({block:'nearest',behavior:reduceMotion()?'auto':'smooth'});}
 function begin(phase){
+ const ex=$('rs-examples-box');if(ex&&ex.open)ex.open=false;
  state.run++;state.phase=phase;state.place=null;state.info=null;state.results={};state.pending={};state.message=null;state.chooser=null;
  state.ranking=null;state.modules=[];state.open=new Set();state.openedFirst=false;state.spcCategory=null;state.ofsPeak=null;state.plan=null;state.checkedAt=null;
  state.local={scope:'city',level:null};state.diag={asset:'',screen:'',status:'idle',result:null,screen_:null,note:null};
@@ -2463,7 +2486,7 @@ function renderSources(){
  const counts={};ids.forEach(id=>{const st=sourceStatus(id).status;counts[st]=(counts[st]||0)+1;});
  const summary=Object.keys(counts).map(k=>counts[k]+' '+(STATUS_LABEL[k]||k).toLowerCase()).join(', ');
  const attn=attention.length?'<ul class="rs-status">'+attention.map(o=>{const d=o.id==='map'?{title:'Map tiles and map library'}:S.SOURCES[o.id],st=sourceStatus(o.id);return stRow(esc(st.r&&st.r.title||d.title),st.status,esc(st.text));}).join('')+'</ul>':'<p class="rs-muted">No source has failed for this search.</p>';
- paint('rs-sources-body','<p class="rs-note">'+esc(ids.length+' sources: '+summary)+'.</p>'+(state.place?'<h3>Sources that did not answer</h3>'+attn:waitingBox())+'<details class="rs-more" data-keep="sources-all"><summary>Show all '+esc(ids.length)+' sources with status, data date, owner and coverage</summary><div class="rs-table-wrap"><table class="rs-table rs-stack rs-sources-table"><thead><tr><th scope="col">Source</th><th scope="col">Status</th><th scope="col">Data date</th><th scope="col">Owner</th><th scope="col">Coverage</th></tr></thead><tbody>'+sorted.join('')+'</tbody></table></div></details>');
+ paint('rs-sources-body','<p class="rs-note">'+esc(ids.length+' sources: '+summary)+'.</p>'+(state.place?'<h3>Sources that failed or answered in part</h3>'+attn:waitingBox())+'<details class="rs-more" data-keep="sources-all"><summary>Show all '+esc(ids.length)+' sources with status, data date, owner and coverage</summary><div class="rs-table-wrap"><table class="rs-table rs-stack rs-sources-table"><thead><tr><th scope="col">Source</th><th scope="col">Status</th><th scope="col">Data date</th><th scope="col">Owner</th><th scope="col">Coverage</th></tr></thead><tbody>'+sorted.join('')+'</tbody></table></div></details>');
 }
 
 /* ---------- map (optional; everything else works without it) ----------
@@ -2539,7 +2562,16 @@ function renderSummary(){
  paint('rs-summary','<dl class="rs-dl"><dt>Leading hazards</dt><dd>'+hz+' <a href="#rs-ranking">Ranking</a></dd><dt>Active alerts</dt><dd>'+esc(al)+' <a href="#rs-live">Live now</a></dd><dt>Sources</dt><dd>'+(down?'<b>'+esc(plural(down,'source'))+' unavailable.</b> ':'None unavailable so far. ')+'<a href="#rs-sources">Sources and status</a></dd></dl>');
 }
 const RENDERERS=[renderSummary,renderChooser,renderGeo,renderRanking,renderLive,renderModules,renderLocal,renderLifelines,renderContext,renderMetrics,renderPlan,renderSources];
+// Until a place is found, one banner stands in for the place panels (they would each say the same thing).
+function renderNoPlace(){
+ const idle=!state.place||state.phase!=='place',main=$('rs-main');
+ if(main.classList.contains('rs-idle')!==idle)main.classList.toggle('rs-idle',idle);
+ if(!idle){paint('rs-noplace','');return;}
+ const lead=state.phase==='idle'?'Search for a place above. Hazards, live alerts, hazard modules, lifelines and community context appear here once a place is found.':waitingText();
+ paint('rs-noplace','<ul class="rs-status">'+stRow('Place',state.phase==='stopped'?'unavailable':state.phase==='idle'||state.phase==='choosing'?'idle':'loading',esc(lead))+'</ul>');
+}
 function renderAll(){
+ renderNoPlace();
  const busy=state.phase==='geocoding'||state.phase==='locating',btn=$('rs-search');
  if(btn.textContent!==(busy?'Searching...':'Search')){btn.textContent=busy?'Searching...':'Search';btn.setAttribute('aria-busy',busy?'true':'false');}
  announceSettled();
@@ -2573,6 +2605,8 @@ $('rs-search-form').addEventListener('submit',e=>{e.preventDefault();search();})
 $('rs-locate').addEventListener('click',useLocation);
 // In-page links move focus to the target section heading, not only the scroll position.
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="#rs-"]');if(!a)return;const t=document.getElementById(a.getAttribute('href').slice(1));if(!t)return;const h=t.matches('h2,h3')?t:t.querySelector('h2,h3')||t;if(!h.hasAttribute('tabindex'))h.setAttribute('tabindex','-1');setTimeout(()=>h.focus({preventScroll:true}),0);});
+// A link to the diagnostics opens its fold, so the link never lands on a closed box.
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href="#rs-metrics"]');if(a)$('rs-metrics-fold').open=true;});
 document.querySelector('.rs-examples').addEventListener('click',e=>{const b=e.target.closest('[data-example]');if(b)search(b.getAttribute('data-example'));});
 $('rs-chooser').addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(!b||!state.chooser)return;const items=state.chooser.items,it=items[+b.getAttribute('data-pick')];if(it){state.run++;const run=state.run;choosePlace(run,it,[]);focusPlace();}});
 /* ---------- ranking, modules and live feeds ---------- */
@@ -2607,7 +2641,9 @@ function updateOfsPeak(){
  state.ofsPeak=E.ofsPeak(f.data.rows,stations,cfg?cfg.datum.mllwToNavd88Ft:0,Date.now());
 }
 function changed(method){
- if(method==='nwsPoint'){const r=state.results.nwsPoint;if(state.place&&r&&r.status==='ok'&&r.data&&r.data.timeZone){try{new Intl.DateTimeFormat('en-US',{timeZone:r.data.timeZone});state.place.timeZone=r.data.timeZone;}catch(e){}}}
+ if(method==='nwsPoint'){const r=state.results.nwsPoint;if(state.place&&r&&r.status==='ok'&&r.data&&r.data.timeZone){try{new Intl.DateTimeFormat('en-US',{timeZone:r.data.timeZone});state.place.timeZone=r.data.timeZone;state.place.tzSource='nws';}catch(e){}}
+  // NWS did not give a zone: use the state's zone where the whole state has one; otherwise say the zone is unknown.
+  if(state.place&&!state.place.timeZone&&r&&r.status!=='ok'){const z=state.place.state&&STATE_TZ[state.place.state.abbr];if(z){state.place.timeZone=z;state.place.tzSource='state';}else state.place.tzSource='unknown';}}
  if(method==='nriCounty'||method==='nriTract'||method==='nwsAlerts')rerank();
  if(method==='spcOutlook'){const r=state.results.spcOutlook;state.spcCategory=r&&r.status==='ok'&&r.data&&state.place?S.spcCategoryAt(r.data,state.place.lat,state.place.lon):null;}
  if(method==='ofsForecast'||method==='loadLocal'){localCache.key='';updateOfsPeak();}
@@ -2642,6 +2678,7 @@ const DETAIL={
  seismicDesign:d=>'<p class="rs-note">ASCE 7-22 seismic design category <b>'+esc(d.sdc||'not stated')+'</b>: Ss '+esc(d.ss)+', S1 '+esc(d.s1)+', SDS '+esc(d.sds)+', SD1 '+esc(d.sd1)+' (default site class'+(d.modelVersion?', model '+esc(d.modelVersion):'')+').</p>',
  nwsPoint:d=>'<p class="rs-note">NWS office '+esc(d.office)+', forecast zone '+esc(d.forecastZone)+'. '+extLink(d.forecastLink,'Forecast for this point')+'.</p>'
 };
+function retryBtn(method,r){return r&&r.status==='unavailable'&&CALLS[method]?'<br><button type="button" class="rs-btn" data-act="retry" data-method="'+esc(method)+'" data-focus="retry-'+esc(method)+'">Try again</button>':'';}
 function srcBlock(method,opts){
  const o=opts||{},r=res(method),def=S.SOURCES[SOURCE_ID[method]]||{title:method};
  const status=r?r.status:state.pending[method]?'loading':o.notCovered?'not-covered':'skipped';
@@ -2649,6 +2686,8 @@ function srcBlock(method,opts){
  let html='<li data-rs-feed="'+esc(method)+'" data-status="'+esc(status)+'"><b>'+esc(r&&r.title||def.title)+'</b> '+badge(status)+' '+labels(r||def)+'<br>'+text;
  if(r&&r.status==='ok'&&r.data&&DETAIL[method]){try{html+=DETAIL[method](r.data);}catch(e){html+='<p class="rs-muted">The details could not be shown.</p>';}}
  if(o.button&&!r&&!state.pending[method])html+='<br>'+o.button;
+ // A failed source can be asked again for this search only (NFHL, for one, often answers the second request at once).
+ html+=retryBtn(method,r);
  html+=r?srcLine(r):'';
  return html+'</li>';
 }
@@ -2705,11 +2744,11 @@ function renderLive(){
  const p=state.place;
  if(!p){paint('rs-live-body',waitingBox());return;}
  const a=res('nwsAlerts'),pt=alertPoint(p);
- let html='<p class="rs-muted" data-rs-tz>'+(p.timeZone?'Times on this page are shown in the place\'s time zone ('+esc(p.timeZone)+').':'Times are shown in your device\'s time zone until the place\'s time zone is known.')+'</p><h3>National Weather Service alerts</h3>';
+ let html='<p class="rs-muted" data-rs-tz>'+(p.timeZone&&p.tzSource==='state'?'Times on this page are shown in '+esc(p.timeZone)+', the time zone of '+esc(p.state.name)+' (NWS did not answer, so the zone comes from the state).':p.timeZone?'Times on this page are shown in the place\'s time zone ('+esc(p.timeZone)+').':p.tzSource==='unknown'?'The place\'s time zone could not be found (NWS did not answer); times are in your device\'s time zone.':'Times are shown in your device\'s time zone until the place\'s time zone is known.')+'</p><h3>National Weather Service alerts</h3>';
  if(p.local&&p.local.pins&&p.local.pins.nwsAlertPoint)html+='<p class="rs-muted">Alerts for the point '+esc(pt.lat.toFixed(3)+', '+pt.lon.toFixed(3))+', the same point the '+esc(p.local.publishedBy||'local')+' uses, so both pages read the same feed.</p>';
  if(!a)html+='<ul class="rs-status">'+stRow('NWS alerts','loading','Loading active alerts...')+'</ul>';
  else if(a.status==='ok'&&a.data){const now=Date.now(),list=a.data.items.filter(x=>{const t=Date.parse(x.ends||x.expires||'');return !finite(t)||t>now;});html+=list.length?list.map(alertCard).join(''):'<p class="rs-note">No active alerts remain in effect at this point.</p>';html+=srcLine(a);}
- else html+='<ul class="rs-status">'+stRow('NWS alerts',a.status,esc(a.message)+(a.status==='unavailable'?' Check <a href="https://www.weather.gov/" target="_blank" rel="noopener noreferrer">weather.gov</a> directly.':''))+'</ul>'+srcLine(a);
+ else html+='<ul class="rs-status">'+stRow('NWS alerts',a.status,esc(a.status==='unavailable'?a.message.replace(/ Nothing is shown in its place; check the source directly\.$/,' Nothing is shown in its place.'):a.message)+(a.status==='unavailable'?' Check <a href="https://www.weather.gov/" target="_blank" rel="noopener noreferrer">weather.gov</a> directly.':''))+'</ul>'+retryBtn('nwsAlerts',a)+srcLine(a);
  const np=res('nwsPoint');if(np&&np.status==='ok')html+=DETAIL.nwsPoint(np.data);
  html+='<h3>Live feeds for the leading hazards</h3>';
  const lead=state.modules.filter(m=>m.status==='leading');
@@ -2855,7 +2894,6 @@ function floodLevelsText(f){
  const raw=nws?[['minor',f.nwsMinor],['moderate',f.nwsModerate],['major',f.nwsMajor]]:[['minor',f.nosMinor],['moderate',f.nosModerate],['major',f.nosMajor]];
  return '<p class="rs-muted">'+who+' flood levels as published, without a datum (not MLLW, so not comparable with the reading above): '+raw.filter(x=>finite(x[1])).map(x=>x[0]+' '+num(x[1],2)+' ft').join(', ')+'. The station\'s MLLW value did not load, so they could not be converted.</p>';
 }
-function itemSuffix(r){return '<br><span class="rs-muted">'+esc(r.title)+(r.hostedBy==='Esri'?' (Federal dataset hosted by Esri)':'')+'; '+esc(dateText(r))+'. Confirm before you go.</span>';}
 const addr=it=>[it.address,it.city,it.state].map(v=>clean(v,80)).filter(Boolean).join(', ');
 const ITEM={
  waterSystems:it=>'<b>'+esc(clean(it.name,90)||it.pwsid)+'</b> ('+esc(it.pwsid)+'): serves about '+esc(num(it.populationServed))+' people'+(it.source?', '+esc(it.source.toLowerCase()):'')+(it.status?', '+esc(it.status.toLowerCase())+' in the record':'')+'. County-wide record, no location.',
@@ -2878,13 +2916,13 @@ function lifelineSource(m){
   if(m==='bridges')html+='<p class="rs-note">'+esc(d.total)+' bridges within '+esc(d.radiusKm)+' km: '+esc(d.good||0)+' good, '+esc(d.fair||0)+' fair, '+esc(d.poor||0)+' poor (structural ratings from inspections).</p>';
   const farShelters=m==='shelters'&&list.length&&list[0].distanceKm>SHELTER_NEAR_KM;
   if(farShelters){
-   html+='<p class="rs-note">None listed within 100 miles in this source. Shelters open when needed: check local emergency management.</p><details class="rs-more"><summary>Open shelters elsewhere in the U.S. ('+esc(list.length)+')</summary><ul class="rs-list">'+list.slice(0,LIFELINE_LIMIT[m]||5).map(it=>'<li>'+ITEM[m](it)+itemSuffix(r)+'</li>').join('')+'</ul></details>';
+   html+='<p class="rs-note">None listed within 100 miles in this source. Shelters open when needed: check local emergency management.</p><details class="rs-more"><summary>Open shelters 100 to '+esc(d.radiusMi||250)+' miles away ('+esc(list.length)+')</summary><ul class="rs-list">'+list.slice(0,LIFELINE_LIMIT[m]||5).map(it=>'<li>'+ITEM[m](it)+'</li>').join('')+'</ul></details>';
    return html+srcLine(r,true)+'</li>';
   }
   if(m==='outages'&&!d.reporting)html+='<p class="rs-muted">No utility in this state reports to ODIN.</p>';
   if(list.length){
    // Nearest 3 first; the rest of the shown list sits behind "Show N more" so the phone page stays short.
-   const lim=LIFELINE_LIMIT[m]||5,shown=list.slice(0,lim),li=it=>'<li>'+ITEM[m](it)+itemSuffix(r)+'</li>';
+   const lim=LIFELINE_LIMIT[m]||5,shown=list.slice(0,lim),li=it=>'<li>'+ITEM[m](it)+'</li>';
    html+='<ul class="rs-list">'+shown.slice(0,3).map(li).join('')+'</ul>';
    if(shown.length>3)html+='<details class="rs-more" data-keep="more-'+esc(m)+'"><summary>Show '+esc(shown.length-3)+' more</summary><ul class="rs-list">'+shown.slice(3).map(li).join('')+'</ul></details>';
    if(list.length>lim)html+='<p class="rs-muted">'+esc(list.length-lim)+' more listed, not shown.</p>';
@@ -2904,14 +2942,16 @@ function renderLifelines(){
   const head='<div class="rs-card-head"><h3 id="rs-lifeline-'+esc(id)+'">'+esc(l.name)+'</h3>'+badge(s.status==='not-available'?'not-covered':s.status,s.status==='not-available'?'Not available here':s.label||null)+'</div>'+
    '<span class="rs-reason">'+(!state.ranking||state.ranking.status!=='ok'?'Strain not assessed: hazard ranking unavailable':by.length?'Strained by the leading hazards: '+esc(by.join(', ')):'Not strained by a leading hazard here')+'. '+(s.nearest!=null?'Nearest listed facility: '+esc(dist(s.nearest))+'.':'')+'</span>';
   const body=id==='communications'?'<p class="rs-mstatus rs-na">Not available here: '+esc(l.notAvailable)+'.</p><p class="rs-note">Missing data: network status and coverage, which no keyless national source publishes; the FCC broadband map API needs credentials. Check your carrier and local emergency management.</p>':
-   '<ul class="rs-facts">'+LIFELINE_SOURCES[id].map(lifelineSource).join('')+'</ul><p class="rs-note"><b>Not covered:</b> '+esc(l.notAvailable)+'.</p>';
+   // Each source's status stays visible; the facility lists and source lines fold behind one disclosure per lifeline.
+   '<ul class="rs-chips-st">'+LIFELINE_SOURCES[id].map(m=>{const r=res(m),st=statusOf(m),n=r&&r.status==='ok'&&r.data?itemList(m).length:0;return '<li data-rs-feed-status="'+esc(m)+'">'+esc(r&&r.title||S.SOURCES[SOURCE_ID[m]].title)+' '+badge(st)+(n?' <span class="rs-muted">'+esc(n+' listed')+'</span>':'')+'</li>';}).join('')+'</ul>'+
+   '<details class="rs-more" data-keep="life-'+esc(id)+'"><summary>Show the listed facilities and sources</summary><ul class="rs-facts">'+LIFELINE_SOURCES[id].map(lifelineSource).join('')+'</ul></details><p class="rs-note"><b>Not covered:</b> '+esc(l.notAvailable)+'.</p>';
   return '<div class="rs-card" data-rs-lifeline="'+esc(id)+'" data-status="'+esc(s.status)+'">'+head+body+(id==='communications'?'':CONFIRM)+'</div>';
  }).join('')+'</div>';
  paint('rs-lifelines-body',html);
 }
 
 /* ---------- community context ---------- */
-const CONTEXT_ROWS=[['population','Population',v=>num(v)],['pctAge65','Age 65 and over',v=>fmt.pct(v)],['pctNoVehicle','Households with no vehicle',v=>fmt.pct(v)],['pctDisability','With a disability',v=>fmt.pct(v)],['pctNoInternet','Households without internet',v=>fmt.pct(v)],['pctPoverty150','Below 150% of the poverty level',v=>fmt.pct(v)],['pctLimitedEnglish','Speak English less than well',v=>fmt.pct(v)],['sviPercentile','CDC social vulnerability percentile (0 to 100)',v=>num(v,1)]];
+const CONTEXT_ROWS=[['population','Population',v=>num(v)],['pctAge65','Age 65 and over',v=>fmt.pct(v)],['pctNoVehicle','Households with no vehicle',v=>fmt.pct(v)],['pctDisability','With a disability',v=>fmt.pct(v)],['pctNoInternet',{svi:'Households without a broadband internet subscription',acs:'Households with no internet access (ACS B28002)'},v=>fmt.pct(v)],['pctPoverty150','Below 150% of the poverty level',v=>fmt.pct(v)],['pctLimitedEnglish',{svi:'Age 5 and over who speak English less than "well"',acs:'Adults with limited English (speak less than "very well", ACS B16004)'},v=>fmt.pct(v)],['sviPercentile','CDC social vulnerability percentile (0 to 100)',v=>num(v,1)]];
 // A tract coded 9800-9899 (special land use, such as a military base or park) or with under 100 residents does not describe
 // where people in the place live, so its figures are not shown as the local detail.
 function tractCaveat(geoid,population){
@@ -2929,7 +2969,7 @@ function renderContext(){
  const d=r.data,caveat=d.tract?tractCaveat(d.tract.geoid,d.tract.population):null,t=caveat?null:d.tract;
  const cell=(o,k,f)=>o&&o[k]!=null?esc(f(o[k])):'<span class="rs-muted">Not published here</span>';
  paint('rs-context-body','<div class="rs-table-wrap" data-rs-context="ok" data-status="ok"><table class="rs-table rs-stack"><thead><tr><th scope="col">Measure</th><th scope="col">'+esc(clean(d.geography,80)||'County')+'</th><th scope="col">'+(t?'Tract '+esc(t.geoid||''):'Census tract')+'</th></tr></thead><tbody>'+
-  CONTEXT_ROWS.map(([k,label,f])=>'<tr><td data-label="Measure">'+esc(label)+'</td><td data-label="County" class="rs-num">'+cell(d,k,f)+'</td><td data-label="Tract" class="rs-num">'+(t?cell(t,k,f):'<span class="rs-muted">'+(caveat?'Not shown (special tract)':'No tract row')+'</span>')+'</td></tr>').join('')+'</tbody></table></div>'+
+  CONTEXT_ROWS.map(([k,label,f])=>'<tr><td data-label="Measure">'+esc(typeof label==='string'?label:p.isPR?label.acs:label.svi)+'</td><td data-label="County" class="rs-num">'+cell(d,k,f)+'</td><td data-label="Tract" class="rs-num">'+(t?cell(t,k,f):'<span class="rs-muted">'+(caveat?'Not shown (special tract)':'No tract row')+'</span>')+'</td></tr>').join('')+'</tbody></table></div>'+
   (caveat?'<div class="rs-box rs-warn"><p>'+esc(caveat)+'</p></div>':t?'<p class="rs-muted">Tract column: tract '+esc(t.geoid||'')+tractWhere()+'.</p>':'')+
   '<ul class="rs-status">'+stRow('Community context',r.status,esc(r.message))+'</ul><p class="rs-note">Survey estimates have margins of error; small tracts are less certain. Vintage: '+esc(d.vintage||'not stated')+'.</p>'+srcLine(r));
 }
@@ -3018,6 +3058,9 @@ function renderMetrics(){
   return '<div class="rs-card" data-rs-metric="'+m.id+'" data-status="'+esc(m.status)+'"><div class="rs-metric-head"><h3 class="rs-h4">'+m.id+'. '+esc(m.name)+'</h3><span class="rs-muted">'+esc(m.pillar)+'</span></div><p class="rs-mstatus'+(m.status==='computed'?'':' rs-na')+'">'+esc(line.replace(/\.+$/,''))+'.</p><details><summary>Method and inputs</summary><p class="rs-note">'+esc(m.method)+'</p><p class="rs-note">Needs: '+esc(m.requires)+'.</p></details></div>';
  }).join('')+'</div><p class="rs-note">Metrics describe asset records against a screen. They are planning context, never live operating condition. Metric 1 needs service areas with Census block population, which only a local configuration can supply; metrics 7 and 10 are never computed from public data.</p>';
  paint('rs-metrics-body',html);
+ const nc=out.metrics.filter(m=>m.status==='computed').length;
+ const line=!state.place?'Not run: search for a place first. Metrics 7 and 10 are never computed from public data.':d.status==='running'?'Running the screen...':ran?'Computed here: '+nc+' of 10 metrics for the last run. Metrics 7 and 10 are never computed from public data.':'Not run yet: 0 of 10 metrics computed. Open below to choose assets and a hazard screen.';
+ const el=$('rs-metrics-line');if(el.textContent!==line)el.textContent=line;
 }
 
 /* ---------- response plan ---------- */
@@ -3049,7 +3092,7 @@ function renderPlan(){
  html+='<h3>Actions</h3>';
  html+=plan.actions.length?'<ul class="rs-facts">'+plan.actions.map(a=>'<li data-rs-action="'+esc(a.id)+'"><b>'+esc((MODULE_DEF[a.module]||{}).name||a.module)+':</b> '+esc(a.text)+'<p class="rs-src">Source: '+esc(a.source||'not stated')+'. '+esc(a.source==='General guidance'?'General preparedness guidance, not specific to this place':a.dataDate?'Data date '+when(a.dataDate):a.dataDateText||S.NO_DATE)+'.'+(a.checkedAt?' Checked '+esc(when(a.checkedAt))+'.':'')+(a.escalateTo?' Escalate to: '+esc(a.escalateTo)+'.':'')+(a.reviewAfter?' Review after '+esc(when(a.reviewAfter))+'.':'')+'</p></li>').join('')+'</ul>':'<ul class="rs-status">'+stRow('Actions',state.ranking?'empty':'loading',state.ranking?'No leading hazard here, so no hazard actions were generated.':'Waiting for the hazard ranking.')+'</ul>';
  html+='<details class="rs-more" data-keep="plan-dims"><summary><b>Ten dimensions</b>: '+esc(plan.dimensions.filter(d=>d.status==='computed').length)+' computed, '+esc(plan.dimensions.filter(d=>d.status!=='computed').length)+' not available or not applicable</summary>'+dimensionsHtml(plan.dimensions)+'</details>';
- html+='<h3>Limits of this plan</h3><ul class="rs-list">'+plan.limitations.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>';
+ html+='<details class="rs-more" data-keep="plan-limits"><summary><b>Limits of this plan</b> ('+esc(plan.limitations.length)+'): a long-term average, not a forecast; records, not live condition</summary><ul class="rs-list">'+plan.limitations.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul></details>';
  paint('rs-plan-body',html);
 }
 function exportPlan(){
@@ -3101,6 +3144,7 @@ document.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.matches||!d.ma
  if(d.open){state.open.add(id);if(!loadedModules.has(id))loadModule(id);}else state.open.delete(id);
  schedule();},true);
 $('rs-modules').addEventListener('click',e=>{const b=e.target.closest('[data-act="surge"]');if(b&&state.place){b.disabled=true;need('surge');}});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-act="retry"]');if(!b||!state.place)return;const m=b.getAttribute('data-method');if(!CALLS[m]||state.pending[m]||!state.results[m]||state.results[m].status!=='unavailable')return;b.disabled=true;delete state.results[m];need(m);});
 $('rs-local').addEventListener('click',e=>{
  const s=e.target.closest('[data-scope]'),l=e.target.closest('[data-level]');
  if(s){state.local.scope=s.getAttribute('data-scope');updateOfsPeak();schedule();}

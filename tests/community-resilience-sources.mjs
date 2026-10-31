@@ -310,6 +310,13 @@ await check('populationCenter measures Anchorage and Tucson from where people li
  const down=await make(async()=>respond(500,'no')).populationCenter({geoid:'0203000',type:'incorporated'});assert.equal(down.status,'unavailable');
  const bad=await make(noNetwork).populationCenter({geoid:'x',type:'incorporated'});assert.equal(bad.status,'unavailable');
 });
+await check('shelters are queried within 250 miles, nearest first, with the national open count (recorded FEMA NSS)',async()=>{
+ const s=make(async(url,o={})=>{const e=r2.get(key(url,o));if(!e)throw new Error('unrecorded '+key(url,o).slice(0,120));return respond(e.status,e.text);});
+ const abq=shape(await s.shelters(35.0844,-106.6504),'shelters abq');assert.equal(abq.status,'ok');assert.ok(sortedNear(abq.data.items));assert.ok(abq.data.items.every(i=>i.distanceKm<=402.4));
+ assert.equal(abq.data.radiusMi,250);assert.equal(abq.data.nationalOpen,5);assert.match(abq.message,/within 250 miles; the nearest is about/);assert.match(abq.message,/5 open shelters are listed nationally/);
+ const sp=shape(await s.shelters(27.7709,-82.6793),'shelters stpete');assert.equal(sp.status,'empty');assert.match(sp.message,/No open shelter within 250 miles is listed/);assert.equal(sp.data.nationalOpen,5);
+ assert.ok([...r2.keys()].some(k=>/OpenShelters.*distance=402336/.test(k)),'the query carries the 250 mile distance');
+});
 await check('riverGauges leaves out inundation sensors (in AGL); elevation dates and water wording',async()=>{
  const g=(lid,name)=>({lid,name,latitude:27.78,longitude:-82.64,status:{observed:{primary:0.6,primaryUnit:'ft',validTime:'2026-10-30T17:00:00Z'}}});
  const s=make(async url=>url.includes('gauges?')?respond(200,JSON.stringify({gauges:[g('BCMF1','Inundation Sensor at Boca Ciega Millenium Park (in AGL)'),g('XXXF1','Some Creek at Main St'),{...g('NOSF1','Gauge at Pier'),pedts:{observed:'HMIRG'}}]})):respond(200,'{"features":[]}'));

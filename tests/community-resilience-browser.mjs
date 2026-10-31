@@ -141,7 +141,11 @@ const text=(page,sel)=>page.locator(sel).innerText();
 const SECTIONS=['rs-geo','rs-ranking','rs-live','rs-modules','rs-local','rs-lifelines','rs-context','rs-metrics','rs-plan','rs-sources'];
 const STATUS_WORDS=/Source: |Unavailable|Not available|None listed|Not covered|Not applicable|Not run|Waiting|OK|Computed|Leading|Rated|None added/;
 async function everyPanelHasStatus(page){
+ // Before a place is found, one banner stands in for the place panels, which are hidden (round 1 UX1-05).
+ const idle=await page.evaluate(()=>document.getElementById('rs-main').classList.contains('rs-idle'));
+ if(idle){assert.match(await text(page,'#rs-noplace'),STATUS_WORDS,'the no-place banner shows a status');assert.ok(await page.locator('#rs-noplace .rs-badge').count()>0);}
  for(const id of SECTIONS){
+  if(idle&&await page.locator('#'+id+'.rs-needs-place').count()){assert.equal(await page.locator('#'+id).isVisible(),false,id+' is hidden behind the banner');continue;}
   const body=(await text(page,'#'+id)).trim();
   assert.ok(body.length>40,id+' is blank');
   assert.match(body,STATUS_WORDS,id+' shows no status');
@@ -201,6 +205,23 @@ try{
   assert.ok(local.includes(zoneText(scoped('all'))),'All-record zone counts');
   assert.ok(local.includes(fmt(fc.deduplicatedPopulationAllRegisterFootprints)+' people in the sewer basin footprint of all register records'),'All-record footprint population');
   assert.ok(local.includes('Across the ladder (all register records): '+water.ladderFtMLLW.map(v=>v+' ft: '+exposedAt('all',v)).join('; ')),'All-record ladder');
+  // Round 2: live text has no code identifiers; tide flood levels are in MLLW; every answered feed says Confirm before you go.
+  const live=await text(page,'#rs-live');
+  assert.doesNotMatch(live,/mllwInStationDatum|\b[a-z]{3,}[A-Z][a-z]+[A-Za-z]*\b/,'no camelCase identifier in Live now');
+  if(/flood levels/i.test(live))assert.match(live,/flood levels, converted to MLLW \(approximate\): minor about -?[\d.]+ ft MLLW|flood levels as published, without a datum \(not MLLW/);
+  for(const sel of ['#rs-live','#rs-modules']){const feeds=page.locator(sel+' [data-rs-feed][data-status="ok"], '+sel+' [data-rs-feed][data-status="empty"]');const n=await feeds.count();assert.ok(sel==='#rs-modules'||n>0,sel+' has answered feeds');
+   for(let i=0;i<n;i++)assert.match(await feeds.nth(i).textContent(),/Confirm before you go/,sel+' feed '+i+' lacks the confirm note');}
+  assert.doesNotMatch(live,/UTC/,'source times are shown in the place time zone');
+  const badgeColors=await page.evaluate(()=>{const c=sel=>{const el=document.querySelector(sel);return el?getComputedStyle(el).color+'|'+getComputedStyle(el).backgroundColor:null;};return {lead:c('#rs-modules .rs-badge[data-state="lead"]'),ok:c('.rs-badge[data-state="ok"]')};});
+  assert.ok(badgeColors.lead&&badgeColors.ok,'both badges present: '+JSON.stringify(badgeColors));assert.notEqual(badgeColors.lead,badgeColors.ok,'a Leading badge is not the OK green');
+  assert.equal(await page.locator('#rs-modules details[data-rs-module][open]').count(),1,'only the top leading module opens by default');
+  assert.equal(await page.locator('#rs-metrics-fold').evaluate(d=>d.open),false,'Diagnostics start collapsed');assert.equal(await page.locator('#rs-about-fold').evaluate(d=>d.open),false,'About starts collapsed');
+  assert.match(await text(page,'#rs-metrics'),/Not run yet: 0 of 10 metrics computed/);
+  assert.equal(await page.locator('#rs-examples-box').evaluate(d=>d.open),false,'examples collapse after a search');assert.match(await text(page,'#rs-privacy'),/stays in this browser/);
+  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
+  const tall=await page.evaluate(()=>document.documentElement.scrollHeight);console.log('INFO phone page height after 33701: '+tall+' px');
+  if(process.env.CR_HEIGHTS)console.log(JSON.stringify(await page.evaluate(()=>[...document.querySelectorAll('header,.rs-section,.rs-two')].map(e=>[e.id||e.className,e.offsetHeight]).concat([...document.querySelectorAll('#rs-plan-body>*,#rs-lifelines-body>*,#rs-modules-body>*,#rs-live-body>*')].map(e=>[e.tagName+'.'+e.className,e.offsetHeight]).filter(x=>x[1]>300)))));
+  await page.setViewportSize({width:1280,height:900});
   // Ranking and plan
   assert.match(await text(page,'#rs-ranking'),/December 2025/);
   assert.equal(await page.locator('#rs-plan [data-rs-dimension]').count(),10);
@@ -279,7 +300,7 @@ try{
   assert.deepEqual([...new Set(log.map(r=>r.host))].filter(h=>h!=='unpkg.com'&&h!=='tile.openstreetmap.org'),['tigerweb.geo.census.gov']);
   assert.equal(nominatimCalls(log).length,0);
   await everyPanelHasStatus(page);
-  assert.match(await text(page,'#rs-ranking'),/No place to show/);
+  assert.match(await text(page,'#rs-noplace'),/No place to show/);
  });
 
  await scenario('59337 is a rural Montana county with no local tier',{},async page=>{
@@ -398,6 +419,8 @@ try{
   await settled(page);
   const ranking=await text(page,'#rs-ranking');
   assert.match(ranking,/Unavailable \(NWS alerts did not answer\)/);assert.doesNotMatch(ranking,/None listed/);
+  const retry=page.locator('#rs-live [data-act="retry"][data-method="nwsAlerts"]');assert.equal(await retry.count(),1,'a failed source offers Try again');
+  await retry.click();await settled(page);assert.equal(await page.evaluate(()=>window.CRPage.state.results.nwsAlerts.status),'unavailable','the retry ran again and still shows its status');
   const plan=await text(page,'#rs-plan');assert.match(plan,/Phase not set: NWS alerts unavailable/);assert.doesNotMatch(plan,/Phase: Prepare/);
   assert.equal(await page.locator('#rs-plan .rs-phase.rs-p-unknown').count(),1,'neutral badge while alerts are unknown');
   assert.match(await text(page,'#rs-geo'),/population-weighted center of its \d+ 2020 census tracts/);
