@@ -20,6 +20,7 @@ local JSON export includes methods, source identities, reporting periods and inp
 | USAID Consequence | USAspending agency fiscal-year resources, obligations/outlays and current public fiscal-period status | All-null future placeholder years are excluded; valid fiscal records retain dates. Agency finances do not establish a country/program cut, beneficiary loss or mortality effect. |
 | Prescription Savings; Medical Cost Abroad; Medical Debt Assistant; Human Trafficking | Dated official methodology/guidance and public dataset-release metadata where available | No private query, medicine, bill, travel choice or personal situation is copied into the response plan/export. Individual savings, clinical outcomes, debt relief and safeguarding outcomes remain unknown. |
 | VA Strain | Official public care-pathway guidance alongside the explicitly labeled synthetic capacity drill | Public guidance does not supply real-time census, staff or acute-care availability. Private operational overrides remain excluded. |
+| Community Resilience (native plan) | FEMA NRI county and tract expected annual loss with ratings, OpenFEMA declarations, active NWS alerts, live NOAA/USGS/NIFC/AirNow feeds, dated federal lifeline inventories and Census/CDC SVI context for the searched place; St. Petersburg adds the Coastal console's published station register | Expected annual loss is a long-term average, not a forecast. Inventories are records, not operating condition. Communications, substations and hospital capacity have no keyless national source and stay unavailable. No other place's figures are substituted; free energy and network leakage remain unknown. |
 
 The canonical ten dimensions stay visible. A dimension is assessed only when its declared inputs and
 method apply; there is no requirement to fill all ten. **Review**, **Context · condition not met**, and
@@ -32,13 +33,13 @@ identities and provider failures are covered by automated checks. Numeric zero i
 is a real supported observation. Unknown conclusions are withheld from both display and export.
 
 See the [field guide](guide.html), [integration contract](CONTRACT.md), and
-[automatic update guide](../data-updates.html). Public-data and offline fixtures exercise all 32 actual
-entrypoints, including the unchanged native Coastal implementation.
+[automatic update guide](../data-updates.html). Public-data and offline fixtures exercise all 33 actual
+entrypoints, including the unchanged native Coastal implementation and the native Community Resilience plan.
 
 ## Priority and escalation layer
 
 All 31 shared consoles derive audience-specific ordered actions from the same public evidence as
-their impacts. The native Coastal checklist remains separate. Ranking uses source-specific meaning:
+their impacts. The native Coastal and Community Resilience checklists remain separate. Ranking uses source-specific meaning:
 NOAA categories and valid forecasts, actual unexpired NWS notices, same-hour EIA reports, same-week
 NHS service counts, matched-year health service gaps, and dated fiscal/reference records. A source
 check comes first when applicable data is missing. Scenario inputs stay practice.
@@ -46,4 +47,4 @@ check comes first when applicable data is missing. Scenario inputs stay practice
 Each card names its target, evidence reason, timing, next step, escalation condition/recipient and
 recheck point. Historical records support planning, not current incident activation. Sources and
 periods remain in print/export. Core validity guards and domain fixtures cover selection changes,
-ranking changes, expiry, stale/duplicate/missing evidence, both audiences, and all 32 offline pages.
+ranking changes, expiry, stale/duplicate/missing evidence, both audiences, and all 33 offline pages.

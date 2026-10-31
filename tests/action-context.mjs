@@ -13,7 +13,7 @@ vm.runInNewContext(source, environment);
 const {forMetric, slugs} = environment.ConsoleResponse.actionContext;
 const manifest = JSON.parse(fs.readFileSync(new URL('../response-plans/manifest.json', import.meta.url), 'utf8'));
 const manifestEntries = Array.isArray(manifest) ? manifest : manifest.consoles || manifest.entries || manifest.modules;
-const allSlugs = manifestEntries.map(r => typeof r === 'string' ? r : r.slug).filter(s => s !== 'coastal-water-resilience').sort();
+const allSlugs = manifestEntries.filter(r => typeof r === 'string' || !r.native).map(r => typeof r === 'string' ? r : r.slug).sort();
 assert.deepEqual([...slugs], allSlugs);
 assert.equal(slugs.length, 31);
 
