@@ -6,7 +6,7 @@ import vm from 'node:vm';
 // native page, private form, clock timer, provider or generated block is read.
 const root=new URL('../',import.meta.url),read=p=>readFile(new URL(p,root),'utf8');
 const core=await read('response-plans/core.js'),helpers=await read('response-plans/domain-helpers.js');
-const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain'];
+const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain','food-desert-oases'];
 const adapters=Object.fromEntries(await Promise.all(slugs.map(async slug=>[slug,await read('response-plans/adapters/'+slug+'.js')])));
 const now=Date.parse('2026-10-23T16:00:00Z');
 class Clock extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
@@ -57,5 +57,25 @@ for(const slug of ['prescription-savings','medical-cost-abroad','medical-debt-as
  f.ctx.SCEN='flu';assert.notEqual(f.plan.selectionKey,p.selectionKey);
  assert.ok(!f.plan.selectionKey.includes('Different local')&&!f.plan.selectionKey.includes('census'));
  pass('VA keys identify only the public synthetic scenario and exclude local labels/override values');
+}
+{
+ const at='2026-10-23T15:00:00Z',bridge={version:1,slug:'food-desert-oases',selectionId:1,state:'settled',context:'Census tract 39035107701 (2025 SNAP-authorized Retailer Access Map)',
+  tract:{status:'ok',geoid:'39035107701',urban:1,vintage:'2025 SNAP-authorized Retailer Access Map, released July 2026',flags:{lowIncome:1,la1and10:0,lila1and10:0},checkedAt:at},
+  sources:{snap:{status:'ok',count:52,radiusMi:2,nearestMi:0.1,dataDate:'October 21, 2026',partial:false,checkedAt:at},markets:{status:'ok',count:14,radiusMi:5,nearestMi:0.1,dataDate:'October 21, 2026',partial:false,checkedAt:at},foodbanks:{status:'failed',count:null,partial:false,reason:'HTTP 504',checkedAt:at}}};
+ for(const name of ['q','query','address','displayName','name','lat','lon','point','coords'])Object.defineProperty(bridge,name,{get(){throw Error('Private location read: '+name);}});
+ const globals={FoodAccessResponse:bridge};
+ for(const name of ['Q','QUERY','ADDRESS','POINT','current'])Object.defineProperty(globals,name,{get(){throw Error('Private page state read: '+name);},enumerable:true});
+ const f=fixture('food-desert-oases',globals),p=f.plan,key=p.selectionKey;
+ Object.defineProperty(f.ctx,'document',{get(){throw Error('Private DOM read');},configurable:true});
+ assert.equal(key,JSON.stringify(['food-desert-oases','search',1]));assert.equal(p.context,'Census tract 39035107701 (2025 SNAP-authorized Retailer Access Map)');
+ assert.equal(p.impacts.items.find(x=>x.id==='foodbanks-listed').status,'unknown');assert.equal(p.impacts.items.find(x=>x.id==='foodbanks-listed').value,null);
+ bridge.sources.snap.count=53;bridge.sources.snap.dataDate='October 22, 2026';bridge.sources.snap.checkedAt='2026-10-23T15:30:00Z';bridge.sources.foodbanks={status:'empty',count:0,radiusMi:31,dataDate:'2026-10-23T14:00:00Z',partial:false,checkedAt:'2026-10-23T15:30:00Z'};
+ const refreshed=f.plan;assert.equal(refreshed.selectionKey,key,'a source refresh or new data date keeps the same search');
+ assert.equal(refreshed.impacts.items.find(x=>x.id==='foodbanks-listed').value,0);assert.equal(refreshed.impacts.items.find(x=>x.id==='foodbanks-listed').status,'available');
+ bridge.selectionId=2;assert.notEqual(f.plan.selectionKey,key,'a new search is a new selection');
+ bridge.selectionId=0;bridge.state='idle';bridge.tract={status:'idle',vintage:bridge.tract.vintage,flags:null};const idle=f.plan;
+ assert.equal(idle.selectionKey,JSON.stringify(['food-desert-oases','search','unselected']));assert.equal(idle.context,'No search yet');
+ for(const plan of [p,refreshed,idle])assert.doesNotMatch(plan.selectionKey+' '+plan.context+' '+JSON.stringify(plan.evidence),/41\.5|-81\.6|Euclid|Cleveland/);
+ pass('food search identity follows selectionId only; refreshes keep it, and no address or coordinates are read');
 }
 console.log('PASS '+passed+' public tools selection regression groups');

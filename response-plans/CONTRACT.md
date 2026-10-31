@@ -14,6 +14,8 @@ state inside an IIFE, or register a read function via `ConsoleResponse.connect(r
 `connect` runs once and on relevant existing DOM changes, ignoring the response panel's own writes;
 it must debounce and render only changed payloads. Prefer actual state objects over parsing text.
 Selectors scope observation to existing data panels. A `connect` failure produces unknown evidence.
+A page may set `<html data-cr-separator=": ">` to change the separator the shared panel and metric
+help place between a label and its status; without the attribute the existing spaced dash is kept.
 
 Payload (plain JSON-compatible objects; `value` may be finite number or explanatory string):
 
@@ -60,7 +62,7 @@ Safety/meaning rules:
 - Coastal already has its full plan; mark it native in the generator manifest, fix its unknown/ack
   semantics in place and give it two audience tracks rather than append a duplicate response panel.
 
-All32 consoles must be in the manifest, including explicit native/not-applicable method explanations.
+All 33 consoles must be in the manifest, including explicit native/not-applicable method explanations.
 `--check` must detect stale generated blocks without a visitor build step. Tests intercept providers
 and map tiles; verify all consoles offline plus fixture-driven changes, audience tracks and export.
 

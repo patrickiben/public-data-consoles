@@ -313,6 +313,8 @@ footer b{color:var(--ink2)}
   var basisNames = { measured: 'MEASURED', modeled: 'MODELED', interpretive: 'INTERPRETIVE', demo: 'DEMO · practice only' };
   function text(value) { return value == null ? '' : String(value); }
   function esc(value) { return text(value).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  // Label separator: a console page may set <html data-cr-separator=": ">; otherwise the long-standing spaced dash is kept.
+  function separator() { var value = doc && doc.documentElement ? doc.documentElement.getAttribute('data-cr-separator') : null; return value ? value : ' \u2014 '; }
   function url(value) { return /^https?:\/\/[^\s]+$/i.test(text(value)) ? text(value) : ''; }
   function canonical(value) {
     if (Array.isArray(value)) return value.map(canonical);
@@ -494,7 +496,7 @@ footer b{color:var(--ink2)}
   }
   function metricLabel(d, label, actionContext, contextTitle) {
     var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.canonicalLabel || d.label);
-    var context = d.label + (d.status === 'unknown' ? ' — not assessable with the available inputs.' : d.scope === 'planning' ? ' — planning comparison.' : '');
+    var context = d.label + (d.status === 'unknown' ? separator() + 'not assessable with the available inputs.' : d.scope === 'planning' ? separator() + 'planning comparison.' : '');
     return d.metricId && root.ConsoleMetricHelp ? root.ConsoleMetricHelp.label(d.metricId, value, actionContext || context, contextTitle) : esc(value);
   }
   function withheldExplanation(a) {
@@ -677,7 +679,7 @@ footer b{color:var(--ink2)}
       followupHTML += '<h3>' + phaseNames[phase] + '</h3>';
       list.forEach(function (a) {
         var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
-        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc(a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return esc((d.metricId ? '#' + d.metricId + ' ' : '') + d.label) + esc(' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : '')); }).join('; ') || 'Evidence is incomplete; verify before deciding.') + '</p>' + actionParameters(plan, a) + '<p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc(a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return esc((d.metricId ? '#' + d.metricId + ' ' : '') + d.label) + esc(separator() + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : '')); }).join('; ') || 'Evidence is incomplete; verify before deciding.') + '</p>' + actionParameters(plan, a) + '<p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
       });
     });
     actionHTML += featured.length ? section('followup', 'Dimension-by-dimension follow-up', followupHTML, 'interpretive') : followupHTML;
@@ -697,7 +699,7 @@ footer b{color:var(--ink2)}
           return link ? (a.selected ? '' : 'Potential step' + actionAvailability(a) + '. ') + parameterContext(a, link) : '';
         }).filter(Boolean).join(' ');
         var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
-        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + metricLabel(d, null, helpContext) + ' — ' + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p>' + diagnosticActions(d, related) + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + metricLabel(d, null, helpContext) + esc(separator()) + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p>' + diagnosticActions(d, related) + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
       }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
     }).join('');
     h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');
@@ -847,7 +849,8 @@ footer b{color:var(--ink2)}
     'us-local-hazards': 'local', 'quake-consequence': 'quake',
     'us-grid-strain': 'grid', 'resilience-telemetry': 'market', 'usaid-consequence': 'aid',
     'prescription-savings': 'reference', 'medical-cost-abroad': 'reference',
-    'medical-debt-assistant': 'reference', 'human-trafficking': 'reference', 'va-strain': 'va'
+    'medical-debt-assistant': 'reference', 'human-trafficking': 'reference', 'va-strain': 'va',
+    'food-desert-oases': 'food'
   });
   const subjects = Object.freeze({
     'global-air-pollution': 'air-quality indicators',
@@ -866,7 +869,8 @@ footer b{color:var(--ink2)}
     'prescription-savings': 'the named drug product and public acquisition-cost benchmark',
     'medical-cost-abroad': 'the procedure quote and cross-border follow-up pathway',
     'medical-debt-assistant': 'the public billing and financial-assistance pathway',
-    'human-trafficking': 'the public safeguarding and support pathway'
+    'human-trafficking': 'the public safeguarding and support pathway',
+    'food-desert-oases': 'the tract food-access classification and nearby food listings'
   });
 
   // Entries explain the maintained adapter's actual estimand or input gap. They do
@@ -1027,6 +1031,18 @@ footer b{color:var(--ink2)}
       'Different kinds of evidence in {subject} must stay distinct; combining benchmarks, rules, marketing or reports does not produce a contamination AUC.',
       'Continuity planning for {subject} needs a qualified responsible contact and a practical alternative; no safe time, distance or buffer AUC is computed.',
       'A handoff in {subject} needs clear responsibility and minimum necessary information; no personal transfer or causal network is inferred.'
+    ],
+    food: [
+      'Population and income context for {subject} comes from one census tract; comparing it with neighboring tracts needs the same Atlas edition, and one tract does not describe a household.',
+      'A distance comparison for {subject} needs lists from the same source, radius and data date; a store list and a food bank list are not samples of one distribution.',
+      'The density of listings for {subject} depends on the search radius, and the Atlas flag is a published June 2025 classification, not a measured density of current listings.',
+      'Only the searched tract is read for {subject}; a cluster of flagged neighboring tracts needs adjacent Atlas records and a defined adjacency rule.',
+      'The Atlas edition and the listing dates for {subject} differ; the 2025 and 2019 measures use different store definitions and tracts, so they are not a trend.',
+      'Counts for {subject} change with the radius the search widened to; counts at different radii are not comparable densities.',
+      'No travel-time, price, hours or eligibility model is fitted for {subject}; straight-line distance and a listing are not a measure of practical access.',
+      'Listings for {subject} come from sources with different completeness; OpenStreetMap food bank tags are partial and there is no complete national pantry list.',
+      'Straight-line distance to the nearest listed SNAP-authorized store in {subject} mirrors the Atlas distance test; it is not travel distance, and a failed list stays unknown.',
+      'Referral for {subject} needs verified contacts, hours and eligibility; a list of places is not an observed referral network.'
     ],
     va: [
       'Synthetic census-weighted and unit-count summaries can rank drill units differently; they do not establish actual VA staffed capacity.',
@@ -1200,6 +1216,18 @@ footer b{color:var(--ink2)}
       'Separate incompatible evidence types before relying on their combined implication.',
       'Identify a qualified contact and practical alternative before finalizing continuity arrangements.',
       'Clarify consent, minimum information and receiving responsibility before a handoff.'
+    ],
+    food: [
+      'Compare the tract with neighbors from the same Atlas edition before describing local need.',
+      'Keep each source list separate before comparing distances between places.',
+      'Read the tract flag with its edition and the listing radius before describing local access.',
+      'Check adjacent tracts in the official Atlas before drawing a service boundary.',
+      'Match the Atlas edition and each listing date before combining them in a briefing.',
+      'Note the radius of each count before comparing one place with another.',
+      'Check transport, hours and eligibility separately before treating a listing as reachable.',
+      'Cross-check partial food bank tags with 211 or the regional food bank before publishing a list.',
+      'Confirm the nearest store list succeeded and is complete before reading the distance test.',
+      'Confirm hours and eligibility with each place before making a referral.'
     ],
     va: [
       'Compare census-weighted and unit-count priorities during the drill before discussing allocation.',
@@ -1478,10 +1506,12 @@ footer b{color:var(--ink2)}
  var doc=root.document, tip=null, active=null, pinned=false, timer=null, overTip=false;
  var hoverDismissed=false, pointerX=null, pointerY=null;
  function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+ // Same per-page separator as the response panel; the default spaced dash is unchanged.
+ function separator(){var value=doc&&doc.documentElement?doc.documentElement.getAttribute('data-cr-separator'):null;return value?value:' \u2014 ';}
  function definition(id){return definitions.find(function(d){return d.id===Number(id);});}
  function label(id,text,context,contextTitle){
   var d=definition(id);if(!d)return esc(text);
-  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?' — '+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
+  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?esc(separator())+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
  }
  function ensure(){
   if(tip)return tip;

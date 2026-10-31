@@ -18,7 +18,8 @@
     'us-local-hazards': 'local', 'quake-consequence': 'quake',
     'us-grid-strain': 'grid', 'resilience-telemetry': 'market', 'usaid-consequence': 'aid',
     'prescription-savings': 'reference', 'medical-cost-abroad': 'reference',
-    'medical-debt-assistant': 'reference', 'human-trafficking': 'reference', 'va-strain': 'va'
+    'medical-debt-assistant': 'reference', 'human-trafficking': 'reference', 'va-strain': 'va',
+    'food-desert-oases': 'food'
   });
   const subjects = Object.freeze({
     'global-air-pollution': 'air-quality indicators',
@@ -37,7 +38,8 @@
     'prescription-savings': 'the named drug product and public acquisition-cost benchmark',
     'medical-cost-abroad': 'the procedure quote and cross-border follow-up pathway',
     'medical-debt-assistant': 'the public billing and financial-assistance pathway',
-    'human-trafficking': 'the public safeguarding and support pathway'
+    'human-trafficking': 'the public safeguarding and support pathway',
+    'food-desert-oases': 'the tract food-access classification and nearby food listings'
   });
 
   // Entries explain the maintained adapter's actual estimand or input gap. They do
@@ -198,6 +200,18 @@
       'Different kinds of evidence in {subject} must stay distinct; combining benchmarks, rules, marketing or reports does not produce a contamination AUC.',
       'Continuity planning for {subject} needs a qualified responsible contact and a practical alternative; no safe time, distance or buffer AUC is computed.',
       'A handoff in {subject} needs clear responsibility and minimum necessary information; no personal transfer or causal network is inferred.'
+    ],
+    food: [
+      'Population and income context for {subject} comes from one census tract; comparing it with neighboring tracts needs the same Atlas edition, and one tract does not describe a household.',
+      'A distance comparison for {subject} needs lists from the same source, radius and data date; a store list and a food bank list are not samples of one distribution.',
+      'The density of listings for {subject} depends on the search radius, and the Atlas flag is a published June 2025 classification, not a measured density of current listings.',
+      'Only the searched tract is read for {subject}; a cluster of flagged neighboring tracts needs adjacent Atlas records and a defined adjacency rule.',
+      'The Atlas edition and the listing dates for {subject} differ; the 2025 and 2019 measures use different store definitions and tracts, so they are not a trend.',
+      'Counts for {subject} change with the radius the search widened to; counts at different radii are not comparable densities.',
+      'No travel-time, price, hours or eligibility model is fitted for {subject}; straight-line distance and a listing are not a measure of practical access.',
+      'Listings for {subject} come from sources with different completeness; OpenStreetMap food bank tags are partial and there is no complete national pantry list.',
+      'Straight-line distance to the nearest listed SNAP-authorized store in {subject} mirrors the Atlas distance test; it is not travel distance, and a failed list stays unknown.',
+      'Referral for {subject} needs verified contacts, hours and eligibility; a list of places is not an observed referral network.'
     ],
     va: [
       'Synthetic census-weighted and unit-count summaries can rank drill units differently; they do not establish actual VA staffed capacity.',
@@ -371,6 +385,18 @@
       'Separate incompatible evidence types before relying on their combined implication.',
       'Identify a qualified contact and practical alternative before finalizing continuity arrangements.',
       'Clarify consent, minimum information and receiving responsibility before a handoff.'
+    ],
+    food: [
+      'Compare the tract with neighbors from the same Atlas edition before describing local need.',
+      'Keep each source list separate before comparing distances between places.',
+      'Read the tract flag with its edition and the listing radius before describing local access.',
+      'Check adjacent tracts in the official Atlas before drawing a service boundary.',
+      'Match the Atlas edition and each listing date before combining them in a briefing.',
+      'Note the radius of each count before comparing one place with another.',
+      'Check transport, hours and eligibility separately before treating a listing as reachable.',
+      'Cross-check partial food bank tags with 211 or the regional food bank before publishing a list.',
+      'Confirm the nearest store list succeeded and is complete before reading the distance test.',
+      'Confirm hours and eligibility with each place before making a referral.'
     ],
     va: [
       'Compare census-weighted and unit-count priorities during the drill before discussing allocation.',

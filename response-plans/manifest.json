@@ -14,6 +14,13 @@
       "method": "Native coastal plan: shared real public station scope and exact NOAA forecast or selected level; eight geographic planning dimensions where inputs are complete, two unsupported probabilistic/hydraulic dimensions explicit. Separate synthetic exercise; screening and interpretive actions do not establish operating state or a validated CRT transfer."
     },
     {
+      "slug": "food-desert-oases",
+      "native": false,
+      "method": "Comparison and planning diagnostics only; the tract classification and listing counts supply no observed network topology, so source/sink accounting is withheld.",
+      "impactMethod": "Public tract flags keep their Atlas edition, and listing counts keep their radius and source data date. A failed source stays unknown, never zero. The typed address and coordinates are excluded.",
+      "prioritySource": "priorities/tools.js"
+    },
+    {
       "slug": "global-air-pollution",
       "native": false,
       "method": "Comparison and planning diagnostics only; observed directed topology is unavailable, so source/sink accounting is withheld.",

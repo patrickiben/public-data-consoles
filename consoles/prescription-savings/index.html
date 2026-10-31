@@ -150,6 +150,8 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
   var basisNames = { measured: 'MEASURED', modeled: 'MODELED', interpretive: 'INTERPRETIVE', demo: 'DEMO · practice only' };
   function text(value) { return value == null ? '' : String(value); }
   function esc(value) { return text(value).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  // Label separator: a console page may set <html data-cr-separator=": ">; otherwise the long-standing spaced dash is kept.
+  function separator() { var value = doc && doc.documentElement ? doc.documentElement.getAttribute('data-cr-separator') : null; return value ? value : ' \u2014 '; }
   function url(value) { return /^https?:\/\/[^\s]+$/i.test(text(value)) ? text(value) : ''; }
   function canonical(value) {
     if (Array.isArray(value)) return value.map(canonical);
@@ -331,7 +333,7 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
   }
   function metricLabel(d, label, actionContext, contextTitle) {
     var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.canonicalLabel || d.label);
-    var context = d.label + (d.status === 'unknown' ? ' — not assessable with the available inputs.' : d.scope === 'planning' ? ' — planning comparison.' : '');
+    var context = d.label + (d.status === 'unknown' ? separator() + 'not assessable with the available inputs.' : d.scope === 'planning' ? separator() + 'planning comparison.' : '');
     return d.metricId && root.ConsoleMetricHelp ? root.ConsoleMetricHelp.label(d.metricId, value, actionContext || context, contextTitle) : esc(value);
   }
   function withheldExplanation(a) {
@@ -514,7 +516,7 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
       followupHTML += '<h3>' + phaseNames[phase] + '</h3>';
       list.forEach(function (a) {
         var linked = a.diagnosticIds.map(function (id) { return plan.diagnostics.find(function (d) { return d.id === id; }); }).filter(Boolean);
-        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc(a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return esc((d.metricId ? '#' + d.metricId + ' ' : '') + d.label) + esc(' — ' + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : '')); }).join('; ') || 'Evidence is incomplete; verify before deciding.') + '</p>' + actionParameters(plan, a) + '<p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
+        followupHTML += '<article class="cr-action" data-cr-action="' + esc(a.id) + '"><h4>' + esc(a.title) + (a.practice ? ' <span class="cr-badge">PRACTICE ONLY</span>' : '') + (a.selfReported ? ' <span class="cr-badge">SELF-REPORTED · planning</span>' : '') + '</h4><p><b>Trigger / dimensions:</b> ' + esc(a.when === 'always' ? 'Baseline preparation / review; no incident is implied. ' : '') + (linked.map(function (d) { return esc((d.metricId ? '#' + d.metricId + ' ' : '') + d.label) + esc(separator() + diagnosticAssessment(d) + (d.rule ? ' (' + d.rule + ')' : '')); }).join('; ') || 'Evidence is incomplete; verify before deciding.') + '</p>' + actionParameters(plan, a) + '<p><b>Next:</b> ' + esc(a.nextStep) + '</p><p><b>Escalate / review:</b> ' + esc(a.escalateWhen || 'Use the responsible authority’s current guidance and local procedures.') + '</p><p>' + sourceLink(a.authorityUrl, 'Responsible authority / guidance') + '</p><label><input type="checkbox" id="cr-ack-' + esc(a.id) + '" data-cr-ack="' + esc(a.id) + '"' + (acknowledgments.has(a.id) ? ' checked' : '') + '> Reviewed locally for this evidence revision</label></article>';
       });
     });
     actionHTML += featured.length ? section('followup', 'Dimension-by-dimension follow-up', followupHTML, 'interpretive') : followupHTML;
@@ -534,7 +536,7 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
           return link ? (a.selected ? '' : 'Potential step' + actionAvailability(a) + '. ') + parameterContext(a, link) : '';
         }).filter(Boolean).join(' ');
         var supporting = d.evidenceIds.map(function (id) { var f = plan.evidence.find(function (item) { return item.id === id; }); return f ? f.label + ': ' + (f.quality === 'missing' ? 'Unavailable' : text(f.value) + (f.unit ? ' ' + f.unit : '')) + ' [' + f.quality + ', ' + basisNames[f.basis] + ']; observed/reported ' + text(f.measuredAt || 'not supplied') : id + ': unavailable'; }).join('; ');
-        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + metricLabel(d, null, helpContext) + ' — ' + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p>' + diagnosticActions(d, related) + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
+        return '<article class="cr-diagnostic cr-' + d.status + '" data-cr-diagnostic="' + esc(d.id) + '"' + (d.metricId ? ' data-cr-metric="' + d.metricId + '"' : '') + '><h4>' + metricLabel(d, null, helpContext) + esc(separator()) + esc(diagnosticAssessment(d)) + '</h4>' + badge('interpretive') + (d.scope === 'planning' ? ' · planning context' : '') + '<p><b>Metric / proxy value:</b> ' + esc(d.status === 'unknown' ? 'Not assessable from the currently applicable evidence.' : (typeof d.value === 'number' && Number.isFinite(d.value)) || typeof d.value === 'string' ? text(d.value) + (d.unit ? ' ' + d.unit : '') : 'No numerical metric supplied; assess the stated domain condition and evidence.') + '</p><p><b>Domain condition / proxy:</b> ' + esc(d.label) + '. ' + esc(d.rule) + ' ' + esc(d.explanation) + (d.reasons.length ? ' ' + esc(d.reasons.join(' ')) : '') + '</p><p><b>Supporting evidence:</b> ' + esc(supporting || 'Unavailable; obtain the named required inputs.') + '</p><p><b>Required inputs:</b> ' + esc(Array.isArray(d.requiredInputs) ? d.requiredInputs.join('; ') : d.requiredInputs) + '</p><p><b>Analytical mitigation:</b> ' + esc(d.analyticalMitigation) + '</p>' + diagnosticActions(d, related) + (track === 'operator' && d.metricId ? '<label>Local assessment (self-reported, never changes machine evidence): <select id="cr-assess-' + d.metricId + '" data-cr-assess="' + d.metricId + '"><option value="">Unassessed</option><option value="review"' + (manualReview.has(d.metricId) ? ' selected' : '') + '>Review needed</option></select></label>' : '') + '</article>';
       }).join('') : '<p class="cr-unknown">Not assessed: applicable inputs are not supplied.</p>');
     }).join('');
     h += section('diagnostics', '3. Research-informed diagnostics', diagnosticHTML, 'interpretive');
@@ -684,7 +686,8 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
     'us-local-hazards': 'local', 'quake-consequence': 'quake',
     'us-grid-strain': 'grid', 'resilience-telemetry': 'market', 'usaid-consequence': 'aid',
     'prescription-savings': 'reference', 'medical-cost-abroad': 'reference',
-    'medical-debt-assistant': 'reference', 'human-trafficking': 'reference', 'va-strain': 'va'
+    'medical-debt-assistant': 'reference', 'human-trafficking': 'reference', 'va-strain': 'va',
+    'food-desert-oases': 'food'
   });
   const subjects = Object.freeze({
     'global-air-pollution': 'air-quality indicators',
@@ -703,7 +706,8 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
     'prescription-savings': 'the named drug product and public acquisition-cost benchmark',
     'medical-cost-abroad': 'the procedure quote and cross-border follow-up pathway',
     'medical-debt-assistant': 'the public billing and financial-assistance pathway',
-    'human-trafficking': 'the public safeguarding and support pathway'
+    'human-trafficking': 'the public safeguarding and support pathway',
+    'food-desert-oases': 'the tract food-access classification and nearby food listings'
   });
 
   // Entries explain the maintained adapter's actual estimand or input gap. They do
@@ -864,6 +868,18 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
       'Different kinds of evidence in {subject} must stay distinct; combining benchmarks, rules, marketing or reports does not produce a contamination AUC.',
       'Continuity planning for {subject} needs a qualified responsible contact and a practical alternative; no safe time, distance or buffer AUC is computed.',
       'A handoff in {subject} needs clear responsibility and minimum necessary information; no personal transfer or causal network is inferred.'
+    ],
+    food: [
+      'Population and income context for {subject} comes from one census tract; comparing it with neighboring tracts needs the same Atlas edition, and one tract does not describe a household.',
+      'A distance comparison for {subject} needs lists from the same source, radius and data date; a store list and a food bank list are not samples of one distribution.',
+      'The density of listings for {subject} depends on the search radius, and the Atlas flag is a published June 2025 classification, not a measured density of current listings.',
+      'Only the searched tract is read for {subject}; a cluster of flagged neighboring tracts needs adjacent Atlas records and a defined adjacency rule.',
+      'The Atlas edition and the listing dates for {subject} differ; the 2025 and 2019 measures use different store definitions and tracts, so they are not a trend.',
+      'Counts for {subject} change with the radius the search widened to; counts at different radii are not comparable densities.',
+      'No travel-time, price, hours or eligibility model is fitted for {subject}; straight-line distance and a listing are not a measure of practical access.',
+      'Listings for {subject} come from sources with different completeness; OpenStreetMap food bank tags are partial and there is no complete national pantry list.',
+      'Straight-line distance to the nearest listed SNAP-authorized store in {subject} mirrors the Atlas distance test; it is not travel distance, and a failed list stays unknown.',
+      'Referral for {subject} needs verified contacts, hours and eligibility; a list of places is not an observed referral network.'
     ],
     va: [
       'Synthetic census-weighted and unit-count summaries can rank drill units differently; they do not establish actual VA staffed capacity.',
@@ -1037,6 +1053,18 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
       'Separate incompatible evidence types before relying on their combined implication.',
       'Identify a qualified contact and practical alternative before finalizing continuity arrangements.',
       'Clarify consent, minimum information and receiving responsibility before a handoff.'
+    ],
+    food: [
+      'Compare the tract with neighbors from the same Atlas edition before describing local need.',
+      'Keep each source list separate before comparing distances between places.',
+      'Read the tract flag with its edition and the listing radius before describing local access.',
+      'Check adjacent tracts in the official Atlas before drawing a service boundary.',
+      'Match the Atlas edition and each listing date before combining them in a briefing.',
+      'Note the radius of each count before comparing one place with another.',
+      'Check transport, hours and eligibility separately before treating a listing as reachable.',
+      'Cross-check partial food bank tags with 211 or the regional food bank before publishing a list.',
+      'Confirm the nearest store list succeeded and is complete before reading the distance test.',
+      'Confirm hours and eligibility with each place before making a referral.'
     ],
     va: [
       'Compare census-weighted and unit-count priorities during the drill before discussing allocation.',
@@ -1315,10 +1343,12 @@ footer{color:var(--dim);font-size:11.5px;margin-top:24px;border-top:1px solid va
  var doc=root.document, tip=null, active=null, pinned=false, timer=null, overTip=false;
  var hoverDismissed=false, pointerX=null, pointerY=null;
  function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+ // Same per-page separator as the response panel; the default spaced dash is unchanged.
+ function separator(){var value=doc&&doc.documentElement?doc.documentElement.getAttribute('data-cr-separator'):null;return value?value:' \u2014 ';}
  function definition(id){return definitions.find(function(d){return d.id===Number(id);});}
  function label(id,text,context,contextTitle){
   var d=definition(id);if(!d)return esc(text);
-  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?' — '+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
+  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?esc(separator())+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
  }
  function ensure(){
   if(tip)return tip;
@@ -1565,7 +1595,7 @@ const refreshCatalog=HealthPublicData.installRefresh(refreshDataset);const datas
 (function () {
   'use strict';
   const R=window.ConsoleResponse;
-  const urls={grid:'https://www.eia.gov/electricity/gridmonitor/',market:'https://www.investor.gov/introduction-investing',agency:'https://api.usaspending.gov/docs/endpoints',rx:'https://www.medicaid.gov/medicaid/nadac',travel:'https://www.cdc.gov/yellow-book/hcp/health-care-abroad/medical-tourism.html',debt:'https://www.cms.gov/initiatives/your-patient-rights/medical-bill-rights/get-help/dispute-bill',safeguarding:'https://www.transportation.gov/stop-human-trafficking/roadmap',va:'https://www.va.gov/resources/choosing-between-urgent-and-emergency-care/'};
+  const urls={grid:'https://www.eia.gov/electricity/gridmonitor/',market:'https://www.investor.gov/introduction-investing',agency:'https://api.usaspending.gov/docs/endpoints',rx:'https://www.medicaid.gov/medicaid/nadac',travel:'https://www.cdc.gov/yellow-book/hcp/health-care-abroad/medical-tourism.html',debt:'https://www.cms.gov/initiatives/your-patient-rights/medical-bill-rights/get-help/dispute-bill',safeguarding:'https://www.transportation.gov/stop-human-trafficking/roadmap',va:'https://www.va.gov/resources/choosing-between-urgent-and-emergency-care/',food:'https://www.ers.usda.gov/data-products/food-access-research-atlas/',snap:'https://www.fna.usda.gov/snap/retailer-locator',help:'https://www.211.org/'};
   const numeric=v=>typeof v==='number'&&Number.isFinite(v);
   function date(value){
     if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}(?:T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d))?$/.test(value))return null;
@@ -1684,12 +1714,38 @@ const refreshCatalog=HealthPublicData.installRefresh(refreshDataset);const datas
     groups.push(pair('va-handoff',track=>({title:'Confirm the real-world verification pathway',target:'Accountable care and operating information',reason:'Public guidance and lagged access information cannot establish internal bed census, RN staffing or transfer state.',evidenceIds:ids(guide?[guide]:[]),signal:'scenario',timing:'Before a real service or operating decision',authorityUrl:urls.va,nextStep:track==='operator'?'Document who owns current verified operating inputs and the approved escalation route; public checklist notes are not completed operations.':'Confirm relevant care/access information with official VA channels instead of inferring it from the drill.',escalateWhen:'Actual care or operations require information absent from this public template.',escalateTo:track==='operator'?'The authorized facility clinical/command pathway':'The appropriate official VA care pathway',reviewAfter:'Recheck when the verified service pathway or exercise purpose changes.'})));
     return ranked(groups);
   }
+  function food(input){
+    // A failed, idle or incomplete source is a data gap. A successful zero stays a real zero.
+    const e=facts(input),names={'tract-lila':'2025 Atlas tract flag','snap-count':'SNAP-authorized stores','markets-count':'SNAP-authorized farmers markets','foodbanks-count':'OpenStreetMap food banks'},groups=[];
+    // sourceStatus comes from the adapter; a tract outside Atlas coverage is a coverage limit, not a source to retry.
+    const tract=byId(e,'tract-lila'),uncovered=!!tract&&['not-covered','no-tract'].includes(tract.sourceStatus)&&!usable(tract);
+    const keys=Object.keys(names),gaps=keys.filter(id=>{const f=byId(e,id);if(id==='tract-lila'&&uncovered)return false;return !usable(f)||f.partial===true;});
+    // A search that ended at the place search (failed or no match) is not the neutral "no search yet" state.
+    const noPlace=input.context==='Place search unavailable'||input.context==='No place found for the search';
+    const idle=!noPlace&&(input.context==='No search yet'||keys.every(id=>{const f=byId(e,id);return !!f&&f.sourceStatus==='idle';}));
+    const why={failed:'failed',loading:'still loading',partial:'returned a partial list',idle:'not searched yet'};
+    const gapWhy=id=>{const f=byId(e,id),st=f&&f.partial===true?'partial':f&&f.sourceStatus;return why[st]||'not searched yet, still loading, failed or partial';};
+    const lists=['snap-count','markets-count','foodbanks-count'].map(id=>byId(e,id)),ok=lists.filter(f=>usable(f));
+    if(noPlace){
+      const failed=input.context==='Place search unavailable';
+      groups.push(pair('food-place',track=>({title:failed?'The place search is unavailable: try again':'No place matched the search: try again',target:input.context,reason:failed?'The place search (OpenStreetMap Nominatim) did not answer, so no location was found and no food source was checked. Nothing here is a result.':'The place search found no match for the text entered, so no food source was checked. Nothing here is a result.',evidenceIds:ids([byId(e,'fara-method')]),signal:'data-gap',priority:'next',timing:'Now, before using this page',authorityUrl:urls.snap,nextStep:track==='operator'?(failed?'Try the search again in a moment or use Use my location; meanwhile refer people to 211 and the official USDA SNAP retailer locator.':'Add a city and state or try a 5-digit ZIP code, then read each source status before using the lists.'):(failed?'Try again in a moment, or press Use my location. If you need food today, dial 2-1-1.':'Check the spelling, add a city and state, or try a 5-digit ZIP code. You can also press Use my location. If you need food today, dial 2-1-1.'),escalateWhen:'Someone needs food today.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck after the next search.'})));
+    }else if(idle){
+      groups.push(pair('food-start',track=>({title:'Search for a place to begin',target:'No search yet',reason:'No place has been searched, so no source has been checked and nothing here is a result yet. After a search, each source shows its own status and data date.',evidenceIds:ids([byId(e,'fara-method')]),signal:'planning',priority:'planned',timing:'When you are ready to search',authorityUrl:urls.snap,nextStep:track==='operator'?'Search the address, city or ZIP code you are planning for, then read each source status before using the lists.':'Type an address, city or ZIP code, or use your location. If you need food today, you can also dial 2-1-1.',escalateWhen:'Someone needs food today.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck after the first search.'})));
+    }else if(gaps.length)groups.push(pair('food-gap',track=>({title:'Check unavailable sources directly',target:input.context||'Searched location',reason:gaps.length+' of '+keys.length+' public sources have no complete result in this view: '+gaps.map(id=>names[id]+' ('+gapWhy(id)+')').join(', ')+'. An unavailable source is unknown, not zero nearby.',evidenceIds:ids(gaps.map(id=>byId(e,id))),signal:'data-gap',priority:'next',timing:'Before relying on the lists on this page',authorityUrl:urls.snap,nextStep:track==='operator'?'Record which sources failed and when, try the search again later, and refer people to 211 and the official USDA SNAP retailer locator in the meantime.':'Use the official USDA SNAP retailer locator, the Feeding America food bank locator or call 211. A missing list here does not mean there are no places nearby.',escalateWhen:'Someone needs food today and the lists here are unavailable or incomplete.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck after Try again succeeds or on the next search.'})));
+    if(!idle&&uncovered)groups.push(pair('food-coverage',track=>({title:'Note that the Atlas has no tract result here',target:'2025 Atlas coverage',reason:tract.sourceStatus==='not-covered'?'The searched point is in a U.S. territory. The 2025 Atlas covers the 50 states and DC only, so no tract classification exists here. This is not a "not low access" result.':'No census tract was found at the searched point. The 2025 Atlas covers the 50 states and DC only, and points in water have no tract. This is not a "not low access" result.',evidenceIds:ids([byId(e,'fara-method')]),signal:'reference',priority:'planned',timing:'Before describing food access for this place',authorityUrl:urls.food,nextStep:track==='operator'?'Use local sources for access planning here; do not record the missing tract result as low or not low access.':'Use the lists on this page and call ahead. The missing tract result says nothing about access here.',escalateWhen:'A plan needs a tract classification for a place the Atlas does not cover.',escalateTo:track==='operator'?'The local food policy or outreach lead':'211 or the regional food bank network',reviewAfter:'Recheck when USDA ERS publishes a new Atlas edition.'})));
+    if(usable(tract))groups.push(pair('food-tract',track=>({title:'Read the tract classification as dated background',target:'Census tract classification, Atlas data '+tract.measuredAt,reason:'USDA Food Access Research Atlas (2025 SNAP-authorized Retailer Access Map, released July 2026), low income and low access at 1 mile urban or 10 miles rural: '+tract.value+'. It uses June 2025 store locations and describes the census tract, not current store access or any household.',evidenceIds:[tract.id],signal:'reference',priority:'planned',timing:'Before using the tract result in a plan or a conversation',authorityUrl:urls.food,nextStep:track==='operator'?'Use the flag for outreach planning next to the current listings; do not present it as current store availability or a household eligibility test.':'Use the flag as context only. Check the current lists and call ahead before you travel.',escalateWhen:'A decision treats the tract flag as if it described current access or a specific household.',escalateTo:track==='operator'?'The local food policy or outreach lead, using the USDA ERS documentation':'The USDA ERS Atlas documentation',reviewAfter:'Recheck when USDA ERS publishes a new Atlas edition.'})));
+    const summary=lists.map((f,i)=>{const label=names[['snap-count','markets-count','foodbanks-count'][i]];return usable(f)?label+': '+fmt(f.value)+' '+(f.unit||'listed')+(f.partial?' (partial)':'')+', data '+f.measuredAt:label+': unavailable';}).join('; ');
+    if(!idle&&!noPlace)groups.push(pair('food-confirm',track=>({title:'Call ahead to confirm hours, stock and eligibility',target:'Listed places from the usable sources',reason:(ok.length?summary+'. ':'No listing source has a usable result in this view. ')+'Listings can be outdated or incomplete, SNAP listings have no hours, and distances are straight-line, not travel distance.',evidenceIds:ids(ok),signal:ok.length?'planning':'data-gap',priority:'planned',timing:'Before you travel to a listed place',authorityUrl:urls.snap,nextStep:track==='operator'?'Verify hours, eligibility rules and current operation with each place before adding it to a referral list.':'Phone the place or check its own website for hours and what to bring before you go.',escalateWhen:'A listed place is closed, moved or does not serve the person.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck on each new search or when a place changes its hours.'})));
+    groups.push(pair('food-help',track=>({title:'Use 211 or the food bank network for help today',target:'Local food assistance referral',reason:'There is no complete national food pantry list. OpenStreetMap food bank tags are partial, and 211 and regional food banks keep local lists with hours and eligibility.',evidenceIds:ids([byId(e,'foodbanks-count')]),signal:'reference',priority:'planned',timing:'Whenever food is needed today or the lists here are thin',authorityUrl:urls.help,nextStep:track==='operator'?'Refer through 211 or the regional food bank network, and keep this page as a dated starting list only.':'Dial 2-1-1 or visit 211.org to find food pantries and meal programs near you.',escalateWhen:'Someone has no food today or cannot reach a listed place.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck when circumstances or local programs change.'})));
+    return ranked(groups);
+  }
   R.registerPrioritizer('us-grid-strain',grid);
   R.registerPrioritizer('resilience-telemetry',market);
   R.registerPrioritizer('usaid-consequence',agency);
   R.registerPrioritizer('prescription-savings',prescriptions);
   Object.keys(references).forEach(slug=>R.registerPrioritizer(slug,input=>reference(input,references[slug])));
   R.registerPrioritizer('va-strain',va);
+  R.registerPrioritizer('food-desert-oases',food);
 })();
 
 // Maintainer adapter: public evidence only; no private questionnaire values.
