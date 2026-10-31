@@ -60,7 +60,7 @@ Safety/meaning rules:
 - Coastal already has its full plan; mark it native in the generator manifest, fix its unknown/ack
   semantics in place and give it two audience tracks rather than append a duplicate response panel.
 
-All32 consoles must be in the manifest, including explicit native/not-applicable method explanations.
+All 33 consoles must be in the manifest, including explicit native/not-applicable method explanations.
 `--check` must detect stale generated blocks without a visitor build step. Tests intercept providers
 and map tiles; verify all consoles offline plus fixture-driven changes, audience tracks and export.
 
