@@ -197,7 +197,7 @@ try{
   await page.waitForFunction(()=>/showing All register records/.test(document.querySelector('#rs-local').innerText));
   local=await text(page,'#rs-local');
   assert.ok(local.includes(zoneText(scoped('all'))),'All-record zone counts');
-  assert.ok(local.includes(fmt(fc.deduplicatedPopulationAllRegisterFootprints)+' people in the all register records sewer basin footprint'),'All-record footprint population');
+  assert.ok(local.includes(fmt(fc.deduplicatedPopulationAllRegisterFootprints)+' people in the sewer basin footprint of all register records'),'All-record footprint population');
   assert.ok(local.includes('Across the ladder (all register records): '+water.ladderFtMLLW.map(v=>v+' ft: '+exposedAt('all',v)).join('; ')),'All-record ladder');
   // Ranking and plan
   assert.match(await text(page,'#rs-ranking'),/December 2025/);
@@ -267,7 +267,7 @@ try{
   await page.waitForFunction(()=>/\(ZIP 33701\)/.test(document.querySelector('#rs-place').textContent));
   await settled(page);
   assert.equal(nominatimCalls(log).length,before,'A ZIP search never calls Nominatim');
-  assert.match(await text(page,'#rs-sources'),/OpenStreetMap|Nominatim/);
+  assert.match(await page.locator('#rs-sources').textContent(),/OpenStreetMap|Nominatim/);
  });
 
  await scenario('00000 is an invalid ZIP and nothing else is searched',{},async(page,log)=>{

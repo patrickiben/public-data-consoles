@@ -79,6 +79,7 @@
  }
 
  function notCoveredReason(rule,place){if(!rule||!place)return null;const abbr=place.state?.abbr;if(rule.conusOnly&&place.isConus===false)return rule.reason;if(rule.states&&(rule.states.includes(abbr)||(place.isPR===true&&rule.states.includes('PR'))))return rule.reason;return null;}
+ const LIVE_NAMES={drought:'U.S. Drought Monitor',heatRisk:'NWS HeatRisk',wildfires:'NIFC wildfires',airQuality:'AirNow',tropical:'active tropical cyclones',earthquakes:'USGS earthquakes',volcanoes:'USGS volcano alerts',riverGauges:'NOAA river gauges',tideStation:'NOAA tide station',spcOutlook:'SPC outlook',ofsForecast:'NOAA OFS forecast'};
  function sourceCoverage(module,place,results={}){return [...module.liveSources.map(n=>[n,'live']),...module.staticSources.map(n=>[n,'static']),...module.screens.map(n=>[n,'screen'])].map(([name,kind])=>{const reason=notCoveredReason(module.notCovered[name],place);return {name,kind,status:reason?'not-covered':results?.[name]?.status||'skipped',reason};});}
  function moduleStatus({ranking,place,results}={}){
   const rows=ranking?.status==='ok'?ranking.rows:[],lead=new Set(ranking?.leading||[]),county=ranking?.county?.name||'this county',money=format.money;
@@ -90,7 +91,11 @@
    else if(ranking?.status!=='ok'){status='not-available';reason='FEMA National Risk Index county figures are not available for this place.';}
    else if(mine.some(r=>lead.has(r.code))){status='leading';reason=best.name+' ranks #'+rank+' by expected annual loss in '+county+' ('+money(best.eal)+' a year'+(best.rating&&!best.insufficient?', NRI '+best.rating:'')+').';}
    else if(mine.every(r=>!r.applicable)){status='not-applicable';reason='FEMA NRI rates '+names+' as Not Applicable in '+county+'.';}
-   else if(!ranks.length&&mine.some(r=>r.insufficient)){status='not-available';reason='FEMA NRI has insufficient data for '+names+' in '+county+'.';}
+   else if(!ranks.length&&mine.some(r=>r.insufficient)){status='not-available';
+    /* Name insufficient-data and not-applicable hazards separately, and say when a live feed still covers the place. */
+    const nm=list=>list.map(r=>r.name).join(', '),ins=mine.filter(r=>r.insufficient),na=mine.filter(r=>!r.applicable);
+    const feeds=sourceCoverage(m,place,results).filter(x=>x.kind==='live'&&x.name!=='nwsAlerts'&&!x.reason).map(x=>LIVE_NAMES[x.name]||x.name);
+    reason='FEMA NRI has insufficient data for '+nm(ins)+' in '+county+(na.length?' and rates '+nm(na)+' as Not Applicable':'')+', so the hazard is not ranked here.'+(feeds.length?' The live feed ('+feeds.join(', ')+') still covers this place; open the card to load it.':'');}
    else {status='rated';reason=rank?best.name+' ranks #'+rank+' by expected annual loss ('+money(best.eal)+' a year).':'FEMA NRI lists no expected annual loss for '+names+' in '+county+'.';}
    return {id:m.id,name:m.name,status,rank,reason,hazards:m.hazards.slice(),alerts,sources:sourceCoverage(m,place,results)};});
   const order={leading:0,rated:1,'not-available':2,'not-applicable':3};
@@ -315,8 +320,10 @@
    for(const life of def.strains){if(used.has('life:'+life))continue;
     if(life==='shelter'&&(ok('shelters')||get('shelters')?.status==='empty')){used.add('life:shelter');const first=ok('shelters')?.data.items?.[0],s=first&&finite(first.distanceKm)&&first.distanceKm<=160?first:null;
      add(m.id,'shelters',{text:s?'Nearest open shelter listed: '+(nameOf(s)||'unnamed shelter')+(placeOf(s)?', '+placeOf(s):'')+', '+dist(s.distanceKm)+' away.'+confirm:'FEMA National Shelter System: no open shelter listed within 100 miles (None listed in this source). Shelters can open when needed; check local emergency management.',source:srcName(get('shelters')),dataDate:dateOf(get('shelters')),escalateTo:pub?'Local emergency management':null,reviewAfter:after('shelters'),basis:'Open shelters only; capacity is often blank.'});}
-    if(life==='health'){const h=ok('hospitalsCMS')||ok('hospitalsUSGS');if(h?.data.items?.length){used.add('life:health');const list=h.data.items.slice(0,pub?1:3);
-     add(m.id,h===get('hospitalsCMS')?'hospitalsCMS':'hospitalsUSGS',{text:(pub?'Nearest hospital listed: ':'Hospitals listed nearest first: ')+list.map(x=>(nameOf(x)||'unnamed hospital')+', '+dist(x.distanceKm)+' away'+(x.emergencyServices!=null||x.emergency!=null?', emergency services: '+((x.emergencyServices??x.emergency)===true||/^y/i.test(String(x.emergencyServices??x.emergency))?'yes':'no'):'')).join('; ')+'.'+(pub?confirm+' Call 911 in an emergency.':' A listing is not live capacity; confirm status with each hospital.'),source:srcName(h),dataDate:dateOf(h),escalateTo:pub?'911 in an emergency':'Hospital emergency management contacts',basis:'Facility records, not operating condition.'});}}
+    /* Department of Defense hospitals serve military beneficiaries, so the public track leaves them out and the operator track labels them. */
+    const dod=x=>/department of defense/i.test(String(x?.type||''));
+    if(life==='health'){const h=ok('hospitalsCMS')||ok('hospitalsUSGS'),pool=(h?.data.items||[]).filter(x=>!pub||!dod(x));if(pool.length){used.add('life:health');const list=pool.slice(0,pub?1:3);
+     add(m.id,h===get('hospitalsCMS')?'hospitalsCMS':'hospitalsUSGS',{text:(pub?'Nearest hospital listed: ':'Hospitals listed nearest first: ')+list.map(x=>(nameOf(x)||'unnamed hospital')+(dod(x)?' (Department of Defense hospital, military beneficiaries)':'')+', '+dist(x.distanceKm)+' away'+(x.emergencyServices!=null||x.emergency!=null?', emergency services: '+((x.emergencyServices??x.emergency)===true||/^y/i.test(String(x.emergencyServices??x.emergency))?'yes':'no'):'')).join('; ')+'.'+(pub?confirm+' Call 911 in an emergency.':' A listing is not live capacity; confirm status with each hospital.'),source:srcName(h),dataDate:dateOf(h),escalateTo:pub?'911 in an emergency':'Hospital emergency management contacts',basis:'Facility records, not operating condition.'});}}
     if(life==='power'&&ok('outages')?.data.reporting&&r('outages').data.items?.length){used.add('life:power');const o=r('outages').data.items,total=o.reduce((s,x)=>s+(finite(x.metersAffected)?x.metersAffected:0),0);
      add(m.id,'outages',{text:'ORNL ODIN reports '+total.toLocaleString('en-US')+' customer meters out in the county ('+o.map(x=>x.utility).join(', ')+').',source:srcName(r('outages')),dataDate:o[0].updated||dateOf(r('outages')),escalateTo:pub?'Your electric utility':'Utility emergency liaison',reviewAfter:after('outages'),basis:'Utility-reported outages; only reporting utilities are included.'});}
     if(life==='water'&&!pub&&ok('waterSystems')?.data.items?.length){used.add('life:water');const w=r('waterSystems').data.items,big=w.slice().sort((a,b)=>(b.populationServed||0)-(a.populationServed||0))[0];

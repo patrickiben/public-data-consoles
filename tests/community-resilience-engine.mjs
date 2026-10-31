@@ -249,6 +249,20 @@ check('rankHazards withholds special land use and nearly empty tracts',()=>{
  const tiny=E.rankHazards({county,tract:tract('04019001100',5),now:NOW});assert.equal(tiny.tract,null);assert.match(tiny.tractNote,/only 5 residents/);
  const normal=E.rankHazards({county,tract:tract('04019001100',4200),now:NOW});assert.ok(normal.tract);
 });
+check('moduleStatus names insufficient and not-applicable hazards separately and keeps a covering live feed',()=>{
+ const county=countyResult(NRI.pima),a={...county.data.attrs,CWAV_RISKR:'Insufficient Data',CWAV_EALT:0,WNTW_RISKR:'Insufficient Data',WNTW_EALT:0,ISTM_RISKR:'Not Applicable',ISTM_EALT:null,DRGT_RISKR:'Insufficient Data',DRGT_EALT:0};
+ const ranking=E.rankHazards({county:{...county,data:{attrs:a}},now:NOW}),mods=E.moduleStatus({ranking,place:place('AZ'),results:{}});
+ const winter=mods.find(m=>m.id==='winter'),drought=mods.find(m=>m.id==='drought');
+ assert.equal(winter.status,'not-available');assert.match(winter.reason,/insufficient data for Cold Wave, Winter Weather in .* and rates Ice Storm as Not Applicable/);
+ assert.equal(drought.status,'not-available');assert.match(drought.reason,/not ranked here/);assert.match(drought.reason,/U\.S\. Drought Monitor\) still covers this place/);
+});
+check('buildPlan leaves Department of Defense hospitals out of the public nearest-hospital action',()=>{
+ const results={...baseResults(),hospitalsCMS:{...baseResults().hospitalsCMS,data:{items:[{name:'673Rd Medical Group',type:'Acute Care - Department of Defense',emergencyServices:'Yes',distanceKm:3},{name:'Providence Alaska Medical Center',type:'Acute Care Hospitals',emergencyServices:'Yes',distanceKm:9}]}}};
+ const pub=E.buildPlan({place:tucson,ranking:pimaRanking,results,track:'public',now:NOW}),h=pub.actions.find(a=>/Nearest hospital listed/.test(a.text));
+ assert.match(h.text,/Providence Alaska Medical Center/);assert.doesNotMatch(h.text,/673Rd/);
+ const op=E.buildPlan({place:tucson,ranking:pimaRanking,results,track:'operator',now:NOW}),o=op.actions.find(a=>/Hospitals listed nearest first/.test(a.text));
+ assert.match(o.text,/673Rd Medical Group \(Department of Defense hospital/);
+});
 check('format helpers, distanceKm and nearest',()=>{
  assert.equal(E.format.money(110079977),'$110.1M');assert.equal(E.format.money(2.5e9),'$2.5B');assert.equal(E.format.money(848998),'$849.0K');assert.equal(E.format.money(null),'Not listed');
  assert.equal(E.format.distance(1.609344),'1.0 mi (1.6 km)');assert.equal(E.format.distance(40),'25 mi (40 km)');assert.equal(E.format.pct(6.7),'6.7%');

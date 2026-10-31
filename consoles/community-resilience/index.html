@@ -168,6 +168,8 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
 .rs-phase{display:inline-block;font-weight:760;font-size:14px;padding:3px 12px;border-radius:999px;background:var(--ok-bg);color:var(--ok)}
 .rs-phase.rs-p-watch{background:var(--watch-bg);color:var(--watch)}
 .rs-phase.rs-p-warning{background:var(--alert-bg);color:var(--alert)}
+.rs-more{margin:10px 0}.rs-more>summary{cursor:pointer;font-weight:650;color:var(--sea);padding:4px 0}
+.rs-sources-table td{overflow-wrap:normal;word-break:normal}
 .rs-phase.rs-p-unknown{background:var(--dim-bg);color:var(--ink2)}
 html .leaflet-container .leaflet-control-attribution{background:var(--panel);color:var(--ink2)}html .leaflet-container .leaflet-control-attribution a{color:var(--sea)}
 .rs-dim{border-top:1px solid var(--line);padding:9px 0}
@@ -596,6 +598,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
  }
 
  function notCoveredReason(rule,place){if(!rule||!place)return null;const abbr=place.state?.abbr;if(rule.conusOnly&&place.isConus===false)return rule.reason;if(rule.states&&(rule.states.includes(abbr)||(place.isPR===true&&rule.states.includes('PR'))))return rule.reason;return null;}
+ const LIVE_NAMES={drought:'U.S. Drought Monitor',heatRisk:'NWS HeatRisk',wildfires:'NIFC wildfires',airQuality:'AirNow',tropical:'active tropical cyclones',earthquakes:'USGS earthquakes',volcanoes:'USGS volcano alerts',riverGauges:'NOAA river gauges',tideStation:'NOAA tide station',spcOutlook:'SPC outlook',ofsForecast:'NOAA OFS forecast'};
  function sourceCoverage(module,place,results={}){return [...module.liveSources.map(n=>[n,'live']),...module.staticSources.map(n=>[n,'static']),...module.screens.map(n=>[n,'screen'])].map(([name,kind])=>{const reason=notCoveredReason(module.notCovered[name],place);return {name,kind,status:reason?'not-covered':results?.[name]?.status||'skipped',reason};});}
  function moduleStatus({ranking,place,results}={}){
   const rows=ranking?.status==='ok'?ranking.rows:[],lead=new Set(ranking?.leading||[]),county=ranking?.county?.name||'this county',money=format.money;
@@ -607,7 +610,11 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
    else if(ranking?.status!=='ok'){status='not-available';reason='FEMA National Risk Index county figures are not available for this place.';}
    else if(mine.some(r=>lead.has(r.code))){status='leading';reason=best.name+' ranks #'+rank+' by expected annual loss in '+county+' ('+money(best.eal)+' a year'+(best.rating&&!best.insufficient?', NRI '+best.rating:'')+').';}
    else if(mine.every(r=>!r.applicable)){status='not-applicable';reason='FEMA NRI rates '+names+' as Not Applicable in '+county+'.';}
-   else if(!ranks.length&&mine.some(r=>r.insufficient)){status='not-available';reason='FEMA NRI has insufficient data for '+names+' in '+county+'.';}
+   else if(!ranks.length&&mine.some(r=>r.insufficient)){status='not-available';
+    /* Name insufficient-data and not-applicable hazards separately, and say when a live feed still covers the place. */
+    const nm=list=>list.map(r=>r.name).join(', '),ins=mine.filter(r=>r.insufficient),na=mine.filter(r=>!r.applicable);
+    const feeds=sourceCoverage(m,place,results).filter(x=>x.kind==='live'&&x.name!=='nwsAlerts'&&!x.reason).map(x=>LIVE_NAMES[x.name]||x.name);
+    reason='FEMA NRI has insufficient data for '+nm(ins)+' in '+county+(na.length?' and rates '+nm(na)+' as Not Applicable':'')+', so the hazard is not ranked here.'+(feeds.length?' The live feed ('+feeds.join(', ')+') still covers this place; open the card to load it.':'');}
    else {status='rated';reason=rank?best.name+' ranks #'+rank+' by expected annual loss ('+money(best.eal)+' a year).':'FEMA NRI lists no expected annual loss for '+names+' in '+county+'.';}
    return {id:m.id,name:m.name,status,rank,reason,hazards:m.hazards.slice(),alerts,sources:sourceCoverage(m,place,results)};});
   const order={leading:0,rated:1,'not-available':2,'not-applicable':3};
@@ -832,8 +839,10 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
    for(const life of def.strains){if(used.has('life:'+life))continue;
     if(life==='shelter'&&(ok('shelters')||get('shelters')?.status==='empty')){used.add('life:shelter');const first=ok('shelters')?.data.items?.[0],s=first&&finite(first.distanceKm)&&first.distanceKm<=160?first:null;
      add(m.id,'shelters',{text:s?'Nearest open shelter listed: '+(nameOf(s)||'unnamed shelter')+(placeOf(s)?', '+placeOf(s):'')+', '+dist(s.distanceKm)+' away.'+confirm:'FEMA National Shelter System: no open shelter listed within 100 miles (None listed in this source). Shelters can open when needed; check local emergency management.',source:srcName(get('shelters')),dataDate:dateOf(get('shelters')),escalateTo:pub?'Local emergency management':null,reviewAfter:after('shelters'),basis:'Open shelters only; capacity is often blank.'});}
-    if(life==='health'){const h=ok('hospitalsCMS')||ok('hospitalsUSGS');if(h?.data.items?.length){used.add('life:health');const list=h.data.items.slice(0,pub?1:3);
-     add(m.id,h===get('hospitalsCMS')?'hospitalsCMS':'hospitalsUSGS',{text:(pub?'Nearest hospital listed: ':'Hospitals listed nearest first: ')+list.map(x=>(nameOf(x)||'unnamed hospital')+', '+dist(x.distanceKm)+' away'+(x.emergencyServices!=null||x.emergency!=null?', emergency services: '+((x.emergencyServices??x.emergency)===true||/^y/i.test(String(x.emergencyServices??x.emergency))?'yes':'no'):'')).join('; ')+'.'+(pub?confirm+' Call 911 in an emergency.':' A listing is not live capacity; confirm status with each hospital.'),source:srcName(h),dataDate:dateOf(h),escalateTo:pub?'911 in an emergency':'Hospital emergency management contacts',basis:'Facility records, not operating condition.'});}}
+    /* Department of Defense hospitals serve military beneficiaries, so the public track leaves them out and the operator track labels them. */
+    const dod=x=>/department of defense/i.test(String(x?.type||''));
+    if(life==='health'){const h=ok('hospitalsCMS')||ok('hospitalsUSGS'),pool=(h?.data.items||[]).filter(x=>!pub||!dod(x));if(pool.length){used.add('life:health');const list=pool.slice(0,pub?1:3);
+     add(m.id,h===get('hospitalsCMS')?'hospitalsCMS':'hospitalsUSGS',{text:(pub?'Nearest hospital listed: ':'Hospitals listed nearest first: ')+list.map(x=>(nameOf(x)||'unnamed hospital')+(dod(x)?' (Department of Defense hospital, military beneficiaries)':'')+', '+dist(x.distanceKm)+' away'+(x.emergencyServices!=null||x.emergency!=null?', emergency services: '+((x.emergencyServices??x.emergency)===true||/^y/i.test(String(x.emergencyServices??x.emergency))?'yes':'no'):'')).join('; ')+'.'+(pub?confirm+' Call 911 in an emergency.':' A listing is not live capacity; confirm status with each hospital.'),source:srcName(h),dataDate:dateOf(h),escalateTo:pub?'911 in an emergency':'Hospital emergency management contacts',basis:'Facility records, not operating condition.'});}}
     if(life==='power'&&ok('outages')?.data.reporting&&r('outages').data.items?.length){used.add('life:power');const o=r('outages').data.items,total=o.reduce((s,x)=>s+(finite(x.metersAffected)?x.metersAffected:0),0);
      add(m.id,'outages',{text:'ORNL ODIN reports '+total.toLocaleString('en-US')+' customer meters out in the county ('+o.map(x=>x.utility).join(', ')+').',source:srcName(r('outages')),dataDate:o[0].updated||dateOf(r('outages')),escalateTo:pub?'Your electric utility':'Utility emergency liaison',reviewAfter:after('outages'),basis:'Utility-reported outages; only reporting utilities are included.'});}
     if(life==='water'&&!pub&&ok('waterSystems')?.data.items?.length){used.add('life:water');const w=r('waterSystems').data.items,big=w.slice().sort((a,b)=>(b.populationServed||0)-(a.populationServed||0))[0];
@@ -918,6 +927,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
  const NRI_FIELDS=['STCOFIPS','COUNTY','STATE','STATEABBRV','NRI_VER','POPULATION','BUILDVALUE','RISK_SCORE','RISK_RATNG','EAL_VALT','EAL_RATNG','SOVI_SCORE','SOVI_RATNG','RESL_SCORE','RESL_RATNG'].concat(...NRI_HAZARDS.map(h=>[h+'_EALT',h+'_RISKS',h+'_RISKR']));
  const SPC_RANK={TSTM:1,MRGL:2,SLGT:3,ENH:4,MDT:5,HIGH:6};
  const SEVERITY={Extreme:4,Severe:3,Moderate:2,Minor:1};
+ const TIDAL_GAUGE=/tide gauge|\b(?:in )?(?:MHHW|MLLW)\b/i;
  const VOLCANO_OBSERVATORIES={AK:['avo'],HI:['hvo'],AS:['hvo'],WA:['cvo'],OR:['cvo'],CA:['calvo'],NV:['calvo'],ID:['yvo'],MT:['yvo'],WY:['yvo'],UT:['yvo'],CO:['yvo'],NM:['yvo'],AZ:['yvo'],MP:['nmi'],GU:['nmi']};
  const ODIN_STATES_2026_10=['Arizona','California','Colorado','Delaware','Florida','Idaho','Indiana','Iowa','Kansas','Louisiana','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Montana','New Jersey','New Mexico','New York','North Carolina','Ohio','Oklahoma','Oregon','Pennsylvania','South Carolina','South Dakota','Tennessee','Texas','Utah','Virginia','Washington','West Virginia','Wyoming'];
  const WATER_SOURCES={GW:'Groundwater',GWP:'Purchased groundwater',SW:'Surface water',SWP:'Purchased surface water',GU:'Groundwater under the influence of surface water',GUP:'Purchased groundwater under the influence of surface water'};
@@ -982,6 +992,8 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
  function dayText(ms){const d=new Date(ms);return MONTHS[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear();}
  function stampText(ms){const d=new Date(ms);return dayText(ms)+' '+pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+' UTC';}
  function distanceKm(a,b){const rad=Math.PI/180,dlat=(b.lat-a.lat)*rad,dlon=(b.lon-a.lon)*rad,x=Math.sin(dlat/2)**2+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dlon/2)**2;return 6371.0088*2*Math.asin(Math.sqrt(Math.max(0,Math.min(1,x))));}
+ /* Miles first, kilometers in parentheses (the page's distance format). */
+ const miKm=d=>{const mi=d/1.609344,f=v=>v>=10?Math.round(v).toLocaleString('en-US'):v.toFixed(1);return f(mi)+' mi ('+f(d)+' km)';};
  const km=(origin,lat,lon)=>finite(lat)&&finite(lon)?round(distanceKm(origin,{lat,lon}),2):null;
  const nearestFirst=list=>list.sort((a,b)=>(a.distanceKm??Infinity)-(b.distanceKm??Infinity));
  function attr(a,key){if(!a)return undefined;if(key in a)return a[key];const lower=key.toLowerCase();for(const k of Object.keys(a))if(k.toLowerCase()===lower)return a[k];return undefined;}
@@ -1479,7 +1491,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
     nearestFirst(storms);
     const date=metaDate(meta,'',true);
     if(!storms.length)return {status:'empty',message:'No active tropical cyclones are listed in this source.',data:{storms:[]},...date};
-    return {status:'ok',message:plural(storms.length,'active tropical cyclone')+' worldwide; the nearest is '+(storms[0].name||storms[0].id)+', about '+Math.round(storms[0].distanceKm)+' km away.',data:{storms},...date};
+    return {status:'ok',message:plural(storms.length,'active tropical cyclone')+' worldwide; the nearest is '+(storms[0].name||storms[0].id)+', about '+miKm(storms[0].distanceKm)+' away.',data:{storms},...date};
    });
   }
   function earthquakes(lat,lon){
@@ -1510,30 +1522,43 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
     return {status:'ok',message:plural(items.length,'volcano','volcanoes')+' above normal alert level for the observatory that covers '+st.name+'. The feed gives no locations.',data:{items,located:false},...date};
    });
   }
+  /* NOAA NWPS allows about 10 requests per 5 minutes and its rate-limit answer carries no CORS header, so the browser
+     sees only a failed request. Answers are cached for the session, and a failure after recent calls says so. */
+  const nwpsCache=new Map(),nwpsCalls=[];
+  function nwpsGauges(url){
+   if(nwpsCache.has(url))return nwpsCache.get(url);
+   const t=now(),recent=nwpsCalls.filter(x=>t-x<300000).length;nwpsCalls.push(t);
+   const p=request(url).catch(e=>{nwpsCache.delete(url);
+    if(recent>0&&!e.status)e.userMessage='NOAA river gauges (NWPS) did not answer. NWPS limits each visitor to about 10 requests per 5 minutes, so after a few searches it can refuse for a while; try again shortly. Nothing is shown in its place.';
+    throw e;});
+   nwpsCache.set(url,p);return p;
+  }
   function riverGauges(lat,lon){
    return run('river-gauges',async()=>{
     checkPoint(lat,lon);
     const dy=0.25,dx=round(0.25/Math.max(0.2,Math.cos(lat*Math.PI/180)),4),origin={lat,lon};
     const b={xmin:round(lon-dx,4),xmax:round(lon+dx,4),ymin:round(lat-dy,4),ymax:round(lat+dy,4)};
     const [{json},thresholds]=await Promise.all([
-     request(NWPS+'?'+qs({srid:'EPSG_4326','bbox.xmin':b.xmin,'bbox.xmax':b.xmax,'bbox.ymin':b.ymin,'bbox.ymax':b.ymax})),
+     nwpsGauges(NWPS+'?'+qs({srid:'EPSG_4326','bbox.xmin':b.xmin,'bbox.xmax':b.xmax,'bbox.ymin':b.ymin,'bbox.ymax':b.ymax})),
      arcQuery(RIVER_GAUGES,{geometry:[b.xmin,b.ymin,b.xmax,b.ymax].join(','),geometryType:'esriGeometryEnvelope',inSR:'4326',spatialRel:'esriSpatialRelIntersects',outFields:'gaugelid,units,action,flood,moderate,major,idp_filedate',returnGeometry:'false'}).catch(()=>null)]);
     if(!json||!Array.isArray(json.gauges))throw new SourceError('Missing gauge list');
     const levels=new Map();
     for(const f of thresholds?thresholds.features:[]){const a=f&&f.attributes||{};if(a.gaugelid)levels.set(String(a.gaugelid).toUpperCase(),a);}
     const reading=s=>{const v=num(s&&s.primary),t=Date.parse(s&&s.validTime||'');return s&&s.primaryUnit==='ft'&&v!=null&&v>-999&&finite(t)&&t>0?{v,t:iso(t)}:{v:null,t:null};};
-    const items=[];
+    const items=[];let tidal=0;
     for(const g of json.gauges){const lid=text(g&&g.lid),glat=num(g&&g.latitude),glon=num(g&&g.longitude);if(!lid||glat==null||glon==null)continue;
      const d=km(origin,glat,glon);if(d>25)continue;
+     // Tide gauges report in a tidal datum (MHHW or MLLW); they are not river gauges and belong with the coastal water level.
+     if(TIDAL_GAUGE.test(text(g.name)||'')){tidal++;continue;}
      const st=g.status||{},ob=reading(st.observed),fc=reading(st.forecast),lv=levels.get(lid.toUpperCase())||{},ft=lv.units==null||lv.units==='ft';
      items.push({lid,name:text(g.name),category:text(st.observed&&st.observed.floodCategory),observedFt:ob.v,observedTime:ob.t,forecastFt:fc.v,forecastTime:fc.t,
       action:ft?num(lv.action):null,minor:ft?num(lv.flood):null,moderate:ft?num(lv.moderate):null,major:ft?num(lv.major):null,lat:glat,lon:glon,distanceKm:d,link:'https://water.noaa.gov/gauges/'+encodeURIComponent(lid.toLowerCase())});}
     nearestFirst(items);
     const newest=Math.max(...items.map(i=>Date.parse(i.observedTime||'')).filter(finite),-Infinity);
     const date=finite(newest)?fed(newest,'newest observed validTime among listed gauges','Newest reading'):undated('No gauge reading time in range');
-    const note=thresholds?'':' Flood thresholds were unavailable.';
-    if(!items.length)return {status:'empty',message:'No NOAA river gauge within 25 km is listed in this source.',data:{items:[]},...date};
-    return {status:'ok',message:plural(items.length,'NOAA river gauge')+' within 25 km.'+note,data:{items,thresholdsAvailable:!!thresholds},...date};
+    const note=(thresholds?'':' Flood thresholds were unavailable.')+(tidal?' '+plural(tidal,'tidal gauge')+' left out (tide levels use a tidal datum and are not river stages).':'');
+    if(!items.length)return {status:'empty',message:'No NOAA river gauge within 25 km is listed in this source.'+note,data:{items:[],tidalLeftOut:tidal},...date};
+    return {status:'ok',message:plural(items.length,'NOAA river gauge')+' within 25 km.'+note,data:{items,thresholdsAvailable:!!thresholds,tidalLeftOut:tidal},...date};
    });
   }
   function coopsStations(){
@@ -1655,16 +1680,23 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
    return run('water-systems',async()=>{
     const st=stateOf(stateAbbr),base=countyBase(countyName);
     if(!st||!base)throw new SourceError('State and county are required');
-    const {json}=await request(SDWIS+'GEOGRAPHIC_AREA/STATE_SERVED/'+st.abbr+'/COUNTY_SERVED/CONTAINING/'+encodeURIComponent(base)+'/WATER_SYSTEM/PWS_TYPE_CODE/CWS/PWS_ACTIVITY_CODE/A/rows/0:400/JSON');
-    if(!Array.isArray(json))throw new SourceError('Unexpected answer');
+    /* SDWIS leaves state_served empty for some states (Texas, Oklahoma), so query by the state served and by the primacy
+       agency, and merge the rows by PWSID. */
+    const url=field=>SDWIS+'GEOGRAPHIC_AREA/'+field+'/'+st.abbr+'/COUNTY_SERVED/CONTAINING/'+encodeURIComponent(base)+'/WATER_SYSTEM/PWS_TYPE_CODE/CWS/PWS_ACTIVITY_CODE/A/rows/0:400/JSON';
+    const ask=field=>request(url(field)).then(({json})=>{if(!Array.isArray(json))throw new SourceError('Unexpected answer');return json;});
+    const answers=await Promise.allSettled([ask('STATE_SERVED'),ask('PRIMACY_AGENCY_CODE')]);
+    const got=answers.filter(a=>a.status==='fulfilled').map(a=>a.value),failed=answers.length-got.length;
+    if(!got.length)throw answers[0].reason instanceof Error?answers[0].reason:new SourceError('No answer');
     const want=base.toLowerCase(),seen=new Map();
-    for(const r of json){if(!r||!r.pwsid||seen.has(r.pwsid))continue;
+    for(const r of got.flat()){if(!r||!r.pwsid||seen.has(r.pwsid))continue;
      const counties=String(r.county_served||'').split(',').map(c=>countyBase(c).toLowerCase());if(!counties.includes(want))continue;
      seen.set(r.pwsid,{pwsid:String(r.pwsid),name:text(r.pws_name),populationServed:num(r.population_served_count),source:WATER_SOURCES[r.primary_source_code]||text(r.primary_source_code)||text(r.gw_sw_code),status:r.pws_activity_code==='A'?'Active':text(r.pws_activity_code),distanceKm:null});}
     const items=[...seen.values()].sort((a,b)=>(b.populationServed||0)-(a.populationServed||0)),date=undated('SDWIS rows carry no data date or quarter');
-    const data={items,truncated:json.length>=400};
+    const data={items,truncated:got.some(j=>j.length>=400),partial:failed>0};
+    // With one of the two lookups unanswered, an empty list cannot be read as "none listed".
+    if(!items.length&&failed)throw Object.assign(new SourceError('One of two SDWIS lookups failed and the other matched nothing'),{userMessage:'EPA SDWIS could not match this county: one of its two lookups did not answer and the other listed nothing. Nothing is shown in its place; check the source directly.'});
     if(!items.length)return {status:'empty',message:'No active community water system listing this county is in this source.',data,...date};
-    return {status:'ok',message:plural(items.length,'active community water system')+' list '+countyName+'. Population served is a record, not live status.',data,...date};
+    return {status:'ok',message:plural(items.length,'active community water system')+' list '+countyName+'. Population served is a record, not live status.'+(failed?' One of the two EPA lookups did not answer, so systems listed only that way may be missing.':''),data,...date};
    });
   }
   function odinStates(){
@@ -1759,8 +1791,9 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
     const items=nearestFirst(j.features.map(f=>{const a=f&&f.attributes||{},p=xy(f);
      return {id:text(a.shelter_id),name:text(a.shelter_name),address:text(a.address),city:text(a.city),state:text(a.state),zip:text(a.zip),status:text(a.shelter_status),evacuationCapacity:num(a.evacuation_capacity),postImpactCapacity:num(a.post_impact_capacity),population:num(a.total_population),organization:text(a.org_name),pets:text(a.pet_accommodations_code),ada:text(a.ada_compliant),wheelchair:text(a.wheelchair_accessible),lat:p.lat,lon:p.lon,distanceKm:km(origin,p.lat,p.lon)};}));
     const date=undated('The shelter layer publishes no edit date; FEMA states it synchronizes each morning with the American Red Cross shelter database');
-    if(!items.length)return {status:'empty',message:'No open shelters are listed in the FEMA National Shelter System right now.',data:{items,total:0},...date};
-    return {status:'ok',message:plural(items.length,'open shelter')+' listed nationally; the nearest is about '+Math.round(items[0].distanceKm)+' km away.',data:{items,total:items.length},...date};
+    const cut=!!j.exceededTransferLimit,cutNote=cut?' The service stopped at its record limit, so nearer shelters may be missing from this list.':'';
+    if(!items.length)return {status:cut?'unavailable':'empty',message:cut?'The FEMA shelter list was cut off at its record limit, so it cannot be read as empty.':'No open shelters are listed in the FEMA National Shelter System right now.',data:cut?null:{items,total:0},...date,...(cut?{error:'exceededTransferLimit'}:{})};
+    return {status:'ok',message:plural(items.length,'open shelter')+' listed nationally; the nearest is about '+miKm(items[0].distanceKm)+' away.'+cutNote,data:{items,total:items.length,truncated:cut},...date};
    });
   }
   function bridges(lat,lon,radiusKm){
@@ -1795,8 +1828,9 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
     if(isPR){
      const fields='GEOID,NAME,B01001_001E,B01001_calc_pctGE65E,B08201_calc_pctNoVehE,B18101_calc_pctDE,B28002_calc_pctNoIntE,B16004_calc_pctGE18LEAE';
      const q=(layer,id)=>arcQuery(ACS+layer,{where:'GEOID='+sql(id),outFields:fields,returnGeometry:'false'});
-     const [c,t,meta]=await Promise.all([q(1,county),/^\d{11}$/.test(tract||'')?q(2,tract).catch(()=>null):null,arcMeta(ACS+'1')]);
-     const v=meta&&/(\d{4})-(\d{4}) 5-year/.exec(meta.copyright),vintage=v?'ACS '+v[1]+'-'+v[2]+' 5-year estimates (Esri)':'ACS 5-year estimates (Esri)';
+     const [c,t,meta,svc]=await Promise.all([q(1,county),/^\d{11}$/.test(tract||'')?q(2,tract).catch(()=>null):null,arcMeta(ACS+'1'),arcMeta(ACS.replace(/\/$/,''))]);
+     // The survey years are in the service copyright text (the layer's own copyright is blank); say so when neither states them.
+     const v=[meta,svc].map(m=>m&&/(\d{4})-(\d{4}) 5-year/.exec(m.copyright)).find(Boolean),vintage=v?'ACS '+v[1]+'-'+v[2]+' 5-year estimates (Esri)':'ACS 5-year estimates (Esri); the survey years are not stated by this service';
      const shape=a=>a&&{vintage,geography:text(a.NAME),geoid:text(a.GEOID),population:num(a.B01001_001E),pctAge65:pct(a.B01001_calc_pctGE65E),pctNoVehicle:pct(a.B08201_calc_pctNoVehE),pctDisability:pct(a.B18101_calc_pctDE),pctNoInternet:pct(a.B28002_calc_pctNoIntE),pctPoverty150:null,pctLimitedEnglish:pct(a.B16004_calc_pctGE18LEAE),sviPercentile:null};
      const row=c.features[0]&&c.features[0].attributes;
      if(!row)return {status:'empty',message:'No ACS row for this municipio in this source.',data:null,hostedBy:'Esri',owner:'U.S. Census Bureau ACS',...metaDate(meta)};
@@ -2118,7 +2152,10 @@ const painted={};
 function paint(id,html){
  if(painted[id]===html)return;
  const el=$(id),ae=document.activeElement,key=ae&&el.contains(ae)?ae.getAttribute('data-focus'):null;
+ // Disclosures marked data-keep keep the visitor's open or closed choice across repaints.
+ const keep=new Map([...el.querySelectorAll('details[data-keep]')].map(d=>[d.getAttribute('data-keep'),d.open]));
  painted[id]=html;el.innerHTML=html;
+ keep.forEach((open,k)=>{const d=el.querySelector('details[data-keep="'+k+'"]');if(d&&d.open!==open)d.open=open;});
  if(key){const t=el.querySelector('[data-focus="'+key+'"]');if(t)t.focus({preventScroll:true});}
 }
 function statusOf(method){const r=state.results[method];if(r)return r.status;if(state.pending[method])return 'loading';return state.place?'skipped':'idle';}
@@ -2346,14 +2383,19 @@ function renderSources(){
   const d=id==='map'?{title:'Map tiles and map library',owner:'OpenStreetMap contributors; Leaflet',link:'https://www.openstreetmap.org/copyright',coverage:'Map images only; the map is optional and every panel works without it.'}:S.SOURCES[id];
   const s=sourceStatus(id),r=s.r;
   const date=r?r.dataDateText:id==='map'?'Live tiles, no release date':'Shown after it runs';
-  return '<tr data-rs-source="'+esc(id)+'" data-status="'+esc(s.status)+'"><td data-label="Source"><b>'+esc(r&&r.title||d.title)+'</b><br>'+labels(r||d)+'</td>'+
+  return '<tr data-rs-source="'+esc(id)+'" data-status="'+esc(s.status)+'"><td data-label="Source"><b>'+extLink(r&&r.link||d.link,r&&r.title||d.title)+'</b><br>'+labels(r||d)+'</td>'+
    '<td data-label="Status">'+badge(s.status)+'<br><span class="rs-muted">'+esc(s.text)+'</span></td>'+
    '<td data-label="Data date">'+esc(date)+'</td><td data-label="Owner">'+esc(r&&r.owner||d.owner)+'</td>'+
-   '<td data-label="Coverage">'+esc(r&&r.coverage||d.coverage)+'</td><td data-label="Link">'+extLink(r&&r.link||d.link,'Source page')+'</td></tr>';
+   '<td data-label="Coverage">'+esc(r&&r.coverage||d.coverage)+'</td></tr>';
  });
+ // Failures first, then partial or not covered, so they are seen before the long list.
+ const RANK={unavailable:0,partial:1,'not-covered':2,loading:3};
+ const order=ids.map((id,i)=>({id,i,st:sourceStatus(id).status})).sort((a,b)=>(RANK[a.st]??9)-(RANK[b.st]??9)||a.i-b.i);
+ const sorted=order.map(o=>rows[o.i]),attention=order.filter(o=>o.st==='unavailable'||o.st==='partial');
  const counts={};ids.forEach(id=>{const st=sourceStatus(id).status;counts[st]=(counts[st]||0)+1;});
  const summary=Object.keys(counts).map(k=>counts[k]+' '+(STATUS_LABEL[k]||k).toLowerCase()).join(', ');
- paint('rs-sources-body','<p class="rs-note">'+esc(ids.length+' sources: '+summary)+'.</p><div class="rs-table-wrap"><table class="rs-table rs-stack"><thead><tr><th scope="col">Source</th><th scope="col">Status</th><th scope="col">Data date</th><th scope="col">Owner</th><th scope="col">Coverage</th><th scope="col">Link</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>');
+ const attn=attention.length?'<ul class="rs-status">'+attention.map(o=>{const d=o.id==='map'?{title:'Map tiles and map library'}:S.SOURCES[o.id],st=sourceStatus(o.id);return stRow(esc(st.r&&st.r.title||d.title),st.status,esc(st.text));}).join('')+'</ul>':'<p class="rs-muted">No source has failed for this search.</p>';
+ paint('rs-sources-body','<p class="rs-note">'+esc(ids.length+' sources: '+summary)+'.</p>'+(state.place?'<h3>Sources that did not answer</h3>'+attn:waitingBox())+'<details class="rs-more" data-keep="sources-all"><summary>Show all '+esc(ids.length)+' sources with status, data date, owner and coverage</summary><div class="rs-table-wrap"><table class="rs-table rs-stack rs-sources-table"><thead><tr><th scope="col">Source</th><th scope="col">Status</th><th scope="col">Data date</th><th scope="col">Owner</th><th scope="col">Coverage</th></tr></thead><tbody>'+sorted.join('')+'</tbody></table></div></details>');
 }
 
 /* ---------- map (optional; everything else works without it) ----------
@@ -2368,7 +2410,14 @@ function initMap(){
  if(hasMap||!(window.L&&typeof window.L.map==='function'))return;
  const L=window.L,el=$('rs-map');leaf=L;
  el.style.height='';el.innerHTML='';
- map=L.map(el,{zoomControl:true,worldCopyJump:true}).setView([39.5,-98.35],3);
+ // On touch screens a one-finger swipe scrolls the page; dragging the map starts only after the visitor asks for it.
+ const touch=!!(window.matchMedia&&matchMedia('(pointer: coarse)').matches);
+ map=L.map(el,{zoomControl:true,worldCopyJump:true,dragging:!touch,tap:false}).setView([39.5,-98.35],3);
+ if(touch){
+  const b=document.createElement('button');b.type='button';b.id='rs-map-move';b.className='rs-btn';b.textContent='Move the map';b.setAttribute('aria-pressed','false');
+  b.addEventListener('click',()=>{const on=!map.dragging.enabled();if(on)map.dragging.enable();else map.dragging.disable();b.textContent=on?'Stop moving the map (swipes scroll the page again)':'Move the map';b.setAttribute('aria-pressed',String(on));});
+  el.parentNode.insertBefore(b,el.nextSibling);
+ }
  const basemap=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'});
  basemap.on('tileerror',()=>{tileStreak++;if(tileFailed||tileStreak<3)return;tileFailed=true;setMap('unavailable','Basemap tiles from tile.openstreetmap.org did not load. Markers and every panel still work.');});
  basemap.on('tileload',()=>{tileStreak=0;if(!tileFailed)return;tileFailed=false;setMap('ok','Ready. Map images come from tile.openstreetmap.org and show the area you view.');});
@@ -2490,7 +2539,7 @@ function dayName(iso){const t=Date.parse(iso);if(!finite(t))return 'Day not list
 function items(list,n,fn){return list&&list.length?'<ul class="rs-list">'+list.slice(0,n).map(fn).join('')+'</ul>'+(list.length>n?'<p class="rs-muted">'+esc(list.length-n)+' more not shown.</p>':''):'';}
 /* Plain-language detail for a source that answered with data. Values are records or model output, never operating condition. */
 const DETAIL={
- tropical:d=>items(d.storms,3,s=>'<li><b>'+esc(clean(s.name,60)||s.id)+'</b>'+(s.type?' ('+esc(s.type)+')':'')+(finite(s.intensity)?', '+esc(s.intensity)+' kt':'')+', about '+esc(dist(s.distanceKm))+' away. Advisory '+esc(when(s.advisoryTime))+'.</li>'),
+ tropical:d=>items(d.storms,3,s=>'<li><b>'+esc(clean(s.name,60)||s.id)+'</b>'+(s.type?' ('+esc(String(s.type).replace(/([A-Za-z])(\d)/,'$1 $2'))+')':'')+(finite(s.intensity)?', '+esc(s.intensity)+' kt':'')+', about '+esc(dist(s.distanceKm))+' away. Advisory '+esc(when(s.advisoryTime))+'.</li>'),
  tideStation:d=>{const st=d.station||{},l=d.latest,f=d.floodLevels||{};
   return '<p class="rs-note">NOAA station <b>'+esc(st.name)+'</b> ('+esc(st.id)+')'+(finite(st.distanceKm)?', '+esc(dist(st.distanceKm))+' away':'')+(l?': '+esc(l.v.toFixed(2))+' ft MLLW at '+esc(when(l.t)):'')+'.</p>'+
   (f.available&&(finite(f.nwsMinor)||finite(f.nosMinor))?'<p class="rs-muted">NOAA flood levels as published (station datum, not MLLW): NWS minor '+esc(num(f.nwsMinor,2))+', moderate '+esc(num(f.nwsModerate,2))+', major '+esc(num(f.nwsMajor,2))+' ft. '+esc(f.datumNote)+(finite(f.mllwInStationDatum)?' MLLW is '+esc(f.mllwInStationDatum.toFixed(2))+' ft in station datum.':'')+'</p>':'');},
@@ -2505,7 +2554,7 @@ const DETAIL={
  earthquakes:d=>'<p class="rs-note">'+esc(plural(d.count!=null?d.count:(d.items||[]).length,'earthquake'))+' of magnitude 2.5 or more within 250 km in the past 30 days.</p>'+items(d.items,4,e=>'<li>M'+esc(e.mag)+' '+esc(clean(e.place,90))+', '+esc(dist(e.distanceKm))+' away, '+esc(when(e.time))+'.</li>'),
  volcanoes:d=>items(d.items,5,v=>'<li><b>'+esc(v.name)+'</b>: alert level '+esc(v.alertLevel||'not listed')+', aviation color '+esc(v.colorCode||'not listed')+' ('+esc(v.observatory||'USGS')+', notice '+esc(when(v.sent))+')'+(v.url?' '+extLink(v.url,'notice'):'')+'.</li>'),
  floodZone:d=>d.unmapped?'':'<p class="rs-note">FEMA flood zone <b>'+esc(d.zone)+'</b>'+(d.subtype?' ('+esc(clean(d.subtype,80).toLowerCase())+')':'')+(d.sfha?', a Special Flood Hazard Area (1% annual chance)':', outside the Special Flood Hazard Area')+(finite(d.bfe)?'; base flood elevation '+esc(d.bfe)+' ft':'')+'. Map panel '+esc(d.panel||'not listed')+(d.effectiveDate?', effective '+esc(d.effectiveDate):'')+'.</p>',
- elevation:d=>'<p class="rs-note">Ground elevation at this point: about <b>'+esc(num(d.feet,1))+' ft</b> (NAVD88), from a '+esc(num(d.resolution,1))+' m terrain model. Not the floor height of any building.</p>',
+ elevation:d=>'<p class="rs-note">Ground elevation at this point: about <b>'+esc(num(d.feet,1))+' ft</b> ('+esc(elevDatum())+'), from a '+esc(num(d.resolution,1))+' m terrain model. Not the floor height of any building.</p>',
  surge:d=>{const b=d.byCategory||{},cls=d.classes||S.SURGE_CLASSES;return '<ul class="rs-list">'+[1,2,3,4,5].map(c=>'<li>Category '+c+' hurricane: '+esc(b[c]!=null?(cls[b[c]]||'class '+b[c]):'no surge flooding mapped here')+'</li>').join('')+'</ul><p class="rs-muted">Worst-case modeled flooding for '+esc(d.region||'this region')+'; not a forecast.</p>';},
  seismicDesign:d=>'<p class="rs-note">ASCE 7-22 seismic design category <b>'+esc(d.sdc||'not stated')+'</b>: Ss '+esc(d.ss)+', S1 '+esc(d.s1)+', SDS '+esc(d.sds)+', SD1 '+esc(d.sd1)+' (default site class'+(d.modelVersion?', model '+esc(d.modelVersion):'')+').</p>',
  nwsPoint:d=>'<p class="rs-note">NWS office '+esc(d.office)+', forecast zone '+esc(d.forecastZone)+'. '+extLink(d.forecastLink,'Forecast for this point')+'.</p>'
@@ -2540,8 +2589,10 @@ function renderRanking(){
   const ranked=rk.rows.filter(r=>r.ealRank!=null),lead=new Set(rk.leading),ast=statusOf('nwsAlerts');
   // 'None listed' only when NWS answered; a pending or failed alerts request is never shown as none.
   const noAlert=ast==='ok'||ast==='empty'?'<span class="rs-muted">None listed</span>':ast==='loading'?'<span class="rs-muted">Loading</span>':'<span class="rs-muted">Unavailable (NWS alerts did not answer)</span>';
-  html+='<div class="rs-table-wrap"><table class="rs-table rs-stack"><caption class="rs-sr">Hazards ranked by county expected annual loss</caption><thead><tr><th scope="col">Rank</th><th scope="col">Hazard</th><th scope="col">Expected annual loss (county)</th><th scope="col">NRI rating (county)</th><th scope="col">Tract loss and rating</th><th scope="col">Active alerts</th></tr></thead><tbody>'+
-   ranked.map(r=>'<tr class="'+(lead.has(r.code)?'rs-lead':'')+'" data-rs-hazard="'+esc(r.code)+'"><td data-label="Rank">#'+esc(r.ealRank)+(lead.has(r.code)?' <span class="rs-tag">Leading</span>':'')+'</td><td data-label="Hazard"><b>'+esc(r.name)+'</b></td><td data-label="Expected annual loss" class="rs-num">'+esc(fmt.money(r.eal))+' a year</td><td data-label="NRI rating">'+esc(rk.noRatings?'No rating published':r.rating||'Not listed')+'</td><td data-label="Tract">'+(rk.tract?esc(fmt.money(r.tractEal))+(r.tractRating&&!rk.noRatings?', '+esc(r.tractRating):rk.noRatings?', no rating published':''):'<span class="rs-muted">Not shown</span>')+'</td><td data-label="Active alerts">'+(r.activeAlerts.length?esc(r.activeAlerts.map(a=>a.event).join(', ')):noAlert)+'</td></tr>').join('')+'</tbody></table></div>';
+  const rowHtml=r=>'<tr class="'+(lead.has(r.code)?'rs-lead':'')+'" data-rs-hazard="'+esc(r.code)+'"><td data-label="Rank">#'+esc(r.ealRank)+(lead.has(r.code)?' <span class="rs-tag">Leading</span>':'')+'</td><td data-label="Hazard"><b>'+esc(r.name)+'</b></td><td data-label="Expected annual loss" class="rs-num">'+esc(fmt.money(r.eal))+' a year</td><td data-label="NRI rating">'+esc(rk.noRatings?'No rating published':r.rating||'Not listed')+'</td><td data-label="Tract">'+(rk.tract?esc(fmt.money(r.tractEal))+(r.tractRating&&!rk.noRatings?', '+esc(r.tractRating):rk.noRatings?', no rating published':''):'<span class="rs-muted">Not shown</span>')+'</td><td data-label="Active alerts">'+(r.activeAlerts.length?esc(r.activeAlerts.map(a=>a.event).join(', ')):noAlert)+'</td></tr>';
+  const tbl=(list,cap)=>'<div class="rs-table-wrap"><table class="rs-table rs-stack"><caption class="rs-sr">'+cap+'</caption><thead><tr><th scope="col">Rank</th><th scope="col">Hazard</th><th scope="col">Expected annual loss (county)</th><th scope="col">NRI rating (county)</th><th scope="col">Tract loss and rating</th><th scope="col">Active alerts</th></tr></thead><tbody>'+list.map(rowHtml).join('')+'</tbody></table></div>';
+  const shown=(r,i)=>i<5||lead.has(r.code)||r.activeAlerts.length>0,top=ranked.filter(shown),rest=ranked.filter((r,i)=>!shown(r,i));
+  html+=tbl(top,'Hazards ranked by county expected annual loss, leading hazards')+(rest.length?'<details class="rs-more" data-keep="ranking-rest"><summary>Show the other '+esc(rest.length)+' ranked hazards</summary>'+tbl(rest,'Other ranked hazards')+'</details>':'');
   const named=codes=>codes.map(cd=>HAZARD_NAME[cd]||cd).join(', ');
   const zero=rk.rows.filter(r=>r.applicable&&!r.insufficient&&r.ealRank==null).map(r=>r.code);
   html+='<p class="rs-note"><b>Method:</b> '+esc(rk.method)+'</p>';
@@ -2630,13 +2681,18 @@ function localScreen(level){
  return localCache.screens[k];
 }
 function localLevel(){const cfg=localModule();return finite(state.local.level)?state.local.level:cfg&&finite(cfg.defaultLevelFtMLLW)?cfg.defaultLevelFtMLLW:null;}
+// Scope wording that reads as English: "5 of 82 city-owned lift stations", "5 of all 131 register lift stations".
+// USGS 3DEP heights are NAVD88 in the lower 48 and Alaska, PRVD02 in Puerto Rico and local vertical datums elsewhere.
+function elevDatum(){const a=state.place&&state.place.state&&state.place.state.abbr;return a==='PR'?'PRVD02':['HI','GU','VI','AS','MP'].includes(a)?'local vertical datum':'NAVD88';}
+function scopeCount(exposed,total,noun){return state.local.scope==='all'?esc(exposed)+' of all '+esc(total)+' register '+esc(noun):esc(exposed)+' of '+esc(total)+' '+esc(scopeLabel().toLowerCase())+' '+esc(noun);}
+function scopeFootprint(){return state.local.scope==='all'?'the sewer basin footprint of all register records':'the '+esc(scopeLabel().toLowerCase())+' sewer basin footprint';}
 function scopeLabel(){const cfg=localModule(),s=cfg&&(cfg.scopes||[]).find(x=>x.id===state.local.scope);return s?s.label:state.local.scope;}
 function screenLine(out,cfg,lc){
  const s=out&&out.screenSummary;if(!s)return 'Not available here: the screen could not run.';
  if(s.exposed==null)return 'Not available here: '+(s.missing?'ground elevation for '+s.missing+' of '+s.total+' records':'a usable water level')+'.';
  const m1=out.metrics.find(m=>m.id===1),pop=m1&&m1.status==='computed'&&m1.detail?m1.detail:null;
- return '<b>'+esc(s.exposed)+' of '+esc(s.total)+'</b> '+esc(scopeLabel().toLowerCase())+' '+esc(cfg.assetLabel||'assets')+' at or below the plane of '+esc(out.planeFtNAVD88.toFixed(2))+' ft NAVD88 ('+esc(out.levelFtMLLW.toFixed(2))+' ft MLLW minus '+esc(cfg.datum.mllwToNavd88Ft)+' ft).'+
-  (pop?' 2020 Census population of the sewer basins with a screened station: '+esc(num(pop.selectedPopulation))+' of '+esc(num(pop.totalPopulation))+' in the '+esc(scopeLabel().toLowerCase())+' footprint (geographic context, not customers or people affected).':lc&&!lc.fingerprintOk?' Population withheld: the context file does not match this station register.':'');
+ return '<b>'+scopeCount(s.exposed,s.total,cfg.assetLabel||'assets')+'</b> at or below the plane of '+esc(out.planeFtNAVD88.toFixed(2))+' ft NAVD88 ('+esc(out.levelFtMLLW.toFixed(2))+' ft MLLW minus '+esc(cfg.datum.mllwToNavd88Ft)+' ft).'+
+  (pop?' 2020 Census population of the sewer basins with a screened station: '+esc(num(pop.selectedPopulation))+' of '+esc(num(pop.totalPopulation))+' in '+scopeFootprint().replace(/ sewer basin/,'')+' (geographic context, not customers or people affected).':lc&&!lc.fingerprintOk?' Population withheld: the context file does not match this station register.':'');
 }
 function zoneCounts(list){
  const order=['A','B','C','D','E','Non Evac','MOBILE HOME'],c={};
@@ -2657,7 +2713,7 @@ function renderLocal(){
  html+='<dl class="rs-dl"><dt>Register</dt><dd>'+esc(plural(all.length,'current record'))+' ('+esc(city)+' City-owned, '+esc(all.length-city)+' private); showing <b>'+esc(scopeLabel())+'</b>: '+esc(scoped.length)+'. An ownership filter, not a city limit or service area.</dd>'+
   '<dt>Evacuation zones</dt><dd>'+esc(zoneCounts(scoped).join(', '))+'. '+esc(cfg.zoneLabel||'')+'.</dd>';
  const fc=lc.context&&lc.context.populationCoverage;
- if(lc.fingerprintOk&&fc)html+='<dt>2020 footprint population</dt><dd>'+esc(num(state.local.scope==='city'?fc.deduplicatedPopulationCityOwnedFootprints:fc.deduplicatedPopulationAllRegisterFootprints))+' people in the '+esc(scopeLabel().toLowerCase())+' sewer basin footprint (Census 2020 blocks, each counted once; county total '+esc(num(fc.countyPopulation))+').</dd>';
+ if(lc.fingerprintOk&&fc)html+='<dt>2020 footprint population</dt><dd>'+esc(num(state.local.scope==='city'?fc.deduplicatedPopulationCityOwnedFootprints:fc.deduplicatedPopulationAllRegisterFootprints))+' people in '+scopeFootprint()+' (Census 2020 blocks, each counted once; county total '+esc(num(fc.countyPopulation))+').</dd>';
  else html+='<dt>2020 footprint population</dt><dd>Withheld: the context file does not match this station register.</dd>';
  html+='</dl>';
  // At the NOAA OFS forecast peak.
@@ -2687,7 +2743,7 @@ function localFacts(moduleId){
  let html=facts.map(f=>'<li>'+esc(f.text)+'<p class="rs-src">Source: '+extLink(f.link,f.source)+'. '+esc(f.date||S.NO_DATE)+'.</p></li>').join('');
  if(cfg&&(cfg.hazardModules||[]).includes(moduleId)){
   const o=state.ofsPeak,lc=localData(),out=o&&o.status==='ok'?localScreen(o.levelFtMLLW):null;
-  html+='<li><b>'+esc(cfg.name)+'</b>: '+(out&&out.screenSummary.exposed!=null?esc(out.screenSummary.exposed)+' of '+esc(out.screenSummary.total)+' '+esc(scopeLabel().toLowerCase())+' '+esc(cfg.assetLabel)+' at or below the NOAA OFS 48-hour peak plane ('+esc(o.levelFtMLLW.toFixed(2))+' ft MLLW).':lc?'the forecast peak screen is not available right now.':'local files '+(res('loadLocal')?'unavailable':'loading')+'.')+' See <a href="#rs-local">Local data for this place</a>.<p class="rs-src">Local data published by the '+esc(c.publishedBy||'local')+(lc?', captured '+esc(dayOnly(lc.capturedAt)):'')+'.</p></li>';
+  html+='<li><b>'+esc(cfg.name)+'</b>: '+(out&&out.screenSummary.exposed!=null?scopeCount(out.screenSummary.exposed,out.screenSummary.total,cfg.assetLabel)+' at or below the NOAA OFS 48-hour peak plane ('+esc(o.levelFtMLLW.toFixed(2))+' ft MLLW).':lc?'the forecast peak screen is not available right now.':'local files '+(res('loadLocal')?'unavailable':'loading')+'.')+' See <a href="#rs-local">Local data for this place</a>.<p class="rs-src">Local data published by the '+esc(c.publishedBy||'local')+(lc?', captured '+esc(dayOnly(lc.capturedAt)):'')+'.</p></li>';
  }
  return html?'<ul class="rs-facts">'+html+'</ul>':'';
 }
@@ -2712,7 +2768,7 @@ const ITEM={
  waterSystems:it=>'<b>'+esc(clean(it.name,90)||it.pwsid)+'</b> ('+esc(it.pwsid)+'): serves about '+esc(num(it.populationServed))+' people'+(it.source?', '+esc(it.source.toLowerCase()):'')+(it.status?', '+esc(it.status.toLowerCase())+' in the record':'')+'. County-wide record, no location.',
  outages:it=>'<b>'+esc(clean(it.utility,90)||'Utility not named')+'</b>: '+esc(num(it.metersAffected))+' meters out'+(it.start?' since '+esc(when(it.start)):'')+(it.estimatedRestoration?'; estimated restoration '+esc(when(it.estimatedRestoration)):'')+'. County-wide report.',
  powerPlants:it=>'<b>'+esc(clean(it.name,90)||'Unnamed plant')+'</b>, '+esc(dist(it.distanceKm))+' away: '+esc(clean(it.primarySource,40)||'source not listed')+(finite(it.totalMw)?', '+esc(num(it.totalMw,1))+' MW':'')+(it.utility?', '+esc(clean(it.utility,80)):'')+'.',
- hospitalsCMS:it=>'<b>'+esc(clean(it.name,90)||'Unnamed hospital')+'</b>, '+esc(dist(it.distanceKm))+' away'+(addr(it)?': '+esc(addr(it)):'')+(it.type?'. '+esc(clean(it.type,60)):'')+(it.emergencyServices!=null?'. Emergency services: '+(it.emergencyServices?'yes':'no')+' in the record':'')+'.',
+ hospitalsCMS:it=>'<b>'+esc(clean(it.name,90)||'Unnamed hospital')+'</b>'+(/department of defense/i.test(it.type||'')?' <span class="rs-tag">Military (Department of Defense)</span>':'')+', '+esc(dist(it.distanceKm))+' away'+(addr(it)?': '+esc(addr(it)):'')+(it.type?'. '+esc(clean(it.type,60)):'')+(it.emergencyServices!=null?'. Emergency services: '+(it.emergencyServices?'yes':'no')+' in the record':'')+'.',
  hospitalsUSGS:it=>'<b>'+esc(clean(it.name,90)||'Unnamed hospital')+'</b>, '+esc(dist(it.distanceKm))+' away'+(addr(it)?': '+esc(addr(it)):'')+'.',
  healthCenters:it=>'<b>'+esc(clean(it.name,90)||'Unnamed site')+'</b>, '+esc(dist(it.distanceKm))+' away'+(addr(it)?': '+esc(addr(it)):'')+(it.type?'. '+esc(clean(it.type,60)):'')+'.',
  shelters:it=>'<b>'+esc(clean(it.name,90)||'Unnamed shelter')+'</b>, '+esc(dist(it.distanceKm))+' away'+(addr(it)?': '+esc(addr(it)):'')+(it.organization?'. '+esc(clean(it.organization,60)):'')+(finite(it.evacuationCapacity)?'. Evacuation capacity '+esc(num(it.evacuationCapacity)):'')+(it.pets?'. Pets: '+esc(clean(it.pets,30)):'')+'.',
@@ -2743,7 +2799,8 @@ function renderLifelines(){
  const ids=E.LIFELINES.map(l=>l.id),st={};ids.forEach(id=>{st[id]=lifelineState(id);});
  ids.sort((a,b)=>(a==='communications')-(b==='communications')||(st[a].nearest==null)-(st[b].nearest==null)||(st[a].nearest||0)-(st[b].nearest||0));
  const lead=state.modules.filter(m=>m.status==='leading').map(m=>m.id),strainedBy=id=>lead.filter(m=>MODULE_DEF[m].strains.includes(id)).map(m=>MODULE_DEF[m].name);
- const html='<div class="rs-grid">'+ids.map(id=>{
+ const ref='<p class="rs-muted">Distances are measured from the point used for this search: '+esc(p.lat.toFixed(4)+', '+p.lon.toFixed(4))+' ('+esc(state.info&&state.info.how||'the searched point')+'). For a large place this point may be far from where you are; search a street address for distances from it.</p>';
+ const html=ref+'<div class="rs-grid">'+ids.map(id=>{
   const l=E.LIFELINES.find(x=>x.id===id),s=st[id],by=strainedBy(id);
   const head='<div class="rs-card-head"><h3 id="rs-lifeline-'+esc(id)+'">'+esc(l.name)+'</h3>'+badge(s.status==='not-available'?'not-covered':s.status,s.status==='not-available'?'Not available here':s.label||null)+'</div>'+
    '<span class="rs-reason">'+(!state.ranking||state.ranking.status!=='ok'?'Strain not assessed: hazard ranking unavailable':by.length?'Strained by the leading hazards: '+esc(by.join(', ')):'Not strained by a leading hazard here')+'. '+(s.nearest!=null?'Nearest listed facility: '+esc(dist(s.nearest))+'.':'')+'</span>';
@@ -2885,14 +2942,14 @@ function renderPlan(){
   // The plan shell renders before any search (and offline): the ten dimensions, each not available until a place is found.
   state.plan=null;
   const shell=E.buildPlan({place:null,ranking:null,modules:[],results:{},track:state.track,now:Date.now()}).dimensions.map(dm=>Object.assign({},dm,{condition:dm.id===7||dm.id===10?dm.condition:'Not available here: search for a place first; the diagnostics then need a run exposure screen.'}));
-  paint('rs-plan-body',waitingBox()+'<h3>Ten dimensions</h3>'+dimensionsHtml(shell));return;
+  paint('rs-plan-body',waitingBox()+'<details class="rs-more" data-keep="plan-dims"><summary><b>Ten dimensions</b> (search for a place first)</summary>'+dimensionsHtml(shell)+'</details>');return;
  }
  const plan=state.plan=currentPlan(),ph=plan.phase;
  let html='<p><span class="rs-phase rs-p-'+esc(ph.id)+'">Phase: '+esc(ph.label)+'</span> <span class="rs-muted">'+esc(state.track==='public'?'Public track':'Operator track')+'; revision '+esc(plan.revision)+'</span></p><p class="rs-note">'+esc(ph.basis)+(ph.until?' Review at '+esc(when(ph.until))+'.':'')+'</p>';
  if(!state.ranking)html+='<p class="rs-note rs-muted">The hazard ranking is still loading; the plan updates as data arrives.</p>';
  html+='<h3>Actions</h3>';
  html+=plan.actions.length?'<ul class="rs-facts">'+plan.actions.map(a=>'<li data-rs-action="'+esc(a.id)+'"><b>'+esc((MODULE_DEF[a.module]||{}).name||a.module)+':</b> '+esc(a.text)+'<p class="rs-src">Source: '+esc(a.source||'not stated')+'. '+esc(a.source==='General guidance'?'General preparedness guidance, not specific to this place':a.dataDate?'Data date '+when(a.dataDate):a.dataDateText||S.NO_DATE)+'.'+(a.checkedAt?' Checked '+esc(when(a.checkedAt))+'.':'')+(a.escalateTo?' Escalate to: '+esc(a.escalateTo)+'.':'')+(a.reviewAfter?' Review after '+esc(when(a.reviewAfter))+'.':'')+'</p></li>').join('')+'</ul>':'<ul class="rs-status">'+stRow('Actions',state.ranking?'empty':'loading',state.ranking?'No leading hazard here, so no hazard actions were generated.':'Waiting for the hazard ranking.')+'</ul>';
- html+='<h3>Ten dimensions</h3>'+dimensionsHtml(plan.dimensions);
+ html+='<details class="rs-more" data-keep="plan-dims"><summary><b>Ten dimensions</b>: '+esc(plan.dimensions.filter(d=>d.status==='computed').length)+' computed, '+esc(plan.dimensions.filter(d=>d.status!=='computed').length)+' not available or not applicable</summary>'+dimensionsHtml(plan.dimensions)+'</details>';
  html+='<h3>Limits of this plan</h3><ul class="rs-list">'+plan.limitations.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>';
  paint('rs-plan-body',html);
 }

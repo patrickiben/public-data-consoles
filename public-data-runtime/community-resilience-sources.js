@@ -56,6 +56,7 @@
  const NRI_FIELDS=['STCOFIPS','COUNTY','STATE','STATEABBRV','NRI_VER','POPULATION','BUILDVALUE','RISK_SCORE','RISK_RATNG','EAL_VALT','EAL_RATNG','SOVI_SCORE','SOVI_RATNG','RESL_SCORE','RESL_RATNG'].concat(...NRI_HAZARDS.map(h=>[h+'_EALT',h+'_RISKS',h+'_RISKR']));
  const SPC_RANK={TSTM:1,MRGL:2,SLGT:3,ENH:4,MDT:5,HIGH:6};
  const SEVERITY={Extreme:4,Severe:3,Moderate:2,Minor:1};
+ const TIDAL_GAUGE=/tide gauge|\b(?:in )?(?:MHHW|MLLW)\b/i;
  const VOLCANO_OBSERVATORIES={AK:['avo'],HI:['hvo'],AS:['hvo'],WA:['cvo'],OR:['cvo'],CA:['calvo'],NV:['calvo'],ID:['yvo'],MT:['yvo'],WY:['yvo'],UT:['yvo'],CO:['yvo'],NM:['yvo'],AZ:['yvo'],MP:['nmi'],GU:['nmi']};
  const ODIN_STATES_2026_10=['Arizona','California','Colorado','Delaware','Florida','Idaho','Indiana','Iowa','Kansas','Louisiana','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Montana','New Jersey','New Mexico','New York','North Carolina','Ohio','Oklahoma','Oregon','Pennsylvania','South Carolina','South Dakota','Tennessee','Texas','Utah','Virginia','Washington','West Virginia','Wyoming'];
  const WATER_SOURCES={GW:'Groundwater',GWP:'Purchased groundwater',SW:'Surface water',SWP:'Purchased surface water',GU:'Groundwater under the influence of surface water',GUP:'Purchased groundwater under the influence of surface water'};
@@ -120,6 +121,8 @@
  function dayText(ms){const d=new Date(ms);return MONTHS[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear();}
  function stampText(ms){const d=new Date(ms);return dayText(ms)+' '+pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+' UTC';}
  function distanceKm(a,b){const rad=Math.PI/180,dlat=(b.lat-a.lat)*rad,dlon=(b.lon-a.lon)*rad,x=Math.sin(dlat/2)**2+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dlon/2)**2;return 6371.0088*2*Math.asin(Math.sqrt(Math.max(0,Math.min(1,x))));}
+ /* Miles first, kilometers in parentheses (the page's distance format). */
+ const miKm=d=>{const mi=d/1.609344,f=v=>v>=10?Math.round(v).toLocaleString('en-US'):v.toFixed(1);return f(mi)+' mi ('+f(d)+' km)';};
  const km=(origin,lat,lon)=>finite(lat)&&finite(lon)?round(distanceKm(origin,{lat,lon}),2):null;
  const nearestFirst=list=>list.sort((a,b)=>(a.distanceKm??Infinity)-(b.distanceKm??Infinity));
  function attr(a,key){if(!a)return undefined;if(key in a)return a[key];const lower=key.toLowerCase();for(const k of Object.keys(a))if(k.toLowerCase()===lower)return a[k];return undefined;}
@@ -617,7 +620,7 @@
     nearestFirst(storms);
     const date=metaDate(meta,'',true);
     if(!storms.length)return {status:'empty',message:'No active tropical cyclones are listed in this source.',data:{storms:[]},...date};
-    return {status:'ok',message:plural(storms.length,'active tropical cyclone')+' worldwide; the nearest is '+(storms[0].name||storms[0].id)+', about '+Math.round(storms[0].distanceKm)+' km away.',data:{storms},...date};
+    return {status:'ok',message:plural(storms.length,'active tropical cyclone')+' worldwide; the nearest is '+(storms[0].name||storms[0].id)+', about '+miKm(storms[0].distanceKm)+' away.',data:{storms},...date};
    });
   }
   function earthquakes(lat,lon){
@@ -648,30 +651,43 @@
     return {status:'ok',message:plural(items.length,'volcano','volcanoes')+' above normal alert level for the observatory that covers '+st.name+'. The feed gives no locations.',data:{items,located:false},...date};
    });
   }
+  /* NOAA NWPS allows about 10 requests per 5 minutes and its rate-limit answer carries no CORS header, so the browser
+     sees only a failed request. Answers are cached for the session, and a failure after recent calls says so. */
+  const nwpsCache=new Map(),nwpsCalls=[];
+  function nwpsGauges(url){
+   if(nwpsCache.has(url))return nwpsCache.get(url);
+   const t=now(),recent=nwpsCalls.filter(x=>t-x<300000).length;nwpsCalls.push(t);
+   const p=request(url).catch(e=>{nwpsCache.delete(url);
+    if(recent>0&&!e.status)e.userMessage='NOAA river gauges (NWPS) did not answer. NWPS limits each visitor to about 10 requests per 5 minutes, so after a few searches it can refuse for a while; try again shortly. Nothing is shown in its place.';
+    throw e;});
+   nwpsCache.set(url,p);return p;
+  }
   function riverGauges(lat,lon){
    return run('river-gauges',async()=>{
     checkPoint(lat,lon);
     const dy=0.25,dx=round(0.25/Math.max(0.2,Math.cos(lat*Math.PI/180)),4),origin={lat,lon};
     const b={xmin:round(lon-dx,4),xmax:round(lon+dx,4),ymin:round(lat-dy,4),ymax:round(lat+dy,4)};
     const [{json},thresholds]=await Promise.all([
-     request(NWPS+'?'+qs({srid:'EPSG_4326','bbox.xmin':b.xmin,'bbox.xmax':b.xmax,'bbox.ymin':b.ymin,'bbox.ymax':b.ymax})),
+     nwpsGauges(NWPS+'?'+qs({srid:'EPSG_4326','bbox.xmin':b.xmin,'bbox.xmax':b.xmax,'bbox.ymin':b.ymin,'bbox.ymax':b.ymax})),
      arcQuery(RIVER_GAUGES,{geometry:[b.xmin,b.ymin,b.xmax,b.ymax].join(','),geometryType:'esriGeometryEnvelope',inSR:'4326',spatialRel:'esriSpatialRelIntersects',outFields:'gaugelid,units,action,flood,moderate,major,idp_filedate',returnGeometry:'false'}).catch(()=>null)]);
     if(!json||!Array.isArray(json.gauges))throw new SourceError('Missing gauge list');
     const levels=new Map();
     for(const f of thresholds?thresholds.features:[]){const a=f&&f.attributes||{};if(a.gaugelid)levels.set(String(a.gaugelid).toUpperCase(),a);}
     const reading=s=>{const v=num(s&&s.primary),t=Date.parse(s&&s.validTime||'');return s&&s.primaryUnit==='ft'&&v!=null&&v>-999&&finite(t)&&t>0?{v,t:iso(t)}:{v:null,t:null};};
-    const items=[];
+    const items=[];let tidal=0;
     for(const g of json.gauges){const lid=text(g&&g.lid),glat=num(g&&g.latitude),glon=num(g&&g.longitude);if(!lid||glat==null||glon==null)continue;
      const d=km(origin,glat,glon);if(d>25)continue;
+     // Tide gauges report in a tidal datum (MHHW or MLLW); they are not river gauges and belong with the coastal water level.
+     if(TIDAL_GAUGE.test(text(g.name)||'')){tidal++;continue;}
      const st=g.status||{},ob=reading(st.observed),fc=reading(st.forecast),lv=levels.get(lid.toUpperCase())||{},ft=lv.units==null||lv.units==='ft';
      items.push({lid,name:text(g.name),category:text(st.observed&&st.observed.floodCategory),observedFt:ob.v,observedTime:ob.t,forecastFt:fc.v,forecastTime:fc.t,
       action:ft?num(lv.action):null,minor:ft?num(lv.flood):null,moderate:ft?num(lv.moderate):null,major:ft?num(lv.major):null,lat:glat,lon:glon,distanceKm:d,link:'https://water.noaa.gov/gauges/'+encodeURIComponent(lid.toLowerCase())});}
     nearestFirst(items);
     const newest=Math.max(...items.map(i=>Date.parse(i.observedTime||'')).filter(finite),-Infinity);
     const date=finite(newest)?fed(newest,'newest observed validTime among listed gauges','Newest reading'):undated('No gauge reading time in range');
-    const note=thresholds?'':' Flood thresholds were unavailable.';
-    if(!items.length)return {status:'empty',message:'No NOAA river gauge within 25 km is listed in this source.',data:{items:[]},...date};
-    return {status:'ok',message:plural(items.length,'NOAA river gauge')+' within 25 km.'+note,data:{items,thresholdsAvailable:!!thresholds},...date};
+    const note=(thresholds?'':' Flood thresholds were unavailable.')+(tidal?' '+plural(tidal,'tidal gauge')+' left out (tide levels use a tidal datum and are not river stages).':'');
+    if(!items.length)return {status:'empty',message:'No NOAA river gauge within 25 km is listed in this source.'+note,data:{items:[],tidalLeftOut:tidal},...date};
+    return {status:'ok',message:plural(items.length,'NOAA river gauge')+' within 25 km.'+note,data:{items,thresholdsAvailable:!!thresholds,tidalLeftOut:tidal},...date};
    });
   }
   function coopsStations(){
@@ -793,16 +809,23 @@
    return run('water-systems',async()=>{
     const st=stateOf(stateAbbr),base=countyBase(countyName);
     if(!st||!base)throw new SourceError('State and county are required');
-    const {json}=await request(SDWIS+'GEOGRAPHIC_AREA/STATE_SERVED/'+st.abbr+'/COUNTY_SERVED/CONTAINING/'+encodeURIComponent(base)+'/WATER_SYSTEM/PWS_TYPE_CODE/CWS/PWS_ACTIVITY_CODE/A/rows/0:400/JSON');
-    if(!Array.isArray(json))throw new SourceError('Unexpected answer');
+    /* SDWIS leaves state_served empty for some states (Texas, Oklahoma), so query by the state served and by the primacy
+       agency, and merge the rows by PWSID. */
+    const url=field=>SDWIS+'GEOGRAPHIC_AREA/'+field+'/'+st.abbr+'/COUNTY_SERVED/CONTAINING/'+encodeURIComponent(base)+'/WATER_SYSTEM/PWS_TYPE_CODE/CWS/PWS_ACTIVITY_CODE/A/rows/0:400/JSON';
+    const ask=field=>request(url(field)).then(({json})=>{if(!Array.isArray(json))throw new SourceError('Unexpected answer');return json;});
+    const answers=await Promise.allSettled([ask('STATE_SERVED'),ask('PRIMACY_AGENCY_CODE')]);
+    const got=answers.filter(a=>a.status==='fulfilled').map(a=>a.value),failed=answers.length-got.length;
+    if(!got.length)throw answers[0].reason instanceof Error?answers[0].reason:new SourceError('No answer');
     const want=base.toLowerCase(),seen=new Map();
-    for(const r of json){if(!r||!r.pwsid||seen.has(r.pwsid))continue;
+    for(const r of got.flat()){if(!r||!r.pwsid||seen.has(r.pwsid))continue;
      const counties=String(r.county_served||'').split(',').map(c=>countyBase(c).toLowerCase());if(!counties.includes(want))continue;
      seen.set(r.pwsid,{pwsid:String(r.pwsid),name:text(r.pws_name),populationServed:num(r.population_served_count),source:WATER_SOURCES[r.primary_source_code]||text(r.primary_source_code)||text(r.gw_sw_code),status:r.pws_activity_code==='A'?'Active':text(r.pws_activity_code),distanceKm:null});}
     const items=[...seen.values()].sort((a,b)=>(b.populationServed||0)-(a.populationServed||0)),date=undated('SDWIS rows carry no data date or quarter');
-    const data={items,truncated:json.length>=400};
+    const data={items,truncated:got.some(j=>j.length>=400),partial:failed>0};
+    // With one of the two lookups unanswered, an empty list cannot be read as "none listed".
+    if(!items.length&&failed)throw Object.assign(new SourceError('One of two SDWIS lookups failed and the other matched nothing'),{userMessage:'EPA SDWIS could not match this county: one of its two lookups did not answer and the other listed nothing. Nothing is shown in its place; check the source directly.'});
     if(!items.length)return {status:'empty',message:'No active community water system listing this county is in this source.',data,...date};
-    return {status:'ok',message:plural(items.length,'active community water system')+' list '+countyName+'. Population served is a record, not live status.',data,...date};
+    return {status:'ok',message:plural(items.length,'active community water system')+' list '+countyName+'. Population served is a record, not live status.'+(failed?' One of the two EPA lookups did not answer, so systems listed only that way may be missing.':''),data,...date};
    });
   }
   function odinStates(){
@@ -897,8 +920,9 @@
     const items=nearestFirst(j.features.map(f=>{const a=f&&f.attributes||{},p=xy(f);
      return {id:text(a.shelter_id),name:text(a.shelter_name),address:text(a.address),city:text(a.city),state:text(a.state),zip:text(a.zip),status:text(a.shelter_status),evacuationCapacity:num(a.evacuation_capacity),postImpactCapacity:num(a.post_impact_capacity),population:num(a.total_population),organization:text(a.org_name),pets:text(a.pet_accommodations_code),ada:text(a.ada_compliant),wheelchair:text(a.wheelchair_accessible),lat:p.lat,lon:p.lon,distanceKm:km(origin,p.lat,p.lon)};}));
     const date=undated('The shelter layer publishes no edit date; FEMA states it synchronizes each morning with the American Red Cross shelter database');
-    if(!items.length)return {status:'empty',message:'No open shelters are listed in the FEMA National Shelter System right now.',data:{items,total:0},...date};
-    return {status:'ok',message:plural(items.length,'open shelter')+' listed nationally; the nearest is about '+Math.round(items[0].distanceKm)+' km away.',data:{items,total:items.length},...date};
+    const cut=!!j.exceededTransferLimit,cutNote=cut?' The service stopped at its record limit, so nearer shelters may be missing from this list.':'';
+    if(!items.length)return {status:cut?'unavailable':'empty',message:cut?'The FEMA shelter list was cut off at its record limit, so it cannot be read as empty.':'No open shelters are listed in the FEMA National Shelter System right now.',data:cut?null:{items,total:0},...date,...(cut?{error:'exceededTransferLimit'}:{})};
+    return {status:'ok',message:plural(items.length,'open shelter')+' listed nationally; the nearest is about '+miKm(items[0].distanceKm)+' away.'+cutNote,data:{items,total:items.length,truncated:cut},...date};
    });
   }
   function bridges(lat,lon,radiusKm){
@@ -933,8 +957,9 @@
     if(isPR){
      const fields='GEOID,NAME,B01001_001E,B01001_calc_pctGE65E,B08201_calc_pctNoVehE,B18101_calc_pctDE,B28002_calc_pctNoIntE,B16004_calc_pctGE18LEAE';
      const q=(layer,id)=>arcQuery(ACS+layer,{where:'GEOID='+sql(id),outFields:fields,returnGeometry:'false'});
-     const [c,t,meta]=await Promise.all([q(1,county),/^\d{11}$/.test(tract||'')?q(2,tract).catch(()=>null):null,arcMeta(ACS+'1')]);
-     const v=meta&&/(\d{4})-(\d{4}) 5-year/.exec(meta.copyright),vintage=v?'ACS '+v[1]+'-'+v[2]+' 5-year estimates (Esri)':'ACS 5-year estimates (Esri)';
+     const [c,t,meta,svc]=await Promise.all([q(1,county),/^\d{11}$/.test(tract||'')?q(2,tract).catch(()=>null):null,arcMeta(ACS+'1'),arcMeta(ACS.replace(/\/$/,''))]);
+     // The survey years are in the service copyright text (the layer's own copyright is blank); say so when neither states them.
+     const v=[meta,svc].map(m=>m&&/(\d{4})-(\d{4}) 5-year/.exec(m.copyright)).find(Boolean),vintage=v?'ACS '+v[1]+'-'+v[2]+' 5-year estimates (Esri)':'ACS 5-year estimates (Esri); the survey years are not stated by this service';
      const shape=a=>a&&{vintage,geography:text(a.NAME),geoid:text(a.GEOID),population:num(a.B01001_001E),pctAge65:pct(a.B01001_calc_pctGE65E),pctNoVehicle:pct(a.B08201_calc_pctNoVehE),pctDisability:pct(a.B18101_calc_pctDE),pctNoInternet:pct(a.B28002_calc_pctNoIntE),pctPoverty150:null,pctLimitedEnglish:pct(a.B16004_calc_pctGE18LEAE),sviPercentile:null};
      const row=c.features[0]&&c.features[0].attributes;
      if(!row)return {status:'empty',message:'No ACS row for this municipio in this source.',data:null,hostedBy:'Esri',owner:'U.S. Census Bureau ACS',...metaDate(meta)};

@@ -269,6 +269,41 @@ await check('Nominatim answers are cached per session; identical queries share o
  const failing=make(async()=>respond(500,'no'));assert.equal((await failing.geocodeAddress('1 Fail St, Tampa, FL')).status,'unavailable');
 });
 
+await check('waterSystems merges the state-served and primacy-agency lookups (Texas rows have no state_served)',async()=>{
+ const row=(pwsid,name,pop,county)=>({pwsid,pws_name:name,population_served_count:pop,primary_source_code:'SWP',pws_activity_code:'A',county_served:county,state_served:null,primacy_agency_code:pwsid.slice(0,2)});
+ const tx=[row('TX0840001','GALVESTON COUNTY WCID 1',30000,'Galveston'),row('TX0840003','CITY OF GALVESTON',53000,'Galveston'),row('TX0840009','CITY OF TEXAS CITY',46000,'Galveston, Harris')];
+ const urls=[];const answer=(byState,byPrimacy)=>make(async url=>{urls.push(url);if(url.includes('/STATE_SERVED/'))return byState;if(url.includes('/PRIMACY_AGENCY_CODE/'))return byPrimacy;throw new Error('unexpected '+url);});
+ const galv=shape(await answer(respond(200,'[]'),respond(200,JSON.stringify(tx))).waterSystems('TX','Galveston County'),'water TX');
+ assert.equal(galv.status,'ok');assert.equal(galv.data.items.length,3);assert.equal(galv.data.items[0].name,'CITY OF GALVESTON');
+ assert.ok(urls.some(u=>u.includes('GEOGRAPHIC_AREA/PRIMACY_AGENCY_CODE/TX/COUNTY_SERVED/CONTAINING/Galveston/')),'queries by primacy agency');
+ const both=shape(await answer(respond(200,JSON.stringify(tx.slice(0,2))),respond(200,JSON.stringify(tx))).waterSystems('TX','Galveston County'),'water dedupe');assert.equal(both.data.items.length,3,'merged by PWSID');
+ const ok=[row('OK2001401','NORMAN UTILITIES AUTHORITY',128000,'Cleveland'),row('OK1020807','MOORE PUBLIC WORKS AUTHORITY',62000,'Cleveland')];
+ const cleveland=await answer(respond(200,'[]'),respond(200,JSON.stringify(ok))).waterSystems('OK','Cleveland County');assert.equal(cleveland.status,'ok');assert.equal(cleveland.data.items.length,2);
+ const none=await answer(respond(200,'[]'),respond(200,'[]')).waterSystems('TX','Loving County');assert.equal(none.status,'empty');assert.match(none.message,/in this source/);
+ const half=shape(await answer(respond(200,'[]'),respond(500,'no')).waterSystems('TX','Galveston County'),'water half');assert.equal(half.status,'unavailable','an empty list with one lookup down is not "none listed"');assert.match(half.message,/could not match this county/);
+ const partial=await answer(respond(200,JSON.stringify(tx)),respond(500,'no')).waterSystems('TX','Galveston County');assert.equal(partial.status,'ok');assert.match(partial.message,/may be missing/);
+});
+
+await check('riverGauges leaves tidal gauges out, caches answers and names the NWPS rate limit',async()=>{
+ const gauge=(lid,name,dlat)=>({lid,name,latitude:27.77+dlat,longitude:-82.64,status:{observed:{primary:0.6,primaryUnit:'ft',validTime:'2026-10-30T17:00:00Z',floodCategory:'no_flooding'}}});
+ let nwps=0;const s=make(async url=>{if(url.includes('water.noaa.gov')||url.includes('/nwps/')||url.includes('gauges?')){nwps++;return respond(200,JSON.stringify({gauges:[gauge('SAPF1','Tide Gauge at St. Petersburg (in MHHW)',0.01),gauge('XXXF1','Some Creek at Main St',0.02)]}));}return respond(200,JSON.stringify({features:[]}));});
+ const r=shape(await s.riverGauges(27.77,-82.64),'gauges tidal');
+ assert.equal(r.status,'ok');assert.deepEqual(r.data.items.map(i=>i.lid),['XXXF1']);assert.equal(r.data.tidalLeftOut,1);assert.match(r.message,/1 tidal gauge left out/);
+ await s.riverGauges(27.77,-82.64);assert.equal(nwps,1,'a repeat search is served from the session cache');
+ let calls=0;const down=make(async url=>{if(url.includes('gauges?')){calls++;throw new TypeError('Failed to fetch');}return respond(200,JSON.stringify({features:[]}));});
+ const first=await down.riverGauges(27.77,-82.64);assert.equal(first.status,'unavailable');assert.doesNotMatch(first.message,/10 requests/);
+ const second=await down.riverGauges(29.3,-94.8);assert.equal(second.status,'unavailable');assert.match(second.message,/about 10 requests per 5 minutes/);assert.equal(calls,2);
+});
+
+await check('communityContext (Puerto Rico) reads the ACS years from the service copyright, or says they are not stated',async()=>{
+ const row={GEOID:'72127',NAME:'San Juan Municipio, Puerto Rico',B01001_001E:342259,B01001_calc_pctGE65E:22.1};
+ const ctx=copy=>make(async url=>{if(url.includes('/query?'))return respond(200,JSON.stringify({features:[{attributes:row}]}));if(url.includes('FeatureServer/1?'))return respond(200,JSON.stringify({copyrightText:''}));if(url.includes('FeatureServer?'))return respond(200,JSON.stringify({copyrightText:copy}));throw new Error('unexpected '+url);});
+ const place={county:{fips:'72127'},tract:null};
+ const a=await ctx("U.S. Census Bureau's American Community Survey (ACS) 2018-2022 5-year estimates, Table(s) B01001").communityContext(place);
+ assert.equal(a.status,'ok');assert.equal(a.data.vintage,'ACS 2018-2022 5-year estimates (Esri)');
+ const b=await ctx('').communityContext(place);assert.match(b.data.vintage,/survey years are not stated/);
+});
+
 // ---------- every adapter: unavailable on HTTP 500, timeout, malformed JSON and ArcGIS error objects ----------
 const sample=[];{const seen=new Set();for(const c of FX.calls)if(!seen.has(c.method)&&c.status!=='not-applicable'){seen.add(c.method);sample.push(c);}}
 sample.push({method:'loadLocal',args:[{files:{stations:'../coastal-water-resilience/data/public-stations.json',context:'../coastal-water-resilience/data/impact-context.json'}},'https://example.test/consoles/community-resilience/']});
