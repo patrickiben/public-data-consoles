@@ -184,7 +184,7 @@ await check('flood zone values',()=>{
  const rural=res('floodZone',1);assert.equal(rural.status,'empty');assert.deepEqual(rural.data,{unmapped:true});assert.match(rural.message,/does not mean safe/);
 });
 await check('elevation values',()=>{
- const r=res('elevation',0);if(r.status==='ok'){assert.ok(r.data.feet>0);assert.match(r.dataDateText,/^Elevation source acquired/);}
+ const r=res('elevation',0);assert.ok(r.data.feet>0&&r.data.resolution>0);assert.match(r.dataDateText,/^Elevation source acquired/);
 });
 await check('surge values',()=>{
  const g=res('surge',0).data.byCategory;assert.ok(g[1]!=null&&g[5]!=null);
