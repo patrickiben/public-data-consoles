@@ -119,7 +119,7 @@ const gridPayload = now => {
     actions: [], limitations: ['No reserves, capacity shortfall or outage is established.']};
 };
 try {
-  for (const entry of manifest.consoles.filter(entry => !entry.native)) await scenario('all31 mapping: ' + entry.slug, {slug: entry.slug}, async page => {
+  for (const entry of manifest.consoles.filter(entry => !entry.native)) await scenario('all32 mapping: ' + entry.slug, {slug: entry.slug}, async page => {
     await open(page); const plan = await assertRendered(page);
     assert.equal(plan.diagnostics.filter(d => d.metricId).length, 10);
   });

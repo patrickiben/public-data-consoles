@@ -6,7 +6,7 @@ import {chromium} from 'playwright';
 // Maintained sources are integrated in memory: this test never regenerates HTML
 // and never contacts a provider, including basemap tile servers.
 const root=new URL('../',import.meta.url),read=p=>readFile(new URL(p,root),'utf8');
-const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain'];
+const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain','free-clinic-finder'];
 const core=await read('response-plans/core.js'),helpers=await read('response-plans/domain-helpers.js'),series=await read('response-plans/observed-series.js'),style=await read('response-plans/style.css');
 const htmls=Object.fromEntries(await Promise.all(slugs.map(async s=>[s,await read('consoles/'+s+'/index.html')])));
 const adapters=Object.fromEntries(await Promise.all(slugs.map(async s=>[s,await read('response-plans/adapters/'+s+'.js')])));

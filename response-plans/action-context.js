@@ -16,6 +16,7 @@
     'global-outbreak-tracker': 'outbreak', 'nhs-scotland-strain': 'nhs',
     'river-flood-network': 'riverNetwork', 'river-flood-propagation': 'riverChain',
     'us-local-hazards': 'local', 'quake-consequence': 'quake',
+    'free-clinic-finder': 'clinic',
     'us-grid-strain': 'grid', 'resilience-telemetry': 'market', 'usaid-consequence': 'aid',
     'prescription-savings': 'reference', 'medical-cost-abroad': 'reference',
     'medical-debt-assistant': 'reference', 'human-trafficking': 'reference', 'va-strain': 'va'
@@ -34,6 +35,7 @@
     'global-wash': 'water, sanitation and hygiene service indicators',
     'antimicrobial-resistance': 'the published antimicrobial-resistance estimate',
     'global-cancer': 'the selected cancer estimate', 'global-ntds': 'the selected NTD reference',
+    'free-clinic-finder': 'the nearby clinic and health center listings',
     'prescription-savings': 'the named drug product and public acquisition-cost benchmark',
     'medical-cost-abroad': 'the procedure quote and cross-border follow-up pathway',
     'medical-debt-assistant': 'the public billing and financial-assistance pathway',
@@ -126,6 +128,18 @@
       'The focus-gauge hydraulic AUC uses hourly observations and official action-to-major thresholds; it does not estimate properties affected or routed damage.',
       'Gauge order does not locate a property-level flood frontier; inundation geometry, asset distances and consequence weights are needed.',
       'A verified link crossing elevated and non-elevated categories identifies two watchpoints to review; it is not measured contaminant leakage or routed arrival.'
+    ],
+    clinic: [
+      'Counts in {subject} come from HRSA health center records and volunteer OpenStreetMap tags around one searched point; they show where care is listed, not how many people need it or who is eligible.',
+      'A distance comparison for {subject} needs lists from the same source and search radius; HRSA sliding-fee health centers and OpenStreetMap free clinics are not samples of one distribution.',
+      'Counts in {subject} depend on the search radius and on volunteer tagging, so a low count is not a measured shortage of clinics or health centers.',
+      'Only the searched area is read for {subject}; describing a gap between listed clinics needs complete local data and a defined travel network.',
+      'Each listing in {subject} carries its own data or last-edit date; an old entry may describe a clinic that has moved, closed or changed its fees or hours.',
+      'Counts for {subject} change with the radius the search covered, so counts at different radii are not comparable densities.',
+      'No model of appointment wait, eligibility, cost or services is fitted for {subject}; a listing and a straight-line distance are not a measure of practical access to care. Call to confirm.',
+      'Coverage of {subject} differs by source: HRSA sites charge on a sliding fee and are not necessarily free, and only some OpenStreetMap clinics are tagged free, so a missing listing is not proof that none exist.',
+      'Straight-line distance to the nearest place in {subject} is not travel time, and a failed source stays unknown rather than counting as none nearby. For an emergency call 911.',
+      'Sending someone to a place in {subject} needs a call to confirm cost, eligibility and hours; a list of places is not an observed network of who can be seen where. For a mental health crisis call or text 988.'
     ],
     local: [
       'Point alerts and reporting-area AQI do not supply affected population or facility weights; those denominators are needed before comparing burden.',
@@ -299,6 +313,18 @@
       'Check the completed hourly threshold integral before extrapolating from one stage reading.',
       'Locate actual inundation boundaries and assets before selecting frontier coverage.',
       'Verify both gauges on a category-crossing link before coordinating their local contacts.'
+    ],
+    clinic: [
+      'Check who each listed clinic serves before describing local need.',
+      'Keep each source list separate before comparing distances between places.',
+      'Read the search radius with each count before describing local availability.',
+      'Check the area beyond the searched point before drawing a service boundary.',
+      'Note each listing date before relying on an older entry.',
+      'Note the radius of each count before comparing one place with another.',
+      'Check fees, eligibility and hours separately before treating a listing as usable.',
+      'Cross-check partial listings with the clinic before sharing a list.',
+      'Confirm the nearest-clinic source succeeded before reading the distance.',
+      'Call each place to confirm cost and eligibility before recommending it to someone.'
     ],
     local: [
       'Identify affected groups and facilities before prioritizing burdens from point feeds.',

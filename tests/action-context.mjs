@@ -15,13 +15,13 @@ const manifest = JSON.parse(fs.readFileSync(new URL('../response-plans/manifest.
 const manifestEntries = Array.isArray(manifest) ? manifest : manifest.consoles || manifest.entries || manifest.modules;
 const allSlugs = manifestEntries.map(r => typeof r === 'string' ? r : r.slug).filter(s => s !== 'coastal-water-resilience').sort();
 assert.deepEqual([...slugs], allSlugs);
-assert.equal(slugs.length, 31);
+assert.equal(slugs.length, 32);
 
 let groups = 0;
 function test(label, check) { check(); groups++; console.log('ok - ' + label); }
 const read = (slug, metricId, extra = {}) => forMetric({ slug, metricId, phase: 'prepare', when: 'triggered', track: 'public', diagnostic: {status: 'triggered'}, ...extra });
 
-test('all 31 consoles, ten canonical IDs and both tracks have bounded explanations', () => {
+test('all 32 consoles, ten canonical IDs and both tracks have bounded explanations', () => {
   for (const slug of slugs) for (let metricId = 1; metricId <= 10; metricId++) for (const track of ['public', 'operator']) {
     const result = read(slug, metricId, {track});
     assert.equal(result.metricId, metricId);
@@ -31,6 +31,8 @@ test('all 31 consoles, ten canonical IDs and both tracks have bounded explanatio
   }
 });
 test('domain contrasts follow actual different estimands, rather than universal CRT thresholds', () => {
+  assert.match(read('free-clinic-finder', 3).why, /nearby clinic and health center listings/);
+  assert.match(read('free-clinic-finder', 7).why, /Call to confirm/);
   assert.match(read('nhs-scotland-strain', 2).why, /weekly attendance.*service size or case mix/);
   assert.match(read('us-grid-strain', 2).why, /two complete adjacent days of hourly demand/);
   assert.match(read('global-outbreak-tracker', 2).why, /reporting ages.*not.*severity/);
