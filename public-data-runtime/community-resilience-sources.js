@@ -152,6 +152,8 @@
  }
 
  /* ZIP, ZIP+4, address, "Name, ST" or plain name. ZIP-shaped input never reaches Nominatim. */
+ // Lowercase two-letter words that are also state codes; only the uppercase form counts as a state without a comma.
+ const LOWER_WORDS=new Set(['in','or','me','hi','oh','de','la','al','id','co','pa','ma','mo']);
  function parseQuery(input){
   const raw=String(input??''),t=raw.trim().replace(/\s+/g,' ');
   if(!t)return {kind:'empty',raw};
@@ -164,6 +166,15 @@
    const tail=/^(.*?)(?:\s+(\d{5})(?:-\d{4})?)?$/.exec(parts[parts.length-1]),state=stateOf(tail[1]);
    if(state)return {kind:'name',name:parts[0],stateAbbr:state.abbr,qualifier:parts.slice(1,-1).join(', ')||undefined,zip:tail[2]||undefined,raw};
    return {kind:'name',name:parts[0],qualifier:parts.slice(1).join(', '),raw};
+  }
+  /* "Moore OK", "Cedar Rapids IA", "Tucson Arizona": a trailing state code or name without a comma. */
+  const words=t.split(' ');
+  for(let k=Math.min(3,words.length-1);k>=1;k--){
+   const tailWords=words.slice(-k),tail=tailWords.join(' ');
+   if(k===1&&tail.length===2&&tail===tail.toLowerCase()&&LOWER_WORDS.has(tail))continue;
+   if(k===1&&tail.length===2&&!/^[A-Za-z]{2}$/.test(tail))continue;
+   const state=stateOf(tail);
+   if(state)return {kind:'name',name:words.slice(0,-k).join(' '),stateAbbr:state.abbr,raw};
   }
   return {kind:'name',name:t,raw};
  }
@@ -206,10 +217,11 @@
 
  /* Nominatim usage policy: at most one request per second across the whole page, by waiting, never dropping. */
  let nominatimChain=Promise.resolve(),nominatimLast=-Infinity;
- function nominatimTurn(){
-  const turn=nominatimChain.then(async()=>{const wait=nominatimLast+NOMINATIM_GAP_MS-Date.now();if(wait>0)await new Promise(r=>setTimeout(r,wait));nominatimLast=Date.now();});
+ function nominatimTurn(isCurrent){
+  const turn=nominatimChain.then(async()=>{const wait=nominatimLast+NOMINATIM_GAP_MS-Date.now();if(wait>0)await new Promise(r=>setTimeout(r,wait));if(typeof isCurrent==='function'&&!isCurrent())return false;nominatimLast=Date.now();return true;});
   nominatimChain=turn.catch(()=>{});return turn;
  }
+ const nominatimKey=t=>String(t||'').trim().replace(/\s+/g,' ').toLowerCase();
 
  function create(options={}){
   const fetchFn=options.fetch||(typeof root.fetch==='function'?root.fetch.bind(root):null);
@@ -217,6 +229,8 @@
   const timeoutMs=finite(options.timeoutMs)&&options.timeoutMs>0?options.timeoutMs:20000;
   const slowTimeoutMs=finite(options.slowTimeoutMs)&&options.slowTimeoutMs>0?options.slowTimeoutMs:timeoutMs*2;
   const metaCache=new Map();
+  /* Nominatim results are cached for the page session (usage policy: "Results must be cached on your side"); identical queries share one request. */
+  const nominatimCache=new Map();
   let airCache=null,coopsCache=null,odinStatesCache=null,femaMetaCache=null;
 
   function finish(def,r,fetchedAt){
@@ -360,14 +374,17 @@
     return {status:'ok',message:plural(items.length,'Census area')+' named '+n+where2+' found.'+(failed.length?' Not checked: '+failed.join(', ')+'.':''),data:{items,failed},...metaDate(meta)};
    });
   }
-  function geocodeAddress(input){
+  function geocodeAddress(input,opts={}){
    const q=parseQuery(input);
    if(q.kind!=='address'){
     const message=q.kind==='empty'?'Type a street address to search.':q.kind==='name'?'Address search is for street addresses only; places are looked up in Census data.':'ZIP codes are looked up in Census ZIP Code Tabulation Areas, never in Nominatim.';
     return Promise.resolve(finish(SOURCES.nominatim,{status:'not-applicable',message,...undated('No request made'),data:null},iso(now())));
    }
-   return run('nominatim',async()=>{
-    await nominatimTurn();
+   const key=nominatimKey(q.raw);
+   if(nominatimCache.has(key))return nominatimCache.get(key).then(r=>r.status==='skipped'?geocodeAddress(input,opts):r);
+   const promise=run('nominatim',async()=>{
+    // A search the person has already replaced sends nothing.
+    if(!(await nominatimTurn(opts.isCurrent)))return {status:'skipped',message:'A newer search replaced this one, so no address request was sent.',...undated('No request made'),data:null};
     const {json}=await request(NOMINATIM+'?'+qs({format:'jsonv2',addressdetails:'1',countrycodes:'us,pr,gu,vi,as,mp',limit:'5',q:q.raw.trim().replace(/\s+/g,' ')}));
     if(!Array.isArray(json))throw new SourceError('Unexpected answer');
     const items=json.map(r=>({lat:num(r&&r.lat),lon:num(r&&r.lon),displayName:String(r&&r.display_name||''),type:String(r&&(r.addresstype||r.type)||''),postcode:r&&r.address&&r.address.postcode||null,state:r&&r.address&&r.address.state||null})).filter(r=>r.lat!=null&&r.lon!=null);
@@ -375,6 +392,10 @@
     if(!items.length)return {status:'empty',message:'No match for that address in OpenStreetMap. Try a ZIP code or a city name.',data,...undated('Nominatim search answers carry no data date')};
     return {status:'ok',message:plural(items.length,'address match','address matches')+' from OpenStreetMap. '+ATTRIBUTION+'.',data,...undated('Nominatim search answers carry no data date')};
    });
+   nominatimCache.set(key,promise);
+   // Only answers are cached; a failure or a dropped request can be tried again.
+   promise.then(r=>{if(r.status!=='ok'&&r.status!=='empty'&&nominatimCache.get(key)===promise)nominatimCache.delete(key);});
+   return promise;
   }
   function pointGeography(lat,lon){
    return run('point-geography',async()=>{
@@ -480,7 +501,7 @@
     const p=json&&json.properties;
     if(!p||!p.cwa)throw new SourceError('Missing forecast office');
     const last=u=>typeof u==='string'&&u?u.split('/').pop():null,rel=p.relativeLocation&&p.relativeLocation.properties||{};
-    return {status:'ok',message:'National Weather Service office '+p.cwa+'.',data:{office:String(p.cwa),forecastZone:last(p.forecastZone),countyZone:last(p.county),forecastLink:'https://forecast.weather.gov/MapClick.php?lat='+c4(lat)+'&lon='+c4(lon),city:text(rel.city),state:text(rel.state)},...undated('Reference lookup; the response carries no data date')};
+    return {status:'ok',message:'National Weather Service office '+p.cwa+'.',data:{office:String(p.cwa),forecastZone:last(p.forecastZone),countyZone:last(p.county),forecastLink:'https://forecast.weather.gov/MapClick.php?lat='+c4(lat)+'&lon='+c4(lon),city:text(rel.city),state:text(rel.state),timeZone:text(p.timeZone)},...undated('Reference lookup; the response carries no data date')};
    });
   }
   function spcOutlook(place){

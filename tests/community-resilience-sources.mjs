@@ -62,6 +62,9 @@ await check('parseQuery',()=>{
  assert.deepEqual([q('San Juan, Puerto Rico').kind,q('San Juan, Puerto Rico').name,q('San Juan, Puerto Rico').stateAbbr],['name','San Juan','PR']);
  assert.equal(q('   ').kind,'empty');
  assert.equal(q('Paris, France').stateAbbr,undefined);
+ // A trailing state without a comma
+ for(const [t,name,st] of [['Moore OK','Moore','OK'],['Cedar Rapids IA','Cedar Rapids','IA'],['Tucson AZ','Tucson','AZ'],['San Juan PR','San Juan','PR'],['Tucson Arizona','Tucson','AZ'],['Charleston West Virginia','Charleston','WV'],['moore ok','moore','OK'],['Oklahoma City OK','Oklahoma City','OK']]){const r=q(t);assert.deepEqual([r.kind,r.name,r.stateAbbr],['name',name,st],t);}
+ for(const t of ['New York','Kansas City','Virginia Beach','Iowa City','Washington','Lake in']){assert.equal(q(t).stateAbbr,undefined,t);}
 });
 
 // ---------- replay of every recorded live call ----------
@@ -254,6 +257,16 @@ await check('Nominatim gate waits at least 1000 ms',async()=>{
  await other.geocodeAddress('3 Main St, Springfield, IL');
  assert.ok(starts[2]-starts[1]>=1000,'the gate is module-wide, gap '+(starts[2]-starts[1])+' ms');
  assert.ok(Date.now()-t0>=2000);
+});
+await check('Nominatim answers are cached per session; identical queries share one request; replaced searches send nothing',async()=>{
+ const urls=[];const s=make(async url=>{urls.push(url);return respond(200,'[{"lat":"27.77","lon":"-82.64","display_name":"175 5th St N"}]');});
+ const [a,b,c]=await Promise.all([s.geocodeAddress('175 5th St N, St. Petersburg, FL'),s.geocodeAddress('175 5th St N, St. Petersburg, FL'),s.geocodeAddress('  175 5th st n,  St. Petersburg, FL ')]);
+ assert.equal(urls.length,1,'one request for three identical queries');for(const r of [a,b,c])assert.equal(r.status,'ok');
+ assert.equal((await s.geocodeAddress('175 5th St N, St. Petersburg, FL')).status,'ok');assert.equal(urls.length,1,'a repeat is served from the cache');
+ let current=true;const pending=s.geocodeAddress('9 Other St, Tampa, FL',{isCurrent:()=>current});current=false;
+ const dropped=await pending;assert.equal(dropped.status,'skipped');assert.equal(urls.length,1,'a replaced search sends nothing');
+ const retry=await s.geocodeAddress('9 Other St, Tampa, FL');assert.equal(retry.status,'ok');assert.equal(urls.length,2,'a dropped query is not cached');
+ const failing=make(async()=>respond(500,'no'));assert.equal((await failing.geocodeAddress('1 Fail St, Tampa, FL')).status,'unavailable');
 });
 
 // ---------- every adapter: unavailable on HTTP 500, timeout, malformed JSON and ArcGIS error objects ----------

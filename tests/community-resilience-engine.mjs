@@ -195,7 +195,7 @@ const baseResults=()=>({nwsAlerts:alertsResult([]),
 const metricsTucson=run(continuous);
 check('buildPlan with no alerts: prepare phase, ten dimensions, only real records or labeled general guidance',()=>{
  const results=baseResults(),modules=E.moduleStatus({ranking:pimaRanking,place:tucson,results}),plan=E.buildPlan({place:tucson,ranking:pimaRanking,modules,results,metrics:metricsTucson,track:'public',now:NOW});
- assert.equal(plan.phase.id,'prepare');assert.equal(plan.phase.until,null);assert.match(plan.phase.basis,/No active NWS alert for the leading hazards/);
+ assert.equal(plan.phase.id,'prepare');assert.equal(plan.phase.until,null);assert.match(plan.phase.basis,/No active NWS watch or warning for the leading hazards/);
  assert.equal(plan.dimensions.length,10);assert.deepEqual(Array.from(plan.dimensions,d=>d.pillar),['Statistical Interchangeability','Statistical Interchangeability','Statistical Interchangeability','Topological and Spatial Cohesion','Topological and Spatial Cohesion','Topological and Spatial Cohesion','Topological and Spatial Cohesion','Exposure Resilience','Exposure Resilience','Exposure Resilience']);
  for(const d of plan.dimensions){assert.ok(d.condition&&d.inputs&&d.mitigation&&d.nextSteps,d.id);assert.ok(/^(Computed here|Not available here|Not applicable here): /.test(d.condition),d.condition);}
  assert.match(plan.dimensions[4].condition,/^Computed here: 3 assets within the declared boundary band.*2 of 6 assets exposed by the ground elevation screen.*Flagged for review/);
@@ -223,6 +223,31 @@ check('buildPlan with a Flood Watch: watch phase until the alert ends, real aler
  const other=E.buildPlan({place:tucson,ranking:pimaRanking,results:{...baseResults(),nwsAlerts:alertsResult([{...floodWatch,id:'ws',event:'Winter Storm Warning'}])},track:'public',now:NOW});
  assert.equal(other.phase.id,'prepare','alerts for non-leading hazards do not set the phase');assert.match(other.phase.basis,/Winter Storm Warning/);
  const down=E.buildPlan({place:tucson,ranking:pimaRanking,results:{nwsAlerts:{status:'unavailable',title:'NWS active alerts',message:'HTTP 503.'}},track:'public',now:NOW});assert.equal(down.phase.id,'prepare');assert.match(down.phase.basis,/not available right now/);
+});
+check('buildPlan: advisories and statements do not set Watch; a missing ranking sets no phase; tide flood levels are converted to MLLW',()=>{
+ for(const event of ['Flood Advisory','Flood Statement','Heat Advisory']){
+  const results={...baseResults(),nwsAlerts:alertsResult([{...floodWatch,id:'adv-'+event,event}])},ranking=E.rankHazards({county:countyResult(NRI.pima),alerts:results.nwsAlerts,now:NOW});
+  const plan=E.buildPlan({place:tucson,ranking,results,track:'public',now:NOW});
+  assert.equal(plan.phase.id,'prepare',event);assert.match(plan.phase.basis,new RegExp('do not set the Watch or Warning phase\\): '+event),event);
+  assert.ok(plan.actions.some(a=>a.text.startsWith('NWS '+event)),'the advisory is still listed as an action');
+ }
+ const noRank=E.buildPlan({place:tucson,ranking:{status:'unavailable',rows:[],leading:[]},results:baseResults(),track:'public',now:NOW});
+ assert.equal(noRank.phase.id,'unknown');assert.match(noRank.phase.label,/Phase not set: hazard ranking unavailable/);assert.match(noRank.phase.basis,/FEMA NRI did not answer/);
+ const tide={id:'coops-station',title:'NOAA CO-OPS water level',owner:'NOAA',status:'ok',dataDate:'2026-10-30T17:54:00Z',fetchedAt:'2026-10-30T17:59:00Z',data:{station:{id:'8726520',name:'St. Petersburg',distanceKm:1.9},latest:{t:'2026-10-30T17:54:00Z',v:2.86,datum:'MLLW'},floodLevels:{nwsMinor:8.33,mllwInStationDatum:3.37,datumNote:'x'}}};
+ const pin=place('FL',{label:'St. Petersburg city, Pinellas County, Florida'});
+ const sp=E.buildPlan({place:pin,ranking:{status:'ok',rows:[],leading:['CFLD']},modules:[{id:'surge',status:'leading'}],results:{nwsAlerts:alertsResult([]),tideStation:tide},track:'public',now:NOW});
+ const act=sp.actions.find(a=>a.module==='surge'&&/St. Petersburg/.test(a.text));assert.ok(act);assert.match(act.text,/2\.86 ft MLLW/);assert.match(act.text,/about 4\.96 ft MLLW \(converted from station datum/);assert.doesNotMatch(act.text,/8\.33|mllwInStationDatum|\)\.\)/);
+ const noConv=E.buildPlan({place:pin,ranking:{status:'ok',rows:[],leading:['CFLD']},modules:[{id:'surge',status:'leading'}],results:{nwsAlerts:alertsResult([]),tideStation:{...tide,data:{...tide.data,floodLevels:{nwsMinor:8.33}}}},track:'public',now:NOW});
+ assert.doesNotMatch(noConv.actions.find(a=>a.module==='surge').text,/flood level/,'no threshold when it cannot be converted');
+ const tz=E.buildPlan({place:{...tucson,timeZone:'America/Phoenix'},ranking:E.rankHazards({county:countyResult(NRI.pima),alerts:alertsResult([floodWatch]),now:NOW}),results:{...baseResults(),nwsAlerts:alertsResult([floodWatch])},track:'public',now:NOW});
+ assert.match(tz.phase.basis,/MST/,'times use the place time zone');
+});
+check('rankHazards withholds special land use and nearly empty tracts',()=>{
+ const county=countyResult(NRI.pima),base=county.data.attrs;
+ const tract=(fips,pop)=>({...county,id:'nri-tract',data:{attrs:{...base,TRACTFIPS:fips,POPULATION:pop,BUILDVALUE:1,EAL_VALT:40600}}});
+ const afb=E.rankHazards({county,tract:tract('04019980300',5000),now:NOW});assert.equal(afb.tract,null);assert.match(afb.tractNote,/special land use tract/);assert.ok(afb.rows.every(r=>r.tractEal==null));
+ const tiny=E.rankHazards({county,tract:tract('04019001100',5),now:NOW});assert.equal(tiny.tract,null);assert.match(tiny.tractNote,/only 5 residents/);
+ const normal=E.rankHazards({county,tract:tract('04019001100',4200),now:NOW});assert.ok(normal.tract);
 });
 check('format helpers, distanceKm and nearest',()=>{
  assert.equal(E.format.money(110079977),'$110.1M');assert.equal(E.format.money(2.5e9),'$2.5B');assert.equal(E.format.money(848998),'$849.0K');assert.equal(E.format.money(null),'Not listed');

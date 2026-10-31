@@ -61,6 +61,10 @@ def build(html, entry, core, style, adapter):
     return html
 
 
+# Pages whose embedded metric help must contain no em dash (U+2014).
+NO_EM_DASH_PAGES = {"community-resilience"}
+
+
 def generate(root=ROOT, check=False):
     source = root / "response-plans"
     manifest = json.loads((source / "manifest.json").read_text())
@@ -86,7 +90,11 @@ def generate(root=ROOT, check=False):
                 raise ValueError("Priority source must be in response-plans/priorities")
             adapter = priority.read_text() + "\n" + adapter
         original = page.read_text()
-        expected = embed_help(build(original, entry, core, style, adapter), help_script, help_style)
+        page_help = help_script
+        if entry["slug"] in NO_EM_DASH_PAGES:
+            # This page's brief forbids em dashes even in code strings; the shared source keeps its text so other pages stay unchanged.
+            page_help = help_script.replace(" \u2014 ", ": ").replace("\u2014", "-")
+        expected = embed_help(build(original, entry, core, style, adapter), page_help, help_style)
         if expected != original:
             outputs[page] = expected
     guide = source / "guide.html"

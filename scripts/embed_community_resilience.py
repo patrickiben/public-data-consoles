@@ -57,6 +57,8 @@ def main():
     assert order == sorted(order), 'blocks must appear as engine, sources, places'
     if args.check and updated != html:
         parser.exit(1, 'Embedded Community Resilience runtime differs from its canonical files\n')
+    if args.check and '\u2014' in updated:
+        parser.exit(1, 'The Community Resilience page contains an em dash (U+2014); the brief forbids them, code strings included\n')
     if not args.check and updated != html:
         TARGET.write_text(updated)
     print('PASS: embedded Community Resilience runtime and places match their canonical files' if args.check else 'Embedded Community Resilience runtime and places')

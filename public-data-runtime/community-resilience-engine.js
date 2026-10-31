@@ -40,7 +40,8 @@
  /* NWS event names (2025 renames included) to NRI hazard codes. First matching rule wins. */
  const ALERT_RULES=[[/storm surge/i,['CFLD']],[/coastal flood|lakeshore flood/i,['CFLD']],[/extreme wind/i,['HRCN','SWND']],[/hurricane|tropical storm|typhoon/i,['HRCN']],[/flood/i,['IFLD']],[/tsunami/i,['TSUN']],[/avalanche/i,['AVLN']],[/red flag|fire weather|extreme fire/i,['WFIR']],[/heat/i,['HWAV']],[/extreme cold|cold weather|wind chill|hard freeze/i,['CWAV']],[/ice storm|freezing rain/i,['ISTM']],[/winter storm|winter weather|blizzard|lake effect snow|snow squall/i,['WNTW']],[/tornado/i,['TRND']],[/severe thunderstorm/i,['HAIL','SWND']],[/high wind|wind advisory/i,['SWND']],[/ashfall|volcan/i,['VLCN']]];
  function alertHazards(event){const name=text(event);if(!name)return [];const rule=ALERT_RULES.find(([re])=>re.test(name));return rule?rule[1].slice():[];}
- const alertLevel=event=>/warning|emergency/i.test(event||'')?'warning':'watch';
+ /* Only a Warning or Emergency sets the Warning phase and only a Watch sets the Watch phase; advisories, statements and outlooks do not. */
+ const alertLevel=event=>/warning|emergency/i.test(event||'')?'warning':/watch/i.test(event||'')?'watch':'advisory';
  function alertItems(result,now){const items=Array.isArray(result)?result:Array.isArray(result?.data?.items)?result.data.items:[];return items.filter(a=>{if(!text(a?.event))return false;const until=timeOf(a.ends||a.expires);return !finite(now)||!finite(until)||until>now;});}
 
  /* ---------- geometry ---------- */
@@ -58,6 +59,10 @@
   if(tattrs&&String(tattrs.STCOFIPS||'')!==String(attrs.STCOFIPS)){tattrs=null;tractNote='The tract figures belong to another county and are not shown.';}
   const sameAsCounty=!!tattrs&&tattrs.POPULATION===attrs.POPULATION&&tattrs.BUILDVALUE===attrs.BUILDVALUE&&finite(tattrs.EAL_VALT)&&finite(attrs.EAL_VALT)&&Math.abs(tattrs.EAL_VALT-attrs.EAL_VALT)<1;
   if(sameAsCounty){tractNote='This county is a single census tract; county figures are shown because tract ratings use a different percentile base.';tattrs=null;}
+  /* A special land use tract (code 9800 to 9899: military base, park, airport) or one with under 100 residents does not describe where people live. */
+  if(tattrs){const tf=text(tattrs.TRACTFIPS)||'',code=tf.slice(5),pop=num(tattrs.POPULATION);
+   if(/^98\d\d/.test(code)){tractNote='Census tract '+tf+' is a special land use tract (code 9800 to 9899, such as a military base, park or airport), so its figures do not describe where people in this place live and are not shown.';tattrs=null;}
+   else if(finite(pop)&&pop<100){tractNote='Census tract '+tf+' has only '+pop+' residents, so its figures do not describe where people in this place live and are not shown.';tattrs=null;}}
   const active=alertItems(alerts,now);
   const rows=HAZARDS.map(h=>{const rating=text(attrs[h.code+'_RISKR']),eal=num(attrs[h.code+'_EALT']),score=num(attrs[h.code+'_RISKS']);
    return {code:h.code,name:h.name,module:h.module,eal,ealRank:null,rating,score,tractEal:tattrs?num(tattrs[h.code+'_EALT']):null,tractRating:tattrs?text(tattrs[h.code+'_RISKR']):null,applicable:rating!=='Not Applicable',insufficient:INSUFFICIENT.has(rating),
@@ -261,16 +266,23 @@
  const nameOf=it=>text(it?.name)||text(it?.shelterName)||text(it?.shelter_name)||text(it?.facilityName)||text(it?.NAME)||null;
  const placeOf=it=>[text(it?.address),text(it?.city),text(it?.state)].filter(Boolean).join(', ');
  function fnv(str){let h=0x811c9dc5;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0;}return h.toString(16).padStart(8,'0');}
- function buildPlan({place,ranking,modules,results,metrics,track,now}={}){
-  const tr=track==='operator'?'operator':'public',res=results||{},get=n=>res[n]||null,ok=n=>get(n)?.status==='ok'&&get(n).data?get(n):null,fd=v=>format.date(v),dist=v=>format.distance(v);
+ function buildPlan({place,ranking,modules,results,metrics,track,now,timeZone}={}){
+  const tz=timeZone||place?.timeZone||undefined;
+  const tr=track==='operator'?'operator':'public',res=results||{},get=n=>res[n]||null,ok=n=>get(n)?.status==='ok'&&get(n).data?get(n):null,fd=v=>format.date(v,tz),dist=v=>format.distance(v);
   const after=name=>{const h=REVIEW_HOURS[name];return finite(now)&&h?iso(now+h*3600000):null;},dateOf=r=>r?.dataDate||null,srcName=r=>(r?.title||'Source')+(r?.hostedBy==='Esri'?' (Federal dataset hosted by Esri)':'')+(r?.experimental?' (Experimental)':'');
   const leading=new Set(ranking?.leading||[]),alerts=alertItems(get('nwsAlerts'),now);
   /* Phase: active NWS alerts for the leading hazards only (no Coastal storm clock, response-plans/CONTRACT.md:101). */
-  const leadAlerts=alerts.filter(a=>alertHazards(a.event).some(c=>leading.has(c))).map(a=>({a,level:alertLevel(a.event),until:a.ends||a.expires||null}));
+  const leadAll=alerts.filter(a=>alertHazards(a.event).some(c=>leading.has(c))).map(a=>({a,level:alertLevel(a.event),until:a.ends||a.expires||null}));
+  const leadAlerts=leadAll.filter(x=>x.level!=='advisory'),advisories=leadAll.filter(x=>x.level==='advisory').map(x=>x.a.event);
   const top=leadAlerts.sort((x,y)=>(y.level==='warning')-(x.level==='warning')||(timeOf(y.until)||0)-(timeOf(x.until)||0))[0];
-  const others=alerts.filter(a=>!leadAlerts.some(x=>x.a===a)).map(a=>a.event);
-  const phase=top?{id:top.level,label:top.level==='warning'?'Warning':'Watch',basis:'NWS '+top.a.event+(top.a.senderName?' from '+top.a.senderName:'')+(top.until?', in effect until '+fd(top.until):'')+'. It maps to '+alertHazards(top.a.event).filter(c=>leading.has(c)).map(c=>HAZARD.get(c).name).join(', ')+', a leading hazard here.'+(others.length?' Other active alerts (not leading hazards here): '+[...new Set(others)].join(', ')+'.':''),until:top.until?iso(timeOf(top.until)):null,alertId:top.a.id||null}
-   :{id:'prepare',label:'Prepare',basis:get('nwsAlerts')?.status==='ok'||get('nwsAlerts')?.status==='empty'?'No active NWS alert for the leading hazards at this point'+(others.length?' (other active alerts: '+[...new Set(others)].join(', ')+')':'')+'.':'NWS alerts are not available right now, so no alert can set the phase; check weather.gov directly.',until:null,alertId:null};
+  const others=alerts.filter(a=>!leadAll.some(x=>x.a===a)).map(a=>a.event);
+  const advLine=advisories.length?' Active advisories or statements for leading hazards (these do not set the Watch or Warning phase): '+[...new Set(advisories)].join(', ')+'.':'';
+  const otherLine=others.length?' Other active alerts (not leading hazards here): '+[...new Set(others)].join(', ')+'.':'';
+  const alertsOk=get('nwsAlerts')?.status==='ok'||get('nwsAlerts')?.status==='empty';
+  const rankOk=ranking&&ranking.status==='ok';
+  const phase=!rankOk?{id:'unknown',label:'Phase not set: hazard ranking unavailable',basis:(ranking?'FEMA NRI did not answer for this county':'The FEMA NRI hazard ranking has not loaded yet')+', so the leading hazards, and with them the phase, cannot be set here.'+(alertsOk?(alerts.length?' Active NWS alerts at this point: '+[...new Set(alerts.map(a=>a.event))].join(', ')+'.':' NWS lists no active alert at this point.'):' NWS alerts are not available right now; check weather.gov directly.'),until:null,alertId:null}
+   :top?{id:top.level,label:top.level==='warning'?'Warning':'Watch',basis:'NWS '+top.a.event+(top.a.senderName?' from '+top.a.senderName:'')+(top.until?', in effect until '+fd(top.until):'')+'. It maps to '+alertHazards(top.a.event).filter(c=>leading.has(c)).map(c=>HAZARD.get(c).name).join(', ')+', a leading hazard here.'+advLine+otherLine,until:top.until?iso(timeOf(top.until)):null,alertId:top.a.id||null}
+   :{id:'prepare',label:'Prepare',basis:alertsOk?'No active NWS watch or warning for the leading hazards at this point.'+advLine+otherLine:'NWS alerts are not available right now, so no alert can set the phase; check weather.gov directly.',until:null,alertId:null};
   /* Dimensions */
   const mlist=Array.isArray(metrics?.metrics)?metrics.metrics:[],summary=metrics?.screenSummary||null;
   const screenLine=summary&&finite(summary.exposed)?' ('+summary.exposed+' of '+summary.total+' assets exposed by the '+summary.label+' screen'+(typeof summary.source==='string'?', '+summary.source:'')+')':'';
@@ -287,7 +299,7 @@
    const r=get,live=[];
    /* Only a storm within 1,500 km is named as an action; a storm on the far side of the world is not one. */
    if(m.id==='tropical'&&ok('tropical')?.data.storms?.length){const s=r('tropical').data.storms[0];if(finite(s.distanceKm)&&s.distanceKm<=1500)live.push(['tropical',(s.name||'A tropical cyclone')+(finite(s.intensity)?' ('+s.intensity+' kt)':'')+' is '+dist(s.distanceKm)+' away (advisory '+fd(s.advisoryTime)+'). Follow NHC advisories.',s.advisoryTime]);}
-   if(m.id==='surge'&&ok('tideStation')?.data.station){const d=r('tideStation').data,st=d.station,fl=d.floodLevels||{};live.push(['tideStation','NOAA tide station '+st.name+' ('+st.id+'), '+dist(st.distanceKm)+' away'+(d.latest&&finite(d.latest.v)?': '+d.latest.v.toFixed(2)+' ft MLLW at '+fd(d.latest.t):'')+(finite(fl.nwsMinor)?'. NWS minor flood level '+fl.nwsMinor+' ft'+(fl.datumNote?' ('+fl.datumNote+')':''):'')+'.',d.latest?.t]);}
+   if(m.id==='surge'&&ok('tideStation')?.data.station){const d=r('tideStation').data,st=d.station,fl=d.floodLevels||{};live.push(['tideStation','NOAA tide station '+st.name+' ('+st.id+'), '+dist(st.distanceKm)+' away'+(d.latest&&finite(d.latest.v)?': '+d.latest.v.toFixed(2)+' ft MLLW at '+fd(d.latest.t):'')+(finite(fl.nwsMinor)&&finite(fl.mllwInStationDatum)?'. NWS minor flood level about '+(fl.nwsMinor-fl.mllwInStationDatum).toFixed(2)+' ft MLLW (converted from station datum; NOAA does not name the datum of its flood levels)':'')+'.',d.latest?.t]);}
    if(m.id==='surge'&&ok('ofsForecast')&&res.ofsPeak?.levelFtMLLW!=null)live.push(['ofsForecast','NOAA OFS forecast peak '+res.ofsPeak.levelFtMLLW.toFixed(2)+' ft MLLW at '+fd(res.ofsPeak.peakAt)+' (model guidance, not an observation).',res.ofsPeak.peakAt]);
    if(m.id==='inland-flood'&&ok('riverGauges')?.data.items?.length){const g=r('riverGauges').data.items[0];live.push(['riverGauges','River gauge '+(g.name||g.lid)+' ('+g.lid+'), '+dist(g.distanceKm)+' away'+(finite(g.observedFt)?': '+g.observedFt+' ft at '+fd(g.observedTime):'')+(g.category?', flood category '+String(g.category).replace(/_/g,' '):'')+(finite(g.minor)?'; minor flood stage '+g.minor+' ft':'')+'.',g.observedTime]);}
    if(m.id==='severe'&&res.spcCategory&&ok('spcOutlook')){const c=res.spcCategory;live.push(['spcOutlook',c.label?'SPC Day 1 outlook: '+(SPC_NAMES[c.label]||c.label)+' ('+c.label+', level '+c.rank+' of 6) at this point, valid until '+fd(r('spcOutlook').data.expires)+'.':'SPC Day 1 outlook: no severe thunderstorm category at this point.',r('spcOutlook').data.issued]);}

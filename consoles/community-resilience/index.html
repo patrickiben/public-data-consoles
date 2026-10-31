@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark light">
+<link rel="icon" href="data:,">
 <title>Community Resilience</title>
 <meta name="description" content="Search an address, ZIP code, city or municipality to see which natural hazards matter most there by FEMA expected annual loss, what is active now, which lifelines those hazards would strain, and a response plan, from public federal data. Unofficial; confirm before you go. In an emergency, call 911.">
 <style>
@@ -13,7 +14,7 @@
  --sea:#5cb6f7;--sea2:#1f7fd6;--ok:#34c98a;--info:#6ea8dc;--watch:#f0b429;--alert:#ff7a73;
  --ok-bg:rgba(52,201,138,.14);--watch-bg:rgba(240,180,41,.14);--alert-bg:rgba(239,83,80,.16);--dim-bg:rgba(145,165,189,.15);--info-bg:rgba(110,168,220,.16);
  --disc-bg:#0a1422;--disc-ink:#c6d6e8;--h1a:#eaf1f8;--h1b:#9fd8f0;
- --go-bg:linear-gradient(135deg,#3fa9f5,#1f7fd6);--go-ink:#06223c;--btn2-bg:#1b3050;--btn2-hover:#22406a;
+ --go-bg:linear-gradient(135deg,#5cb6f7,#3a96e6);--go-ink:#021526;--btn2-bg:#1b3050;--btn2-hover:#22406a;
  --page-bg:radial-gradient(1200px 600px at 70% -10%,#1a3252 0%,#0f1b2a 55%) fixed,#0f1b2a;
  --shadow:0 8px 24px -16px rgba(0,0,0,.6);
  --r:16px;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -87,10 +88,10 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
 .rs-box.rs-bad{border-color:var(--alert);background:var(--alert-bg);color:var(--ink)}
 .rs-box p{margin:0}.rs-box p+p{margin-top:5px}
 .rs-badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;white-space:nowrap;background:var(--dim-bg);color:var(--ink2)}
-[data-state="ok"]>.rs-badge,[data-state="ok"] .rs-badge.rs-own,.rs-badge.rs-b-ok{background:var(--ok-bg);color:var(--ok)}
-[data-state="loading"]>.rs-badge,[data-state="loading"] .rs-badge.rs-own,.rs-badge.rs-b-loading{background:var(--info-bg);color:var(--info)}
-[data-state="partial"]>.rs-badge,[data-state="partial"] .rs-badge.rs-own,.rs-badge.rs-b-watch{background:var(--watch-bg);color:var(--watch)}
-[data-state="failed"]>.rs-badge,[data-state="failed"] .rs-badge.rs-own,.rs-badge.rs-b-bad{background:var(--alert-bg);color:var(--alert)}
+[data-state="ok"]>.rs-badge:not(.rs-own),.rs-badge.rs-own[data-state="ok"],.rs-badge.rs-b-ok{background:var(--ok-bg);color:var(--ok)}
+[data-state="loading"]>.rs-badge:not(.rs-own),.rs-badge.rs-own[data-state="loading"],.rs-badge.rs-b-loading{background:var(--info-bg);color:var(--info)}
+[data-state="partial"]>.rs-badge:not(.rs-own),.rs-badge.rs-own[data-state="partial"],.rs-badge.rs-b-watch{background:var(--watch-bg);color:var(--watch)}
+[data-state="failed"]>.rs-badge:not(.rs-own),.rs-badge.rs-own[data-state="failed"],.rs-badge.rs-b-bad{background:var(--alert-bg);color:var(--alert)}
 .rs-status{list-style:none;margin:0;padding:0}
 .rs-st{display:grid;grid-template-columns:minmax(0,15em) auto minmax(0,1fr);gap:4px 12px;align-items:start;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
 .rs-st:last-child{border-bottom:none}
@@ -167,6 +168,8 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
 .rs-phase{display:inline-block;font-weight:760;font-size:14px;padding:3px 12px;border-radius:999px;background:var(--ok-bg);color:var(--ok)}
 .rs-phase.rs-p-watch{background:var(--watch-bg);color:var(--watch)}
 .rs-phase.rs-p-warning{background:var(--alert-bg);color:var(--alert)}
+.rs-phase.rs-p-unknown{background:var(--dim-bg);color:var(--ink2)}
+html .leaflet-container .leaflet-control-attribution{background:var(--panel);color:var(--ink2)}html .leaflet-container .leaflet-control-attribution a{color:var(--sea)}
 .rs-dim{border-top:1px solid var(--line);padding:9px 0}
 .rs-dim h4{margin:0;font-size:14px}
 .rs-dim p{margin:3px 0 0;font-size:13px;color:var(--ink2)}
@@ -281,7 +284,7 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
  function definition(id){return definitions.find(function(d){return d.id===Number(id);});}
  function label(id,text,context,contextTitle){
   var d=definition(id);if(!d)return esc(text);
-  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?' — '+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
+  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?': '+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
  }
  function ensure(){
   if(tip)return tip;
@@ -364,7 +367,7 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
 <div id="disc"><b>Unofficial</b> planning view built from public federal data. <b>Confirm before you go.</b> In an emergency, call 911.</div>
 <div class="rs-wrap">
   <header class="rs-header">
-    <div class="rs-top"><a href="../../">All consoles</a><button id="rs-theme" type="button" aria-label="Color theme: follows your device. Activate to switch.">Theme: Auto</button></div>
+    <div class="rs-top"><a href="../../">All consoles</a><button id="rs-theme" type="button" aria-label="Theme: Auto, follows your device. Activate to switch.">Theme: Auto</button></div>
     <h1>Community Resilience</h1>
     <p class="rs-sub">Which natural hazards matter most where you live, what is active now, and which lifelines those hazards would strain, from public federal data.</p>
     <div class="rs-emerg" role="note" aria-label="Emergency number">
@@ -380,6 +383,7 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
           <button id="rs-locate" type="button">Use my location</button>
         </div>
       </div>
+      <div id="rs-place" role="status" aria-live="polite" tabindex="-1"><span class="rs-muted">Search for a place to begin.</span></div>
       <p class="rs-attrib">Address search: &copy; OpenStreetMap contributors, via Nominatim (<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">usage policy</a>). Used for street addresses only, only when you press Search, at most once a second. ZIP codes and place names are looked up in Census data.</p>
       <div class="rs-examples" role="group" aria-label="Example searches"><span>Examples:</span>
         <button type="button" class="rs-chip" data-example="33701">33701</button>
@@ -394,11 +398,11 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
         <p>A street address you type goes to OpenStreetMap Nominatim. A ZIP code or place name goes to Census TIGERweb. Once a place is found, its point (latitude and longitude) and its state and county go to the federal and public services in the Sources and status table, such as FEMA, NOAA, USGS, EPA, CDC and HRSA, some through Esri-hosted copies. "Use my location" asks your browser for your position only when you press it. Map images come from tile.openstreetmap.org and show the area you view; the map code (Leaflet) loads from unpkg.com without any location.</p></details>
       </div>
     </form>
-    <div id="rs-place" role="status" aria-live="polite"><span class="rs-muted">Search for a place to begin.</span></div>
   </header>
+  <main id="rs-main">
 
   <section id="rs-chooser" class="rs-section" aria-labelledby="rs-chooser-title" hidden>
-    <h2 id="rs-chooser-title">Which place did you mean?</h2>
+    <h2 id="rs-chooser-title" tabindex="-1">Which place did you mean?</h2>
     <div id="rs-chooser-body"></div>
   </section>
 
@@ -506,6 +510,7 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
   </section>
 
   <div id="rs-foot">An unofficial, volunteer tool. It reads public data for the place you search, in your browser. It is not a warning service and it does not know whether any facility is open. In an emergency, call 911.</div>
+  </main>
   <div id="rs-live-say" class="rs-sr" role="status" aria-live="polite"></div>
 </div>
 <!-- BEGIN COMMUNITY RESILIENCE ENGINE -->
@@ -552,7 +557,8 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
  /* NWS event names (2025 renames included) to NRI hazard codes. First matching rule wins. */
  const ALERT_RULES=[[/storm surge/i,['CFLD']],[/coastal flood|lakeshore flood/i,['CFLD']],[/extreme wind/i,['HRCN','SWND']],[/hurricane|tropical storm|typhoon/i,['HRCN']],[/flood/i,['IFLD']],[/tsunami/i,['TSUN']],[/avalanche/i,['AVLN']],[/red flag|fire weather|extreme fire/i,['WFIR']],[/heat/i,['HWAV']],[/extreme cold|cold weather|wind chill|hard freeze/i,['CWAV']],[/ice storm|freezing rain/i,['ISTM']],[/winter storm|winter weather|blizzard|lake effect snow|snow squall/i,['WNTW']],[/tornado/i,['TRND']],[/severe thunderstorm/i,['HAIL','SWND']],[/high wind|wind advisory/i,['SWND']],[/ashfall|volcan/i,['VLCN']]];
  function alertHazards(event){const name=text(event);if(!name)return [];const rule=ALERT_RULES.find(([re])=>re.test(name));return rule?rule[1].slice():[];}
- const alertLevel=event=>/warning|emergency/i.test(event||'')?'warning':'watch';
+ /* Only a Warning or Emergency sets the Warning phase and only a Watch sets the Watch phase; advisories, statements and outlooks do not. */
+ const alertLevel=event=>/warning|emergency/i.test(event||'')?'warning':/watch/i.test(event||'')?'watch':'advisory';
  function alertItems(result,now){const items=Array.isArray(result)?result:Array.isArray(result?.data?.items)?result.data.items:[];return items.filter(a=>{if(!text(a?.event))return false;const until=timeOf(a.ends||a.expires);return !finite(now)||!finite(until)||until>now;});}
 
  /* ---------- geometry ---------- */
@@ -570,6 +576,10 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
   if(tattrs&&String(tattrs.STCOFIPS||'')!==String(attrs.STCOFIPS)){tattrs=null;tractNote='The tract figures belong to another county and are not shown.';}
   const sameAsCounty=!!tattrs&&tattrs.POPULATION===attrs.POPULATION&&tattrs.BUILDVALUE===attrs.BUILDVALUE&&finite(tattrs.EAL_VALT)&&finite(attrs.EAL_VALT)&&Math.abs(tattrs.EAL_VALT-attrs.EAL_VALT)<1;
   if(sameAsCounty){tractNote='This county is a single census tract; county figures are shown because tract ratings use a different percentile base.';tattrs=null;}
+  /* A special land use tract (code 9800 to 9899: military base, park, airport) or one with under 100 residents does not describe where people live. */
+  if(tattrs){const tf=text(tattrs.TRACTFIPS)||'',code=tf.slice(5),pop=num(tattrs.POPULATION);
+   if(/^98\d\d/.test(code)){tractNote='Census tract '+tf+' is a special land use tract (code 9800 to 9899, such as a military base, park or airport), so its figures do not describe where people in this place live and are not shown.';tattrs=null;}
+   else if(finite(pop)&&pop<100){tractNote='Census tract '+tf+' has only '+pop+' residents, so its figures do not describe where people in this place live and are not shown.';tattrs=null;}}
   const active=alertItems(alerts,now);
   const rows=HAZARDS.map(h=>{const rating=text(attrs[h.code+'_RISKR']),eal=num(attrs[h.code+'_EALT']),score=num(attrs[h.code+'_RISKS']);
    return {code:h.code,name:h.name,module:h.module,eal,ealRank:null,rating,score,tractEal:tattrs?num(tattrs[h.code+'_EALT']):null,tractRating:tattrs?text(tattrs[h.code+'_RISKR']):null,applicable:rating!=='Not Applicable',insufficient:INSUFFICIENT.has(rating),
@@ -773,16 +783,23 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
  const nameOf=it=>text(it?.name)||text(it?.shelterName)||text(it?.shelter_name)||text(it?.facilityName)||text(it?.NAME)||null;
  const placeOf=it=>[text(it?.address),text(it?.city),text(it?.state)].filter(Boolean).join(', ');
  function fnv(str){let h=0x811c9dc5;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0;}return h.toString(16).padStart(8,'0');}
- function buildPlan({place,ranking,modules,results,metrics,track,now}={}){
-  const tr=track==='operator'?'operator':'public',res=results||{},get=n=>res[n]||null,ok=n=>get(n)?.status==='ok'&&get(n).data?get(n):null,fd=v=>format.date(v),dist=v=>format.distance(v);
+ function buildPlan({place,ranking,modules,results,metrics,track,now,timeZone}={}){
+  const tz=timeZone||place?.timeZone||undefined;
+  const tr=track==='operator'?'operator':'public',res=results||{},get=n=>res[n]||null,ok=n=>get(n)?.status==='ok'&&get(n).data?get(n):null,fd=v=>format.date(v,tz),dist=v=>format.distance(v);
   const after=name=>{const h=REVIEW_HOURS[name];return finite(now)&&h?iso(now+h*3600000):null;},dateOf=r=>r?.dataDate||null,srcName=r=>(r?.title||'Source')+(r?.hostedBy==='Esri'?' (Federal dataset hosted by Esri)':'')+(r?.experimental?' (Experimental)':'');
   const leading=new Set(ranking?.leading||[]),alerts=alertItems(get('nwsAlerts'),now);
   /* Phase: active NWS alerts for the leading hazards only (no Coastal storm clock, response-plans/CONTRACT.md:101). */
-  const leadAlerts=alerts.filter(a=>alertHazards(a.event).some(c=>leading.has(c))).map(a=>({a,level:alertLevel(a.event),until:a.ends||a.expires||null}));
+  const leadAll=alerts.filter(a=>alertHazards(a.event).some(c=>leading.has(c))).map(a=>({a,level:alertLevel(a.event),until:a.ends||a.expires||null}));
+  const leadAlerts=leadAll.filter(x=>x.level!=='advisory'),advisories=leadAll.filter(x=>x.level==='advisory').map(x=>x.a.event);
   const top=leadAlerts.sort((x,y)=>(y.level==='warning')-(x.level==='warning')||(timeOf(y.until)||0)-(timeOf(x.until)||0))[0];
-  const others=alerts.filter(a=>!leadAlerts.some(x=>x.a===a)).map(a=>a.event);
-  const phase=top?{id:top.level,label:top.level==='warning'?'Warning':'Watch',basis:'NWS '+top.a.event+(top.a.senderName?' from '+top.a.senderName:'')+(top.until?', in effect until '+fd(top.until):'')+'. It maps to '+alertHazards(top.a.event).filter(c=>leading.has(c)).map(c=>HAZARD.get(c).name).join(', ')+', a leading hazard here.'+(others.length?' Other active alerts (not leading hazards here): '+[...new Set(others)].join(', ')+'.':''),until:top.until?iso(timeOf(top.until)):null,alertId:top.a.id||null}
-   :{id:'prepare',label:'Prepare',basis:get('nwsAlerts')?.status==='ok'||get('nwsAlerts')?.status==='empty'?'No active NWS alert for the leading hazards at this point'+(others.length?' (other active alerts: '+[...new Set(others)].join(', ')+')':'')+'.':'NWS alerts are not available right now, so no alert can set the phase; check weather.gov directly.',until:null,alertId:null};
+  const others=alerts.filter(a=>!leadAll.some(x=>x.a===a)).map(a=>a.event);
+  const advLine=advisories.length?' Active advisories or statements for leading hazards (these do not set the Watch or Warning phase): '+[...new Set(advisories)].join(', ')+'.':'';
+  const otherLine=others.length?' Other active alerts (not leading hazards here): '+[...new Set(others)].join(', ')+'.':'';
+  const alertsOk=get('nwsAlerts')?.status==='ok'||get('nwsAlerts')?.status==='empty';
+  const rankOk=ranking&&ranking.status==='ok';
+  const phase=!rankOk?{id:'unknown',label:'Phase not set: hazard ranking unavailable',basis:(ranking?'FEMA NRI did not answer for this county':'The FEMA NRI hazard ranking has not loaded yet')+', so the leading hazards, and with them the phase, cannot be set here.'+(alertsOk?(alerts.length?' Active NWS alerts at this point: '+[...new Set(alerts.map(a=>a.event))].join(', ')+'.':' NWS lists no active alert at this point.'):' NWS alerts are not available right now; check weather.gov directly.'),until:null,alertId:null}
+   :top?{id:top.level,label:top.level==='warning'?'Warning':'Watch',basis:'NWS '+top.a.event+(top.a.senderName?' from '+top.a.senderName:'')+(top.until?', in effect until '+fd(top.until):'')+'. It maps to '+alertHazards(top.a.event).filter(c=>leading.has(c)).map(c=>HAZARD.get(c).name).join(', ')+', a leading hazard here.'+advLine+otherLine,until:top.until?iso(timeOf(top.until)):null,alertId:top.a.id||null}
+   :{id:'prepare',label:'Prepare',basis:alertsOk?'No active NWS watch or warning for the leading hazards at this point.'+advLine+otherLine:'NWS alerts are not available right now, so no alert can set the phase; check weather.gov directly.',until:null,alertId:null};
   /* Dimensions */
   const mlist=Array.isArray(metrics?.metrics)?metrics.metrics:[],summary=metrics?.screenSummary||null;
   const screenLine=summary&&finite(summary.exposed)?' ('+summary.exposed+' of '+summary.total+' assets exposed by the '+summary.label+' screen'+(typeof summary.source==='string'?', '+summary.source:'')+')':'';
@@ -799,7 +816,7 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
    const r=get,live=[];
    /* Only a storm within 1,500 km is named as an action; a storm on the far side of the world is not one. */
    if(m.id==='tropical'&&ok('tropical')?.data.storms?.length){const s=r('tropical').data.storms[0];if(finite(s.distanceKm)&&s.distanceKm<=1500)live.push(['tropical',(s.name||'A tropical cyclone')+(finite(s.intensity)?' ('+s.intensity+' kt)':'')+' is '+dist(s.distanceKm)+' away (advisory '+fd(s.advisoryTime)+'). Follow NHC advisories.',s.advisoryTime]);}
-   if(m.id==='surge'&&ok('tideStation')?.data.station){const d=r('tideStation').data,st=d.station,fl=d.floodLevels||{};live.push(['tideStation','NOAA tide station '+st.name+' ('+st.id+'), '+dist(st.distanceKm)+' away'+(d.latest&&finite(d.latest.v)?': '+d.latest.v.toFixed(2)+' ft MLLW at '+fd(d.latest.t):'')+(finite(fl.nwsMinor)?'. NWS minor flood level '+fl.nwsMinor+' ft'+(fl.datumNote?' ('+fl.datumNote+')':''):'')+'.',d.latest?.t]);}
+   if(m.id==='surge'&&ok('tideStation')?.data.station){const d=r('tideStation').data,st=d.station,fl=d.floodLevels||{};live.push(['tideStation','NOAA tide station '+st.name+' ('+st.id+'), '+dist(st.distanceKm)+' away'+(d.latest&&finite(d.latest.v)?': '+d.latest.v.toFixed(2)+' ft MLLW at '+fd(d.latest.t):'')+(finite(fl.nwsMinor)&&finite(fl.mllwInStationDatum)?'. NWS minor flood level about '+(fl.nwsMinor-fl.mllwInStationDatum).toFixed(2)+' ft MLLW (converted from station datum; NOAA does not name the datum of its flood levels)':'')+'.',d.latest?.t]);}
    if(m.id==='surge'&&ok('ofsForecast')&&res.ofsPeak?.levelFtMLLW!=null)live.push(['ofsForecast','NOAA OFS forecast peak '+res.ofsPeak.levelFtMLLW.toFixed(2)+' ft MLLW at '+fd(res.ofsPeak.peakAt)+' (model guidance, not an observation).',res.ofsPeak.peakAt]);
    if(m.id==='inland-flood'&&ok('riverGauges')?.data.items?.length){const g=r('riverGauges').data.items[0];live.push(['riverGauges','River gauge '+(g.name||g.lid)+' ('+g.lid+'), '+dist(g.distanceKm)+' away'+(finite(g.observedFt)?': '+g.observedFt+' ft at '+fd(g.observedTime):'')+(g.category?', flood category '+String(g.category).replace(/_/g,' '):'')+(finite(g.minor)?'; minor flood stage '+g.minor+' ft':'')+'.',g.observedTime]);}
    if(m.id==='severe'&&res.spcCategory&&ok('spcOutlook')){const c=res.spcCategory;live.push(['spcOutlook',c.label?'SPC Day 1 outlook: '+(SPC_NAMES[c.label]||c.label)+' ('+c.label+', level '+c.rank+' of 6) at this point, valid until '+fd(r('spcOutlook').data.expires)+'.':'SPC Day 1 outlook: no severe thunderstorm category at this point.',r('spcOutlook').data.issued]);}
@@ -997,6 +1014,8 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
  }
 
  /* ZIP, ZIP+4, address, "Name, ST" or plain name. ZIP-shaped input never reaches Nominatim. */
+ // Lowercase two-letter words that are also state codes; only the uppercase form counts as a state without a comma.
+ const LOWER_WORDS=new Set(['in','or','me','hi','oh','de','la','al','id','co','pa','ma','mo']);
  function parseQuery(input){
   const raw=String(input??''),t=raw.trim().replace(/\s+/g,' ');
   if(!t)return {kind:'empty',raw};
@@ -1009,6 +1028,15 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
    const tail=/^(.*?)(?:\s+(\d{5})(?:-\d{4})?)?$/.exec(parts[parts.length-1]),state=stateOf(tail[1]);
    if(state)return {kind:'name',name:parts[0],stateAbbr:state.abbr,qualifier:parts.slice(1,-1).join(', ')||undefined,zip:tail[2]||undefined,raw};
    return {kind:'name',name:parts[0],qualifier:parts.slice(1).join(', '),raw};
+  }
+  /* "Moore OK", "Cedar Rapids IA", "Tucson Arizona": a trailing state code or name without a comma. */
+  const words=t.split(' ');
+  for(let k=Math.min(3,words.length-1);k>=1;k--){
+   const tailWords=words.slice(-k),tail=tailWords.join(' ');
+   if(k===1&&tail.length===2&&tail===tail.toLowerCase()&&LOWER_WORDS.has(tail))continue;
+   if(k===1&&tail.length===2&&!/^[A-Za-z]{2}$/.test(tail))continue;
+   const state=stateOf(tail);
+   if(state)return {kind:'name',name:words.slice(0,-k).join(' '),stateAbbr:state.abbr,raw};
   }
   return {kind:'name',name:t,raw};
  }
@@ -1051,10 +1079,11 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
 
  /* Nominatim usage policy: at most one request per second across the whole page, by waiting, never dropping. */
  let nominatimChain=Promise.resolve(),nominatimLast=-Infinity;
- function nominatimTurn(){
-  const turn=nominatimChain.then(async()=>{const wait=nominatimLast+NOMINATIM_GAP_MS-Date.now();if(wait>0)await new Promise(r=>setTimeout(r,wait));nominatimLast=Date.now();});
+ function nominatimTurn(isCurrent){
+  const turn=nominatimChain.then(async()=>{const wait=nominatimLast+NOMINATIM_GAP_MS-Date.now();if(wait>0)await new Promise(r=>setTimeout(r,wait));if(typeof isCurrent==='function'&&!isCurrent())return false;nominatimLast=Date.now();return true;});
   nominatimChain=turn.catch(()=>{});return turn;
  }
+ const nominatimKey=t=>String(t||'').trim().replace(/\s+/g,' ').toLowerCase();
 
  function create(options={}){
   const fetchFn=options.fetch||(typeof root.fetch==='function'?root.fetch.bind(root):null);
@@ -1062,6 +1091,8 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
   const timeoutMs=finite(options.timeoutMs)&&options.timeoutMs>0?options.timeoutMs:20000;
   const slowTimeoutMs=finite(options.slowTimeoutMs)&&options.slowTimeoutMs>0?options.slowTimeoutMs:timeoutMs*2;
   const metaCache=new Map();
+  /* Nominatim results are cached for the page session (usage policy: "Results must be cached on your side"); identical queries share one request. */
+  const nominatimCache=new Map();
   let airCache=null,coopsCache=null,odinStatesCache=null,femaMetaCache=null;
 
   function finish(def,r,fetchedAt){
@@ -1205,14 +1236,17 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
     return {status:'ok',message:plural(items.length,'Census area')+' named '+n+where2+' found.'+(failed.length?' Not checked: '+failed.join(', ')+'.':''),data:{items,failed},...metaDate(meta)};
    });
   }
-  function geocodeAddress(input){
+  function geocodeAddress(input,opts={}){
    const q=parseQuery(input);
    if(q.kind!=='address'){
     const message=q.kind==='empty'?'Type a street address to search.':q.kind==='name'?'Address search is for street addresses only; places are looked up in Census data.':'ZIP codes are looked up in Census ZIP Code Tabulation Areas, never in Nominatim.';
     return Promise.resolve(finish(SOURCES.nominatim,{status:'not-applicable',message,...undated('No request made'),data:null},iso(now())));
    }
-   return run('nominatim',async()=>{
-    await nominatimTurn();
+   const key=nominatimKey(q.raw);
+   if(nominatimCache.has(key))return nominatimCache.get(key).then(r=>r.status==='skipped'?geocodeAddress(input,opts):r);
+   const promise=run('nominatim',async()=>{
+    // A search the person has already replaced sends nothing.
+    if(!(await nominatimTurn(opts.isCurrent)))return {status:'skipped',message:'A newer search replaced this one, so no address request was sent.',...undated('No request made'),data:null};
     const {json}=await request(NOMINATIM+'?'+qs({format:'jsonv2',addressdetails:'1',countrycodes:'us,pr,gu,vi,as,mp',limit:'5',q:q.raw.trim().replace(/\s+/g,' ')}));
     if(!Array.isArray(json))throw new SourceError('Unexpected answer');
     const items=json.map(r=>({lat:num(r&&r.lat),lon:num(r&&r.lon),displayName:String(r&&r.display_name||''),type:String(r&&(r.addresstype||r.type)||''),postcode:r&&r.address&&r.address.postcode||null,state:r&&r.address&&r.address.state||null})).filter(r=>r.lat!=null&&r.lon!=null);
@@ -1220,6 +1254,10 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
     if(!items.length)return {status:'empty',message:'No match for that address in OpenStreetMap. Try a ZIP code or a city name.',data,...undated('Nominatim search answers carry no data date')};
     return {status:'ok',message:plural(items.length,'address match','address matches')+' from OpenStreetMap. '+ATTRIBUTION+'.',data,...undated('Nominatim search answers carry no data date')};
    });
+   nominatimCache.set(key,promise);
+   // Only answers are cached; a failure or a dropped request can be tried again.
+   promise.then(r=>{if(r.status!=='ok'&&r.status!=='empty'&&nominatimCache.get(key)===promise)nominatimCache.delete(key);});
+   return promise;
   }
   function pointGeography(lat,lon){
    return run('point-geography',async()=>{
@@ -1325,7 +1363,7 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
     const p=json&&json.properties;
     if(!p||!p.cwa)throw new SourceError('Missing forecast office');
     const last=u=>typeof u==='string'&&u?u.split('/').pop():null,rel=p.relativeLocation&&p.relativeLocation.properties||{};
-    return {status:'ok',message:'National Weather Service office '+p.cwa+'.',data:{office:String(p.cwa),forecastZone:last(p.forecastZone),countyZone:last(p.county),forecastLink:'https://forecast.weather.gov/MapClick.php?lat='+c4(lat)+'&lon='+c4(lon),city:text(rel.city),state:text(rel.state)},...undated('Reference lookup; the response carries no data date')};
+    return {status:'ok',message:'National Weather Service office '+p.cwa+'.',data:{office:String(p.cwa),forecastZone:last(p.forecastZone),countyZone:last(p.county),forecastLink:'https://forecast.weather.gov/MapClick.php?lat='+c4(lat)+'&lon='+c4(lon),city:text(rel.city),state:text(rel.state),timeZone:text(p.timeZone)},...undated('Reference lookup; the response carries no data date')};
    });
   }
   function spcOutlook(place){
@@ -1985,7 +2023,9 @@ const finite=v=>typeof v==='number'&&Number.isFinite(v);
 const plural=(n,one,many)=>n+' '+(n===1?one:(many||one+'s'));
 const fmt=E.format;
 const dist=km=>fmt.distance(km);
-const when=v=>fmt.date(v);
+// Place-specific times use the place's own time zone (from the NWS points lookup) once it is known.
+const placeTz=()=>state&&state.place&&state.place.timeZone||undefined;
+const when=v=>fmt.date(v,placeTz());
 const num=(v,d)=>finite(v)?v.toLocaleString('en-US',{maximumFractionDigits:d==null?0:d}):'Not listed';
 const EM_DASH=new RegExp('\\s*'+String.fromCharCode(8212)+'\\s*','g');
 // Agency text: collapse whitespace, shorten, and show any em dash as " - ".
@@ -2107,15 +2147,18 @@ function waitingText(){
  if(state.phase==='stopped')return 'No place to show: '+(state.message||'the search stopped')+'.';
  return 'Loading...';
 }
-function waitingBox(){return '<ul class="rs-status">'+stRow('Status',state.phase==='stopped'?'unavailable':state.phase==='idle'?'idle':'loading',esc(waitingText()))+'</ul>';}
+function waitingBox(){return '<ul class="rs-status">'+stRow('Status',state.phase==='stopped'?'unavailable':state.phase==='idle'||state.phase==='choosing'?'idle':'loading',esc(waitingText()))+'</ul>';}
 
 /* ---------- search ---------- */
 function setPlaceLine(html){$('rs-place').innerHTML=html;}
+const reduceMotion=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Bring the place status into view (it sits right under the search bar) and focus it after a chooser pick.
+function focusPlace(){const el=$('rs-place');el.focus({preventScroll:true});el.scrollIntoView({block:'nearest',behavior:reduceMotion()?'auto':'smooth'});}
 function begin(phase){
  state.run++;state.phase=phase;state.place=null;state.info=null;state.results={};state.pending={};state.message=null;state.chooser=null;
  state.ranking=null;state.modules=[];state.open=new Set();state.spcCategory=null;state.ofsPeak=null;state.plan=null;state.checkedAt=null;
  state.local={scope:'city',level:null};state.diag={asset:'',screen:'',status:'idle',result:null,screen_:null,note:null};
- Object.keys(painted).forEach(k=>delete painted[k]);
+ Object.keys(painted).forEach(k=>delete painted[k]);loadedModules.clear();
  schedule();return state.run;
 }
 function stop(run,message){if(run!==state.run)return;state.phase='stopped';state.message=message;setPlaceLine('<span class="rs-err">'+esc(message)+'</span>');schedule();say(message);}
@@ -2128,6 +2171,7 @@ async function search(text){
  const run=begin('geocoding');state.parsed=q;
  if(q.kind==='zip-invalid'){stop(run,'A ZIP code has 5 digits, for example 33701. Nothing was sent');return;}
  setPlaceLine('<span class="rs-spin" aria-hidden="true"></span> Looking up '+esc(raw)+'...');
+ $('rs-place').scrollIntoView({block:'nearest',behavior:reduceMotion()?'auto':'smooth'});
  if(q.kind==='zip')return zipFlow(run,q);
  if(q.kind==='name')return nameFlow(run,q);
  return addressFlow(run,raw);
@@ -2137,7 +2181,7 @@ async function zipFlow(run,q){
  const r=await track('zcta',src.zcta(q.zip));
  if(run!==state.run)return;
  if(r.status==='empty'){stop(run,'Not a valid or known ZIP code: '+q.zip+' is not a 2020 Census ZIP Code Tabulation Area. Nothing else was searched');return;}
- if(r.status!=='ok'||!r.data){stop(run,'The Census ZIP code lookup did not answer, so no place could be found. Try again, or type a city or street address');return;}
+ if(r.status!=='ok'||!r.data){stop(run,'The Census ZIP code lookup did not answer, so no place could be found. Try again in a minute, or type a street address (looked up by OpenStreetMap Nominatim instead of the Census)');return;}
  overlap.then(o=>{if(run===state.run&&state.place&&o.status==='ok'&&o.data)state.place.zcta={zip:q.zip,counties:o.data.counties,places:o.data.places,edgeTouching:!!o.data.edgeTouching};schedule();});
  return resolvePoint(run,{kind:'zip',lat:r.data.lat,lon:r.data.lon,zip:q.zip,how:'the internal point of ZIP Code Tabulation Area '+q.zip});
 }
@@ -2153,23 +2197,24 @@ function singlePlace(items){
 async function nameFlow(run,q){
  const r=await track('placesByName',src.placesByName(q.name,q.stateAbbr));
  if(run!==state.run)return;
- if(r.status==='unavailable'){stop(run,'The Census place lookup did not answer. Try again, or type a ZIP code or street address');return;}
+ if(r.status==='unavailable'){stop(run,'The Census place lookup did not answer. Try again in a minute, or type a street address (looked up by OpenStreetMap Nominatim instead of the Census)');return;}
  const items=r.status==='ok'&&r.data?r.data.items.filter(i=>finite(i.lat)&&finite(i.lon)):[];
  if(!items.length){
   // No Census place: fall through to the address search, which accepts only street addresses (owner decision 1).
-  const a=await track('geocodeAddress',src.geocodeAddress(q.raw));
+  const a=await track('geocodeAddress',src.geocodeAddress(q.raw,{isCurrent:()=>run===state.run}));
   if(run!==state.run)return;
   if(a.status==='ok'&&a.data&&a.data.items.length){const it=a.data.items[0];return resolvePoint(run,{kind:'address',lat:it.lat,lon:it.lon,label:clean(it.displayName,200),how:'the OpenStreetMap match for the address'});}
-  stop(run,'No Census place or county subdivision named '+q.name+(q.stateAbbr?' in '+q.stateAbbr:'')+' is listed. '+(a.status==='not-applicable'?'Address search needs a street address with a house number. ':'')+'Check the spelling, add the state (for example "'+q.name+', OH"), or type a ZIP code');
+  stop(run,'No Census place or county subdivision named '+q.name+(q.stateAbbr?' in '+q.stateAbbr:'')+' is listed. '+(a.status==='not-applicable'?'Address search needs a street address with a house number. ':'')+'Check the spelling'+(q.stateAbbr?'':', add the two-letter state code after a comma (for example "'+q.name+', ST")')+', or type a ZIP code');
   return;
  }
  const one=singlePlace(items);
  if(one)return choosePlace(run,one,items);
- state.phase='choosing';state.chooser={items,name:q.name};
+ state.phase='choosing';state.chooser={items,name:q.name,stateAbbr:q.stateAbbr||null};
  setPlaceLine(esc(plural(items.length,'place'))+' named <b>'+esc(q.name)+'</b>. Pick one below.');
  schedule();
  say(plural(items.length,'place')+' found. Pick one from the list.');
- requestAnimationFrame(()=>{const b=document.querySelector('#rs-chooser button');if(b)b.focus();});
+ // Move focus to the chooser heading once it is painted, so the next Tab reaches the first pick (not the example chips).
+ setTimeout(()=>{if(run!==state.run||!state.chooser)return;renderAll();const h=$('rs-chooser-title');h.focus({preventScroll:true});h.scrollIntoView({block:'start',behavior:reduceMotion()?'auto':'smooth'});},0);
 }
 function choosePlace(run,item,all){
  if(run!==state.run)return;
@@ -2178,7 +2223,7 @@ function choosePlace(run,item,all){
  return resolvePoint(run,{kind:'place',lat:item.lat,lon:item.lon,picked:item,also:others,how:'the Census internal point of '+item.name});
 }
 async function addressFlow(run,raw){
- const r=await track('geocodeAddress',src.geocodeAddress(raw));
+ const r=await track('geocodeAddress',src.geocodeAddress(raw,{isCurrent:()=>run===state.run}));
  if(run!==state.run)return;
  if(r.status==='ok'&&r.data&&r.data.items.length){
   const it=r.data.items[0];
@@ -2244,8 +2289,12 @@ function renderChooser(){
  const items=state.chooser.items;
  const li=(it)=>{const i=items.indexOf(it);return '<li><button type="button" class="rs-btn" data-pick="'+i+'" data-focus="pick-'+i+'">'+esc(it.name)+', '+esc(it.stateName||it.stateAbbr||'')+'</button> <span class="rs-muted">'+esc(TYPE_LABEL[it.type]||it.type)+'</span></li>';};
  const main=items.filter(i=>i.type!=='county-subdivision'),subs=items.filter(i=>i.type==='county-subdivision');
- paint('rs-chooser-body','<p class="rs-lede">'+esc(plural(items.length,'Census area'))+' named '+esc(state.chooser.name)+'. Pick one; nothing else is searched until you do. Adding the state, for example "'+esc(state.chooser.name)+', IL", narrows the list.</p>'+
-  (main.length?'<ul class="rs-list">'+main.map(li).join('')+'</ul>':'')+
+ // Group by state (state names in order) so a long list can be scanned.
+ const stName=i=>i.stateName||i.stateAbbr||'State not listed',states=[...new Set(main.map(stName))].sort((a,b)=>a.localeCompare(b));
+ const grouped=states.length>1?states.map(st=>'<h3 class="rs-h4">'+esc(st)+'</h3><ul class="rs-list">'+main.filter(i=>stName(i)===st).map(li).join('')+'</ul>').join(''):'<ul class="rs-list">'+main.map(li).join('')+'</ul>';
+ const first=(states.length?main.find(i=>stName(i)===states[0]):null)||subs[0],hint=state.chooser.stateAbbr||!first||!first.stateAbbr?'':' Adding the state after a comma, for example "'+esc(state.chooser.name)+', '+esc(first.stateAbbr)+'", narrows the list.';
+ paint('rs-chooser-body','<p class="rs-lede">'+esc(plural(items.length,'Census area'))+' named '+esc(state.chooser.name)+'. Pick one; nothing else is searched until you do.'+hint+'</p>'+
+  (main.length?grouped:'')+
   (subs.length?(main.length?'<details class="rs-privacy"><summary data-focus="subs">Towns, townships and other county subdivisions ('+subs.length+')</summary><ul class="rs-list">'+subs.map(li).join('')+'</ul></details>':'<ul class="rs-list">'+subs.map(li).join('')+'</ul>'):'')+srcLine(state.results.placesByName));
 }
 function renderGeo(){
@@ -2361,10 +2410,23 @@ function drawMap(){
 /* ---------- render everything that changed ---------- */
 const RENDERERS=[renderChooser,renderGeo,renderRanking,renderLive,renderModules,renderLocal,renderLifelines,renderContext,renderMetrics,renderPlan,renderSources];
 function renderAll(){
+ const busy=state.phase==='geocoding'||state.phase==='locating',btn=$('rs-search');
+ if(btn.textContent!==(busy?'Searching...':'Search')){btn.textContent=busy?'Searching...':'Search';btn.setAttribute('aria-busy',busy?'true':'false');}
+ announceSettled();
  RENDERERS.forEach(fn=>{try{fn();}catch(e){console.error(e);}});
  try{drawMap();}catch(e){hasMap=false;mapDown('The map could not be drawn.');}
 }
 function say(text){$('rs-live-say').textContent=text;}
+// Announce once when the last pending source of a search settles, naming the unavailable sources.
+let announcedRun=-1;
+function announceSettled(){
+ if(!state.place||state.phase!=='place'||announcedRun===state.run||Object.keys(state.pending).length||!state.results.nriCounty)return;
+ announcedRun=state.run;
+ const down=Object.values(state.results).filter(r=>r&&r.status==='unavailable').map(r=>r.title);
+ say('Hazard data loaded for '+state.place.label+'. '+(down.length?plural(down.length,'source')+' unavailable: '+down.join(', ')+'.':'No source was unavailable.'));
+}
+// Re-evaluate time-dependent views (alert expiry, phase) once a minute while a place is shown.
+setInterval(()=>{if(state.place)schedule();},60000);
 
 /* ---------- theme (no storage: the choice lasts for this page view) ---------- */
 const THEMES=['auto','light','dark'];let theme='auto';
@@ -2373,14 +2435,16 @@ $('rs-theme').addEventListener('click',()=>{
  if(theme==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',theme);
  const label={auto:'Auto',light:'Light',dark:'Dark'}[theme];
  $('rs-theme').textContent='Theme: '+label;
- $('rs-theme').setAttribute('aria-label','Color theme: '+(theme==='auto'?'follows your device':label)+'. Activate to switch.');
+ $('rs-theme').setAttribute('aria-label','Theme: '+label+(theme==='auto'?', follows your device':'')+'. Activate to switch.');
 });
 
 /* ---------- wiring ---------- */
 $('rs-search-form').addEventListener('submit',e=>{e.preventDefault();search();});
 $('rs-locate').addEventListener('click',useLocation);
+// In-page links move focus to the target section heading, not only the scroll position.
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="#rs-"]');if(!a)return;const t=document.getElementById(a.getAttribute('href').slice(1));if(!t)return;const h=t.matches('h2,h3')?t:t.querySelector('h2,h3')||t;if(!h.hasAttribute('tabindex'))h.setAttribute('tabindex','-1');setTimeout(()=>h.focus({preventScroll:true}),0);});
 document.querySelector('.rs-examples').addEventListener('click',e=>{const b=e.target.closest('[data-example]');if(b)search(b.getAttribute('data-example'));});
-$('rs-chooser').addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(!b||!state.chooser)return;const items=state.chooser.items,it=items[+b.getAttribute('data-pick')];if(it){state.run++;const run=state.run;choosePlace(run,it,[]);}});
+$('rs-chooser').addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(!b||!state.chooser)return;const items=state.chooser.items,it=items[+b.getAttribute('data-pick')];if(it){state.run++;const run=state.run;choosePlace(run,it,[]);focusPlace();}});
 /* ---------- ranking, modules and live feeds ---------- */
 const MODULE_DEF={};E.MODULES.forEach(m=>{MODULE_DEF[m.id]=m;});
 const HAZARD_NAME={};E.HAZARDS.forEach(h=>{HAZARD_NAME[h.code]=h.name;});
@@ -2411,6 +2475,7 @@ function updateOfsPeak(){
  state.ofsPeak=E.ofsPeak(f.data.rows,stations,cfg?cfg.datum.mllwToNavd88Ft:0,Date.now());
 }
 function changed(method){
+ if(method==='nwsPoint'){const r=state.results.nwsPoint;if(state.place&&r&&r.status==='ok'&&r.data&&r.data.timeZone){try{new Intl.DateTimeFormat('en-US',{timeZone:r.data.timeZone});state.place.timeZone=r.data.timeZone;}catch(e){}}}
  if(method==='nriCounty'||method==='nriTract'||method==='nwsAlerts')rerank();
  if(method==='spcOutlook'){const r=state.results.spcOutlook;state.spcCategory=r&&r.status==='ok'&&r.data&&state.place?S.spcCategoryAt(r.data,state.place.lat,state.place.lon):null;}
  if(method==='ofsForecast'||method==='loadLocal'){localCache.key='';updateOfsPeak();}
@@ -2469,12 +2534,14 @@ function renderRanking(){
   const t=res('nriTract');
   html+='<dl class="rs-dl"><dt>County</dt><dd>'+esc(rk.county.name)+(rk.county.state?', '+esc(rk.county.state):'')+' (population '+esc(num(rk.county.population))+', building value '+esc(fmt.money(rk.county.buildingValue))+')</dd>'+
    '<dt>All hazards</dt><dd>Expected annual loss '+esc(fmt.money(rk.county.ealTotal))+' a year'+(rk.noRatings?'':'; overall NRI risk rating '+esc(rk.county.riskRating||'not listed')+'; social vulnerability '+esc(rk.county.soviRating||'not listed')+'; community resilience '+esc(rk.county.reslRating||'not listed'))+'</dd>'+
-   '<dt>Census tract</dt><dd>'+(rk.tract?esc(rk.tract.fips)+' (population '+esc(num(rk.tract.population))+', expected annual loss '+esc(fmt.money(rk.tract.ealTotal))+(rk.tract.riskRating&&!rk.noRatings?', rating '+esc(rk.tract.riskRating):'')+')':esc(rk.tractNote||(t?t.message:state.pending.nriTract?'Loading tract figures...':'Tract figures not available.')))+'</dd>'+
+   '<dt>Census tract</dt><dd>'+(rk.tract?esc(rk.tract.fips)+' (population '+esc(num(rk.tract.population))+', expected annual loss '+esc(fmt.money(rk.tract.ealTotal))+(rk.tract.riskRating&&!rk.noRatings?', rating '+esc(rk.tract.riskRating):'')+')'+tractWhere():esc(rk.tractNote||(t?t.message:state.pending.nriTract?'Loading tract figures...':'Tract figures not available.')))+'</dd>'+
    '<dt>NRI version</dt><dd>'+esc(rk.version||'Not stated')+'; '+esc(c.dataDateText)+'</dd></dl>';
   if(rk.noRatings)html+='<div class="rs-box rs-warn"><p>'+esc(rk.noRatingsNote)+'</p></div>';
-  const ranked=rk.rows.filter(r=>r.ealRank!=null),lead=new Set(rk.leading);
+  const ranked=rk.rows.filter(r=>r.ealRank!=null),lead=new Set(rk.leading),ast=statusOf('nwsAlerts');
+  // 'None listed' only when NWS answered; a pending or failed alerts request is never shown as none.
+  const noAlert=ast==='ok'||ast==='empty'?'<span class="rs-muted">None listed</span>':ast==='loading'?'<span class="rs-muted">Loading</span>':'<span class="rs-muted">Unavailable (NWS alerts did not answer)</span>';
   html+='<div class="rs-table-wrap"><table class="rs-table rs-stack"><caption class="rs-sr">Hazards ranked by county expected annual loss</caption><thead><tr><th scope="col">Rank</th><th scope="col">Hazard</th><th scope="col">Expected annual loss (county)</th><th scope="col">NRI rating (county)</th><th scope="col">Tract loss and rating</th><th scope="col">Active alerts</th></tr></thead><tbody>'+
-   ranked.map(r=>'<tr class="'+(lead.has(r.code)?'rs-lead':'')+'" data-rs-hazard="'+esc(r.code)+'"><td data-label="Rank">#'+esc(r.ealRank)+(lead.has(r.code)?' <span class="rs-tag">Leading</span>':'')+'</td><td data-label="Hazard"><b>'+esc(r.name)+'</b></td><td data-label="Expected annual loss" class="rs-num">'+esc(fmt.money(r.eal))+' a year</td><td data-label="NRI rating">'+esc(rk.noRatings?'No rating published':r.rating||'Not listed')+'</td><td data-label="Tract">'+(rk.tract?esc(fmt.money(r.tractEal))+(r.tractRating&&!rk.noRatings?', '+esc(r.tractRating):rk.noRatings?', no rating published':''):'<span class="rs-muted">Not shown</span>')+'</td><td data-label="Active alerts">'+(r.activeAlerts.length?esc(r.activeAlerts.map(a=>a.event).join(', ')):'<span class="rs-muted">None</span>')+'</td></tr>').join('')+'</tbody></table></div>';
+   ranked.map(r=>'<tr class="'+(lead.has(r.code)?'rs-lead':'')+'" data-rs-hazard="'+esc(r.code)+'"><td data-label="Rank">#'+esc(r.ealRank)+(lead.has(r.code)?' <span class="rs-tag">Leading</span>':'')+'</td><td data-label="Hazard"><b>'+esc(r.name)+'</b></td><td data-label="Expected annual loss" class="rs-num">'+esc(fmt.money(r.eal))+' a year</td><td data-label="NRI rating">'+esc(rk.noRatings?'No rating published':r.rating||'Not listed')+'</td><td data-label="Tract">'+(rk.tract?esc(fmt.money(r.tractEal))+(r.tractRating&&!rk.noRatings?', '+esc(r.tractRating):rk.noRatings?', no rating published':''):'<span class="rs-muted">Not shown</span>')+'</td><td data-label="Active alerts">'+(r.activeAlerts.length?esc(r.activeAlerts.map(a=>a.event).join(', ')):noAlert)+'</td></tr>').join('')+'</tbody></table></div>';
   const named=codes=>codes.map(cd=>HAZARD_NAME[cd]||cd).join(', ');
   const zero=rk.rows.filter(r=>r.applicable&&!r.insufficient&&r.ealRank==null).map(r=>r.code);
   html+='<p class="rs-note"><b>Method:</b> '+esc(rk.method)+'</p>';
@@ -2504,7 +2571,7 @@ function renderLive(){
  const p=state.place;
  if(!p){paint('rs-live-body',waitingBox());return;}
  const a=res('nwsAlerts'),pt=alertPoint(p);
- let html='<h3>National Weather Service alerts</h3>';
+ let html='<p class="rs-muted" data-rs-tz>'+(p.timeZone?'Times on this page are shown in the place\'s time zone ('+esc(p.timeZone)+').':'Times are shown in your device\'s time zone until the place\'s time zone is known.')+'</p><h3>National Weather Service alerts</h3>';
  if(p.local&&p.local.pins&&p.local.pins.nwsAlertPoint)html+='<p class="rs-muted">Alerts for the point '+esc(pt.lat.toFixed(3)+', '+pt.lon.toFixed(3))+', the same point the '+esc(p.local.publishedBy||'local')+' uses, so both pages read the same feed.</p>';
  if(!a)html+='<ul class="rs-status">'+stRow('NWS alerts','loading','Loading active alerts...')+'</ul>';
  else if(a.status==='ok'&&a.data){const now=Date.now(),list=a.data.items.filter(x=>{const t=Date.parse(x.ends||x.expires||'');return !finite(t)||t>now;});html+=list.length?list.map(alertCard).join(''):'<p class="rs-note">No active alerts remain in effect at this point.</p>';html+=srcLine(a);}
@@ -2627,11 +2694,14 @@ function localFacts(moduleId){
 /* ---------- lifelines ---------- */
 const LIFELINE_SOURCES={water:['waterSystems'],power:['outages','powerPlants'],health:['hospitalsCMS','hospitalsUSGS','healthCenters'],shelter:['shelters'],transport:['bridges'],communications:[]};
 const itemList=m=>{const d=okData(m);return d&&Array.isArray(d.items)?d.items:[];};
+const SHELTER_NEAR_KM=160.9344;
 function lifelineState(id){
  const def=E.LIFELINES.find(l=>l.id===id)||{};
  if(id==='communications')return {status:'not-available',short:'not available here',nearest:null};
  const ms=LIFELINE_SOURCES[id]||[],sts=ms.map(statusOf);
- let nearest=null;ms.forEach(m=>itemList(m).forEach(it=>{if(finite(it.distanceKm)&&(nearest==null||it.distanceKm<nearest))nearest=it.distanceKm;}));
+ let nearest=null;ms.forEach(m=>itemList(m).forEach(it=>{if(finite(it.distanceKm)&&(m!=='shelters'||it.distanceKm<=SHELTER_NEAR_KM)&&(nearest==null||it.distanceKm<nearest))nearest=it.distanceKm;}));
+ // The shelter list is national: open shelters more than 100 miles away are not a local answer.
+ if(id==='shelter'&&sts.includes('ok')&&nearest==null)return {status:'empty',label:'None listed nearby',short:'none open within 100 mi',nearest:null,notAvailable:def.notAvailable};
  const status=sts.includes('ok')?'ok':sts.includes('loading')?'loading':sts.includes('empty')?'empty':sts.includes('not-covered')?'not-covered':sts.every(s=>s==='skipped'||s==='idle')?'skipped':'unavailable';
  const short=status==='ok'?(nearest!=null?'nearest listed '+dist(nearest).replace(/ \(.*$/,''):'listed for the county'):status==='loading'?'loading':status==='empty'?'none listed in these sources':status==='unavailable'?'sources unavailable':status==='not-covered'?'not covered here':'not run';
  return {status,short,nearest,notAvailable:def.notAvailable};
@@ -2657,7 +2727,11 @@ function lifelineSource(m){
  if(r&&r.status==='ok'&&r.data){
   const d=r.data,list=Array.isArray(d.items)?d.items:[];
   if(m==='bridges')html+='<p class="rs-note">'+esc(d.total)+' bridges within '+esc(d.radiusKm)+' km: '+esc(d.good||0)+' good, '+esc(d.fair||0)+' fair, '+esc(d.poor||0)+' poor (structural ratings from inspections).</p>';
-  if(m==='shelters'&&list.length&&list[0].distanceKm>160)html+='<p class="rs-note">None listed within 100 miles; the nearest open shelters in this national list are far away. Shelters open when needed: check local emergency management.</p>';
+  const farShelters=m==='shelters'&&list.length&&list[0].distanceKm>SHELTER_NEAR_KM;
+  if(farShelters){
+   html+='<p class="rs-note">None listed within 100 miles in this source. Shelters open when needed: check local emergency management.</p><details class="rs-more"><summary>Open shelters elsewhere in the U.S. ('+esc(list.length)+')</summary><ul class="rs-list">'+list.slice(0,LIFELINE_LIMIT[m]||5).map(it=>'<li>'+ITEM[m](it)+itemSuffix(r)+'</li>').join('')+'</ul></details>';
+   return html+srcLine(r)+'</li>';
+  }
   if(m==='outages'&&!d.reporting)html+='<p class="rs-muted">No utility in this state reports to ODIN.</p>';
   if(list.length)html+='<ul class="rs-list">'+list.slice(0,LIFELINE_LIMIT[m]||5).map(it=>'<li>'+ITEM[m](it)+itemSuffix(r)+'</li>').join('')+'</ul>'+(list.length>(LIFELINE_LIMIT[m]||5)?'<p class="rs-muted">'+esc(list.length-(LIFELINE_LIMIT[m]||5))+' more listed, not shown.</p>':'');
  }
@@ -2671,8 +2745,8 @@ function renderLifelines(){
  const lead=state.modules.filter(m=>m.status==='leading').map(m=>m.id),strainedBy=id=>lead.filter(m=>MODULE_DEF[m].strains.includes(id)).map(m=>MODULE_DEF[m].name);
  const html='<div class="rs-grid">'+ids.map(id=>{
   const l=E.LIFELINES.find(x=>x.id===id),s=st[id],by=strainedBy(id);
-  const head='<div class="rs-card-head"><h3 id="rs-lifeline-'+esc(id)+'">'+esc(l.name)+'</h3>'+badge(s.status==='not-available'?'not-covered':s.status,s.status==='not-available'?'Not available here':null)+'</div>'+
-   '<span class="rs-reason">'+(by.length?'Strained by the leading hazards: '+esc(by.join(', ')):'Not strained by a leading hazard here')+'. '+(s.nearest!=null?'Nearest listed facility: '+esc(dist(s.nearest))+'.':'')+'</span>';
+  const head='<div class="rs-card-head"><h3 id="rs-lifeline-'+esc(id)+'">'+esc(l.name)+'</h3>'+badge(s.status==='not-available'?'not-covered':s.status,s.status==='not-available'?'Not available here':s.label||null)+'</div>'+
+   '<span class="rs-reason">'+(!state.ranking||state.ranking.status!=='ok'?'Strain not assessed: hazard ranking unavailable':by.length?'Strained by the leading hazards: '+esc(by.join(', ')):'Not strained by a leading hazard here')+'. '+(s.nearest!=null?'Nearest listed facility: '+esc(dist(s.nearest))+'.':'')+'</span>';
   const body=id==='communications'?'<p class="rs-mstatus rs-na">Not available here: '+esc(l.notAvailable)+'.</p><p class="rs-note">Missing data: network status and coverage, which no keyless national source publishes; the FCC broadband map API needs credentials. Check your carrier and local emergency management.</p>':
    '<ul class="rs-facts">'+LIFELINE_SOURCES[id].map(lifelineSource).join('')+'</ul><p class="rs-note"><b>Not covered:</b> '+esc(l.notAvailable)+'.</p>';
   return '<div class="rs-card" data-rs-lifeline="'+esc(id)+'" data-status="'+esc(s.status)+'">'+head+body+(id==='communications'?'':CONFIRM)+'</div>';
@@ -2682,16 +2756,26 @@ function renderLifelines(){
 
 /* ---------- community context ---------- */
 const CONTEXT_ROWS=[['population','Population',v=>num(v)],['pctAge65','Age 65 and over',v=>fmt.pct(v)],['pctNoVehicle','Households with no vehicle',v=>fmt.pct(v)],['pctDisability','With a disability',v=>fmt.pct(v)],['pctNoInternet','Households without internet',v=>fmt.pct(v)],['pctPoverty150','Below 150% of the poverty level',v=>fmt.pct(v)],['pctLimitedEnglish','Speak English less than well',v=>fmt.pct(v)],['sviPercentile','CDC social vulnerability percentile (0 to 100)',v=>num(v,1)]];
+// A tract coded 9800-9899 (special land use, such as a military base or park) or with under 100 residents does not describe
+// where people in the place live, so its figures are not shown as the local detail.
+function tractCaveat(geoid,population){
+ const code=String(geoid||'').slice(5);
+ if(/^98\d\d/.test(code))return 'Census tract '+geoid+' is a special land use tract (code 9800 to 9899, such as a military base, park or airport), so its figures do not describe where people in this place live and are not shown.';
+ if(finite(population)&&population<100)return 'Census tract '+geoid+' has only '+num(population)+' residents, so its figures do not describe where people in this place live and are not shown.';
+ return null;
+}
+const tractWhere=()=>state.info&&state.info.kind==='place'?' (the tract at '+esc(state.info.how)+')':'';
 function renderContext(){
  const p=state.place;
  if(!p){paint('rs-context-body',waitingBox());return;}
  const r=res('communityContext');
  if(!r||r.status!=='ok'||!r.data){paint('rs-context-body','<ul class="rs-status" data-rs-context="'+esc(r?r.status:'loading')+'">'+stRow('Community context',r?r.status:'loading',r?esc(r.message):'Loading Census survey estimates...')+'</ul>'+(r?srcLine(r):''));return;}
- const d=r.data,t=d.tract;
+ const d=r.data,caveat=d.tract?tractCaveat(d.tract.geoid,d.tract.population):null,t=caveat?null:d.tract;
  const cell=(o,k,f)=>o&&o[k]!=null?esc(f(o[k])):'<span class="rs-muted">Not published here</span>';
- paint('rs-context-body','<div class="rs-table-wrap" data-rs-context="ok"><table class="rs-table rs-stack"><thead><tr><th scope="col">Measure</th><th scope="col">'+esc(clean(d.geography,80)||'County')+'</th><th scope="col">'+(t?'Tract '+esc(t.geoid||''):'Census tract')+'</th></tr></thead><tbody>'+
-  CONTEXT_ROWS.map(([k,label,f])=>'<tr><td data-label="Measure">'+esc(label)+'</td><td data-label="County" class="rs-num">'+cell(d,k,f)+'</td><td data-label="Tract" class="rs-num">'+(t?cell(t,k,f):'<span class="rs-muted">No tract row</span>')+'</td></tr>').join('')+'</tbody></table></div>'+
-  '<p class="rs-note">'+esc(r.message)+' Survey estimates have margins of error; small tracts are less certain. Vintage: '+esc(d.vintage||'not stated')+'.</p>'+srcLine(r));
+ paint('rs-context-body','<div class="rs-table-wrap" data-rs-context="ok" data-status="ok"><table class="rs-table rs-stack"><thead><tr><th scope="col">Measure</th><th scope="col">'+esc(clean(d.geography,80)||'County')+'</th><th scope="col">'+(t?'Tract '+esc(t.geoid||''):'Census tract')+'</th></tr></thead><tbody>'+
+  CONTEXT_ROWS.map(([k,label,f])=>'<tr><td data-label="Measure">'+esc(label)+'</td><td data-label="County" class="rs-num">'+cell(d,k,f)+'</td><td data-label="Tract" class="rs-num">'+(t?cell(t,k,f):'<span class="rs-muted">'+(caveat?'Not shown (special tract)':'No tract row')+'</span>')+'</td></tr>').join('')+'</tbody></table></div>'+
+  (caveat?'<div class="rs-box rs-warn"><p>'+esc(caveat)+'</p></div>':t?'<p class="rs-muted">Tract column: tract '+esc(t.geoid||'')+tractWhere()+'.</p>':'')+
+  '<ul class="rs-status">'+stRow('Community context',r.status,esc(r.message))+'</ul><p class="rs-note">Survey estimates have margins of error; small tracts are less certain. Vintage: '+esc(d.vintage||'not stated')+'.</p>'+srcLine(r));
 }
 
 /* ---------- diagnostics: asset sets, hazard screens and the ten metrics ---------- */
@@ -2775,7 +2859,7 @@ function renderMetrics(){
  html+='<div class="rs-grid">'+out.metrics.map(m=>{
   const word=METRIC_WORD[m.status]||m.status;
   const line=m.status==='computed'?word+': '+m.display+(m.review?'. Flagged for review':''):word+': '+m.reason;
-  return '<div class="rs-card" data-rs-metric="'+m.id+'" data-status="'+esc(m.status)+'"><div class="rs-metric-head"><h4>'+m.id+'. '+esc(m.name)+'</h4><span class="rs-muted">'+esc(m.pillar)+'</span></div><p class="rs-mstatus'+(m.status==='computed'?'':' rs-na')+'">'+esc(line.replace(/\.+$/,''))+'.</p><details><summary>Method and inputs</summary><p class="rs-note">'+esc(m.method)+'</p><p class="rs-note">Needs: '+esc(m.requires)+'.</p></details></div>';
+  return '<div class="rs-card" data-rs-metric="'+m.id+'" data-status="'+esc(m.status)+'"><div class="rs-metric-head"><h3 class="rs-h4">'+m.id+'. '+esc(m.name)+'</h3><span class="rs-muted">'+esc(m.pillar)+'</span></div><p class="rs-mstatus'+(m.status==='computed'?'':' rs-na')+'">'+esc(line.replace(/\.+$/,''))+'.</p><details><summary>Method and inputs</summary><p class="rs-note">'+esc(m.method)+'</p><p class="rs-note">Needs: '+esc(m.requires)+'.</p></details></div>';
  }).join('')+'</div><p class="rs-note">Metrics describe asset records against a screen. They are planning context, never live operating condition. Metric 1 needs service areas with Census block population, which only a local configuration can supply; metrics 7 and 10 are never computed from public data.</p>';
  paint('rs-metrics-body',html);
 }
@@ -2855,7 +2939,11 @@ function mapItems(){
  return out;
 }
 // Open or close a hazard card: remember it, and load a card's data the first time it opens.
-document.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.matches||!d.matches('details[data-rs-module]'))return;const id=d.getAttribute('data-rs-module');if(d.open){state.open.add(id);if(!loadedModules.has(id))loadModule(id);}else state.open.delete(id);painted['rs-modules-body']=null;schedule();},true);
+document.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.matches||!d.matches('details[data-rs-module]'))return;const id=d.getAttribute('data-rs-module');
+ // The open attribute is painted from state.open, so a repaint fires toggle events too; ignore those to avoid a render loop.
+ if(d.open===state.open.has(id))return;
+ if(d.open){state.open.add(id);if(!loadedModules.has(id))loadModule(id);}else state.open.delete(id);
+ schedule();},true);
 $('rs-modules').addEventListener('click',e=>{const b=e.target.closest('[data-act="surge"]');if(b&&state.place){b.disabled=true;need('surge');}});
 $('rs-local').addEventListener('click',e=>{
  const s=e.target.closest('[data-scope]'),l=e.target.closest('[data-level]');

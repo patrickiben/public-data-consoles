@@ -54,6 +54,8 @@ function coops(u){
  return null;
 }
 
+/* Active NWS alerts answered by the fixture for the current scenario (none unless a scenario sets them). */
+let ALERTS=[];
 /* One synthetic answer per public host, or null to fall through. */
 function synthetic(u,method,body){
  const host=u.hostname,p=u.pathname;
@@ -78,7 +80,7 @@ function synthetic(u,method,body){
  if(p.includes('/National_Risk_Index_Census_Tracts/')&&p.endsWith('/query')){const pt=pointOf(u),a=pt&&areaAt(pt.lat,pt.lon),row=a&&NRI.tracts[a.tract];return {json:{features:row?[{attributes:row}]:[]}};}
  if(p.includes('National_Risk_Index')&&!p.endsWith('/query'))return {json:{editingInfo:{dataLastEditDate:Date.parse('2025-12-16T07:37:01.340Z')}}};
  if(host==='api.tidesandcurrents.noaa.gov'){const j=coops(u);if(j)return {json:j};}
- if(host==='api.weather.gov'&&p==='/alerts/active')return {json:{type:'FeatureCollection',features:[],updated:new Date().toISOString()}};
+ if(host==='api.weather.gov'&&p==='/alerts/active')return {json:{type:'FeatureCollection',features:ALERTS.map(a=>({type:'Feature',id:a.id,geometry:null,properties:{id:a.id,senderName:'NWS Tucson AZ',sent:new Date(Date.now()-3600000).toISOString(),effective:new Date(Date.now()-3600000).toISOString(),ends:new Date(Date.now()+86400000).toISOString(),expires:new Date(Date.now()+86400000).toISOString(),severity:'Minor',certainty:'Likely',urgency:'Expected',areaDesc:'Eastern Pima County',headline:a.event+' issued for Eastern Pima County',...a}})),updated:new Date().toISOString()}};
  if(/\/(MapServer|FeatureServer|ImageServer)(\/\d+)?\/query$/.test(p))return {json:{features:[]}};
  if(/\/(MapServer|FeatureServer|ImageServer)(\/\d+)?$/.test(p))return {json:{}};
  return null;
@@ -87,7 +89,8 @@ function synthetic(u,method,body){
 const browser=await chromium.launch({headless:true,channel:process.env.CHROME_CHANNEL||undefined});
 let passed=0;
 /* mode: 'fixtures' (recorded, then synthetic), 'feeds-down' (geography answers, every other source fails), 'offline' (everything fails). */
-async function scenario(name,{mode='fixtures',width=1280,colorScheme='light'}={},verify){
+async function scenario(name,{mode='fixtures',width=1280,colorScheme='light',alerts=[],down=[]}={},verify){
+ ALERTS=alerts;
  const context=await browser.newContext({viewport:{width,height:900},colorScheme,acceptDownloads:true,serviceWorkers:'block',timezoneId:'America/New_York',locale:'en-US'});
  const log=[],errors=[],html=await read('consoles/community-resilience/index.html');
  await context.route('**/*',async route=>{
@@ -99,6 +102,7 @@ async function scenario(name,{mode='fixtures',width=1280,colorScheme='light'}={}
   }
   log.push({host:u.hostname,url:u.href,method,at:Date.now()});
   const geo=u.hostname==='tigerweb.geo.census.gov'||u.hostname==='nominatim.openstreetmap.org';
+  if(down.includes(u.hostname))return route.fulfill({status:503,headers:CORS,contentType:'text/plain',body:'fixture: host down'});
   if(mode==='offline'||(mode==='feeds-down'&&!geo&&u.hostname!=='unpkg.com'&&u.hostname!=='tile.openstreetmap.org'))return route.fulfill({status:503,headers:CORS,contentType:'text/plain',body:'fixture: source down'});
   // Time-relative hosts (CO-OPS, NWS alerts), Nominatim and the map are always synthetic, so the test does not depend on the day it runs.
   const fixed=DETERMINISTIC.has(u.hostname)&&synthetic(u,method,body);
@@ -139,6 +143,7 @@ async function everyPanelHasStatus(page){
   const body=(await text(page,'#'+id)).trim();
   assert.ok(body.length>40,id+' is blank');
   assert.match(body,STATUS_WORDS,id+' shows no status');
+  if(id!=='rs-geo')assert.ok(await page.locator('#'+id+' [data-status], #'+id+' .rs-badge').count()>0,id+' has no status element');
  }
 }
 async function noOverflow(page,w){
@@ -243,15 +248,20 @@ try{
   await page.waitForFunction(()=>/St\. Petersburg city, Pinellas County, Florida/.test(document.querySelector('#rs-place').textContent));
   let calls=nominatimCalls(log);
   assert.equal(calls.length,2);
-  assert.ok(calls[1].at-calls[0].at>=1000,'Nominatim requests '+(calls[1].at-calls[0].at)+' ms apart');
-  // Back to back: the second request still waits its turn.
+  assert.ok(calls[1].at-calls[0].at>=950,'Nominatim requests '+(calls[1].at-calls[0].at)+' ms apart');
+  // Back to back, and repeated: answers are cached for the session, so neither search sends a request.
   await search(page,'1200 N Stone Ave, Tucson, AZ');
   await page.waitForFunction(n=>window.CRPage.state.pending.geocodeAddress||window.CRPage.state.results.geocodeAddress,null);
   await search(page,'175 5th St N, St. Petersburg, FL');
   await page.waitForFunction(()=>/St\. Petersburg city/.test(document.querySelector('#rs-place').textContent)&&window.CRPage.state.phase==='place');
   calls=nominatimCalls(log);
-  assert.equal(calls.length,4);
-  for(let i=1;i<calls.length;i++)assert.ok(calls[i].at-calls[i-1].at>=1000,'Nominatim gap '+(calls[i].at-calls[i-1].at)+' ms');
+  assert.equal(calls.length,2,'repeated addresses are served from the session cache');
+  // Three identical rapid submits of a new address make one request.
+  await page.evaluate(()=>{for(let i=0;i<3;i++)window.CRPage.search('100 1st Ave N, St. Petersburg, FL');});
+  await page.waitForFunction(()=>/No match for that address/.test(document.querySelector('#rs-place').textContent));
+  calls=nominatimCalls(log);
+  assert.equal(calls.length,3,'three identical submits sent '+(calls.length-2)+' requests');
+  for(let i=1;i<calls.length;i++)assert.ok(calls[i].at-calls[i-1].at>=950,'Nominatim gap '+(calls[i].at-calls[i-1].at)+' ms');
   const before=calls.length;
   await search(page,'33701');
   await page.waitForFunction(()=>/\(ZIP 33701\)/.test(document.querySelector('#rs-place').textContent));
@@ -328,6 +338,10 @@ try{
   assert.match(local,/No level is substituted/);
   assert.ok(!/Peak \d/.test(local));
   assert.match(await text(page,'#rs-context'),/Unavailable/);
+  const plan=await text(page,'#rs-plan');
+  assert.match(plan,/Phase not set: hazard ranking unavailable/);assert.doesNotMatch(plan,/Phase: Prepare/);
+  assert.match(await text(page,'#rs-lifelines'),/Strain not assessed: hazard ranking unavailable/);
+  assert.doesNotMatch(await text(page,'#rs-lifelines'),/Not strained by a leading hazard/);
   await noOverflow(page,390);
  });
 
@@ -339,6 +353,60 @@ try{
   assert.match(await text(page,'#rs-map-status')+await text(page,'#rs-map'),/unavailable/i);
   assert.equal(await page.locator('#rs-plan [data-rs-dimension]').count(),10);
   assert.equal(await page.evaluate(()=>window.CRPage.exportPlan()),null);
+ });
+
+ await scenario('a second search loads its own live feeds, and an idle page does not repaint',{},async page=>{
+  const feedsOf=()=>page.evaluate(()=>{const st=window.CRPage.state,lead=st.modules.filter(m=>m.status==='leading').map(m=>m.id);
+   return {lead,missing:lead.flatMap(id=>{const m=window.CREngine.MODULES.find(x=>x.id===id);return m.liveSources.filter(n=>n!=='nwsAlerts'&&!st.results[n]).map(n=>id+':'+n);})};});
+  await search(page,'Tucson, AZ');
+  await page.waitForFunction(()=>/Tucson city, Pima County, Arizona/.test(document.querySelector('#rs-place').textContent));
+  await settled(page);
+  let f=await feedsOf();assert.ok(f.lead.length>0);assert.deepEqual(f.missing,[],'first search');
+  await search(page,'33701');
+  await page.waitForFunction(()=>/St\. Petersburg city, Pinellas County, Florida/.test(document.querySelector('#rs-place').textContent));
+  await settled(page);
+  f=await feedsOf();assert.ok(f.lead.includes('tropical'),f.lead.join(','));assert.deepEqual(f.missing,[],'second search loads the feeds of its own leading hazards');
+  await search(page,'33701');
+  await page.waitForFunction(()=>window.CRPage.state.phase==='place');
+  await settled(page);
+  f=await feedsOf();assert.deepEqual(f.missing,[],'repeating a search loads its feeds again');
+  const open=await page.locator('#rs-modules details[data-rs-module][open]').count();assert.ok(open>0,'leading cards are open');
+  const mutations=await page.evaluate(()=>new Promise(done=>{let n=0;const ob=new MutationObserver(list=>{n+=list.length;});ob.observe(document.getElementById('rs-modules-body'),{childList:true,subtree:true});setTimeout(()=>{ob.disconnect();done(n);},2000);}));
+  assert.equal(mutations,0,'the hazard cards repainted '+mutations+' times while idle');
+  // Closing and opening a card by hand still works.
+  const card=page.locator('#rs-modules details[data-rs-module][open]').first(),id=await card.getAttribute('data-rs-module');
+  await card.locator('summary').click();await page.waitForFunction(id=>!window.CRPage.state.open.has(id),id);
+  await page.locator('#rs-modules details[data-rs-module="'+id+'"] summary').click();await page.waitForFunction(id=>window.CRPage.state.open.has(id),id);
+ });
+
+ await scenario('a Flood Advisory is listed but does not set the Watch phase',{alerts:[{id:'fa-1',event:'Flood Advisory'}]},async page=>{
+  await search(page,'Tucson, AZ');
+  await page.waitForFunction(()=>/Tucson city, Pima County, Arizona/.test(document.querySelector('#rs-place').textContent));
+  await settled(page);
+  const plan=await text(page,'#rs-plan');
+  assert.match(plan,/Phase: Prepare/);assert.doesNotMatch(plan,/Phase: Watch/);assert.match(plan,/Flood Advisory/);
+  assert.match(await text(page,'#rs-ranking'),/Flood Advisory/);
+  assert.match(await text(page,'#rs-live'),/time zone \(America\/Phoenix\)|your device's time zone/);
+ });
+
+ await scenario('NWS alerts down: the ranking never says no alerts',{down:['api.weather.gov']},async page=>{
+  await search(page,'Tucson, AZ');
+  await page.waitForFunction(()=>/Tucson city, Pima County, Arizona/.test(document.querySelector('#rs-place').textContent));
+  await settled(page);
+  const ranking=await text(page,'#rs-ranking');
+  assert.match(ranking,/Unavailable \(NWS alerts did not answer\)/);assert.doesNotMatch(ranking,/None listed/);
+  assert.match(await text(page,'#rs-plan'),/NWS alerts are not available right now/);
+ });
+
+ await scenario('keyboard: the chooser takes focus, and the hint uses a listed state',{width:390},async page=>{
+  await page.locator('#rs-q').fill('Springfield');await page.locator('#rs-q').press('Enter');
+  await page.locator('#rs-chooser:not([hidden]) [data-pick]').first().waitFor();
+  await page.waitForFunction(()=>document.activeElement&&document.activeElement.id==='rs-chooser-title');
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(()=>document.activeElement.hasAttribute('data-pick')),true,'the next Tab reaches the first pick');
+  assert.match(await text(page,'#rs-ranking'),/Waiting\s*Waiting for you to pick/);
+  assert.match(await text(page,'#rs-chooser'),/for example "Springfield, AR"/);
+  assert.equal(await page.locator('#rs-ranking .rs-spin').count(),0,'no spinner while waiting for a pick');
  });
 
  await scenario('dark color scheme at 390 px',{colorScheme:'dark',width:390},async page=>{
