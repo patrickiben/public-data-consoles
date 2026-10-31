@@ -205,6 +205,160 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
  .rs-table.rs-stack td[data-label]::before{content:attr(data-label) ": ";font-weight:650;color:var(--ink)}
 }
 </style>
+<!-- CONSOLE_METRIC_HELP_START -->
+<style>
+.cmh-term{white-space:normal;overflow-wrap:anywhere}
+.cmh-term .cmh-button,#console-response .cmh-button{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;box-sizing:border-box;min-width:26px;min-height:26px;width:26px;height:26px;margin:0 0 0 6px;padding:0;border:1px solid #69bbd0;border-radius:50%;background:#15394a;color:#dcf8ff;font:700 14px/1 system-ui,sans-serif;cursor:help;flex:none;box-shadow:none}
+.cmh-term .cmh-button:hover,#console-response .cmh-button:hover{background:#24556a;border-color:#b0eaf5}
+.cmh-term .cmh-button:focus-visible,#console-response .cmh-button:focus-visible{outline:3px solid #f4d57d;outline-offset:3px}
+#console-metric-tooltip{position:fixed;z-index:2147483000;box-sizing:border-box;width:370px;padding:15px 17px;background:#102a39;color:#e9f4fa;border:1px solid #85d0e0;border-radius:12px;box-shadow:0 8px 28px #0008;font:14px/1.5 system-ui,sans-serif;overflow:auto;overflow-wrap:anywhere;text-align:left;user-select:text}
+#console-metric-tooltip[hidden]{display:none!important}
+#console-metric-tooltip strong{display:block;color:#c0f2ff;font-size:15px;line-height:1.35}
+#console-metric-tooltip p{margin:10px 0}
+#console-metric-tooltip small{display:block;color:#a9c4d4;font-size:11px;margin-top:10px}
+@media(max-width:640px),(pointer:coarse){.cmh-term .cmh-button,#console-response .cmh-button{width:44px;height:44px;min-width:44px;min-height:44px;font-size:17px}#console-metric-tooltip{font-size:14px}}
+@media print{.cmh-button,#console-metric-tooltip{display:none!important}}
+</style>
+<script>
+/* Shared, self-contained plain-language help. No data, scoring or network access. */
+(function(root){
+ 'use strict';
+ var definitions = [
+  {
+    "id": 1,
+    "name": "Population Balance",
+    "meaning": "Checks whether comparison groups are alike in the characteristics or population/workload weights that matter to the question. Equal numbers of sites do not ensure comparable groups."
+  },
+  {
+    "id": 2,
+    "name": "Wasserstein Distance / Shape Imbalance",
+    "meaning": "Measures how far apart two distributions are by how far their values would need to move to match. Read the distance in its stated units; a gap does not identify its cause."
+  },
+  {
+    "id": 3,
+    "name": "Density Symmetry",
+    "meaning": "Compares how concentrated or spread out two groups are, using the stated density measure. Similar totals can hide different geographic or statistical patterns."
+  },
+  {
+    "id": 4,
+    "name": "Euler Characteristic / Contiguity",
+    "meaning": "Describes connectedness using a declared spatial or graph definition. A component count is a proxy: the full Euler characteristic also accounts for holes."
+  },
+  {
+    "id": 5,
+    "name": "Persistence Gap",
+    "meaning": "Checks which spatial clusters or gaps remain as you change how nearby points are connected. A count near a chosen threshold is a simpler sensitivity check."
+  },
+  {
+    "id": 6,
+    "name": "Spatial Mixing / Scale Stability",
+    "meaning": "Checks whether a pattern changes when you change the spatial scale, grouping or comparison window. The dashboard states which scale it varies; this does not measure physical mixing."
+  },
+  {
+    "id": 7,
+    "name": "Variational Free Energy",
+    "meaning": "Checks how well a model describes relationships between parts of a system, while accounting for model complexity. The research uses a fit-versus-complexity score (BIC); a dashboard’s link-count proxy is a different measure."
+  },
+  {
+    "id": 8,
+    "name": "Contamination AUC",
+    "meaning": "Combines an exposure screen across a stated range of times, distances, thresholds or scenario levels into one summary: the area under the curve. It does not give the probability of contamination or damage."
+  },
+  {
+    "id": 9,
+    "name": "Frontier Risk / Buffer Depth AUC",
+    "meaning": "Summarizes how much of the otherwise unexposed group lies near the exposed group as a chosen buffer grows. Its meaning depends on the weights and distance range; it does not give a failure probability or a safe buffer distance."
+  },
+  {
+    "id": 10,
+    "name": "Mobility Network Leakage",
+    "meaning": "Measures or models movement between comparison groups along defined links. A cross-group link count alone does not establish actual volume, hydraulic flow or causal transmission."
+  }
+];
+ var doc=root.document, tip=null, active=null, pinned=false, timer=null, overTip=false;
+ var hoverDismissed=false, pointerX=null, pointerY=null;
+ function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+ function definition(id){return definitions.find(function(d){return d.id===Number(id);});}
+ function label(id,text,context,contextTitle){
+  var d=definition(id);if(!d)return esc(text);
+  return '<span class="cmh-term" data-metric-term><span>'+esc(text)+'</span><button class="cmh-button" type="button" data-metric-help="'+d.id+'" data-metric-context="'+esc(context||'')+'" data-metric-context-title="'+esc(contextTitle||'In this view')+'" aria-label="Explain parameter '+d.id+': '+esc(d.name)+(contextTitle?' — '+esc(contextTitle):'')+'" aria-expanded="false"><span aria-hidden="true">?</span></button></span>';
+ }
+ function ensure(){
+  if(tip)return tip;
+  tip=doc.createElement('div');tip.id='console-metric-tooltip';tip.setAttribute('role','tooltip');tip.hidden=true;
+  doc.body.appendChild(tip);
+  tip.addEventListener('pointerenter',function(){overTip=true;root.clearTimeout(timer);});
+  tip.addEventListener('pointerleave',function(){overTip=false;schedule();});
+  return tip;
+ }
+ function close(){
+  root.clearTimeout(timer);
+  if(active){active.removeAttribute('aria-describedby');active.setAttribute('aria-expanded','false');}
+  if(tip)tip.hidden=true;
+  active=null;pinned=false;overTip=false;
+ }
+ function position(){
+  if(!active||!tip||tip.hidden)return;
+  if(!active.isConnected){close();return;}
+  var r=active.getBoundingClientRect(),v=root.visualViewport,w=v?v.width:root.innerWidth,h=v?v.height:root.innerHeight,x=v?v.offsetLeft:0,y=v?v.offsetTop:0;
+  if(r.bottom<y||r.top>y+h||r.right<x||r.left>x+w){close();return;}
+  tip.style.maxWidth=Math.max(0,w-24)+'px';tip.style.maxHeight=Math.max(0,h-24)+'px';
+  var box=tip.getBoundingClientRect(),below=Math.max(0,y+h-12-r.bottom-8),above=Math.max(0,r.top-y-12-8);
+  // Keep the trigger outside the popup, including while touch focus precedes
+  // click. Otherwise a long explanation can cover its own button mid-tap.
+  var useBelow=box.height<=below||(box.height>above&&below>=above);
+  tip.style.maxHeight=Math.min(h-24,useBelow?below:above)+'px';
+  box=tip.getBoundingClientRect();
+  var left=Math.max(x+12,Math.min(r.left,x+w-box.width-12)),top=useBelow?r.bottom+8:r.top-box.height-8;
+  tip.style.left=left+'px';tip.style.top=top+'px';
+ }
+ function show(button,lock){
+  var d=definition(button&&button.dataset.metricHelp);if(!d)return;
+  root.clearTimeout(timer);
+  if(active!==button){close();active=button;}
+  pinned=!!lock||pinned;
+  var el=ensure();el.replaceChildren();
+  var title=doc.createElement('strong');title.textContent='#'+d.id+' '+d.name;el.appendChild(title);
+  var meaning=doc.createElement('p');meaning.textContent=d.meaning;el.appendChild(meaning);
+  if(button.dataset.metricContext){var context=doc.createElement('p'),lead=doc.createElement('b');lead.textContent=(button.dataset.metricContextTitle||'In this view')+': ';context.append(lead,doc.createTextNode(button.dataset.metricContext));el.appendChild(context);}
+  var hint=doc.createElement('small');hint.textContent=pinned?'Tap ? again or elsewhere to close. Escape also closes.':'Tap ? to keep open. Press Escape to close.';el.appendChild(hint);
+  el.hidden=false;button.setAttribute('aria-describedby',el.id);button.setAttribute('aria-expanded','true');position();
+ }
+ function schedule(){
+  root.clearTimeout(timer);timer=root.setTimeout(function(){if(!pinned&&!overTip&&doc.activeElement!==active)close();},160);
+ }
+ function termButton(target){var term=target&&target.closest&&target.closest('[data-metric-term]');return term&&term.querySelector('[data-metric-help]');}
+ function pointerMoved(e){var moved=pointerX===null||e.clientX!==pointerX||e.clientY!==pointerY;pointerX=e.clientX;pointerY=e.clientY;return moved;}
+ function hover(button){if(!button||active&&button!==active&&(pinned||doc.activeElement===active))return;show(button,false);}
+ function start(){
+  doc.querySelectorAll('[data-metric-name]').forEach(function(el){el.innerHTML=label(el.dataset.metricName,el.textContent,el.dataset.metricContext);});
+  ensure();
+  doc.addEventListener('pointerover',function(e){if(e.pointerType==='touch')return;var moved=pointerMoved(e);if(hoverDismissed){if(!moved)return;hoverDismissed=false;}var b=termButton(e.target);if(b&&termButton(e.relatedTarget)!==b)hover(b);});
+  // Escape can uncover a label under a stationary pointer. Ignore that layout
+  // reentry until coordinates change; movement inside the same label restores
+  // hover too, without requiring a new pointerover. Focus and clicks stay usable.
+  doc.addEventListener('pointermove',function(e){if(e.pointerType==='touch')return;var moved=pointerMoved(e);if(!hoverDismissed||!moved)return;hoverDismissed=false;hover(termButton(e.target));});
+  doc.addEventListener('pointerout',function(e){var b=termButton(e.target);if(b&&termButton(e.relatedTarget)!==b&&!tip.contains(e.relatedTarget))schedule();});
+  doc.addEventListener('focusin',function(e){if(e.target.matches('[data-metric-help]'))show(e.target,false);});
+  doc.addEventListener('focusout',function(e){if(e.target===active){pinned=false;schedule();}});
+  // Capture prevents help inside a summary/label from opening it or checking a box.
+  doc.addEventListener('click',function(e){
+   var b=e.target.closest('[data-metric-help]');
+   if(b){e.preventDefault();e.stopPropagation();if(active===b&&pinned)close();else show(b,true);return;}
+   if(!tip.contains(e.target))close();
+  },true);
+  doc.addEventListener('keydown',function(e){if(e.key==='Escape'&&active){hoverDismissed=true;close();e.preventDefault();e.stopPropagation();}},true);
+  doc.addEventListener('scroll',function(e){if(e.target!==tip)position();},true);
+  root.addEventListener('resize',position);
+  if(root.visualViewport){root.visualViewport.addEventListener('resize',position);root.visualViewport.addEventListener('scroll',position);}
+  if(root.MutationObserver)new root.MutationObserver(function(){if(active&&!active.isConnected)close();}).observe(doc.body,{childList:true,subtree:true});
+  root.addEventListener('beforeprint',close);
+ }
+ root.ConsoleMetricHelp={label:label,definition:definition,close:close,definitions:definitions};
+ if(doc){if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',start,{once:true});else start();}
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+<!-- CONSOLE_METRIC_HELP_END -->
 </head>
 <body>
 <div id="disc"><b>Unofficial</b> planning view built from public federal data. <b>Confirm before you go.</b> In an emergency, call 911.</div>
@@ -2635,17 +2789,26 @@ function currentPlan(){
  const metrics=state.diag.status==='done'&&state.diag.result&&!state.diag.result.placeholder?state.diag.result:null;
  return E.buildPlan({place:state.place,ranking:state.ranking,modules:state.modules,results,metrics,track:state.track,now:Date.now()});
 }
+function dimensionsHtml(dims){
+ const help=window.ConsoleMetricHelp;
+ return dims.map(dm=>'<div class="rs-dim" data-rs-dimension="'+dm.id+'" data-status="'+esc(dm.status)+'"><h4>'+dm.id+'. '+(help?help.label(dm.id,dm.name,dm.condition):esc(dm.name))+' <span class="rs-muted">('+esc(dm.pillar)+')</span></h4><p>'+esc(dm.condition)+'</p><p><b>Mitigation:</b> '+esc(dm.mitigation)+'</p><p><b>Next steps:</b> '+esc(dm.nextSteps)+'</p></div>').join('');
+}
 function renderPlan(){
  $('rs-track-public').setAttribute('aria-pressed',String(state.track==='public'));
  $('rs-track-operator').setAttribute('aria-pressed',String(state.track==='operator'));
  $('rs-export-plan').disabled=$('rs-export-text').disabled=!state.place;
- if(!state.place){state.plan=null;paint('rs-plan-body',waitingBox());return;}
+ if(!state.place){
+  // The plan shell renders before any search (and offline): the ten dimensions, each not available until a place is found.
+  state.plan=null;
+  const shell=E.buildPlan({place:null,ranking:null,modules:[],results:{},track:state.track,now:Date.now()}).dimensions.map(dm=>Object.assign({},dm,{condition:dm.id===7||dm.id===10?dm.condition:'Not available here: search for a place first; the diagnostics then need a run exposure screen.'}));
+  paint('rs-plan-body',waitingBox()+'<h3>Ten dimensions</h3>'+dimensionsHtml(shell));return;
+ }
  const plan=state.plan=currentPlan(),ph=plan.phase;
  let html='<p><span class="rs-phase rs-p-'+esc(ph.id)+'">Phase: '+esc(ph.label)+'</span> <span class="rs-muted">'+esc(state.track==='public'?'Public track':'Operator track')+'; revision '+esc(plan.revision)+'</span></p><p class="rs-note">'+esc(ph.basis)+(ph.until?' Review at '+esc(when(ph.until))+'.':'')+'</p>';
  if(!state.ranking)html+='<p class="rs-note rs-muted">The hazard ranking is still loading; the plan updates as data arrives.</p>';
  html+='<h3>Actions</h3>';
  html+=plan.actions.length?'<ul class="rs-facts">'+plan.actions.map(a=>'<li data-rs-action="'+esc(a.id)+'"><b>'+esc((MODULE_DEF[a.module]||{}).name||a.module)+':</b> '+esc(a.text)+'<p class="rs-src">Source: '+esc(a.source||'not stated')+'. '+esc(a.source==='General guidance'?'General preparedness guidance, not specific to this place':a.dataDate?'Data date '+when(a.dataDate):a.dataDateText||S.NO_DATE)+'.'+(a.checkedAt?' Checked '+esc(when(a.checkedAt))+'.':'')+(a.escalateTo?' Escalate to: '+esc(a.escalateTo)+'.':'')+(a.reviewAfter?' Review after '+esc(when(a.reviewAfter))+'.':'')+'</p></li>').join('')+'</ul>':'<ul class="rs-status">'+stRow('Actions',state.ranking?'empty':'loading',state.ranking?'No leading hazard here, so no hazard actions were generated.':'Waiting for the hazard ranking.')+'</ul>';
- html+='<h3>Ten dimensions</h3>'+plan.dimensions.map(dm=>'<div class="rs-dim" data-rs-dimension="'+dm.id+'" data-status="'+esc(dm.status)+'"><h4>'+dm.id+'. '+esc(dm.name)+' <span class="rs-muted">('+esc(dm.pillar)+')</span></h4><p>'+esc(dm.condition)+'</p><p><b>Mitigation:</b> '+esc(dm.mitigation)+'</p><p><b>Next steps:</b> '+esc(dm.nextSteps)+'</p></div>').join('');
+ html+='<h3>Ten dimensions</h3>'+dimensionsHtml(plan.dimensions);
  html+='<h3>Limits of this plan</h3><ul class="rs-list">'+plan.limitations.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>';
  paint('rs-plan-body',html);
 }
