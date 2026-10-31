@@ -168,6 +168,7 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
 .rs-phase{display:inline-block;font-weight:760;font-size:14px;padding:3px 12px;border-radius:999px;background:var(--ok-bg);color:var(--ok)}
 .rs-phase.rs-p-watch{background:var(--watch-bg);color:var(--watch)}
 .rs-phase.rs-p-warning{background:var(--alert-bg);color:var(--alert)}
+.rs-summary{max-width:680px;margin:10px auto 0;text-align:left;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:8px 12px;font-size:13.5px}.rs-summary .rs-dl{margin:0}
 .rs-more{margin:10px 0}.rs-more>summary{cursor:pointer;font-weight:650;color:var(--sea);padding:4px 0}
 .rs-sources-table td{overflow-wrap:normal;word-break:normal}
 .rs-phase.rs-p-unknown{background:var(--dim-bg);color:var(--ink2)}
@@ -386,6 +387,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
         </div>
       </div>
       <div id="rs-place" role="status" aria-live="polite" tabindex="-1"><span class="rs-muted">Search for a place to begin.</span></div>
+      <div id="rs-summary" class="rs-summary" hidden></div>
       <p class="rs-attrib">Address search: &copy; OpenStreetMap contributors, via Nominatim (<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">usage policy</a>). Used for street addresses only, only when you press Search, at most once a second. ZIP codes and place names are looked up in Census data.</p>
       <div class="rs-examples" role="group" aria-label="Example searches"><span>Examples:</span>
         <button type="button" class="rs-chip" data-example="33701">33701</button>
@@ -2457,7 +2459,20 @@ function drawMap(){
 }
 
 /* ---------- render everything that changed ---------- */
-const RENDERERS=[renderChooser,renderGeo,renderRanking,renderLive,renderModules,renderLocal,renderLifelines,renderContext,renderMetrics,renderPlan,renderSources];
+// A short summary right under the place line: leading hazards, alerts and failed sources, each with its status.
+function renderSummary(){
+ const p=state.place,el=$('rs-summary');
+ if(!p||state.phase!=='place'){el.hidden=true;paint('rs-summary','');return;}
+ el.hidden=false;
+ const rk=state.ranking,ast=statusOf('nwsAlerts'),a=res('nwsAlerts');
+ const lead=rk&&rk.status==='ok'?rk.rows.filter(r=>rk.leading.includes(r.code)).slice(0,3).map(r=>esc(r.name)+' ('+esc(fmt.money(r.eal))+' a year)').join(', '):'';
+ const hz=!rk?'Loading the FEMA NRI ranking...':rk.status!=='ok'?'Not ranked: FEMA NRI did not answer.':lead?lead+'.':'None listed with an expected loss here.';
+ const live=a&&a.status==='ok'&&a.data?a.data.items.filter(x=>{const t=Date.parse(x.ends||x.expires||'');return !finite(t)||t>Date.now();}).length:0;
+ const al=ast==='loading'?'Loading...':ast==='ok'||ast==='empty'?(live?plural(live,'active NWS alert')+' at this point.':'None listed at this point.'):'Unavailable: NWS alerts did not answer.';
+ const down=Object.values(state.results).filter(r=>r&&r.status==='unavailable').length;
+ paint('rs-summary','<dl class="rs-dl"><dt>Leading hazards</dt><dd>'+hz+' <a href="#rs-ranking">Ranking</a></dd><dt>Active alerts</dt><dd>'+esc(al)+' <a href="#rs-live">Live now</a></dd><dt>Sources</dt><dd>'+(down?'<b>'+esc(plural(down,'source'))+' unavailable.</b> ':'None unavailable so far. ')+'<a href="#rs-sources">Sources and status</a></dd></dl>');
+}
+const RENDERERS=[renderSummary,renderChooser,renderGeo,renderRanking,renderLive,renderModules,renderLocal,renderLifelines,renderContext,renderMetrics,renderPlan,renderSources];
 function renderAll(){
  const busy=state.phase==='geocoding'||state.phase==='locating',btn=$('rs-search');
  if(btn.textContent!==(busy?'Searching...':'Search')){btn.textContent=busy?'Searching...':'Search';btn.setAttribute('aria-busy',busy?'true':'false');}

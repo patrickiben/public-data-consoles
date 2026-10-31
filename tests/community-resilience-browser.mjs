@@ -313,6 +313,7 @@ try{
   await page.waitForFunction(()=>/Tucson city, Pima County, Arizona/.test(document.querySelector('#rs-place').textContent));
   await settled(page);
   assert.equal(await page.locator('#rs-chooser').isHidden(),true,'One city plus its CCD is one place');
+  const summary=await text(page,'#rs-summary');assert.match(summary,/Leading hazards\s*Inland Flooding \(\$/);assert.match(summary,/Active alerts\s*None listed at this point/);
   assert.equal(await page.locator('#rs-modules [data-rs-module="surge"]').getAttribute('data-status'),'not-applicable');
   assert.match(await text(page,'#rs-modules'),/Coastal Flooding as Not Applicable in Pima/);
   assert.equal(await page.locator('#rs-local [data-rs-local="none"]').count(),1);
