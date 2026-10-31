@@ -419,6 +419,7 @@ try{
   await settled(page);
   const ranking=await text(page,'#rs-ranking');
   assert.match(ranking,/Unavailable \(NWS alerts did not answer\)/);assert.doesNotMatch(ranking,/None listed/);
+  assert.match(await text(page,'#rs-live'),/The place's time zone could not be found \(NWS did not answer\); times are in your device's time zone/,'Arizona has no single state zone, so the page says the zone is unknown');
   const retry=page.locator('#rs-live [data-act="retry"][data-method="nwsAlerts"]');assert.equal(await retry.count(),1,'a failed source offers Try again');
   await retry.click();await settled(page);assert.equal(await page.evaluate(()=>window.CRPage.state.results.nwsAlerts.status),'unavailable','the retry ran again and still shows its status');
   const plan=await text(page,'#rs-plan');assert.match(plan,/Phase not set: NWS alerts unavailable/);assert.doesNotMatch(plan,/Phase: Prepare/);
