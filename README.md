@@ -146,7 +146,7 @@ See the [field guide](https://patrickiben.github.io/public-data-consoles/respons
 |---|---|---|
 | [Free Clinic Finder](consoles/free-clinic-finder/) | Live listings | HRSA health center sites (sliding fee, not necessarily free, with the HRSA data load date), OpenStreetMap clinics via Overpass (a very small, unverified set shown as possibly free; no clinic is labeled free outright), plus a link to the free and charitable clinic locator |
 | [Human Trafficking — Get Help](consoles/human-trafficking/) | Reference | Verified hotlines + Polaris / UNODC / ILO–Walk Free / CTDC (badge-framed) |
-| [Food Desert Oases](consoles/food-desert-oases/) | Live listings + dated tract atlas | USDA ERS Food Access Research Atlas tract flags (2025 SNAP-authorized Retailer Access Map, released July 2026, on 2020 census tracts), USDA FNS SNAP retailer locator data (SNAP-authorized stores and SNAP-authorized farmers markets, with the list's data date), OpenStreetMap-tagged food banks (partial coverage) |
+| [Food Desert Oases](consoles/food-desert-oases/) | Live listings + dated tract atlas | USDA ERS Food Access Research Atlas tract flags (2025 SNAP-authorized Retailer Access Map, released July 2026, on 2020 census tracts), USDA FNA SNAP retailer locator data (SNAP-authorized stores and SNAP-authorized farmers markets, with the list's data date), USDA Local Food Directories farmers market directory (a dated copy in this repository, built with `scripts/build_farmers_markets.py` from USDA's own download), OpenStreetMap-tagged food banks (partial coverage) |
 | [Free Public Bathroom Finder](consoles/public-bathroom-finder/) | Live listings | Refuge Restrooms (crowd-sourced listings, each with its date), OpenStreetMap amenity=toilets via Overpass (partial coverage; "free" only where tagged fee=no and not customers only) |
 
 ## No visitor API keys
@@ -159,7 +159,7 @@ on embedded EIA measurements and checks a same-origin public data file for updat
 checks EIA's keyless downloads every six hours; an open, visible dashboard checks the published file
 every 15 minutes. Neither visitors nor the scheduled job need an EIA key. These are **delayed public
 reports**, with measurement dates shown, rather than a real-time operational feed. Food Desert Oases
-uses keyless USDA ArcGIS services, OpenStreetMap Nominatim and Overpass queries; each list shows its own
+uses keyless USDA ArcGIS services, OpenStreetMap Nominatim and Overpass queries, and a dated copy of USDA's farmers market directory kept in this repository; each list shows its own
 source data date, and a failed source is shown as unavailable, never as zero.
 Free Public Bathroom Finder uses the keyless Refuge Restrooms API and OpenStreetMap Nominatim and Overpass queries; each result shows its source and data date, and a failed source is shown as unavailable, never as zero.
 

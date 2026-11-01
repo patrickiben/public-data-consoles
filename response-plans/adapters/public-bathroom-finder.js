@@ -118,7 +118,7 @@
     LISTS.forEach(function (cfgList) { items.push(item(counts[cfgList.key], cfgList)); });
     var records = [{id:'restroom-reference',label:'Listing sources used',kind:'context',evidenceIds:['restroom-method'],summary:METHOD+'. Refuge Restrooms entries are crowd-sourced and unverified; free is shown only where OpenStreetMap is tagged fee=no.'}];
     payload.impacts = {title:'Nearby public restroom listings',scope:'Listing counts only; the typed address and coordinates are excluded',
-      summary:'Listing counts come from Refuge Restrooms (crowd-sourced) and OpenStreetMap; a failed source is unknown, never zero, and a successful zero is a real zero within the distance searched.',
+      summary:'Listing counts come from Refuge Restrooms (crowd-sourced) and OpenStreetMap; a failed source is unknown, never zero, and a successful zero means none are listed in that source within the distance searched, not that none exist.',
       items:items,records:records,
       limitations:[cfg.limit,'Many restrooms in businesses, libraries, parks and transit stations are not listed. Confirm access, hours and cost with the place before you go.']};
     return payload;
