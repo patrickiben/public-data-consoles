@@ -92,6 +92,8 @@ async function until(fn, label, ms = 10000) {
 async function open(options = {}, contextOptions = {}) {
   const opt = options;
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1280, height: 900 }, timezoneId: 'UTC', locale: 'en-US', ...contextOptions });
+  // The page pauses 30 seconds after an Overpass HTTP error; record that wait and shorten it for the test.
+  await context.addInitScript(() => { const st = window.setTimeout; window.__pauses = []; window.setTimeout = function (f, ms, ...a) { if (a[0] === 'overpass-pause') { window.__pauses.push(ms); ms = 50; } return st.call(window, f, ms, ...a); }; });
   const page = await context.newPage();
   const log = { requests: [], census: [], nominatim: [], nominatimTimes: [], refuge: [], overpass: [], bodies: [], referers: [], tiles: [], unexpected: [], errors: [], hung: [] };
   page.on('pageerror', e => log.errors.push(e.message));
@@ -517,6 +519,7 @@ try {
     assert.match(row, /Unavailable: the service answered with HTTP 504 \(tried overpass-api\.de twice\)\. No OpenStreetMap listings are shown; this is not a zero\./);
     assert.match(row, /Try again/);
     assert.deepEqual(log.overpass.map(o => o.host), ['overpass-api.de', 'overpass-api.de']);
+    assert.ok((await page.evaluate(() => window.__pauses.some(ms => ms > 29000))), 'waits about 30 seconds after an Overpass HTTP error');
     assert.equal((await keys(page)).length, 4);
     assert.match(await text(page, '#results-summary'), /Unavailable: OpenStreetMap/);
     assert.equal(await text(page, '#filters [data-filter="free"]'), 'Free (fee=no) (unavailable)');

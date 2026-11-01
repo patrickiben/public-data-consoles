@@ -1723,7 +1723,7 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
       <div class="pb-source"><h3>HRSA health center sites</h3><p><a href="https://data.hrsa.gov/" target="_blank" rel="noopener noreferrer">HRSA public data</a> from the HRSA Data Warehouse, read from gisportal.hrsa.gov (layer: Health Care Service Delivery Sites). Sites within 10 miles, widened to 25, 50 and then 100 miles only when fewer than 5 regular sites are found (not mobile, seasonal or school-based). Records at the same name and address are shown once, preferring the permanent site. Records named administrative only are hidden. Distance is calculated in your browser.</p><p>HRSA data reloads daily; the date shown is the warehouse load date of a related HRSA table, not the date a site was last confirmed. The site list itself carries no date, so this date may differ from when the list loaded. Date: <span id="src-date-hrsa">shown after a search</span>.</p></div>
       <div class="pb-source"><h3>Free clinics: OpenStreetMap via Overpass</h3><p><a href="https://overpass-api.de/" target="_blank" rel="noopener noreferrer">overpass-api.de</a>, tried twice if it does not answer. Places tagged as a clinic or doctor within 15 miles that are tagged fee=no or have free clinic, free medical or free health in the name. Places tagged fee=yes are not listed. Private and no-access places are hidden.</p><p>&copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a>. Date: <span id="src-date-osm">shown after a search, from the OpenStreetMap database timestamp</span>, plus each place's last edit date.</p></div>
       <div class="pb-source"><h3>Place search: U.S. Census and OpenStreetMap Nominatim</h3><p>ZIP codes: <a href="https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html" target="_blank" rel="noopener noreferrer">Census TIGERweb</a> ZIP code areas, including the territories. A ZIP code with no Census area, such as many PO box ZIP codes, is reported as not found. Everything else: <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">nominatim.openstreetmap.org</a>, used only when you press Search, at most one request per second (<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">usage policy</a>).</p><p>Data &copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a>. Date: live OpenStreetMap data, no release date.</p></div>
-      <div class="pb-source"><h3>Map tiles and map library</h3><p>Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> from tile.openstreetmap.org. Map library: <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> 1.9.4 from unpkg.com.</p></div>
+      <div class="pb-source"><h3>Map tiles and map library</h3><p>Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> from tile.openstreetmap.org. Map library: <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> 1.9.4 from unpkg.com. Something wrong on the map? <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">Report a map problem to OpenStreetMap</a>.</p></div>
     </div>
   </section>
 
@@ -1806,7 +1806,7 @@ async function fetchJSON(url,opt){
  try{
   if(o.track!==false)inflight.add(c);
   const r=await fetch(url,{method:o.method||'GET',body:o.body||undefined,headers:o.headers||undefined,signal:c.signal,credentials:'omit'});
-  if(!r.ok)throw new SourceError('the service answered with HTTP '+r.status);
+  if(!r.ok){const e=new SourceError('the service answered with HTTP '+r.status);e.status=r.status;throw e;}
   try{return await r.json();}catch(e){throw new SourceError(timedOut?'no answer within '+Math.round(timeout/1000)+' seconds':'the response was not valid data');}
  }catch(e){
   if(e instanceof SourceError)throw e;
@@ -1827,6 +1827,8 @@ src.map={state:'loading',attempt:1,text:'Loading the map library...'};
    Leaflet is loaded from this script, never from <head>, so a slow or blocked unpkg.com
    can never hold up the page: the search works while the map is still loading or if it fails. */
 const LEAFLET_CSS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',LEAFLET_JS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',LEAFLET_TIMEOUT=15000;
+// Pinned file hashes, so the browser refuses a changed copy of the map library.
+const LEAFLET_CSS_SRI='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=',LEAFLET_JS_SRI='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
 let hasMap=false,map=null,leaf=null,layer=null,lastDrawn=[],lastSig='',tileFailed=false,tileStreak=0;
 const MAP_DOWN='Map unavailable; the lists still work.';
 function mapNote(html){$('map').style.height='auto';$('map').innerHTML='<p class="pb-map-off">'+html+'</p>';}
@@ -1857,9 +1859,9 @@ function loadLeaflet(){
   if(cssOk===false||jsOk===false){mapDown('The map library did not load.');return;}
   if(cssOk&&jsOk){if(window.L&&typeof window.L.map==='function'){try{initMap();}catch(e){hasMap=false;mapDown('The map library could not start.');}}else mapDown('The map library did not load.');}
  };
- const css=document.createElement('link');css.rel='stylesheet';css.href=LEAFLET_CSS;
+ const css=document.createElement('link');css.rel='stylesheet';css.href=LEAFLET_CSS;css.integrity=LEAFLET_CSS_SRI;css.crossOrigin='anonymous';
  css.onload=()=>{cssOk=true;check();};css.onerror=()=>{cssOk=false;check();};
- const js=document.createElement('script');js.src=LEAFLET_JS;js.async=true;
+ const js=document.createElement('script');js.src=LEAFLET_JS;js.integrity=LEAFLET_JS_SRI;js.crossOrigin='anonymous';js.async=true;
  js.onload=()=>{jsOk=true;check();};js.onerror=()=>{jsOk=false;check();};
  document.head.appendChild(css);document.head.appendChild(js);
  // If the library is still loading after the limit, say so; a late load still builds the map.
@@ -2305,18 +2307,24 @@ function osmItem(el,pt){
  return {src:'osm',cat:cat,key:'osm:'+el.type+'/'+(+el.id),osmType:el.type,osmId:+el.id,name:name||clean(t.operator,140)||'Unnamed clinic',tag:tagText,typeLabel:osmTypeLabel(t),lat:lat,lon:lon,dist:dist,dir:dist>=0.01?compass(pt,pos):'',
   address:[street,cityLine].filter(Boolean).join(', ')||'No address tagged',facts:facts,dateText:dateText,hasPhone:!!ph,hiddenAccess:access==='private'||access==='no'};
 }
+// Overpass asks clients to pause 30 seconds after an HTTP error such as 429 or 406, and to cache answers.
+const OVERPASS_PAUSE=30100;let overpassPauseUntil=0;const overpassCache=new Map();
+const overpassRetryText=e=>'The Overpass server did not answer ('+e.message+'); '+(e.status?'pausing 30 seconds as its usage rules ask, then trying once more':'trying once more')+', which can take up to '+Math.round((OVERPASS_TIMEOUTS[1]+(e.status?OVERPASS_PAUSE:0))/1000)+' more seconds...';
 async function overpass(pt,alive,retryNote){
  const body='data='+encodeURIComponent(overpassQuery(pt));
+ if(overpassCache.has(body))return overpassCache.get(body);
  let last=null;
  for(let i=0;i<OVERPASS_TIMEOUTS.length;i++){
-  if(i){if(alive())retryNote(last);await sleep(OVERPASS_RETRY_WAIT);if(!alive())throw STALE;}
+  if(i&&alive())retryNote(last);
+  const wait=Math.max(i?OVERPASS_RETRY_WAIT:0,overpassPauseUntil-Date.now());
+  if(wait>0){await new Promise(r=>setTimeout(r,wait,'overpass-pause'));if(!alive())throw STALE;}
   try{
    const r=await fetchJSON(OVERPASS_URL,{method:'POST',body:body,headers:{'Content-Type':'application/x-www-form-urlencoded'},timeout:OVERPASS_TIMEOUTS[i]});
    if(!r||typeof r!=='object'||!Array.isArray(r.elements))throw new SourceError('the response had no list of places');
    if(r.remark&&/error/i.test(String(r.remark))&&!r.elements.length)throw new SourceError('the server stopped the query');
    if(r.elements.length&&!r.elements.some(el=>el&&typeof el==='object'&&/^(node|way|relation)$/.test(el.type)))throw new SourceError('the response had no usable places');
-   return r;
-  }catch(e){last=e;if(!alive())throw STALE;}
+   overpassCache.set(body,r);return r;
+  }catch(e){last=e;if(e.status)overpassPauseUntil=Date.now()+OVERPASS_PAUSE;if(!alive())throw STALE;}
  }
  throw new SourceError(last.message+' (tried overpass-api.de twice)');
 }
@@ -2329,7 +2337,7 @@ async function runOsm(id){
  const timer=setTimeout(()=>{slowOn=true;paint();},SLOW_MS);
  try{
   let j;
-  try{j=await overpass(pt,alive,e=>{base='The Overpass server did not answer ('+e.message+'); trying once more, which can take up to '+Math.round(OVERPASS_TIMEOUTS[1]/1000)+' more seconds...';paint();});}
+  try{j=await overpass(pt,alive,e=>{base=overpassRetryText(e);paint();});}
   catch(e){if(e===STALE||!alive())return;throw e;}
   clearTimeout(timer);
   if(!alive())return;

@@ -1687,7 +1687,7 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
       <div class="pb-source"><h3>Place search: U.S. Census and OpenStreetMap Nominatim</h3><p>ZIP codes: <a href="https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html" target="_blank" rel="noopener noreferrer">Census TIGERweb</a> ZIP code areas, including the territories. A ZIP code with no Census area, such as many PO box ZIP codes, is reported as not found. Everything else: <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">nominatim.openstreetmap.org</a>, used only when you press Search, at most one request per second (<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">usage policy</a>).</p><p>Data &copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a>. Date: live OpenStreetMap data, no release date.</p></div>
       <div class="pb-source"><h3>Refuge Restrooms (crowd-sourced)</h3><p><a href="https://www.refugerestrooms.org/" target="_blank" rel="noopener noreferrer">refugerestrooms.org</a>, public API. This page asks for the nearest 100 restrooms within 20 miles of a point. Listings are submitted by the public. This page is not affiliated with or endorsed by Refuge Restrooms.</p><p>Date: <span id="src-date-refuge">shown after a search; each entry also shows its own update date</span>.</p></div>
       <div class="pb-source"><h3>Toilets: OpenStreetMap via Overpass</h3><p><a href="https://overpass-api.de/" target="_blank" rel="noopener noreferrer">overpass-api.de</a>, tried twice if it does not answer. Places tagged amenity=toilets within 3 miles, or within 15 miles when fewer than 5 are listed within 3. Private, staff-only, residents-only, disused and closed toilets are hidden.</p><p>&copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a>. Date: <span id="src-date-osm">shown after a search, from the OpenStreetMap database timestamp</span>, plus each place's last edit date.</p></div>
-      <div class="pb-source"><h3>Map tiles and map library</h3><p>Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> from tile.openstreetmap.org. Map library: <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> 1.9.4 from unpkg.com.</p></div>
+      <div class="pb-source"><h3>Map tiles and map library</h3><p>Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> from tile.openstreetmap.org. Map library: <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> 1.9.4 from unpkg.com. Something wrong on the map? <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">Report a map problem to OpenStreetMap</a>.</p></div>
     </div>
   </section>
 
@@ -1747,7 +1747,7 @@ async function fetchJSON(url,opt){
  try{
   inflight.add(c);
   const r=await fetch(url,{method:o.method||'GET',body:o.body||undefined,headers:o.headers||undefined,signal:c.signal,credentials:'omit'});
-  if(!r.ok)throw new SourceError('the service answered with HTTP '+r.status);
+  if(!r.ok){const e=new SourceError('the service answered with HTTP '+r.status);e.status=r.status;throw e;}
   try{return await r.json();}catch(e){throw new SourceError(timedOut?'no answer within '+Math.round(timeout/1000)+' seconds':'the response was not valid data');}
  }catch(e){
   if(e instanceof SourceError)throw e;
@@ -1768,6 +1768,8 @@ src.map={state:'loading',attempt:1,text:'Loading the map library...'};
    Leaflet is loaded from this script, never from <head>, so a slow or blocked unpkg.com
    can never hold up the page: the search works while the map is still loading or if it fails. */
 const LEAFLET_CSS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',LEAFLET_JS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',LEAFLET_TIMEOUT=15000;
+// Pinned file hashes, so the browser refuses a changed copy of the map library.
+const LEAFLET_CSS_SRI='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=',LEAFLET_JS_SRI='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
 let hasMap=false,map=null,layer=null,lastDrawn=[],lastSig='',tileFailed=false;
 const MAP_DOWN='Map unavailable; the list still works.';
 function mapNote(html){$('map').style.height='auto';$('map').innerHTML='<p class="pb-map-off">'+html+'</p>';}
@@ -1796,9 +1798,9 @@ function loadLeaflet(){
   if(cssOk===false||jsOk===false){mapDown('The map library did not load.');return;}
   if(cssOk&&jsOk){if(window.L&&typeof window.L.map==='function'){try{initMap();}catch(e){hasMap=false;mapDown('The map library could not start.');}}else mapDown('The map library did not load.');}
  };
- const css=document.createElement('link');css.rel='stylesheet';css.href=LEAFLET_CSS;
+ const css=document.createElement('link');css.rel='stylesheet';css.href=LEAFLET_CSS;css.integrity=LEAFLET_CSS_SRI;css.crossOrigin='anonymous';
  css.onload=()=>{cssOk=true;check();};css.onerror=()=>{cssOk=false;check();};
- const js=document.createElement('script');js.src=LEAFLET_JS;js.async=true;
+ const js=document.createElement('script');js.src=LEAFLET_JS;js.integrity=LEAFLET_JS_SRI;js.crossOrigin='anonymous';js.async=true;
  js.onload=()=>{jsOk=true;check();};js.onerror=()=>{jsOk=false;check();};
  document.head.appendChild(css);document.head.appendChild(js);
  // If the library is still loading after the limit, say so; a late load still builds the map.
@@ -2121,18 +2123,24 @@ function osmItem(el,pt){
  return {src:'osm',key:'osm:'+el.type+'/'+(+el.id),osmType:el.type,osmId:+el.id,name:clean(t.name,140)||clean(t.operator,140)||(customers?'Unnamed customers-only toilet':'Unnamed toilet'),typeLabel:(customers?'Customers-only toilet':['yes','public','permissive'].includes(access)?'Public toilet':'Toilet, access not tagged')+' (OpenStreetMap amenity=toilets)',lat:lat,lon:lon,dist:dist,dir:dist>=0.01?compass(pt,pos):'',
   address:[street,cityLine].filter(Boolean).join(', ')||'No address tagged',free:free,wheel:wheel||null,neutral:neutral,changing:changing,facts:facts,notes:[],dateText:dateText,hiddenAccess:['private','no','employees','staff','residents','military'].includes(access)||low('disused')==='yes'||low('abandoned')==='yes'||['closed','off'].includes(low('opening_hours'))};
 }
+// Overpass asks clients to pause 30 seconds after an HTTP error such as 429 or 406, and to cache answers.
+const OVERPASS_PAUSE=30100;let overpassPauseUntil=0;const overpassCache=new Map();
+const overpassRetryText=e=>'The Overpass server did not answer ('+e.message+'); '+(e.status?'pausing 30 seconds as its usage rules ask, then trying once more':'trying once more')+', which can take up to '+Math.round((OVERPASS_TIMEOUTS[1]+(e.status?OVERPASS_PAUSE:0))/1000)+' more seconds...';
 async function overpass(pt,radius,alive,retryNote){
  const body='data='+encodeURIComponent(overpassQuery(pt,radius));
+ if(overpassCache.has(body))return overpassCache.get(body);
  let last=null;
  for(let i=0;i<OVERPASS_TIMEOUTS.length;i++){
-  if(i){if(alive())retryNote(last);await sleep(OVERPASS_RETRY_WAIT);if(!alive())throw STALE;}
+  if(i&&alive())retryNote(last);
+  const wait=Math.max(i?OVERPASS_RETRY_WAIT:0,overpassPauseUntil-Date.now());
+  if(wait>0){await new Promise(r=>setTimeout(r,wait,'overpass-pause'));if(!alive())throw STALE;}
   try{
    const r=await fetchJSON(OVERPASS_URL,{method:'POST',body:body,headers:{'Content-Type':'application/x-www-form-urlencoded'},timeout:OVERPASS_TIMEOUTS[i]});
    if(!r||typeof r!=='object'||!Array.isArray(r.elements))throw new SourceError('the response had no list of places');
    if(r.remark&&/error/i.test(String(r.remark))&&!r.elements.length)throw new SourceError('the server stopped the query');
    if(r.elements.length&&!r.elements.some(el=>el&&typeof el==='object'&&/^(node|way|relation)$/.test(el.type)))throw new SourceError('the response had no usable places');
-   return r;
-  }catch(e){last=e;if(!alive())throw STALE;}
+   overpassCache.set(body,r);return r;
+  }catch(e){last=e;if(e.status)overpassPauseUntil=Date.now()+OVERPASS_PAUSE;if(!alive())throw STALE;}
  }
  throw new SourceError(last.message+' (tried overpass-api.de twice)');
 }
@@ -2149,7 +2157,7 @@ async function runOsm(id){
    radius=OSM_RADII[i];
    if(i){base='Fewer than '+OSM_MIN+' listings within '+miles(OSM_RADII[0])+'; looking within '+miles(radius)+'...';paint();}
    let j;
-   try{j=await overpass(pt,radius,alive,e=>{base='The Overpass server did not answer ('+e.message+'); trying once more, which can take up to '+Math.round(OVERPASS_TIMEOUTS[1]/1000)+' more seconds...';paint();});}
+   try{j=await overpass(pt,radius,alive,e=>{base=overpassRetryText(e);paint();});}
    catch(e){if(e===STALE||!alive())return;if(i===0)throw e;widenErr=e;break;}
    if(!alive())return;
    done=radius;

@@ -165,6 +165,7 @@ main.rs-idle .rs-needs-place{display:none}
 .leaflet-popup-content{font-family:var(--sans);font-size:13px}
 .leaflet-container a.leaflet-popup-close-button{color:var(--ink2)}
 .leaflet-control-attribution{font-size:11px}
+.rs-aqi{display:inline-block;padding:0 6px;border-radius:3px;font-weight:600}
 .rs-metric-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;align-items:baseline}
 .rs-mstatus{font-size:13px;margin:4px 0 0;color:var(--ink)}
 .rs-mstatus.rs-na{color:var(--ink2)}
@@ -528,7 +529,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
       <h3>Privacy</h3>
       <p class="rs-note">This page has no server of its own and stores nothing. Your location does leave this browser: the searched point goes to the public services in the Sources and status table. A street address goes to OpenStreetMap Nominatim; ZIP codes and place names go to Census TIGERweb; the searched point goes to the federal and public services listed there. Exported plans are saved by your browser only when you ask, and they carry the place name and county, not your coordinates or the text you typed.</p>
       <h3>Attribution</h3>
-      <p class="rs-note">Address search: &copy; OpenStreetMap contributors, via Nominatim, under the <a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">Nominatim usage policy</a>. Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>; map library <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>. Data from FEMA, NOAA (NWS, SPC, NHC, CO-OPS), USGS, EPA, CDC/ATSDR, HRSA, CMS, EIA, FHWA and BTS, ORNL, NIFC and the U.S. Census Bureau, some through Esri-hosted copies labeled "Federal dataset hosted by Esri". NWS HeatRisk is labeled "Experimental".</p>
+      <p class="rs-note">Address search: &copy; OpenStreetMap contributors, via Nominatim, under the <a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">Nominatim usage policy</a>. Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">report a map problem</a>); map library <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>. Data from FEMA, NOAA (NWS, SPC, NHC, CO-OPS), USGS, EPA, CDC/ATSDR, HRSA, CMS, EIA, FHWA and BTS, ORNL, NIFC and the U.S. Census Bureau, some through Esri-hosted copies labeled "Federal dataset hosted by Esri". NWS HeatRisk is labeled "Experimental".</p>
       <h3>How to add a place configuration</h3>
       <p class="rs-note">See <code>consoles/community-resilience/places/README.md</code>. Add a JSON file under <code>consoles/community-resilience/places/</code> (see <code>st-petersburg-fl.json</code>): <code>match.placeGeoid</code> (the Census place GEOID), optional <code>pins</code> for a shared NWS alert point and NOAA station, <code>files</code> naming same-origin published data, <code>links</code>, <code>modules</code> (the local modules, with their datum, ladder and scopes) and <code>moduleFacts</code> (dated local facts per hazard module). Then run <code>python3 scripts/embed_community_resilience.py</code>, which embeds every place file into this page; <code>--check</code> fails when the page is out of date.</p>
       <h3>How to add a hazard module</h3>
@@ -996,7 +997,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
  source('nws-point','National Weather Service office and zones','NOAA National Weather Service','https://www.weather.gov/','Names the forecast office and zones for this point; it carries no hazard values.');
  source('spc-outlook','Storm Prediction Center Day 1 outlook','NOAA Storm Prediction Center','https://www.spc.noaa.gov/products/outlook/day1otlk.html','Covers the lower 48 states only; Alaska, Hawaii, Puerto Rico and the territories are not covered.');
  source('heatrisk','NWS HeatRisk (experimental)','NOAA National Weather Service','https://www.wpc.ncep.noaa.gov/heatrisk/','Experimental 7-day heat risk for the lower 48 states only; Alaska, Hawaii, Puerto Rico and the territories are not covered.',{experimental:true});
- source('drought','U.S. Drought Monitor by county','National Drought Mitigation Center, USDA and NOAA','https://droughtmonitor.unl.edu/','Weekly share of county area in drought; it does not describe the water supply at any address.',{hostedBy:'Esri'});
+ source('drought','U.S. Drought Monitor by county','National Drought Mitigation Center, USDA, NOAA and NASA','https://droughtmonitor.unl.edu/','Weekly share of county area in drought; it does not describe the water supply at any address.',{hostedBy:'Esri'});
  source('wildfires','Wildfire incidents and perimeters (NIFC WFIGS)','National Interagency Fire Center','https://data-nifc.opendata.arcgis.com/','Reported wildfire incidents and mapped perimeters only; new or small fires can be missing, and prescribed burns are counted separately.');
  source('air-quality','AirNow reporting areas','U.S. EPA AirNow and partner agencies','https://www.airnow.gov/','Preliminary hourly values for the nearest reporting area, which can differ from conditions at the address; Puerto Rico and the U.S. Virgin Islands are not in this file.');
  source('tropical','Active tropical cyclones','NOAA NHC and JTWC','https://www.nhc.noaa.gov/','Latest observed storm centers worldwide; storm size, rainfall and surge are not included.',{hostedBy:'Esri'});
@@ -1566,7 +1567,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
     for(const line of body.split(/\r?\n/)){const f=line.split('|');if(f.length<14||f[5]!=='O')continue;
      const st=stateOf(f[8]),lat=num(f[9]),lon=num(f[10]),aqi=num(f[12]),stamp=airStamp(f[1],f[2],f[3],f[8]);
      if(!st||lat==null||lon==null||aqi==null||aqi<0||aqi>999||!finite(stamp))continue;
-     rows.push({area:f[7].trim(),state:st.abbr,lat,lon,parameter:f[11].trim(),aqi,category:text(f[13]),validDate:f[1],validTime:f[2],tz:f[3],stamp});}
+     rows.push({area:f[7].trim(),state:st.abbr,lat,lon,parameter:f[11].trim(),aqi,category:text(f[13]),validDate:f[1],validTime:f[2],tz:f[3],stamp,agency:text(f[16]||'')});}
     if(!rows.length)throw new SourceError('No observation rows in the file');
     return {rows,modified:Date.parse(header('last-modified')||'')};
    });
@@ -1585,7 +1586,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
     for(const r of file.rows)if(r.area+'|'+r.state+'|'+r.lat+'|'+r.lon===best.key){const old=latest.get(r.parameter);if(!old||r.stamp>old.stamp)latest.set(r.parameter,r);}
     const items=[...latest.values()].sort((a,b)=>b.aqi-a.aqi).map(r=>({parameter:r.parameter,aqi:r.aqi,category:r.category,validDate:r.validDate,validTime:r.validTime,tz:r.tz,observedAt:iso(r.stamp)}));
     const newest=Math.max(...[...latest.values()].map(r=>r.stamp)),stale=now()-newest>6*3600000;
-    const data={area:best.row.area,state:best.row.state,lat:best.row.lat,lon:best.row.lon,distanceKm:round(best.d,2),observedAt:iso(newest),stale,items};
+    const data={area:best.row.area,state:best.row.state,lat:best.row.lat,lon:best.row.lon,distanceKm:round(best.d,2),observedAt:iso(newest),stale,items,agency:best.row.agency||''};
     return {status:'ok',message:'Nearest AirNow reporting area: '+data.area+', '+data.state+(stale?'; its latest hourly observation is more than 6 hours old.':'.'),data,...date};
    });
   }
@@ -2180,6 +2181,9 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
 const E=window.CREngine,S=window.CRSources;
 const $=id=>document.getElementById(id);
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// AirNow asks that values appear with the official Air Quality Index colors.
+const AQI_COLORS=[[50,'#00e400','#000'],[100,'#ffff00','#000'],[150,'#ff7e00','#000'],[200,'#ff0000','#fff'],[300,'#8f3f97','#fff'],[Infinity,'#7e0023','#fff']];
+const aqiChip=i=>{const c=AQI_COLORS.find(a=>i.aqi<=a[0]);return '<span class="rs-aqi" style="background:'+c[1]+';color:'+c[2]+'">'+esc(i.category)+'</span>';};
 function safeUrl(u){if(typeof u!=='string')return null;try{const x=new URL(u.trim(),location.href);return /^https?:$/.test(x.protocol)?x.href:null;}catch(e){return null;}}
 function extLink(u,text){const s=safeUrl(u);return s?'<a href="'+esc(s)+'" target="_blank" rel="noopener noreferrer">'+esc(text)+'</a>':esc(text);}
 const finite=v=>typeof v==='number'&&Number.isFinite(v);
@@ -2556,6 +2560,8 @@ function renderSources(){
    Leaflet loads from this script after the page loads, never from <head>, so a slow or blocked unpkg.com
    can never hold up the page. */
 const LEAFLET_CSS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',LEAFLET_JS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',LEAFLET_TIMEOUT=15000;
+// Pinned file hashes, so the browser refuses a changed copy of the map library.
+const LEAFLET_CSS_SRI='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=',LEAFLET_JS_SRI='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
 const mapState={status:'loading',text:'Loading the map library...'};
 let hasMap=false,map=null,leaf=null,layer=null,lastSig='',tileFailed=false,tileStreak=0;
 function mapNote(html){$('rs-map').style.height='auto';$('rs-map').innerHTML='<p class="rs-map-off">'+html+'</p>';}
@@ -2588,9 +2594,9 @@ function loadLeaflet(){
   if(cssOk===false||jsOk===false){mapDown('The map library did not load.');return;}
   if(cssOk&&jsOk){if(window.L&&typeof window.L.map==='function'){try{initMap();}catch(e){hasMap=false;mapDown('The map library could not start.');}}else mapDown('The map library did not load.');}
  };
- const css=document.createElement('link');css.rel='stylesheet';css.href=LEAFLET_CSS;
+ const css=document.createElement('link');css.rel='stylesheet';css.href=LEAFLET_CSS;css.integrity=LEAFLET_CSS_SRI;css.crossOrigin='anonymous';
  css.onload=()=>{cssOk=true;check();};css.onerror=()=>{cssOk=false;check();};
- const js=document.createElement('script');js.src=LEAFLET_JS;js.async=true;
+ const js=document.createElement('script');js.src=LEAFLET_JS;js.integrity=LEAFLET_JS_SRI;js.crossOrigin='anonymous';js.async=true;
  js.onload=()=>{jsOk=true;check();};js.onerror=()=>{jsOk=false;check();};
  document.head.appendChild(css);document.head.appendChild(js);
  setTimeout(()=>{if(!hasMap&&cssOk!==false&&jsOk!==false)mapDown('The map library did not load within '+Math.round(LEAFLET_TIMEOUT/1000)+' seconds.');},LEAFLET_TIMEOUT);
@@ -2733,7 +2739,7 @@ const DETAIL={
  spcOutlook:d=>{const c=state.spcCategory;return '<p class="rs-note">'+(c&&c.label?'Day 1 outlook at this point: <b>'+esc(SPC_NAMES[c.label]||c.label)+'</b> ('+esc(c.label)+', level '+esc(c.rank)+' of 6)':'Day 1 outlook: no thunderstorm or severe category at this point')+'. Valid until '+esc(when(d.expires))+'.</p>';},
  heatRisk:d=>{const days=(d.days||[]).filter(x=>finite(x.levels&&x.levels[0]));if(!days.length)return '';const peak=days.reduce((a,b)=>b.levels[0]>a.levels[0]?b:a);
   return '<p class="rs-note">Highest level in the next 7 days: <b>'+esc(peak.levels[0])+' of 4 ('+esc(HEAT_NAMES[peak.levels[0]])+')</b> on '+esc(dayName(peak.validTime))+'.</p><p class="rs-muted">'+esc(days.map(x=>dayName(x.validTime)+': '+x.levels[0]).join('; '))+'.</p>';},
- airQuality:d=>'<p class="rs-note">'+esc(d.area)+', '+esc(d.state)+' ('+esc(dist(d.distanceKm))+' away): '+esc((d.items||[]).map(i=>i.parameter+' AQI '+i.aqi+' ('+i.category+')').join('; '))+(d.stale?'. The latest observation is more than 6 hours old.':'.')+'</p>',
+ airQuality:d=>'<p class="rs-note">'+esc(d.area)+', '+esc(d.state)+' ('+esc(dist(d.distanceKm))+' away): '+(d.items||[]).map(i=>esc(i.parameter)+' AQI '+esc(i.aqi)+' '+aqiChip(i)).join('; ')+(d.stale?'. The latest observation is more than 6 hours old':'')+'. Preliminary data'+(d.agency?' from '+esc(d.agency):'')+' via U.S. EPA AirNow, subject to change.</p>',
  wildfires:d=>items(d.incidents,4,f=>'<li><b>'+esc(clean(f.name,80)||'Unnamed fire')+'</b>, '+esc(dist(f.distanceKm))+' away'+(finite(f.acres)?', '+esc(num(f.acres))+' acres':'')+(finite(f.containment)?', '+esc(f.containment)+'% contained':'')+'. Updated '+esc(when(f.modified))+'.</li>')+'<p class="rs-muted">'+esc(plural((d.incidents||[]).length,'wildfire incident'))+' and '+esc(plural((d.perimeters||[]).length,'mapped perimeter'))+' within '+esc(d.radiusMi)+' miles'+(d.prescribedCount?'; '+esc(plural(d.prescribedCount,'prescribed burn'))+' counted separately':'')+'.</p>',
  drought:d=>'<p class="rs-note">U.S. Drought Monitor map of '+esc(d.mapDate)+': '+esc(fmt.pct(d.d0,0))+' of the county abnormally dry or worse (D0+), '+esc(fmt.pct(d.d1,0))+' moderate drought or worse (D1+), '+esc(fmt.pct(d.d2,0))+' severe (D2+), '+esc(fmt.pct(d.d3,0))+' extreme (D3+), '+esc(fmt.pct(d.d4,0))+' exceptional (D4).</p>',
  earthquakes:d=>'<p class="rs-note">'+esc(plural(d.count!=null?d.count:(d.items||[]).length,'earthquake'))+' of magnitude 2.5 or more within 250 km in the past 30 days.</p>'+items(d.items,4,e=>'<li>M'+esc(e.mag)+' '+esc(clean(e.place,90))+', '+esc(dist(e.distanceKm))+' away, '+esc(when(e.time))+'.</li>'),

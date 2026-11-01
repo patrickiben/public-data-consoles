@@ -1682,7 +1682,7 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
       <div class="fa-source"><h3>SNAP-authorized retailers: USDA Food and Nutrition Administration</h3><p><a href="https://www.fna.usda.gov/snap/retailer-locator" target="_blank" rel="noopener noreferrer">SNAP Retailer Locator</a> data (<a href="https://usda-snap-retailers-usda-fns.hub.arcgis.com/datasets/8b260f9a10b0459aa441ad8588c2251c" target="_blank" rel="noopener noreferrer">public ArcGIS dataset</a>), excluding farmers markets and Restaurant Meals Program restaurants.</p><p>Date: <span id="src-date-snap">shown after a search, from the layer's last edit date</span>. The source says it updates every 2 weeks.</p></div>
       <div class="fa-source"><h3>SNAP-authorized farmers markets: USDA Food and Nutrition Administration</h3><p>The same SNAP retailer data, store type "Farmers and Markets". Only markets and farmers authorized to accept SNAP are included.</p><p>Date: <span id="src-date-markets">shown after a search, from the layer's last edit date</span>.</p></div>
       <div class="fa-source"><h3>Food banks and meal programs: OpenStreetMap via Overpass</h3><p><a href="https://overpass-api.de/" target="_blank" rel="noopener noreferrer">overpass-api.de</a>, tried twice if it does not answer. Places tagged social_facility=food_bank, amenity=food_bank or social_facility=soup_kitchen within 50 km (31 miles).</p><p>&copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a>. Date: <span id="src-date-osm">shown after a search, from the OSM data timestamp</span>, plus each place's last edit date.</p></div>
-      <div class="fa-source"><h3>Map tiles and map library</h3><p>Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> from tile.openstreetmap.org. Map library: <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> 1.9.4 from unpkg.com.</p></div>
+      <div class="fa-source"><h3>Map tiles and map library</h3><p>Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> from tile.openstreetmap.org. Map library: <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> 1.9.4 from unpkg.com. Something wrong on the map? <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">Report a map problem to OpenStreetMap</a>.</p></div>
     </div>
   </section>
 
@@ -1700,7 +1700,7 @@ const FARA25_URL='https://gisportal.ers.usda.gov/server/rest/services/FARA/FARA_
 const FARA19_URL='https://gisportal.ers.usda.gov/server/rest/services/FARA/FARA_2019/MapServer/30/query';
 const SNAP_LAYER_URL='https://services1.arcgis.com/RLQu0rK7h4kbsBq5/arcgis/rest/services/snap_retailer_location_data/FeatureServer/0';
 const OVERPASS_URL='https://overpass-api.de/api/interpreter';
-const OVERPASS_TIMEOUTS=[30000,30000],OVERPASS_RETRY_WAIT=4000;
+const OVERPASS_TIMEOUTS=[45000,35000],OVERPASS_RETRY_WAIT=4000;
 const LISTS={snap:{radii:[1,2,5,10,25,50],target:15,markets:false,noun:'stores'},markets:{radii:[5,10,25,50],target:10,markets:true,noun:'markets'}};
 const OSM_RADIUS_M=50000,OSM_RADIUS_MI=31;
 const PHONE=window.innerWidth<768,PAGE=PHONE?10:25;
@@ -1741,7 +1741,7 @@ async function fetchJSON(url,opt){
  const o=opt||{},timeout=o.timeout||15000,c=new AbortController(),timer=setTimeout(()=>c.abort(),timeout);
  try{
   const r=await fetch(url,{method:o.method||'GET',body:o.body||undefined,headers:o.headers||undefined,signal:c.signal,credentials:'omit'});
-  if(!r.ok)throw new SourceError('the service answered with HTTP '+r.status);
+  if(!r.ok){const e=new SourceError('the service answered with HTTP '+r.status);e.status=r.status;throw e;}
   try{return await r.json();}catch(e){throw new SourceError(c.signal.aborted?'no answer within '+Math.round(timeout/1000)+' seconds':'the response was not valid data');}
  }catch(e){
   if(e instanceof SourceError)throw e;
@@ -1768,6 +1768,8 @@ resetSources('idle');
    Leaflet is loaded from this script, never from <head>, so a slow or blocked unpkg.com
    can never hold up the page: the search works while the map is still loading or if it fails. */
 const LEAFLET_CSS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',LEAFLET_JS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',LEAFLET_TIMEOUT=15000;
+// Pinned file hashes, so the browser refuses a changed copy of the map library.
+const LEAFLET_CSS_SRI='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=',LEAFLET_JS_SRI='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
 let hasMap=false,map=null,layer=null,lastDrawn=[];
 function mapNote(html){$('map').style.height='auto';$('map').innerHTML='<p class="fa-map-off">'+html+'</p>';}
 function initMap(){
@@ -1794,9 +1796,9 @@ function loadLeaflet(){
   if(cssOk===false||jsOk===false){mapNote(UNAVAILABLE);return;}
   if(cssOk&&jsOk){if(window.L&&typeof window.L.map==='function'){try{initMap();}catch(e){hasMap=false;mapNote(UNAVAILABLE);}}else mapNote(UNAVAILABLE);}
  };
- const css=document.createElement('link');css.rel='stylesheet';css.href=LEAFLET_CSS;
+ const css=document.createElement('link');css.rel='stylesheet';css.href=LEAFLET_CSS;css.integrity=LEAFLET_CSS_SRI;css.crossOrigin='anonymous';
  css.onload=()=>{cssOk=true;check();};css.onerror=()=>{cssOk=false;check();};
- const js=document.createElement('script');js.src=LEAFLET_JS;js.async=true;
+ const js=document.createElement('script');js.src=LEAFLET_JS;js.integrity=LEAFLET_JS_SRI;js.crossOrigin='anonymous';js.async=true;
  js.onload=()=>{jsOk=true;check();};js.onerror=()=>{jsOk=false;check();};
  document.head.appendChild(css);document.head.appendChild(js);
  // If the library is still loading after the limit, say so; a late load still builds the map.
@@ -2209,21 +2211,26 @@ function osmItem(el,pt){
   address:[street,cityLine].filter(Boolean).join(', ')||'No address tagged',hours:clean(t.opening_hours,200),phone:clean(t.phone||t['contact:phone'],60),website:safeUrl(t.website||t['contact:website']||''),edited:Number.isFinite(edited)?new Date(edited).toISOString().slice(0,10):null,
   osmType:/^(node|way|relation)$/.test(el.type)?el.type:null,osmId:Number.isFinite(+el.id)?+el.id:null};
 }
+// Overpass asks clients to pause 30 seconds after an HTTP error such as 429 or 406, and to cache answers.
+const OVERPASS_PAUSE=30100;let overpassPauseUntil=0;const overpassCache=new Map();
+const overpassRetryText=(e,ms)=>'The Overpass server did not answer ('+e.message+'); '+(e.status?'pausing 30 seconds as its usage rules ask, then trying once more':'trying once more')+', which can take up to '+Math.round((ms+(e.status?OVERPASS_PAUSE:0))/1000)+' more seconds...';
 async function runOsm(id){
  if(id!==searchRun||!current)return;
  const pt=current.point;items.osm=[];renderResults();
  const alive=begin('osm','Loading from overpass-api.de. This source can be slow: it can take up to a minute while the other sections fill in.');publish();
  const body='data='+encodeURIComponent(overpassQuery(roundPt(pt,3)));
- let j=null,last=null;
- for(let i=0;i<OVERPASS_TIMEOUTS.length;i++){
-  if(i){setSrc('osm',{text:'The Overpass server did not answer ('+last.message+'); trying once more, which can take up to '+Math.round(OVERPASS_TIMEOUTS[i]/1000)+' more seconds...'});await sleep(OVERPASS_RETRY_WAIT);if(!alive())return;}
+ let j=overpassCache.get(body)||null,last=null;
+ for(let i=0;!j&&i<OVERPASS_TIMEOUTS.length;i++){
+  if(i)setSrc('osm',{text:overpassRetryText(last,OVERPASS_TIMEOUTS[i])});
+  const wait=Math.max(i?OVERPASS_RETRY_WAIT:0,overpassPauseUntil-Date.now());
+  if(wait>0){await new Promise(r=>setTimeout(r,wait,'overpass-pause'));if(!alive())return;}
   try{
    const r=await fetchJSON(OVERPASS_URL,{method:'POST',body:body,headers:{'Content-Type':'application/x-www-form-urlencoded'},timeout:OVERPASS_TIMEOUTS[i]});
    if(!r||!Array.isArray(r.elements))throw new SourceError('the response had no list of places');
    if(r.remark&&/error/i.test(r.remark)&&!r.elements.length)throw new SourceError('the server stopped the query');
    if(r.elements.length&&!r.elements.some(el=>el&&typeof el==='object'&&/^(node|way|relation)$/.test(el.type)))throw new SourceError('the response had no usable places');
-   j=r;break;
-  }catch(e){if(!alive())return;last=e;}
+   j=r;overpassCache.set(body,r);break;
+  }catch(e){if(e.status)overpassPauseUntil=Date.now()+OVERPASS_PAUSE;if(!alive())return;last=e;}
  }
  if(!alive())return;
  const now=new Date().toISOString();

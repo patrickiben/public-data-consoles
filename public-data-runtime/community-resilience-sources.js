@@ -90,7 +90,7 @@
  source('nws-point','National Weather Service office and zones','NOAA National Weather Service','https://www.weather.gov/','Names the forecast office and zones for this point; it carries no hazard values.');
  source('spc-outlook','Storm Prediction Center Day 1 outlook','NOAA Storm Prediction Center','https://www.spc.noaa.gov/products/outlook/day1otlk.html','Covers the lower 48 states only; Alaska, Hawaii, Puerto Rico and the territories are not covered.');
  source('heatrisk','NWS HeatRisk (experimental)','NOAA National Weather Service','https://www.wpc.ncep.noaa.gov/heatrisk/','Experimental 7-day heat risk for the lower 48 states only; Alaska, Hawaii, Puerto Rico and the territories are not covered.',{experimental:true});
- source('drought','U.S. Drought Monitor by county','National Drought Mitigation Center, USDA and NOAA','https://droughtmonitor.unl.edu/','Weekly share of county area in drought; it does not describe the water supply at any address.',{hostedBy:'Esri'});
+ source('drought','U.S. Drought Monitor by county','National Drought Mitigation Center, USDA, NOAA and NASA','https://droughtmonitor.unl.edu/','Weekly share of county area in drought; it does not describe the water supply at any address.',{hostedBy:'Esri'});
  source('wildfires','Wildfire incidents and perimeters (NIFC WFIGS)','National Interagency Fire Center','https://data-nifc.opendata.arcgis.com/','Reported wildfire incidents and mapped perimeters only; new or small fires can be missing, and prescribed burns are counted separately.');
  source('air-quality','AirNow reporting areas','U.S. EPA AirNow and partner agencies','https://www.airnow.gov/','Preliminary hourly values for the nearest reporting area, which can differ from conditions at the address; Puerto Rico and the U.S. Virgin Islands are not in this file.');
  source('tropical','Active tropical cyclones','NOAA NHC and JTWC','https://www.nhc.noaa.gov/','Latest observed storm centers worldwide; storm size, rainfall and surge are not included.',{hostedBy:'Esri'});
@@ -660,7 +660,7 @@
     for(const line of body.split(/\r?\n/)){const f=line.split('|');if(f.length<14||f[5]!=='O')continue;
      const st=stateOf(f[8]),lat=num(f[9]),lon=num(f[10]),aqi=num(f[12]),stamp=airStamp(f[1],f[2],f[3],f[8]);
      if(!st||lat==null||lon==null||aqi==null||aqi<0||aqi>999||!finite(stamp))continue;
-     rows.push({area:f[7].trim(),state:st.abbr,lat,lon,parameter:f[11].trim(),aqi,category:text(f[13]),validDate:f[1],validTime:f[2],tz:f[3],stamp});}
+     rows.push({area:f[7].trim(),state:st.abbr,lat,lon,parameter:f[11].trim(),aqi,category:text(f[13]),validDate:f[1],validTime:f[2],tz:f[3],stamp,agency:text(f[16]||'')});}
     if(!rows.length)throw new SourceError('No observation rows in the file');
     return {rows,modified:Date.parse(header('last-modified')||'')};
    });
@@ -679,7 +679,7 @@
     for(const r of file.rows)if(r.area+'|'+r.state+'|'+r.lat+'|'+r.lon===best.key){const old=latest.get(r.parameter);if(!old||r.stamp>old.stamp)latest.set(r.parameter,r);}
     const items=[...latest.values()].sort((a,b)=>b.aqi-a.aqi).map(r=>({parameter:r.parameter,aqi:r.aqi,category:r.category,validDate:r.validDate,validTime:r.validTime,tz:r.tz,observedAt:iso(r.stamp)}));
     const newest=Math.max(...[...latest.values()].map(r=>r.stamp)),stale=now()-newest>6*3600000;
-    const data={area:best.row.area,state:best.row.state,lat:best.row.lat,lon:best.row.lon,distanceKm:round(best.d,2),observedAt:iso(newest),stale,items};
+    const data={area:best.row.area,state:best.row.state,lat:best.row.lat,lon:best.row.lon,distanceKm:round(best.d,2),observedAt:iso(newest),stale,items,agency:best.row.agency||''};
     return {status:'ok',message:'Nearest AirNow reporting area: '+data.area+', '+data.state+(stale?'; its latest hourly observation is more than 6 hours old.':'.'),data,...date};
    });
   }

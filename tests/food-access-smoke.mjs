@@ -76,6 +76,8 @@ let passed = 0;
 
 async function open(options = {}, contextOptions = {}) {
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1280, height: 900 }, ...contextOptions });
+  // The page pauses 30 seconds after an Overpass HTTP error; record that wait and shorten it for the test.
+  await context.addInitScript(() => { const st = window.setTimeout; window.__pauses = []; window.setTimeout = function (f, ms, ...a) { if (a[0] === 'overpass-pause') { window.__pauses.push(ms); ms = 50; } return st.call(window, f, ms, ...a); }; });
   const page = await context.newPage();
   const log = { requests: [], nominatimTimes: [], unexpected: [], errors: [] };
   page.on('pageerror', e => log.errors.push(e.message));
@@ -512,6 +514,7 @@ try {
     const failChips = await page.$$eval('#filters [data-filter]', bs => bs.map(b => b.lastElementChild.textContent));
     assert.ok(failChips.every(c => /\(unavailable\)$/.test(c) && !/\(0\)/.test(c)), 'failed chips are never zero: ' + failChips.join(' | '));
     assert.match(await text(page, '#src-date-osm'), /unavailable: the OpenStreetMap query failed/);
+    assert.ok(await page.evaluate(() => window.__pauses.some(ms => ms > 29000)), 'waits about 30 seconds after an Overpass HTTP error');
     assert.doesNotMatch(summary, /No places are listed/);
     await page.waitForFunction(() => /Check unavailable sources directly/.test(document.getElementById('console-response').textContent), null, { timeout: 5000 });
     await finish(t, 'all lists failed');

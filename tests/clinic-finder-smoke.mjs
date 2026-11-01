@@ -128,6 +128,8 @@ async function until(fn, label, ms = 10000) {
 async function open(options = {}, contextOptions = {}) {
   const opt = options;
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1280, height: 900 }, timezoneId: 'UTC', locale: 'en-US', ...contextOptions });
+  // The page pauses 30 seconds after an Overpass HTTP error; record that wait and shorten it for the test.
+  await context.addInitScript(() => { const st = window.setTimeout; window.__pauses = []; window.setTimeout = function (f, ms, ...a) { if (a[0] === 'overpass-pause') { window.__pauses.push(ms); ms = 50; } return st.call(window, f, ms, ...a); }; });
   await context.addInitScript(() => {
     window.__writes = [];
     const rec = n => window.__writes.push(n);
@@ -764,6 +766,7 @@ try {
     assert.match(row, /Try again/);
     assert.doesNotMatch(row, /None listed/);
     assert.deepEqual(log.overpass.map(o => o.host), ['overpass-api.de', 'overpass-api.de']);
+    assert.ok((await page.evaluate(() => window.__pauses.some(ms => ms > 29000))), 'waits about 30 seconds after an Overpass HTTP error');
     assert.equal((await keys(page, 'osm')).length, 0);
     assert.deepEqual(await keys(page, 'hrsa'), CITY_HRSA_ORDER);
     assert.equal(await text(page, '#count-osm'), '(unavailable)');
