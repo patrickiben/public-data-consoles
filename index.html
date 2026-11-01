@@ -179,6 +179,7 @@
     font-size:12px;letter-spacing:.18em;text-transform:uppercase;
     color:var(--ink-2);font-weight:500;margin:0;white-space:nowrap;
   }
+  @media (max-width:520px){.secthead h2{white-space:normal;letter-spacing:.12em}}
   .secthead .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent)}
   .secthead .count{
     font-family:var(--mono);font-size:11px;color:var(--cyan);
@@ -373,7 +374,7 @@
   <div class="wrap">
     <span class="dot" aria-hidden="true"></span>
     <div class="sb-scroll">
-      <span class="sb-seg"><span class="sb-key">32</span>&nbsp;CONSOLES</span>
+      <span class="sb-seg"><span class="sb-key">36</span>&nbsp;CONSOLES</span>
       <span class="sb-sep" aria-hidden="true">·</span>
       <span class="sb-seg">PUBLIC&nbsp;FEEDS</span>
       <span class="sb-sep" aria-hidden="true">·</span>
@@ -393,7 +394,7 @@
 
     <div class="metrics" role="list" aria-label="Key facts">
       <div class="metric" role="listitem">
-        <div class="num">32<span class="u"></span></div>
+        <div class="num">36<span class="u"></span></div>
         <div class="lbl">Consoles</div>
       </div>
       <div class="metric" role="listitem">
@@ -417,7 +418,7 @@
     <div class="secthead">
       <h2>Hazards &amp; Early Warning</h2>
       <span class="rule" aria-hidden="true"></span>
-      <span class="count">07</span>
+      <span class="count">08</span>
     </div>
 
     <div class="grid" id="consoles" aria-label="Console array">
@@ -581,7 +582,40 @@
         </div>
       </article>
 
-      <!-- 6. U.S. Grid Strain -->
+      <!-- 6. Community Resilience -->
+      <article class="module" style="--accent:#27e0e0">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 21h18"/>
+                <path d="M5 21V10l7-6 7 6v11"/>
+                <path d="M9 21v-5h6v5"/>
+                <path d="M12 4V2"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span>SRC: FEMA/NWS/USGS/Census</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · NWS/NOAA/USGS</span>
+            <span class="pill scope">U.S. + Puerto Rico</span>
+          </div>
+          <h3>Community Resilience</h3>
+          <p>Search an address, ZIP code, city or municipality to see which natural hazards matter most there by FEMA expected annual loss, what is active now, and which lifelines (water, power, health, shelter, transport) those hazards would strain. Gives a phase-by-phase response plan with public and operator checklists, and its own ten-dimension response plan and the St. Petersburg lift station tier from the Coastal console.</p>
+          <div class="actions">
+            <a class="open" href="consoles/community-resilience/" aria-label="Open Community Resilience">Open console <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 7. U.S. Grid Strain -->
       <article class="module" style="--accent:#27e0e0">
         <div class="topstrip" aria-hidden="true"></div>
         <span class="scan" aria-hidden="true"></span>
@@ -611,7 +645,7 @@
         </div>
       </article>
 
-      <!-- 7. Global Outbreak Tracker -->
+      <!-- 8. Global Outbreak Tracker -->
       <article class="module" style="--accent:#27e0e0">
         <div class="topstrip" aria-hidden="true"></div>
         <span class="scan" aria-hidden="true"></span>
@@ -1468,12 +1502,43 @@
     <div class="secthead">
       <h2>Get Help</h2>
       <span class="rule" aria-hidden="true"></span>
-      <span class="count">01</span>
+      <span class="count">04</span>
     </div>
 
     <div class="grid" aria-label="Get help consoles">
 
-      <!-- 1. Human Trafficking — Get Help -->
+      <!-- 1. Free Clinic Finder -->
+      <article class="module" style="--accent:#4dabf7">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7h16v13H4Z"/><path d="M9 7V4h6v3"/><path d="M12 11v6M9 14h6"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span>SRC: HRSA · OSM</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · HRSA + OSM</span>
+            <span class="pill modeled"><span class="pd" aria-hidden="true"></span>Partial listings</span>
+            <span class="pill scope">U.S.</span>
+          </div>
+          <h3>Free Clinic Finder</h3>
+          <p>Enter an address or ZIP code, or use your location, to list nearby clinics that OpenStreetMap lists as free or possibly free, and HRSA health centers, which charge on a sliding fee and are not necessarily free. "Free" appears only where OpenStreetMap tags a clinic fee=no; clinics whose name says free are shown as not confirmed. Call to confirm cost and eligibility. In an emergency call 911; in a mental health crisis call or text 988.</p>
+          <div class="actions">
+            <a class="open" href="consoles/free-clinic-finder/" aria-label="Open Free Clinic Finder">Open console <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2. Human Trafficking — Get Help -->
       <article class="module" style="--accent:#ff6b8a">
         <div class="topstrip" aria-hidden="true"></div>
         <span class="scan" aria-hidden="true"></span>
@@ -1504,6 +1569,68 @@
         </div>
       </article>
 
+      <!-- 3. Food Desert Oases -->
+      <article class="module" style="--accent:#7bd88f">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 9h16l-1.5 10a2 2 0 0 1-2 1.7h-9a2 2 0 0 1-2-1.7Z"/><path d="M8 9l3-5M16 9l-3-5"/><path d="M9 13v4M15 13v4"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span>SRC: USDA ERS · FNS · OSM</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · SNAP + OSM</span>
+            <span class="pill snapshot"><span class="pd" aria-hidden="true"></span>Dated · USDA tract atlas</span>
+            <span class="pill scope">U.S.</span>
+          </div>
+          <h3>Food Desert Oases</h3>
+          <p>Enter an address, city or ZIP code to see whether the census tract is flagged low income and low access in the USDA Food Access Research Atlas (2025 edition, released July 2026), plus the nearest SNAP-authorized stores, farmers markets and food banks tagged in OpenStreetMap. Confirm hours before you go.</p>
+          <div class="actions">
+            <a class="open" href="consoles/food-desert-oases/" aria-label="Open Food Desert Oases">Open console <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 4. Free Public Bathroom Finder -->
+      <article class="module" style="--accent:#f4a259">
+        <div class="topstrip" aria-hidden="true"></div>
+        <span class="scan" aria-hidden="true"></span>
+        <span class="tick tl" aria-hidden="true"></span><span class="tick tr" aria-hidden="true"></span>
+        <span class="tick bl" aria-hidden="true"></span><span class="tick br" aria-hidden="true"></span>
+        <div class="body">
+          <div class="mod-head">
+            <span class="iconbox" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17"/><path d="M4 21h16"/><path d="M13 12v.01"/>
+              </svg>
+            </span>
+            <div class="src">
+              <span class="livedot"><span class="d" aria-hidden="true"></span>LIVE</span>
+              <span>SRC: Refuge · OSM</span>
+            </div>
+          </div>
+          <div class="pills">
+            <span class="pill live"><span class="pd" aria-hidden="true"></span>LIVE · Refuge + OSM</span>
+            <span class="pill modeled"><span class="pd" aria-hidden="true"></span>Crowd-sourced listings</span>
+            <span class="pill scope">U.S.</span>
+          </div>
+          <h3>Free Public Bathroom Finder</h3>
+          <p>Enter an address or ZIP code, or use your location, to list the nearest public restrooms from Refuge Restrooms (crowd-sourced) and OpenStreetMap, with accessibility and hours where listed. "Free" appears only where the data says so. Confirm before you go.</p>
+          <div class="actions">
+            <a class="open" href="consoles/public-bathroom-finder/" aria-label="Open Free Public Bathroom Finder">Open console <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </article>
+
     </div>
 
     <!-- honesty note -->
@@ -1516,7 +1643,7 @@
       <div>
         <p class="htitle">Read the instrument honestly</p>
         <p>These are <strong>descriptive, decision-support tools, not predictions</strong>. Data sources are public and labeled on each console (measured / modeled / demo). Nothing here contains protected health information or proprietary data. Readings are <strong>coincident indicators</strong> — a high value means "large/coupled today," not a forecast.</p>
-        <p>Every console includes a ten-parameter response checklist with public and operator views, linked evidence, explicit input gaps and phased next steps. <a href="response-plans/guide.html">Read the response-plan field guide.</a> <a href="data-updates.html">See what updates automatically across all 32 consoles.</a></p>
+        <p>Every console includes a ten-parameter response checklist with public and operator views, linked evidence, explicit input gaps and phased next steps. <a href="response-plans/guide.html">Read the response-plan field guide.</a> <a href="data-updates.html">See what updates automatically across all 36 consoles.</a></p>
       </div>
     </section>
   </main>

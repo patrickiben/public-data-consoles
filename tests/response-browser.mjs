@@ -130,7 +130,20 @@ try{
       const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));
       try{
         await page.goto(pathToFileURL(resolve(root,'consoles',entry.slug,'index.html')).href,{waitUntil:'domcontentloaded',timeout:90000});
-        if(entry.native){
+        if(entry.slug==='community-resilience'){
+          // Native community plan: its own panel renders offline before any search, with no shared response panel.
+          await page.waitForFunction(()=>document.querySelectorAll('#rs-plan [data-rs-dimension]').length===10,{timeout:45000});
+          assert.equal(await page.locator('#console-response').count(),0,'Native Community Resilience must not have a shared panel');
+          assert.equal(await page.locator('#console-response-shortcut').count(),0);
+          for(let metric=1;metric<=10;metric++)assert.equal(await page.locator('#rs-plan [data-rs-dimension="'+metric+'"] [data-metric-help="'+metric+'"]').count(),1,'Community Resilience offers help for parameter '+metric);
+          assert.match(await page.locator('#rs-plan').textContent(),/Not available here/);
+          for(const audience of ['operator','public']){
+            await page.locator('#rs-track-'+audience).click();
+            await page.waitForFunction(id=>document.getElementById(id).getAttribute('aria-pressed')==='true','rs-track-'+audience,{timeout:5000});
+          }
+          assert.equal(await page.locator('#rs-export-plan').count(),1);
+          assert.equal(await page.evaluate(()=>window.CRPage.exportPlan()),null,'No plan is exported before a place is found');
+        }else if(entry.native){
           await page.waitForFunction(()=>document.querySelector('#tm')?.textContent.includes('Mobility Network Leakage'),{timeout:45000});
           assert.equal(await page.locator('#console-response').count(),0,'Native Coastal must not have a duplicate panel');
           assert.equal(await page.locator('#tm [data-metric-help]').count(),10,'All ten native exercise labels offer help');
