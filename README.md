@@ -49,7 +49,7 @@ for each paper's draft, code/data archive and related applications.
 ## Ten-parameter response plans
 
 Every console includes a checklist organized around the same ten numbered research dimensions.
-The **Response plan** shortcut opens the shared checklist; Coastal has its own **Response plan** tab, and Community Resilience builds its own native plan for the searched place: Prepare, Watch, Warning, Impact and Recovery, each with public and operator checklists for the hazards that lead there. Its public steps follow the linked official pages (Ready.gov, the National Weather Service and Avalanche.org). Its operator steps are planning prompts written for the page, and the page labels them that way.
+The **Response plan** shortcut opens the shared checklist; Coastal has its own **Response plan** tab, and Community Resilience builds its own native plan for the searched place: Prepare, Watch, Warning, Impact and Recovery, each with public and operator checklists for the hazards that lead there. Its public steps follow the linked official pages (Ready.gov, the National Weather Service, NOAA, USGS, CDC and Avalanche.org). No emergency manager or clinician has reviewed them yet, and the page says so. Its operator steps are planning prompts written for the page, and the page labels them that way.
 Each dimension shows the domain condition or numerical proxy, required inputs, analytical mitigation
 and practical next steps. Public and professional-operator tracks use the same evidence with different
 responsibilities, escalation routes and verify/prepare/respond/review phases.

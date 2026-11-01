@@ -317,6 +317,40 @@ try{
   await everyPanelHasStatus(page);
  });
 
+ await scenario('every hazard checklist renders in every phase on both tracks, and the any-hazard list renders when no hazard leads',{},async page=>{
+  await search(page,'33701');
+  await page.waitForFunction(()=>/Checklist for this phase/.test(document.getElementById('rs-plan-body')?.innerText||''));
+  await page.waitForFunction(()=>window.CRPage.state.modules.length===window.CREngine.MODULES.length);
+  await page.waitForTimeout(1500); // late feeds refresh the modules; let them land before this test sets them
+  const everyPhase=async ids=>{
+   for(const track of ['public','operator']){
+    await page.click('#rs-track-'+track);
+    await page.waitForFunction(t=>document.getElementById('rs-track-'+t).getAttribute('aria-pressed')==='true',track);
+    for(const ph of ['prepare','watch','warning','impact','recovery']){
+     await page.click('[data-plan-phase="'+ph+'"]');
+     await page.waitForFunction(x=>document.querySelector('[data-plan-phase="'+x+'"]')?.getAttribute('aria-pressed')==='true',ph);
+     await page.waitForFunction(n=>document.querySelectorAll('#rs-plan-body .rs-check-mod').length===n,ids.length);
+     const seen=await page.evaluate(()=>[...document.querySelectorAll('#rs-plan-body .rs-check-mod')].map(m=>({id:m.dataset.rsPlanModule,steps:[...m.querySelectorAll('li')].map(li=>li.innerText.trim()),links:m.querySelectorAll('.rs-src a').length})));
+     const want=await page.evaluate(({ids,track,ph})=>ids.map(id=>({id,steps:window.CREngine.PLAYBOOK[id][track][ph],links:1+(window.CREngine.PLAYBOOK[id].also||[]).length})),{ids,track,ph});
+     assert.deepEqual(seen,want,track+' '+ph);
+    }
+   }
+  };
+  // Every hazard leads, through the page's own render path. Places where drought or landslide lead are not in the fixtures.
+  const ids=await page.evaluate(()=>{const E=window.CREngine,S=window.CRPage.state;window.__allStatus=S.modules;S.modules=S.modules.map(m=>({...m,status:'leading'}));return E.MODULES.map(m=>m.id);});
+  await page.click('#rs-track-operator');await page.click('#rs-track-public');
+  await page.waitForFunction(n=>document.querySelectorAll('#rs-plan-body .rs-check-mod').length===n,ids.length);
+  const order=await page.evaluate(()=>[...document.querySelectorAll('#rs-plan-body .rs-check-mod')].map(m=>m.dataset.rsPlanModule));
+  assert.deepEqual([...order].sort(),[...ids].sort(),'all 13 hazard lists are on the page');
+  assert.ok(order.includes('drought')&&order.includes('landslide'));
+  await everyPhase(order);
+  // No hazard leads: the any-hazard list stands in.
+  await page.evaluate(()=>{const S=window.CRPage.state;S.modules=window.__allStatus.map(m=>({...m,status:m.status==='leading'?'rated':m.status}));});
+  await page.click('#rs-track-operator');await page.click('#rs-track-public');
+  await page.waitForFunction(()=>document.querySelector('#rs-plan-body .rs-check-mod')?.dataset.rsPlanModule==='all');
+  assert.match(await page.locator('#rs-plan-body').innerText(),/Any hazard/);
+  await everyPhase(['all']);
+ });
  await scenario('00901 Puerto Rico: no NRI ratings, Esri ACS context, AirNow not covered',{},async page=>{
   await search(page,'00901');
   await page.waitForFunction(()=>/San Juan Municipio, Puerto Rico/.test(document.querySelector('#rs-place').textContent));
@@ -380,7 +414,7 @@ try{
   assert.equal(await page.locator('[data-plan-phase="prepare"]').getAttribute('aria-pressed'),'true','opens on the phase the sources point to');
   assert.match(await page.locator('[data-plan-phase="prepare"]').innerText(),/now/i);
   const prepare=await page.locator('#rs-plan-body').innerText();
-  assert.match(prepare,/Checklist for this phase/);assert.match(prepare,/Know your evacuation zone/);assert.match(prepare,/General guidance, not specific to this place/);assert.match(prepare,/What the data says here now/);assert.match(prepare,/Assets behind this plan/);
+  assert.match(prepare,/Checklist for this phase/);assert.match(prepare,/Know your evacuation zone/);assert.match(prepare,/General guidance, not specific to this place/);assert.match(prepare,/no emergency manager or clinician has reviewed this list/);assert.match(prepare,/What the data says here now/);assert.match(prepare,/Assets behind this plan/);
   // Reading ahead changes the checklist, not what the sources say now.
   await page.click('[data-plan-phase="warning"]');
   await page.waitForFunction(()=>/Leave right away/.test(document.getElementById('rs-plan-body').innerText));
