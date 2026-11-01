@@ -52,7 +52,8 @@
  for(const s of STATES){STATE_KEYS.set(s[0],s);STATE_KEYS.set(s[1],s);STATE_KEYS.set(s[2].toUpperCase(),s);}
  STATE_KEYS.set('D.C.',STATE_KEYS.get('DC'));STATE_KEYS.set('WASHINGTON DC',STATE_KEYS.get('DC'));STATE_KEYS.set('WASHINGTON D.C.',STATE_KEYS.get('DC'));
  STATE_KEYS.set('VIRGIN ISLANDS',STATE_KEYS.get('VI'));STATE_KEYS.set('US VIRGIN ISLANDS',STATE_KEYS.get('VI'));STATE_KEYS.set('P.R.',STATE_KEYS.get('PR'));
- function stateOf(key){const s=STATE_KEYS.get(String(key??'').trim().replace(/\s+/g,' ').toUpperCase());return s?{fips:s[0],abbr:s[1],name:s[2]}:null;}
+ // Census calls two territories by longer names than the table does.
+ function stateOf(key){const k=String(key??'').trim().replace(/\s+/g,' ').toUpperCase().replace(/^COMMONWEALTH OF THE /,'').replace(/^UNITED STATES VIRGIN ISLANDS$/,'U.S. VIRGIN ISLANDS'),s=STATE_KEYS.get(k);return s?{fips:s[0],abbr:s[1],name:s[2]}:null;}
 
  const NRI_HAZARDS=['AVLN','CFLD','CWAV','DRGT','ERQK','HAIL','HWAV','HRCN','ISTM','LNDS','LTNG','IFLD','SWND','TRND','TSUN','VLCN','WFIR','WNTW'];
  const NRI_FIELDS=['STCOFIPS','COUNTY','STATE','STATEABBRV','NRI_VER','POPULATION','BUILDVALUE','RISK_SCORE','RISK_RATNG','EAL_VALT','EAL_RATNG','SOVI_SCORE','SOVI_RATNG','RESL_SCORE','RESL_RATNG'].concat(...NRI_HAZARDS.map(h=>[h+'_EALT',h+'_RISKS',h+'_RISKR']));
@@ -178,6 +179,8 @@
    if(state)return {kind:'name',name:parts[0],stateAbbr:state.abbr,qualifier:parts.slice(1,-1).join(', ')||undefined,zip:tail[2]||undefined,raw};
    return {kind:'name',name:parts[0],qualifier:parts.slice(1).join(', '),raw};
   }
+  /* A whole state name is not split: "West Virginia" must not become West in Virginia. */
+  if(stateOf(t)&&t.length>2)return {kind:'name',name:t,raw};
   /* "Moore OK", "Cedar Rapids IA", "Tucson Arizona": a trailing state code or name without a comma. */
   const words=t.split(' ');
   for(let k=Math.min(3,words.length-1);k>=1;k--){
@@ -361,28 +364,64 @@
   }
   function nameVariants(name){
    const base=String(name).trim().replace(/\s+/g,' ').toUpperCase(),out=new Set([base]);
+   // Names people use that the Census writes differently.
+   if(base==='NEW YORK CITY'||base==='NYC')out.add('NEW YORK');
    const swaps=[[/^(?:SAINT|ST\.?) /,['SAINT ','ST. ','ST ']],[/^(?:MOUNT|MT\.?) /,['MOUNT ','MT. ','MT ']],[/^(?:FORT|FT\.?) /,['FORT ','FT. ','FT ']]];
    for(const [re,alts] of swaps)if(re.test(base))for(const a of alts)out.add(base.replace(re,a));
    return [...out];
+  }
+  const foldName=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+  const COUNTY_WORDS=/\s+(COUNTY|PARISH|BOROUGH|CENSUS AREA|MUNICIPIO|MUNICIPALITY)$/i;
+  /* County names for the chooser, so same-named townships can be told apart. A failed lookup only leaves the county off the label. */
+  async function addCounties(items){
+   try{
+    const subs=items.filter(i=>i.type==='county-subdivision');
+    const fips=[...new Set(subs.map(i=>i.geoid.slice(0,5)))];
+    if(fips.length){
+     const j=await arcQuery(TIGER+'/82',{where:'GEOID IN ('+fips.map(sql).join(',')+')',outFields:'GEOID,NAME',returnGeometry:'false',resultRecordCount:'200'});
+     const names=new Map(j.features.map(f=>[String(f.attributes&&f.attributes.GEOID),text(f.attributes&&f.attributes.NAME)]));
+     subs.forEach(i=>{i.countyName=names.get(i.geoid.slice(0,5))||null;});
+    }
+    const rest=items.filter(i=>i.type==='incorporated'||i.type==='cdp');
+    if(rest.length&&rest.length<=10)await Promise.all(rest.map(async i=>{
+     if(!finite(i.lat)||!finite(i.lon))return;
+     const j=await arcQuery(TIGER+'/82',{geometry:i.lon+','+i.lat,geometryType:'esriGeometryPoint',inSR:'4326',spatialRel:'esriSpatialRelIntersects',outFields:'NAME',returnGeometry:'false'});
+     const a=j.features[0]&&j.features[0].attributes;if(a)i.countyName=text(a.NAME);
+    }));
+   }catch(e){/* the chooser still works without county names */}
   }
   function placesByName(name,stateAbbr){
    return run('places',async()=>{
     const n=String(name??'').trim();
     if(!n)return {status:'empty',message:'Type a city, town or municipality name.',...undated('No request made')};
-    const state=stateAbbr?stateOf(stateAbbr):null;
-    const where='UPPER(BASENAME) IN ('+nameVariants(n).map(sql).join(',')+')'+(state?' AND STATE='+sql(state.fips):'');
-    const layers=[[28,'incorporated'],[30,'cdp'],[22,'county-subdivision']].concat(state&&state.abbr==='PR'?[[82,'municipio']]:[]);
-    const [settled,meta]=await Promise.all([Promise.allSettled(layers.map(([id])=>arcQuery(TIGER+'/'+id,{where,outFields:'GEOID,NAME,BASENAME,STATE,INTPTLAT,INTPTLON',returnGeometry:'false',resultRecordCount:'200'}))),arcMeta(TIGER)]);
-    const items=[],failed=[];
-    settled.forEach((s,i)=>{const type=layers[i][1];if(s.status!=='fulfilled'){failed.push(type);return;}
-     for(const f of s.value.features){const a=f&&f.attributes;if(!a||!a.GEOID)continue;const st=stateOf(a.STATE);
-      items.push({geoid:String(a.GEOID),name:String(a.NAME||''),basename:String(a.BASENAME||''),type,stateFips:String(a.STATE||''),stateAbbr:st?st.abbr:null,stateName:st?st.name:null,lat:num(a.INTPTLAT),lon:num(a.INTPTLON)});}});
+    // "New York City" and "NYC" mean one place, not every New York in the country.
+    const state=stateAbbr?stateOf(stateAbbr):/^(new york city|nyc)$/i.test(n)?stateOf('NY'):null;
+    const inState=state?' AND STATE='+sql(state.fips):'';
+    const countyName=COUNTY_WORDS.test(n)?n.replace(COUNTY_WORDS,''):null;
+    const layers=countyName?[[82,'county']]:[[28,'incorporated'],[30,'cdp'],[22,'county-subdivision']].concat(state&&state.abbr==='PR'?[[82,'municipio']]:[]);
+    const ask=async where=>{
+     const settled=await Promise.allSettled(layers.map(([id])=>arcQuery(TIGER+'/'+id,{where,outFields:'GEOID,NAME,BASENAME,STATE,INTPTLAT,INTPTLON',returnGeometry:'false',resultRecordCount:'200'})));
+     const items=[],failed=[];
+     settled.forEach((r,i)=>{const type=layers[i][1];if(r.status!=='fulfilled'){failed.push(type);return;}
+      for(const f of r.value.features){const a=f&&f.attributes;if(!a||!a.GEOID)continue;const st=stateOf(a.STATE);
+       items.push({geoid:String(a.GEOID),name:String(a.NAME||''),basename:String(a.BASENAME||''),type,stateFips:String(a.STATE||''),stateAbbr:st?st.abbr:null,stateName:st?st.name:null,lat:num(a.INTPTLAT),lon:num(a.INTPTLON)});}});
+     return {items,failed};
+    };
+    let [{items,failed},meta]=await Promise.all([ask('UPPER(BASENAME) IN ('+nameVariants(countyName||n).map(sql).join(',')+')'+inState),arcMeta(TIGER)]);
+    // Census names can differ from common ones ("Nashville-Davidson", "Boise City", "Mayagüez"): try again by the start of the name, ignoring accents.
+    const target=foldName(countyName||nameVariants(n).pop());
+    if(!items.length&&!failed.length&&target.length>=4){
+     const pattern=target.replace(/'/g,"''").replace(/[AEIOUN]/g,'_')+'%';
+     const more=await ask("UPPER(BASENAME) LIKE '"+pattern+"'"+inState);
+     items=more.items.filter(i=>{const b=foldName(i.basename);return b===target||(b.startsWith(target)&&!/[A-Z]/.test(b.charAt(target.length)));});
+    }
     if(failed.length===layers.length)throw new SourceError('Every place layer failed');
-    const order={incorporated:0,municipio:1,cdp:2,'county-subdivision':3};
+    const order={incorporated:0,municipio:1,county:1,cdp:2,'county-subdivision':3};
     items.sort((a,b)=>order[a.type]-order[b.type]||String(a.stateName).localeCompare(String(b.stateName))||a.name.localeCompare(b.name));
     const where2=state?' in '+state.name:'';
     if(!items.length&&failed.length)throw new SourceError('Some place layers failed: '+failed.join(', '));
     if(!items.length)return {status:'empty',message:'No Census place or county subdivision named '+n+where2+' is listed in this source.',data:{items:[],failed},...metaDate(meta)};
+    if(items.length>1)await addCounties(items);
     return {status:'ok',message:plural(items.length,'Census area')+' named '+n+where2+' found.'+(failed.length?' Not checked: '+failed.join(', ')+'.':''),data:{items,failed},...metaDate(meta)};
    });
   }
@@ -391,7 +430,7 @@
      this point is where people live. If the mean falls outside the boundary (a bay or a split city), the internal point of
      the populated tract nearest to it is used instead. */
   const CENSUS2020={dataDate:iso(Date.UTC(2020,3,1)),dataDateText:'2020 Census counts (April 1, 2020)',dataDateBasis:'POP100 (2020 Census count)'};
-  const PLACE_LAYER={incorporated:28,cdp:30,'county-subdivision':22,municipio:82};
+  const PLACE_LAYER={incorporated:28,cdp:30,'county-subdivision':22,municipio:82,county:82};
   function populationCenter(item){
    return run('pop-center',async()=>{
     const geoid=String(item&&item.geoid||''),layer=PLACE_LAYER[item&&item.type];
@@ -931,9 +970,11 @@
    return run('hospitals-cms',async()=>{
     checkPoint(lat,lon);
     const r=finite(radiusKm)&&radiusKm>0?Math.min(radiusKm,200):25,origin={lat,lon};
-    const [j,meta]=await Promise.all([nearby(CMS_HOSPITALS,lat,lon,r*1000,null,'USER_Facility_ID,USER_Facility_Name,USER_Address,USER_City_Town,USER_State,USER_Hospital_Type,USER_Emergency_Services,USER_Hospital_overall_rating'),arcMeta(CMS_HOSPITALS)]);
+    const [j,meta]=await Promise.all([nearby(CMS_HOSPITALS,lat,lon,r*1000,null,'USER_Facility_ID,USER_Facility_Name,USER_Address,USER_City_Town,USER_State,USER_Hospital_Type,USER_Emergency_Services,USER_Hospital_overall_rating,USER_Telephone_Number'),arcMeta(CMS_HOSPITALS)]);
     const items=nearestFirst(j.features.map(f=>{const a=f&&f.attributes||{},p=xy(f);
-     return {id:text(a.USER_Facility_ID),name:text(a.USER_Facility_Name),address:text(a.USER_Address),city:text(a.USER_City_Town),state:text(a.USER_State),type:text(a.USER_Hospital_Type),emergencyServices:a.USER_Emergency_Services==null?null:/^(yes|true|y)$/i.test(String(a.USER_Emergency_Services)),rating:text(a.USER_Hospital_overall_rating),lat:p.lat,lon:p.lon,distanceKm:km(origin,p.lat,p.lon)};}));
+     return {id:text(a.USER_Facility_ID),phone:text(a.USER_Telephone_Number),name:text(a.USER_Facility_Name),address:text(a.USER_Address),city:text(a.USER_City_Town),state:text(a.USER_State),type:text(a.USER_Hospital_Type),emergencyServices:a.USER_Emergency_Services==null?null:/^(yes|true|y)$/i.test(String(a.USER_Emergency_Services)),rating:text(a.USER_Hospital_overall_rating),lat:p.lat,lon:p.lon,distanceKm:km(origin,p.lat,p.lon)};}));
+    // Very rural places: look farther rather than leave the person with no hospital named.
+    if(!items.length&&r<200)return hospitalsCMS(lat,lon,200);
     const date=metaDate(meta);
     if(!items.length)return {status:'empty',message:'No Medicare hospitals within '+r+' km are listed in this source.',data:{items,radiusKm:r},...date};
     return {status:'ok',message:plural(items.length,'Medicare hospital')+' within '+r+' km, '+items.filter(i=>i.emergencyServices).length+' with emergency services.',data:{items,radiusKm:r},...date};
@@ -943,9 +984,10 @@
    return run('health-centers',async()=>{
     checkPoint(lat,lon);
     const r=finite(radiusMi)&&radiusMi>0?Math.min(radiusMi,100):15,origin={lat,lon};
-    const j=await nearby(HRSA,lat,lon,r,'esriSRUnit_StatuteMile','SITE_NM,SITE_ADDRESS,SITE_CITY,SITE_STATE_ABBR,HCC_TYP_DESC,HCC_STATUS_DESC,GRANTEE_NM');
+    const j=await nearby(HRSA,lat,lon,r,'esriSRUnit_StatuteMile','SITE_NM,SITE_ADDRESS,SITE_CITY,SITE_STATE_ABBR,HCC_TYP_DESC,HCC_STATUS_DESC,GRANTEE_NM,SITE_PHONE_NUM');
     const items=nearestFirst(j.features.map(f=>{const a=f&&f.attributes||{},p=xy(f);
-     return {name:text(a.SITE_NM),address:text(a.SITE_ADDRESS),city:text(a.SITE_CITY),state:text(a.SITE_STATE_ABBR),type:text(a.HCC_TYP_DESC),status:text(a.HCC_STATUS_DESC),operator:text(a.GRANTEE_NM),lat:p.lat,lon:p.lon,distanceKm:km(origin,p.lat,p.lon)};}));
+     return {phone:text(a.SITE_PHONE_NUM),name:text(a.SITE_NM),address:text(a.SITE_ADDRESS),city:text(a.SITE_CITY),state:text(a.SITE_STATE_ABBR),type:text(a.HCC_TYP_DESC),status:text(a.HCC_STATUS_DESC),operator:text(a.GRANTEE_NM),lat:p.lat,lon:p.lon,distanceKm:km(origin,p.lat,p.lon)};}));
+    if(!items.length&&r<100)return healthCenters(lat,lon,100);
     const date=undated('The HRSA layer publishes no edit date');
     if(!items.length)return {status:'empty',message:'No HRSA health center sites within '+r+' miles are listed in this source.',data:{items,radiusMi:r},...date};
     return {status:'ok',message:plural(items.length,'HRSA health center site')+' within '+r+' miles.',data:{items,radiusMi:r},...date};
@@ -1079,6 +1121,15 @@
   function loadLocal(config,baseUrl){
    return run('local',async()=>{
     const files=config&&config.files||{};
+    if(files.assets){
+     let url;try{url=new URL(files.assets,baseUrl).href;}catch(e){throw new SourceError('Invalid local file address');}
+     if(/^file:/i.test(url))throw new SourceError('file:// page','', 'Local files cannot be read when the page is opened from a file; open it from its web address to see the local tier.');
+     const got=await request(url,{text:true}).catch(e=>{throw new SourceError(e.message,e.status,'The local data file could not be loaded ('+e.message+'). The national tier is shown without it.');});
+     let file;try{file=JSON.parse(got.text);}catch(e){throw new SourceError('Malformed JSON');}
+     if(!file||file.schemaVersion!==1||!Array.isArray(file.assets))throw new SourceError('Unsupported local file schema');
+     const genericAssets=file.assets.filter(x=>x&&finite(+x.lat)&&finite(+x.lon)).map(x=>({name:text(x.name)||'Unnamed asset',lat:+x.lat,lon:+x.lon,note:text(x.note)}));
+     return {status:'ok',message:plural(genericAssets.length,'local asset')+' loaded.',data:{genericAssets,capturedAt:text(file.capturedAt)},...undated('Date stated in the local file')};
+    }
     if(!files.stations||!files.context)return {status:'not-applicable',message:'This place has no local data files.',...undated('No local files configured')};
     let stationsUrl,contextUrl;
     try{stationsUrl=new URL(files.stations,baseUrl).href;contextUrl=new URL(files.context,baseUrl).href;}catch(e){throw new SourceError('Invalid local file address');}
