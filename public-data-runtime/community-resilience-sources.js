@@ -563,7 +563,7 @@
     for(const f of json.features){const p=f&&f.properties;if(!p)continue;
      if(p.status&&p.status!=='Actual')continue;if(p.messageType==='Cancel')continue;
      const end=Math.max(Date.parse(p.ends||'')||-Infinity,Date.parse(p.expires||'')||-Infinity);if(finite(end)&&end<=t)continue;
-     items.push({id:text(p.id)||text(f.id),event:text(p.event),severity:text(p.severity),certainty:text(p.certainty),urgency:text(p.urgency),headline:text(p.headline),areaDesc:text(p.areaDesc),
+     items.push({id:text(p.id)||text(f.id),event:text(p.event),severity:text(p.severity),certainty:text(p.certainty),urgency:text(p.urgency),headline:text(p.headline),description:text(p.description),areaDesc:text(p.areaDesc),
       onset:text(p.onset),effective:text(p.effective),ends:text(p.ends),expires:text(p.expires),sent:text(p.sent),senderName:text(p.senderName),instruction:text(p.instruction),geometry:f.geometry||null,uri:text(p['@id'])||text(f.id)});}
     items.sort((a,b)=>(SEVERITY[b.severity]||0)-(SEVERITY[a.severity]||0)||String(a.onset||a.effective).localeCompare(String(b.onset||b.effective)));
     const date=fed(Date.parse(json.updated||''),'alerts collection "updated"');
