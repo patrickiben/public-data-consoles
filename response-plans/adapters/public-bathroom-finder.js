@@ -70,7 +70,7 @@
         });
       });
     });
-    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'Ten-dimension action checklist: '+cfg.title,context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
+    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'For planners: ten-part review of '+cfg.title.toLowerCase(),context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
       limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. Unavailable inputs never become an all-clear, and a failed source is unknown, never zero. No access decision, availability forecast or walking-time estimate is produced.']};
   }
 
@@ -90,7 +90,7 @@
       var settled = ['ok','empty','partial'].indexOf(src.status) >= 0 && finite(src.count) && src.count >= 0;
       var radius = finite(src.radiusMi) ? src.radiusMi : null, day = isoDate(src.dataDate), checked = checkedIso(src.checkedAt);
       var unit = radius == null ? 'listed' : 'listed within ' + radius + ' mi';
-      var measured = settled ? day || 'Source data date unavailable at check time' : null;
+      var measured = settled ? day || (cfgList.key === 'refuge' ? 'Each Refuge listing shows its own date' : 'Source data date unavailable at check time') : null;
       var note = !settled ? (src.status === 'failed' ? 'Unavailable at check time; this is unknown, not zero nearby.' : src.status === 'loading' ? 'Still loading; unknown until the query settles.' : 'Not searched yet; unknown.') :
         src.status === 'partial' ? 'Partial list: at least this many are listed; some may be missing.' :
         src.count === 0 ? 'The query succeeded and lists zero within the distance searched. Zero listed is not proof that none exist.' : 'Listed in the source within the distance searched; confirm access, hours and cost with each place.';

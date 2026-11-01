@@ -144,7 +144,7 @@ See the [field guide](https://patrickiben.github.io/public-data-consoles/respons
 | Console | Data | Sources |
 |---|---|---|
 | [Human Trafficking — Get Help](consoles/human-trafficking/) | Reference | Verified hotlines + Polaris / UNODC / ILO–Walk Free / CTDC (badge-framed) |
-| [Free Public Bathroom Finder](consoles/public-bathroom-finder/) | Live listings | Refuge Restrooms (crowd-sourced listings, each with its date), OpenStreetMap amenity=toilets via Overpass (partial coverage; "free" only where tagged fee=no) |
+| [Free Public Bathroom Finder](consoles/public-bathroom-finder/) | Live listings | Refuge Restrooms (crowd-sourced listings, each with its date), OpenStreetMap amenity=toilets via Overpass (partial coverage; "free" only where tagged fee=no and not customers only) |
 
 ## No visitor API keys
 

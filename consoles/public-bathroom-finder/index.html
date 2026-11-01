@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-cr-separator=": ">
+<html lang="en" data-cr-separator=": " data-cr-after="#sources">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -173,6 +173,14 @@ body{padding-bottom:72px}
  .pb-btns{flex:1 1 100%}
  #go,#loc{flex:1 1 0}
 }
+.pb-jump{margin:10px 0 0;padding:10px 12px;border:1px solid var(--line2);border-radius:8px;background:var(--panel2);font-size:14px;color:var(--ink);line-height:1.5}
+.pb-jump a{font-weight:650;white-space:nowrap;margin-right:12px}
+#list-retry{font-size:13px;color:var(--ink2);margin:0 0 8px}
+#list-retry .pb-btn{margin-left:6px}
+html body .pb-privacy summary,html body .pb-card summary{display:list-item;min-height:0;padding:8px 0}
+html body #console-response-shortcut{position:static;display:block;width:max-content;margin:18px auto 0;box-shadow:none}
+#noscript-note{margin:12px;padding:12px;border:1px solid var(--line2);border-radius:8px}
+@media print{html,body,.pb-wrap,.pb-wrap *{color:#111!important;background:transparent!important;box-shadow:none!important}#search-form,.pb-map-col,.pb-jump,.pb-btn,#console-response-shortcut{display:none!important}}
 </style>
 <!-- CONSOLE_RESPONSE_HEAD_START -->
 <style>
@@ -488,7 +496,13 @@ body{padding-bottom:72px}
       panel.dataset.mounted = 'true';
       // Keep the console's identity and navigation before the shared plan.
       var heading = doc.querySelector('h1'), nativeHeader = heading && heading.closest('header');
-      if (nativeHeader && !panel.contains(nativeHeader)) nativeHeader.insertAdjacentElement('afterend', panel);
+      // A finder page may set <html data-cr-after="#section"> so its own results come before the plan.
+      var afterSelector = doc.documentElement.getAttribute('data-cr-after'), afterNode = afterSelector ? doc.querySelector(afterSelector) : null;
+      if (afterNode && !panel.contains(afterNode)) {
+        afterNode.insertAdjacentElement('afterend', panel);
+        var planLink = doc.getElementById('console-response-shortcut');
+        if (planLink) panel.insertAdjacentElement('beforebegin', planLink);
+      } else if (nativeHeader && !panel.contains(nativeHeader)) nativeHeader.insertAdjacentElement('afterend', panel);
       panel.addEventListener('click', function (event) {
         var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact],[data-cr-open-priorities]');
         if (!button) return;
@@ -1531,38 +1545,35 @@ body{padding-bottom:72px}
 <a id="console-response-shortcut" href="#console-response">Response plan</a>
 <!-- CONSOLE_RESPONSE_MOUNT_END -->
 
+<noscript><p id="noscript-note">This page needs JavaScript to search for restrooms.</p></noscript>
 <div id="disc"><b>Unofficial</b> listings from public, crowd-sourced and volunteer data. <b>Confirm before you go.</b></div>
 <div class="pb-wrap">
   <header class="pb-header">
     <h1>Free Public Bathroom Finder</h1>
-    <div class="pb-sub">Find nearby public restrooms, nearest first, from Refuge Restrooms (crowd-sourced) and OpenStreetMap. A restroom is called free only where OpenStreetMap is tagged fee=no.</div>
+    <div class="pb-sub">Find nearby restrooms, nearest first, from Refuge Restrooms (crowd-sourced) and OpenStreetMap. Many are inside businesses and may be for customers only. A restroom is called free only where OpenStreetMap is tagged fee=no.</div>
     <form id="search-form" class="pb-search" role="search" autocomplete="off" novalidate onsubmit="return false">
-      <label for="q">Address, city or ZIP code</label>
+      <label for="q">U.S. address, city or ZIP code</label>
       <div class="pb-bar">
-        <input id="q" type="search" placeholder="e.g. 233 S Wacker Dr, Chicago, IL or 59337" autocomplete="street-address" spellcheck="false" maxlength="200">
+        <input id="q" type="search" placeholder="e.g. 233 S Wacker Dr, Chicago, IL or 59337" autocomplete="off" spellcheck="false" maxlength="200">
         <div class="pb-btns">
           <button id="go" type="submit">Search</button>
           <button id="loc" type="button">Use my location</button>
         </div>
       </div>
-      <p id="privacy" class="pb-privacy"><b>Privacy:</b> Your exact location stays in this browser. Nothing is saved, added to the page address, or sent to this site. To search, your browser sends the text you type to OpenStreetMap Nominatim, and coordinates rounded to about 100 meters to Refuge Restrooms and an OpenStreetMap Overpass server (overpass-api.de, or the maps.mail.ru mirror if it fails). Map images come from tile.openstreetmap.org and show the area you view. The map code (Leaflet) loads from unpkg.com; that request carries no location. Distances are calculated in your browser. Tip: a ZIP code or nearby intersection works if you prefer not to type a home address.</p>
+      <div id="privacy" class="pb-privacy">
+        <p><b>Privacy:</b> This page has no server of its own and saves nothing: no cookies, no browser storage, and your location is not added to the page address. Your location does leave this browser, because the search has to ask public services. They receive it rounded to about 100 meters, or as you typed it.</p>
+        <details><summary>Show what is sent, and to whom</summary>
+        <p>A ZIP code goes to the U.S. Census (tigerweb.geo.census.gov). Any other text you type goes, exactly as typed, to OpenStreetMap Nominatim (nominatim.openstreetmap.org). The searched point, rounded to about 100 meters, goes to Refuge Restrooms (refugerestrooms.org) and to an OpenStreetMap Overpass server (overpass-api.de, run by the German OpenStreetMap association FOSSGIS). Map images come from tile.openstreetmap.org and show the area you view. The map code (Leaflet) loads from unpkg.com; that request carries no location. Each of these services can also see your IP address, as any website can. A Directions link opens Google Maps only if you tap it, and Google then sees that destination. Distances are calculated in your browser. Tip: a ZIP code or nearby intersection works if you prefer not to type a home address.</p></details>
+      </div>
     </form>
     <div id="place" role="status" aria-live="polite"><span class="pb-muted">Search for a place to begin.</span></div>
+    <p id="jump" class="pb-jump" hidden></p>
   </header>
 
-  <section id="status-panel" class="pb-section" aria-labelledby="status-title">
-    <h2 id="status-title">Source status</h2>
-    <p class="pb-lede">Each source is checked on its own. A source that fails is marked unavailable; it never counts as zero or as none listed.</p>
-    <ul id="status" class="pb-status">
-      <li id="status-geocoder" class="pb-st" data-state="idle"><span class="pb-st-name">Place search (OpenStreetMap Nominatim)</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
-      <li id="status-refuge" class="pb-st" data-state="idle"><span class="pb-st-name">Refuge Restrooms (crowd-sourced)</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
-      <li id="status-osm" class="pb-st" data-state="idle"><span class="pb-st-name">OpenStreetMap public toilets (Overpass)</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
-      <li id="status-map" class="pb-st" data-state="loading"><span class="pb-st-name">Map (OpenStreetMap tiles)</span><span class="pb-badge">Loading</span><span class="pb-st-text">Loading the map library...</span></li>
-    </ul>
-  </section>
+  
 
   <section id="places" class="pb-section" aria-labelledby="places-title">
-    <h2 id="places-title">Nearest restrooms</h2>
+    <h2 id="places-title" tabindex="-1">Nearest restrooms</h2>
     <p class="pb-lede">One list, nearest first, by straight-line distance from the searched point. Each source is searched to its own distance, stated below the filters. Refuge Restrooms listings are crowd-sourced and unverified.</p>
     <div class="pb-places">
       <div class="pb-list-col">
@@ -1577,7 +1588,8 @@ body{padding-bottom:72px}
           <button type="button" class="pb-chip" data-source="refuge" aria-pressed="true"><span class="pb-dot pb-c-refuge" aria-hidden="true"></span><span>Refuge Restrooms</span></button>
           <button type="button" class="pb-chip" data-source="osm" aria-pressed="true"><span class="pb-dot pb-c-osm" aria-hidden="true"></span><span>OpenStreetMap</span></button>
         </div>
-        <p id="results-summary">Search for a place to list nearby restrooms.</p>
+        <p id="list-retry" hidden></p>
+          <p id="results-summary">Search for a place to list nearby restrooms.</p>
         <ul id="results" class="pb-results"></ul>
         <button id="more" type="button" class="pb-btn" hidden>Show more</button>
         <div id="live" class="pb-sr" role="status" aria-live="polite"></div>
@@ -1589,13 +1601,26 @@ body{padding-bottom:72px}
     </div>
   </section>
 
+<section id="status-panel" class="pb-section" aria-labelledby="status-title">
+    <h2 id="status-title">Source status</h2>
+    <p class="pb-lede">Each source is checked on its own. A source that fails is marked unavailable; it never counts as zero or as none listed.</p>
+    <ul id="status" class="pb-status">
+      <li id="status-geocoder" class="pb-st" data-state="idle"><span class="pb-st-name">Place search (U.S. Census for ZIP codes, OpenStreetMap Nominatim for the rest)</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
+      <li id="status-refuge" class="pb-st" data-state="idle"><span class="pb-st-name">Refuge Restrooms (crowd-sourced)</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
+      <li id="status-osm" class="pb-st" data-state="idle"><span class="pb-st-name">OpenStreetMap toilets (Overpass)</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
+      <li id="status-map" class="pb-st" data-state="loading"><span class="pb-st-name">Map (OpenStreetMap tiles)</span><span class="pb-badge">Loading</span><span class="pb-st-text">Loading the map library...</span></li>
+    </ul>
+  </section>
+
   <section id="coverage" class="pb-section" aria-labelledby="coverage-title">
     <h2 id="coverage-title">What this does not cover</h2>
     <ul class="pb-list">
       <li><b>Not a complete list.</b> Many restrooms in businesses, libraries, parks and transit stations are not listed in either source.</li>
       <li><b>Refuge Restrooms is crowd-sourced.</b> Entries are submitted by the public and are not verified by staff. The site focuses on safe restrooms for transgender, intersex and gender nonconforming people, and many entries are years old. Some sit at a city's center point instead of the real location.</li>
       <li><b>OpenStreetMap is volunteer-edited.</b> It often lacks fee, hours or accessibility tags. Restrooms in businesses may be listed for customers only.</li>
-      <li><b>Free means tagged fee=no.</b> "Free" appears only where OpenStreetMap is tagged fee=no. Refuge Restrooms records no cost and no hours, so its entries always show cost unknown and hours not listed.</li>
+      <li><b>Free means tagged fee=no, and open to anyone.</b> "Free" appears only where OpenStreetMap is tagged fee=no and the toilet is not marked customers only. Refuge Restrooms records no cost and no hours, so its entries always show cost unknown and hours not listed.</li>
+      <li><b>Public is not promised.</b> Refuge Restrooms lists many restrooms inside businesses, and it does not record who may use them. A business may ask you to be a customer. In OpenStreetMap, a toilet with no access tag may also be restricted.</li>
+      <li><b>United States and its territories only.</b> A place name from another country may match a U.S. place with the same name.</li>
       <li><b>No live status.</b> Nothing here says whether a restroom is open, closed, out of order or clean right now.</li>
       <li><b>Straight-line distances.</b> Distances are measured in a straight line from the searched point, not along a walking route.</li>
       <li><b>Empty means none listed.</b> When a source shows none, it means none are listed in that source within the distance searched. It does not mean none exist. A source that failed is shown as unavailable, never as none.</li>
@@ -1607,9 +1632,9 @@ body{padding-bottom:72px}
     <h2 id="sources-title">Sources</h2>
     <p class="pb-lede">Every listing shows its own data date from its source. Nothing on this page is cached from elsewhere or filled in when a source fails.</p>
     <div class="pb-sources">
-      <div class="pb-source"><h3>Place search: OpenStreetMap Nominatim</h3><p><a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">nominatim.openstreetmap.org</a>, used only when you press Search, at most one request per second (<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">usage policy</a>).</p><p>Data &copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a>. Date: live OpenStreetMap data, no release date.</p></div>
-      <div class="pb-source"><h3>Refuge Restrooms (crowd-sourced)</h3><p><a href="https://www.refugerestrooms.org/" target="_blank" rel="noopener noreferrer">refugerestrooms.org</a>, public API (restrooms near a point, up to 20 miles, nearest first, at most 100 per search). Listings are submitted by the public. This page is not affiliated with or endorsed by Refuge Restrooms.</p><p>Date: <span id="src-date-refuge">shown after a search; each entry also shows its own update date</span>.</p></div>
-      <div class="pb-source"><h3>Public toilets: OpenStreetMap via Overpass</h3><p><a href="https://overpass-api.de/" target="_blank" rel="noopener noreferrer">overpass-api.de</a>, with the <a href="https://maps.mail.ru/osm/tools/overpass/" target="_blank" rel="noopener noreferrer">maps.mail.ru</a> mirror as a fallback. Places tagged amenity=toilets within 3 miles, or within 15 miles when fewer than 5 are listed within 3. Private and no-access toilets are hidden.</p><p>&copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a>. Date: <span id="src-date-osm">shown after a search, from the OpenStreetMap database timestamp</span>, plus each place's last edit date.</p></div>
+      <div class="pb-source"><h3>Place search: U.S. Census and OpenStreetMap Nominatim</h3><p>ZIP codes: <a href="https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html" target="_blank" rel="noopener noreferrer">Census TIGERweb</a> ZIP code areas, including the territories. A ZIP code with no Census area, such as many PO box ZIP codes, is reported as not found. Everything else: <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">nominatim.openstreetmap.org</a>, used only when you press Search, at most one request per second (<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">usage policy</a>).</p><p>Data &copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a>. Date: live OpenStreetMap data, no release date.</p></div>
+      <div class="pb-source"><h3>Refuge Restrooms (crowd-sourced)</h3><p><a href="https://www.refugerestrooms.org/" target="_blank" rel="noopener noreferrer">refugerestrooms.org</a>, public API. This page asks for the nearest 100 restrooms within 20 miles of a point. Listings are submitted by the public. This page is not affiliated with or endorsed by Refuge Restrooms.</p><p>Date: <span id="src-date-refuge">shown after a search; each entry also shows its own update date</span>.</p></div>
+      <div class="pb-source"><h3>Toilets: OpenStreetMap via Overpass</h3><p><a href="https://overpass-api.de/" target="_blank" rel="noopener noreferrer">overpass-api.de</a>, tried twice if it does not answer. Places tagged amenity=toilets within 3 miles, or within 15 miles when fewer than 5 are listed within 3. Private, staff-only, residents-only, disused and closed toilets are hidden.</p><p>&copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a>. Date: <span id="src-date-osm">shown after a search, from the OpenStreetMap database timestamp</span>, plus each place's last edit date.</p></div>
       <div class="pb-source"><h3>Map tiles and map library</h3><p>Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> from tile.openstreetmap.org. Map library: <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> 1.9.4 from unpkg.com.</p></div>
     </div>
   </section>
@@ -1626,12 +1651,13 @@ body{padding-bottom:72px}
 const GEOCODER_URL='https://nominatim.openstreetmap.org/search';
 const REFUGE_URL='https://www.refugerestrooms.org/api/v1/restrooms/by_location';
 const REFUGE_PER_PAGE=100,REFUGE_RADIUS_MI=20,REFUGE_TIMEOUT=30000;
-const OVERPASS_URLS=['https://overpass-api.de/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
-const OVERPASS_TIMEOUTS=[50000,40000];
-const OSM_RADII=[3,15],OSM_MIN=5,KM_PER_MI=1.609344,PAGE=25,SLOW_MS=8000;
+const OVERPASS_URL='https://overpass-api.de/api/interpreter';
+const OVERPASS_TIMEOUTS=[45000,35000],OVERPASS_RETRY_WAIT=4000;
+const OSM_RADII=[3,15],OSM_MIN=5,KM_PER_MI=1.609344,SLOW_MS=8000;
+const PHONE=window.innerWidth<768,PAGE=PHONE?10:25;
 const MARKER={refuge:'#d9730d',osm:'#1864ab',free:'#2b8a3e'};
 const CAT_LABEL={all:'All',free:'Free (fee=no)',wheelchair:'Wheelchair accessible',neutral:'Gender neutral',changing:'Changing table',refuge:'Refuge Restrooms',osm:'OpenStreetMap'};
-const LABELS={geocoder:'Place search (OpenStreetMap Nominatim)',refuge:'Refuge Restrooms (crowd-sourced)',osm:'OpenStreetMap public toilets (Overpass)',map:'Map (OpenStreetMap tiles)'};
+const LABELS={geocoder:'Place search (U.S. Census for ZIP codes, OpenStreetMap Nominatim for the rest)',refuge:'Refuge Restrooms (crowd-sourced)',osm:'OpenStreetMap toilets (Overpass)',map:'Map (OpenStreetMap tiles)'};
 const LIST_NAME={refuge:'Refuge Restrooms',osm:'OpenStreetMap'};
 const BADGE={idle:'Waiting',notrun:'Not run',notused:'Not used',invalid:'Not sent',loading:'Loading',ok:'OK',empty:'None listed',partial:'Partial',failed:'Unavailable'};
 const KEYS=Object.keys(LABELS),SEARCH_KEYS=['geocoder','refuge','osm'],LIST_KEYS=['refuge','osm'];
@@ -1678,7 +1704,7 @@ async function fetchJSON(url,opt){
 }
 
 /* ---------- state (the searched point lives only in this closure) ---------- */
-let searchRun=0,selectionId=0,current=null,filter='all',shown=PAGE,revision=0,searchState='idle',checkedAt=null,locationType=null;
+let searchRun=0,selectionId=0,current=null,filter='all',shown=PAGE,revision=0,searchState='idle',checkedAt=null,locationType=null,lastQuery=null,scrolledFor=null;
 const srcOn={refuge:true,osm:true},openNotes=new Set();
 const src={};
 const items={refuge:[],osm:[]};
@@ -1697,7 +1723,8 @@ function initMap(){
  if(hasMap||!(window.L&&typeof window.L.map==='function'))return;
  const L=window.L,el=$('map');
  el.style.height='';el.innerHTML='';
- map=L.map(el,{zoomControl:true,worldCopyJump:true}).setView([39.5,-98.35],4);
+ // On touch screens one finger scrolls the page; the zoom buttons still work.
+ map=L.map(el,{zoomControl:true,worldCopyJump:true,dragging:!window.matchMedia('(pointer:coarse)').matches,tap:false}).setView([39.5,-98.35],4);
  const basemap=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'});
  basemap.on('tileerror',()=>{if(tileFailed)return;tileFailed=true;$('map-status').hidden=false;$('map-status').textContent='Basemap tiles unavailable. Markers, the list and the sources below still work.';setSrc('map',{state:'partial',text:'Basemap tiles from tile.openstreetmap.org did not load. Markers, the list and the sources below still work.'});});
  if(/^https?:$/.test(location.protocol)){basemap.addTo(map);setSrc('map',{state:'ok',text:'Ready. Map images come from tile.openstreetmap.org and show the area you view.'});}
@@ -1726,7 +1753,7 @@ function loadLeaflet(){
  setTimeout(()=>{if(!hasMap&&cssOk!==false&&jsOk!==false)mapDown('The map library did not load within '+Math.round(LEAFLET_TIMEOUT/1000)+' seconds.');},LEAFLET_TIMEOUT);
 }
 function markerIcon(L,it){const kind=it.src==='refuge'?'refuge':it.free?'free':'osm';return L.divIcon({className:'pb-mk-wrap',html:'<span class="pb-mk pb-mk-'+kind+'"></span>',iconSize:[20,20],iconAnchor:[10,10],popupAnchor:[0,-10]});}
-function popupHtml(it){return '<b>'+esc(it.name)+'</b><br>'+esc(it.typeLabel)+'<br>'+esc(distText(it))+' straight-line<br>'+esc(it.dateText)+'<br><b>Confirm before you go.</b>';}
+function popupHtml(it){const limits=it.facts.filter(x=>x[1]==='pb-caution').map(x=>esc(x[0])+'<br>').join('');return '<b>'+esc(it.name)+'</b><br>'+esc(it.typeLabel)+'<br>'+esc(it.facts[0][0])+'<br>'+limits+esc(distText(it))+' straight-line<br>'+esc(it.dateText)+'<br><b>Confirm before you go.</b>';}
 function drawMap(list){
  lastDrawn=list;
  if(!hasMap)return;
@@ -1768,6 +1795,7 @@ function renderStatus(k){
 function setSrc(k,patch){Object.assign(src[k],patch);renderStatus(k);}
 function renderAllStatus(){KEYS.forEach(renderStatus);}
 $('status').addEventListener('click',e=>{const b=e.target.closest('[data-retry]');if(b)retry(b.getAttribute('data-retry'));});
+$('places').addEventListener('click',e=>{const b=e.target.closest('[data-retry]');if(b)retry(b.getAttribute('data-retry'));});
 
 /* ---------- response-layer bridge: no address, query text or coordinates ever ---------- */
 function bridgeStatus(s){return ({ok:'ok',empty:'empty',partial:'partial',failed:'failed',loading:'loading',notused:'not-used',invalid:'invalid',notrun:'not-run'})[s]||'idle';}
@@ -1788,14 +1816,37 @@ function placeError(msg){showPlace('<span class="pb-err">'+esc(msg)+'</span>');}
 
 /* ---------- geocoding ---------- */
 const geoCache=new Map();let nextGeoSlot=0;
+const ZCTA_URL='https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/2/query';
+const TIGER_LAYER='https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/';
+// ZIP codes go to the Census ZIP code areas, not the place search, which can match phantom ZIP codes to unrelated places.
+async function lookupZip(zip){
+ const j=await fetchJSON(ZCTA_URL+'?'+qs({where:"ZCTA5='"+zip+"'",outFields:'ZCTA5,INTPTLAT,INTPTLON',returnGeometry:'false',f:'json'}),{timeout:15000});
+ if(!j||typeof j!=='object'||j.error||!Array.isArray(j.features))throw new SourceError('the Census ZIP code service did not return a list');
+ const a=j.features[0]&&j.features[0].attributes;if(!a)return null;
+ const lat=parseFloat(a.INTPTLAT),lon=parseFloat(a.INTPTLON);
+ if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)throw new SourceError('the Census ZIP code service returned an unusable point');
+ return {lat:lat,lon:lon};
+}
+// County and state names only make the place line easier to check; a failed name lookup never stops the search.
+async function zipArea(pt){
+ const ask=(id,fields)=>fetchJSON(TIGER_LAYER+id+'/query?'+qs({geometry:pt.lon+','+pt.lat,geometryType:'esriGeometryPoint',inSR:4326,spatialRel:'esriSpatialRelIntersects',outFields:fields,returnGeometry:'false',f:'json'}),{timeout:8000}).then(j=>j&&Array.isArray(j.features)&&j.features[0]&&j.features[0].attributes||null,()=>null);
+ const [county,state]=await Promise.all([ask(82,'NAME'),ask(80,'NAME,STUSAB')]);
+ return {county:county&&county.NAME?clean(county.NAME,80):'',state:state&&state.NAME?clean(state.NAME,60):'',stateCode:state&&state.STUSAB?clean(state.STUSAB,4):''};
+}
 async function geocode(text,zip,id){
  const key=zip?'zip:'+zip:'q:'+text.toLowerCase().replace(/\s+/g,' ');
  if(geoCache.has(key))return geoCache.get(key);
+ if(zip){
+  const pt=await lookupZip(zip);if(!pt){geoCache.set(key,null);return null;}
+  const area=await zipArea(pt);
+  const out={point:pt,name:'ZIP code '+zip+([area.county,area.state].filter(Boolean).length?', '+[area.county,area.state].filter(Boolean).join(', '):''),isZip:true,zip:zip};
+  geoCache.set(key,out);return out;
+ }
  const start=Math.max(Date.now(),nextGeoSlot);nextGeoSlot=start+1000;
  if(start>Date.now())await sleep(start-Date.now());
  if(id!==searchRun)throw STALE;
  const p={format:'jsonv2',limit:1,addressdetails:1,countrycodes:'us,pr,gu,vi,as,mp'};
- if(zip)p.postalcode=zip;else p.q=text;
+ p.q=text;
  const j=await fetchJSON(GEOCODER_URL+'?'+qs(p),{timeout:15000});
  if(!Array.isArray(j))throw new SourceError('the response was not a list of places');
  const hit=j[0];let out=null;
@@ -1811,7 +1862,7 @@ async function geocode(text,zip,id){
 }
 
 /* ---------- searches ---------- */
-function clearResults(){items.refuge=[];items.osm=[];shown=PAGE;}
+function clearResults(){items.refuge=[];items.osm=[];shown=PAGE;scrolledFor=null;}
 function beginSearch(type){
  inflight.forEach(c=>c.abort());inflight.clear();
  const id=++searchRun;selectionId++;current=null;locationType=type;searchState='loading';checkedAt=null;
@@ -1824,9 +1875,15 @@ function beginSearch(type){
 function endWithoutLocation(){searchState='settled';checkedAt=new Date().toISOString();renderResults();publish();announce();}
 async function search(){
  const text=clean($('q').value,200);
- if(!text){placeError('Type an address, city or ZIP code first, or use your location.');$('q').focus();return;}
- const zipM=/^(\d{5})(?:[-\s]?\d{4})?$/.exec(text);
+ if(text&&text===lastQuery&&searchState==='loading')return;
+ lastQuery=text;
+ const zipM=/^(?:zip(?:\s*code)?[\s:]*)?(\d{5})(?:[-\s]?\d{4})?$/i.exec(text);
  const id=beginSearch(zipM?'zip':'address');
+ if(!text){
+  setSrc('geocoder',{state:'invalid',text:'Not sent: nothing was typed.'});
+  placeError('Type an address, city or ZIP code first, or use your location.');$('q').focus();
+  endWithoutLocation();return;
+ }
  if(/^[\d\s-]+$/.test(text)&&!zipM){
   setSrc('geocoder',{state:'invalid',text:'Not sent: a ZIP code needs exactly 5 digits.'});
   placeError('That is not a valid ZIP code. A ZIP code has 5 digits, for example 59337. You can also type a street address or a city and state.');
@@ -1845,12 +1902,12 @@ async function search(){
  }
  if(id!==searchRun)return;
  if(!res){
-  setSrc('geocoder',{state:'empty',checkedAt:new Date().toISOString(),text:'No match found for that text in the United States or its territories. Nothing else was searched.'});
-  showPlace('<span class="pb-err">No place matched "'+esc(text)+'". Check the ZIP code or try a street address or city.</span>');
+  setSrc('geocoder',{state:'empty',checkedAt:new Date().toISOString(),text:zipM?'The U.S. Census has no ZIP code area for that ZIP code. Nothing else was searched.':'No match found for that text in the United States or its territories. Nothing else was searched.'});
+  showPlace('<span class="pb-err">'+(zipM?'The U.S. Census has no ZIP code area for '+esc(zipM[1])+'. Check the digits. Some PO box and single-building ZIP codes have no area, so try a city and state instead.':'No place matched "'+esc(text)+'". Try a street address, or a city and state.')+'</span>');
   endWithoutLocation();return;
  }
  setSrc('geocoder',{state:'ok',text:'OK: 1 match. See the "Searching near" line below the search box.',checkedAt:new Date().toISOString()});
- let html='Searching near: <b>'+esc(res.name)+'</b>'+(res.isZip?' (center of the ZIP code area, approximate)':'')+'.';
+ let html='Near: <b>'+esc(res.name)+'</b>'+(res.isZip?' (center of the ZIP code area, approximate)':'')+'.';
  if(res.isZip)html+='<br><span class="pb-muted">Distances are measured from the approximate center of '+(res.zip?'ZIP code '+esc(res.zip):'that ZIP code')+'. Enter a street address or use your location for nearer results.</span>';
  html+='<br><span class="pb-muted">Not the place you meant? Add a city and state and search again.</span>';
  showPlace(html);
@@ -1870,7 +1927,7 @@ function useLocation(){
   if(settled||id!==searchRun)return;settled=true;clearTimeout(guard);
   const lat=+p.coords.latitude,lon=+p.coords.longitude,acc=+p.coords.accuracy;
   if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){noFix();placeError('Your device returned an unusable location. Type an address, city or ZIP code instead.');endWithoutLocation();return;}
-  showPlace('Searching near: <b>your device location</b>'+(Number.isFinite(acc)?' (accuracy about '+esc(acc<1000?Math.round(acc)+' m':(acc/1609.344).toFixed(1)+' mi')+')':'')+'.<br><span class="pb-muted">Your exact location stays in this browser. Only coordinates rounded to about 100 meters are sent, to Refuge Restrooms and OpenStreetMap Overpass.</span>');
+  showPlace('Near: <b>your device location</b>'+(Number.isFinite(acc)?' (accuracy about '+esc(acc<1000?Math.round(acc)+' m':(acc/1609.344).toFixed(1)+' mi')+')':'')+'.<br><span class="pb-muted">To run this search, your location is sent to Refuge Restrooms and to the OpenStreetMap Overpass server, rounded to about 100 meters. Map images for the area you view come from tile.openstreetmap.org.</span>');
   runAll(id,{lat:lat,lon:lon});
  },err=>{
   if(settled||id!==searchRun)return;settled=true;clearTimeout(guard);
@@ -1887,7 +1944,12 @@ function runAll(id,point){
  current={id:id,point:point};
  const jobs=[runRefuge(id),runOsm(id)];
  renderResults();publish();
- Promise.allSettled(jobs).then(()=>{if(id!==searchRun)return;settleIfDone();});
+ Promise.allSettled(jobs).then(()=>{
+  if(id!==searchRun)return;
+  // A source whose answer could not be processed must never stay on Loading.
+  LIST_KEYS.forEach(k=>{if(src[k].state==='loading')setSrc(k,{state:'failed',reason:'the answer could not be read',text:'Unavailable: the answer could not be read. This is not a zero.'});});
+  renderResults();settleIfDone();
+ });
 }
 function retry(k){
  if(k==='geocoder'){search();return;}
@@ -1898,8 +1960,9 @@ function retry(k){
 }
 function begin(k,text){const att=src[k].attempt+1;src[k]={state:'loading',attempt:att,text:text||'Loading...'};renderStatus(k);const id=current.id;return ()=>id===searchRun&&src[k].attempt===att;}
 function announce(){
+ if(!current){$('live').textContent='Search stopped, no location. '+$('place').textContent.trim();return;}
  const n=allItems().length,failed=LIST_KEYS.filter(k=>src[k].state==='failed').length;
- $('live').textContent='Search finished. '+n+' restroom '+plural(n,'listing','listings')+' found'+(failed?'; '+failed+' of '+LIST_KEYS.length+' sources unavailable':'')+'.';
+ $('live').textContent=failed===LIST_KEYS.length?'Search finished. All restroom sources are unavailable. This is not a zero.':'Search finished. '+n+' restroom '+plural(n,'listing','listings')+' found'+(failed?'; '+failed+' of '+LIST_KEYS.length+' sources unavailable':'')+'.';
 }
 
 /* ---------- Refuge Restrooms (crowd-sourced) ---------- */
@@ -1914,14 +1977,14 @@ function refugeItem(a,pt,same){
  if(a.latitude==null||a.longitude==null||!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180||!Number.isInteger(id)||id<=0)return null;
  const upd=Date.parse(a.updated_at),cre=Date.parse(a.created_at);
  const street=cleanPart(a.street,120),cityLine=[cleanPart(a.city,60),cleanPart(a.state,40)].filter(Boolean).join(', '),country=cleanPart(a.country,40);
- const facts=[['Cost unknown (Refuge Restrooms does not record cost)',''],['Hours not listed','']];
+ const facts=[['Cost unknown (Refuge Restrooms does not record cost)',''],['Who may use it is not listed: it may be for customers only','pb-caution'],['Hours not listed','']];
  facts.push([a.accessible===true?'Accessible (listed)':'Not listed as accessible','']);
  if(a.unisex===true)facts.push(['Gender neutral / unisex (listed)','']);
  if(a.changing_table===true)facts.push(['Changing table (listed)','']);
  const up=Number.isFinite(+a.upvote)&&a.upvote!=null?+a.upvote:0,down=Number.isFinite(+a.downvote)&&a.downvote!=null?+a.downvote:0;
- if(up+down>0)facts.push(['Crowd votes: '+up+' up, '+down+' down','']);
+ if(up+down>0)facts.push(['Crowd votes: '+up+' up, '+down+' down',down>up&&down>=2?'pb-caution':'']);
  const n=same.get(a.latitude+','+a.longitude)||1;
- if(n>=2)facts.push(['Location may be approximate: '+n+' listings share this exact point','pb-caution']);
+ if(n>=2)facts.push(['Location may be approximate: '+n+' different listings share this exact point','pb-caution']);
  const notes=[['Directions',clean(a.directions,800)],['Comment',clean(a.comment,800)]].filter(x=>x[1]);
  const dateText=Number.isFinite(upd)?'Updated '+fmtDate(upd)+(Number.isFinite(cre)&&isoDay(cre)!==isoDay(upd)?' (added '+fmtDate(cre)+')':''):Number.isFinite(cre)?'Added '+fmtDate(cre)+' (no update date)':'Date not listed';
  const pos={lat:lat,lon:lon},dist=haversine(pt,pos);
@@ -1946,9 +2009,11 @@ async function runRefuge(id){
  clearTimeout(slow);
  if(!alive())return;
  const now=new Date().toISOString();
- const same=new Map();rows.forEach(a=>{if(a&&a.latitude!=null&&a.longitude!=null){const k=a.latitude+','+a.longitude;same.set(k,(same.get(k)||0)+1);}});
- const seen=new Set(),list=[];
- rows.forEach(a=>{const it=refugeItem(a,exact,same);if(!it||seen.has(it.id))return;seen.add(it.id);list.push(it);});
+ // Listings that repeat the same name at the same point are one restroom; different names at one point suggest a rough location.
+ const named=new Map();rows.forEach(a=>{if(a&&a.latitude!=null&&a.longitude!=null){const k=a.latitude+','+a.longitude;if(!named.has(k))named.set(k,new Set());named.get(k).add(String(a.name||'').trim().toLowerCase());}});
+ const same=new Map();named.forEach((v,k)=>same.set(k,v.size));
+ const seen=new Set(),twins=new Set(),list=[];
+ rows.forEach(a=>{const it=refugeItem(a,exact,same);if(!it||seen.has(it.id))return;seen.add(it.id);const twin=a.latitude+','+a.longitude+','+String(a.name||'').trim().toLowerCase();if(twins.has(twin))return;twins.add(twin);list.push(it);});
  if(rows.length&&!list.length){
   $('src-date-refuge').textContent='unavailable: no usable listings in the response';
   setSrc('refuge',{state:'failed',reason:'the response had no usable listings',checkedAt:now,text:'Unavailable: the response had no usable listings. No Refuge Restrooms listings are shown; this is not a zero.'});
@@ -1957,10 +2022,11 @@ async function runRefuge(id){
  list.sort((a,b)=>a.dist-b.dist);items.refuge=list;
  const partial=rows.length>=REFUGE_PER_PAGE,far=list.length?list[list.length-1].dist:0;
  const newest=list.reduce((m,it)=>Number.isFinite(it.updatedMs)&&it.updatedMs>m?it.updatedMs:m,-Infinity);
- const b={count:list.length,radiusMi:partial?Math.floor(far*100)/100:REFUGE_RADIUS_MI,nearestMi:list.length?Math.round(list[0].dist*100)/100:null,dataDate:isoDay(newest),checkedAt:now};
+ // Refuge listings carry their own dates, so one newest row says nothing about the rest: no single data date is reported.
+ const b={count:list.length,radiusMi:partial?Math.floor(far*100)/100:REFUGE_RADIUS_MI,nearestMi:list.length?Math.round(list[0].dist*100)/100:null,dataDate:null,checkedAt:now};
  const newestText=Number.isFinite(newest)?' Newest update in this list: '+fmtDate(newest)+'.':'';
  $('src-date-refuge').textContent=Number.isFinite(newest)?'each entry shows its own update date; newest in this search: '+fmtDate(newest):'each entry shows its own update date';
- if(partial)setSrc('refuge',Object.assign(b,{state:'partial',reason:'the source returns at most '+REFUGE_PER_PAGE+' listings per search',text:'Partial: the nearest '+REFUGE_PER_PAGE+' listings only, out to '+scopeDist(far)+'. More are listed within '+miles(REFUGE_RADIUS_MI)+' but are not shown here. Crowd-sourced and unverified.'+newestText}));
+ if(partial)setSrc('refuge',Object.assign(b,{state:'ok',limited:true,text:'OK: this page asks for the nearest '+REFUGE_PER_PAGE+' listings, which reach '+scopeDist(far)+'. More may be listed farther out. Crowd-sourced and unverified.'+newestText}));
  else if(!list.length)setSrc('refuge',Object.assign(b,{state:'empty',text:'None listed in Refuge Restrooms within '+miles(REFUGE_RADIUS_MI)+'. This does not mean none exist.'}));
  else setSrc('refuge',Object.assign(b,{state:'ok',text:'OK: '+list.length+' '+plural(list.length,'listing','listings')+', all those within '+miles(REFUGE_RADIUS_MI)+'. Crowd-sourced and unverified; each entry shows its own update date.'+newestText}));
  renderResults();publish();
@@ -1981,10 +2047,12 @@ function osmItem(el,pt){
  const pos={lat:lat,lon:lon},dist=haversine(pt,pos);
  const street=[clean(t['addr:housenumber'],20),clean(t['addr:street'],100)].filter(Boolean).join(' ');
  const cityLine=[clean(t['addr:city'],60),[clean(t['addr:state'],20),clean(t['addr:postcode'],12)].filter(Boolean).join(' ')].filter(Boolean).join(', ');
- const access=low('access'),fee=low('fee'),wheel=low('wheelchair')==='designated'?'yes':low('wheelchair'),hours=tag('opening_hours');
- const free=fee==='no',facts=[];
+ const access=low('access'),fee=low('fee'),wheelRaw=low('wheelchair')||low('toilets:wheelchair'),wheel=wheelRaw==='designated'?'yes':wheelRaw,hours=tag('opening_hours');
+ const customers=access==='customers',free=fee==='no'&&!customers,facts=[];
  if(free)facts.push(['Free (fee=no in OpenStreetMap)','pb-free']);
+ else if(fee==='no')facts.push(['No fee tagged, but for customers only','']);
  else if(fee==='yes')facts.push(['Fee charged'+(tag('charge')?': '+tag('charge'):''),'']);
+ else if(fee)facts.push(['Cost unclear (listed as: '+fee+')','']);
  else facts.push(['Cost unknown','']);
  if(access==='customers')facts.push(['Customers only (a purchase may be required)','pb-caution']);
  else if(access&&!['yes','permissive','public'].includes(access))facts.push(['Access listed as: '+access,'pb-caution']);
@@ -1998,29 +2066,30 @@ function osmItem(el,pt){
  if(desc)facts.push(['Mapper note: '+desc,'']);
  const edited=Date.parse(el.timestamp),checked=tag('check_date')||tag('survey:date');
  const dateText=(Number.isFinite(edited)?'Last edited in OpenStreetMap '+fmtDate(edited):'Edit date not available')+(checked?'. Last checked by a mapper '+checked:'');
- return {src:'osm',key:'osm:'+el.type+'/'+(+el.id),osmType:el.type,osmId:+el.id,name:clean(t.name,140)||clean(t.operator,140)||'Unnamed public toilet',typeLabel:'Public toilet (OpenStreetMap amenity=toilets)',lat:lat,lon:lon,dist:dist,dir:dist>=0.01?compass(pt,pos):'',
-  address:[street,cityLine].filter(Boolean).join(', ')||'No address tagged',free:free,wheel:wheel||null,neutral:neutral,changing:changing,facts:facts,notes:[],dateText:dateText,hiddenAccess:access==='private'||access==='no'};
+ return {src:'osm',key:'osm:'+el.type+'/'+(+el.id),osmType:el.type,osmId:+el.id,name:clean(t.name,140)||clean(t.operator,140)||(customers?'Unnamed customers-only toilet':'Unnamed toilet'),typeLabel:(customers?'Customers-only toilet':['yes','public','permissive'].includes(access)?'Public toilet':'Toilet, access not tagged')+' (OpenStreetMap amenity=toilets)',lat:lat,lon:lon,dist:dist,dir:dist>=0.01?compass(pt,pos):'',
+  address:[street,cityLine].filter(Boolean).join(', ')||'No address tagged',free:free,wheel:wheel||null,neutral:neutral,changing:changing,facts:facts,notes:[],dateText:dateText,hiddenAccess:['private','no','employees','staff','residents','military'].includes(access)||low('disused')==='yes'||low('abandoned')==='yes'||['closed','off'].includes(low('opening_hours'))};
 }
-async function overpass(pt,radius,alive,mirrorNote){
+async function overpass(pt,radius,alive,retryNote){
  const body='data='+encodeURIComponent(overpassQuery(pt,radius));
  let last=null;
- for(let i=0;i<OVERPASS_URLS.length;i++){
-  if(i&&alive())mirrorNote(last);
+ for(let i=0;i<OVERPASS_TIMEOUTS.length;i++){
+  if(i){if(alive())retryNote(last);await sleep(OVERPASS_RETRY_WAIT);if(!alive())throw STALE;}
   try{
-   const r=await fetchJSON(OVERPASS_URLS[i],{method:'POST',body:body,headers:{'Content-Type':'application/x-www-form-urlencoded'},timeout:OVERPASS_TIMEOUTS[i]});
+   const r=await fetchJSON(OVERPASS_URL,{method:'POST',body:body,headers:{'Content-Type':'application/x-www-form-urlencoded'},timeout:OVERPASS_TIMEOUTS[i]});
    if(!r||typeof r!=='object'||!Array.isArray(r.elements))throw new SourceError('the response had no list of places');
    if(r.remark&&/error/i.test(String(r.remark))&&!r.elements.length)throw new SourceError('the server stopped the query');
+   if(r.elements.length&&!r.elements.some(el=>el&&typeof el==='object'&&/^(node|way|relation)$/.test(el.type)))throw new SourceError('the response had no usable places');
    return r;
   }catch(e){last=e;if(!alive())throw STALE;}
  }
- throw new SourceError(last.message+' (tried overpass-api.de and the maps.mail.ru mirror)');
+ throw new SourceError(last.message+' (tried overpass-api.de twice)');
 }
 async function runOsm(id){
  if(id!==searchRun||!current)return;
  const exact=current.point,pt=rounded(exact);items.osm=[];renderResults();
- const alive=begin('osm','Loading from overpass-api.de: public toilets within '+miles(OSM_RADII[0])+'...');publish();
+ const alive=begin('osm','Loading from overpass-api.de: toilets within '+miles(OSM_RADII[0])+'...');publish();
  let slowOn=false,base=src.osm.text;
- const paint=()=>{if(alive()&&src.osm.state==='loading')setSrc('osm',{text:(slowOn?'OpenStreetMap servers are slow today; this can take up to 90 seconds. ':'')+base});};
+ const paint=()=>{if(alive()&&src.osm.state==='loading')setSrc('osm',{text:(slowOn?'This source is often slow; it can take a minute or more. ':'')+base});};
  const timer=setTimeout(()=>{slowOn=true;paint();},SLOW_MS);
  try{
   let kept=[],hidden=0,radius=OSM_RADII[0],done=OSM_RADII[0],baseTs=null,stopped=false,widenErr=null;
@@ -2028,7 +2097,7 @@ async function runOsm(id){
    radius=OSM_RADII[i];
    if(i){base='Fewer than '+OSM_MIN+' listings within '+miles(OSM_RADII[0])+'; looking within '+miles(radius)+'...';paint();}
    let j;
-   try{j=await overpass(pt,radius,alive,e=>{base='The main Overpass server did not answer ('+e.message+'); trying the maps.mail.ru mirror, which can take up to '+Math.round(OVERPASS_TIMEOUTS[1]/1000)+' more seconds...';paint();});}
+   try{j=await overpass(pt,radius,alive,e=>{base='The Overpass server did not answer ('+e.message+'); trying once more, which can take up to '+Math.round(OVERPASS_TIMEOUTS[1]/1000)+' more seconds...';paint();});}
    catch(e){if(e===STALE||!alive())return;if(i===0)throw e;widenErr=e;break;}
    if(!alive())return;
    done=radius;
@@ -2042,7 +2111,7 @@ async function runOsm(id){
   if(!alive())return;
   radius=done;
   const now=new Date().toISOString(),stamp=baseTs?fmtStamp(baseTs):null,dateText=stamp?'Database as of '+stamp+'.':'Database date unavailable.';
-  const hiddenText=hidden?' '+hidden+' private or no-access '+plural(hidden,'listing','listings')+' hidden.':'';
+  const hiddenText=hidden?' '+hidden+' private, closed or no-access '+plural(hidden,'listing','listings')+' hidden.':'';
   kept.sort((a,b)=>a.dist-b.dist);kept.forEach(it=>{it.osmBase=stamp;});items.osm=kept;
   $('src-date-osm').textContent=stamp?'database as of '+stamp:'database date unavailable';
   const b={count:kept.length,radiusMi:radius,nearestMi:kept.length?Math.round(kept[0].dist*100)/100:null,dataDate:baseTs&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(baseTs)?baseTs:null,checkedAt:now,hidden:hidden};
@@ -2064,7 +2133,8 @@ async function runOsm(id){
 function allItems(){return items.refuge.concat(items.osm).sort((a,b)=>a.dist-b.dist);}
 const distText=it=>fmtDist(it.dist)+(it.dir?' '+it.dir:'');
 function card(it){
- const dir='https://www.openstreetmap.org/directions?route='+encodeURIComponent(';'+it.lat.toFixed(5)+','+it.lon.toFixed(5));
+ // Google Maps opens directions on phones and computers alike; OpenStreetMap's directions page lands on a map of Europe on a phone.
+ const dir='https://www.google.com/maps/dir/?api=1&destination='+it.lat.toFixed(5)+','+it.lon.toFixed(5);
  const kind=it.src==='refuge'?'refuge':it.free?'free':'osm';
  let notes='';
  if(it.notes&&it.notes.length){
@@ -2079,15 +2149,15 @@ function card(it){
   '<ul class="pb-facts">'+it.facts.map(x=>'<li'+(x[1]?' class="'+x[1]+'"':'')+'>'+esc(x[0])+'</li>').join('')+'</ul>'+notes+
   '<p class="pb-src">'+source+'</p>'+
   '<p class="pb-confirm"><b>Confirm before you go:</b> listings can be out of date, and hours, access and cost can change.</p>'+
-  '<a class="pb-dir" data-l="dir" href="'+esc(dir)+'" target="_blank" rel="noopener noreferrer">Directions on OpenStreetMap</a>'+entry.replace('<a ','<a class="pb-dir" data-l="entry" ')+'</li>';
+  '<a class="pb-dir" data-l="dir" href="'+esc(dir)+'" target="_blank" rel="noopener noreferrer">Directions (opens Google Maps)</a>'+entry.replace('<a ','<a class="pb-dir" data-l="entry" ')+'</li>';
 }
 // What each source covered, so a merged list never looks more complete than its parts.
 function scopeMi(k){const s=src[k];return ['ok','empty','partial'].indexOf(s.state)>=0&&Number.isFinite(s.radiusMi)?s.radiusMi:null;}
 function scopeText(k){
  const s=src[k],r=scopeMi(k);if(r==null)return null;
- if(k==='refuge')return s.state==='partial'?'Refuge Restrooms: the nearest '+REFUGE_PER_PAGE+' listings only, out to '+scopeDist(s.radiusMi):s.state==='empty'?'Refuge Restrooms: none listed within '+miles(r):'Refuge Restrooms: all listings within '+miles(r);
+ if(k==='refuge')return s.limited?'Refuge Restrooms: the nearest '+REFUGE_PER_PAGE+' listings only, out to '+scopeDist(s.radiusMi):s.state==='empty'?'Refuge Restrooms: none listed within '+miles(r):'Refuge Restrooms: all listings within '+miles(r);
  const widened=r>OSM_RADII[0]?' (widened because fewer than '+OSM_MIN+' were listed within '+miles(OSM_RADII[0])+')':'';
- return s.state==='empty'?'OpenStreetMap: none listed within '+miles(r):s.state==='partial'&&s.reason==='the server stopped the query early'?'OpenStreetMap: part of the public toilets within '+miles(r):'OpenStreetMap: public toilets within '+miles(r)+widened;
+ return s.state==='empty'?'OpenStreetMap: none listed within '+miles(r):s.state==='partial'&&s.reason==='the server stopped the query early'?'OpenStreetMap: part of the toilets within '+miles(r):'OpenStreetMap: toilets within '+miles(r)+widened;
 }
 // A note in the list where one source's search area ends but another source's places continue.
 function dividers(list){
@@ -2098,7 +2168,7 @@ function dividers(list){
   const at=list.findIndex((it,i)=>i>last&&it.src!==k&&it.dist>r);
   if(at<0)return;
   const other=LIST_KEYS.filter(x=>x!==k).map(x=>LIST_NAME[x]).join(' and ');
-  out.push({at:at,html:'<b>Beyond '+esc(k==='refuge'&&src[k].state==='partial'?scopeDist(r):miles(r))+':</b> '+esc(LIST_NAME[k])+' was searched only '+(k==='refuge'&&src[k].state==='partial'?'out to '+esc(scopeDist(r))+' (nearest '+REFUGE_PER_PAGE+' only)':'within '+esc(miles(r)))+(src[k].state==='partial'&&k==='osm'?' and may be incomplete':'')+', so listings farther away are not shown below. The places below are from '+esc(other)+'.'});
+  out.push({at:at,html:'<b>Beyond '+esc(k==='refuge'&&src[k].limited?scopeDist(r):miles(r))+':</b> '+esc(LIST_NAME[k])+' was searched only '+(k==='refuge'&&src[k].limited?'out to '+esc(scopeDist(r))+' (nearest '+REFUGE_PER_PAGE+' only)':'within '+esc(miles(r)))+(src[k].state==='partial'&&k==='osm'?' and may be incomplete':'')+', so listings farther away are not shown below. The places below are from '+esc(other)+'.'});
  });
  return out.sort((a,b)=>a.at-b.at);
 }
@@ -2116,8 +2186,26 @@ function chipCount(f,n){
  if(!incomplete)return ' ('+n+')';
  return n?' ('+n+'+)':st.some(x=>x==='loading')?' (loading)':'';
 }
+// The first screen says what was found and links to it, so a phone visitor is not left guessing.
+function renderJump(){
+ const el=$('jump'),box=$('list-retry');
+ const failed=current?LIST_KEYS.filter(k=>src[k].state==='failed'):[];
+ box.hidden=!failed.length;
+ box.innerHTML=failed.map(k=>esc(LIST_NAME[k])+' did not answer.<button type="button" class="pb-btn" data-retry="'+k+'">Try again</button>').join(' ');
+ if(!current){el.hidden=true;el.textContent='';return;}
+ const all=allItems(),loading=LIST_KEYS.some(k=>src[k].state==='loading'),frees=all.filter(it=>it.free).length;
+ const said=all.length?all.length+' '+plural(all.length,'restroom','restrooms')+' listed (nearest '+distText(all[0])+'). '+(src.osm.state==='failed'?'Free: unknown, OpenStreetMap did not answer.':frees+' tagged free.'):failed.length===LIST_KEYS.length?'No source answered. This is not a zero.':loading?'Still searching.':'None listed nearby in the sources that answered.';
+ el.hidden=false;
+ el.innerHTML=esc(said+(loading&&all.length?' Still searching.':''))+'<br><a href="#places">Go to results</a><a href="#map">Go to map</a>';
+ if(PHONE&&scrolledFor!==current.id&&all.length&&window.scrollY<160){
+  scrolledFor=current.id;
+  $('places').scrollIntoView({block:'start'});
+  $('places-title').focus({preventScroll:true});
+ }
+}
 const FEATURE={all:()=>true,free:it=>it.free,wheelchair:it=>it.wheel==='yes',neutral:it=>it.neutral,changing:it=>it.changing};
 function renderResults(){
+ renderJump();
  const all=allItems(),counts={all:all.length,free:0,wheelchair:0,neutral:0,changing:0,refuge:0,osm:0};
  all.forEach(it=>{counts[it.src]++;if(it.free)counts.free++;if(it.wheel==='yes')counts.wheelchair++;if(it.neutral)counts.neutral++;if(it.changing)counts.changing++;});
  document.querySelectorAll('#filters [data-filter]').forEach(b=>{const f=b.getAttribute('data-filter');b.setAttribute('aria-pressed',String(f===filter));b.lastElementChild.textContent=CAT_LABEL[f]+chipCount(f,counts[f]);});
@@ -2133,10 +2221,11 @@ function renderResults(){
   else if(list.length)parts.push('Showing '+visible.length+' of '+list.length+' '+plural(list.length,'restroom','restrooms')+', nearest first. Distances are straight-line.');
   else if(loading.length&&!answered.length)parts.push('Loading nearby restrooms...');
   else if(!answered.length&&failed.length)parts.push('No restrooms can be shown: '+(failed.length===LIST_KEYS.length?'all '+LIST_KEYS.length:failed.length+' of '+LIST_KEYS.length)+' sources are unavailable. This is not a zero; no results could be retrieved from '+plural(failed.length,'that source','those sources')+'.');
+  else if(filter==='free'&&(src.osm.state==='failed'||!srcOn.osm))parts.push(src.osm.state==='failed'?'Free can only be read from OpenStreetMap, which is unavailable. This is not a zero.':'Free can only be read from OpenStreetMap, and that source is switched off.');
   else if(filter!=='all'||!(srcOn.refuge&&srcOn.osm))parts.push('No restrooms match this filter in the sources that answered. This means none are listed there, not that none exist.');
   else parts.push('No restrooms are listed near this point in the sources that answered. This does not mean none exist.');
   if(scopes.length)parts.push('Searched: '+scopes.join('; ')+'.');
-  if(hidden)parts.push(hidden+' private or no-access OpenStreetMap '+plural(hidden,'listing','listings')+' hidden.');
+  if(hidden)parts.push(hidden+' private, closed or no-access OpenStreetMap '+plural(hidden,'listing','listings')+' hidden.');
   if(partial.length)parts.push('Partial: '+partial.map(k=>LIST_NAME[k]+(k==='refuge'?' returned only its nearest '+REFUGE_PER_PAGE+' listings':src[k].reason==='the server stopped the query early'?' (the server stopped the query early)':' (the wider search did not complete)')).join('; ')+'.');
   if(loading.length&&(list.length||answered.length))parts.push('Still loading: '+loading.map(k=>LIST_NAME[k]).join('; ')+'.');
   if(failed.length)parts.push('Unavailable: '+failed.map(k=>LIST_NAME[k]).join('; ')+'.'+(answered.length||list.length?' A source that failed is not a zero; check the source status above.':' Check the source status above.'));
@@ -2395,7 +2484,7 @@ if(document.readyState==='complete')loadLeaflet();else window.addEventListener('
         });
       });
     });
-    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'Ten-dimension action checklist: '+cfg.title,context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
+    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'For planners: ten-part review of '+cfg.title.toLowerCase(),context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
       limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. Unavailable inputs never become an all-clear, and a failed source is unknown, never zero. No access decision, availability forecast or walking-time estimate is produced.']};
   }
 
@@ -2415,7 +2504,7 @@ if(document.readyState==='complete')loadLeaflet();else window.addEventListener('
       var settled = ['ok','empty','partial'].indexOf(src.status) >= 0 && finite(src.count) && src.count >= 0;
       var radius = finite(src.radiusMi) ? src.radiusMi : null, day = isoDate(src.dataDate), checked = checkedIso(src.checkedAt);
       var unit = radius == null ? 'listed' : 'listed within ' + radius + ' mi';
-      var measured = settled ? day || 'Source data date unavailable at check time' : null;
+      var measured = settled ? day || (cfgList.key === 'refuge' ? 'Each Refuge listing shows its own date' : 'Source data date unavailable at check time') : null;
       var note = !settled ? (src.status === 'failed' ? 'Unavailable at check time; this is unknown, not zero nearby.' : src.status === 'loading' ? 'Still loading; unknown until the query settles.' : 'Not searched yet; unknown.') :
         src.status === 'partial' ? 'Partial list: at least this many are listed; some may be missing.' :
         src.count === 0 ? 'The query succeeded and lists zero within the distance searched. Zero listed is not proof that none exist.' : 'Listed in the source within the distance searched; confirm access, hours and cost with each place.';
