@@ -154,7 +154,8 @@ See the [field guide](https://patrickiben.github.io/public-data-consoles/respons
 All public consoles open without a visitor account or provider key. Maps use standard OpenStreetMap
 tiles with visible attribution; mapping failures leave the data panels usable. Air quality uses EPA's
 [public reporting-area observation file](https://files.airnowtech.org/airnow/today/reportingarea.dat),
-with observation time, reporting-area distance and freshness checks. U.S. Grid Strain opens immediately
+labeled preliminary and credited to the reporting agency, in the official AQI colors, with observation time,
+reporting-area distance and freshness checks. U.S. Grid Strain opens immediately
 on embedded EIA measurements and checks a same-origin public data file for updates. GitHub Actions
 checks EIA's keyless downloads every six hours; an open, visible dashboard checks the published file
 every 15 minutes. Neither visitors nor the scheduled job need an EIA key. These are **delayed public

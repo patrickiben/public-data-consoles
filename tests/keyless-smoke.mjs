@@ -178,6 +178,8 @@ async function scenario(slug, options = {}) {
       } else {
         assert.match(air, /AQI 55 · Moderate/);
         assert.match(air, /MEASURED · preliminary AirNow observation/);
+        assert.match(air, /Data from EPA via U\.S\. EPA AirNow\./);
+        assert.equal(await page.locator('#lvl-air').evaluate(e => getComputedStyle(e).backgroundColor), 'rgb(255, 255, 0)', label + ': official Moderate AQI color');
         assert.match(air, /Observed 10\/23\/26 12:00 EDT/);
         assert.match(air, /fetched 2026-10-23 16:00 UTC/);
       }

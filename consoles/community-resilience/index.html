@@ -2268,7 +2268,7 @@ const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const phoneMq=window.matchMedia('(max-width:640px)'),isPhone=()=>phoneMq.matches;
 const phoneFold=(key,summary,body)=>isPhone()?'<details class="rs-more" data-keep="fold-'+key+'"><summary>'+summary+'</summary>'+body+'</details>':body;
 // AirNow asks that values appear with the official Air Quality Index colors.
-const AQI_COLORS=[[50,'#00e400','#000'],[100,'#ffff00','#000'],[150,'#ff7e00','#000'],[200,'#ff0000','#fff'],[300,'#8f3f97','#fff'],[Infinity,'#7e0023','#fff']];
+const AQI_COLORS=[[50,'#00e400','#000'],[100,'#ffff00','#000'],[150,'#ff7e00','#000'],[200,'#ff0000','#000'],[300,'#8f3f97','#fff'],[Infinity,'#7e0023','#fff']];
 const aqiChip=i=>{const c=AQI_COLORS.find(a=>i.aqi<=a[0]);return '<span class="rs-aqi" style="background:'+c[1]+';color:'+c[2]+'">'+esc(i.category)+'</span>';};
 function safeUrl(u){if(typeof u!=='string')return null;try{const x=new URL(u.trim(),location.href);return /^https?:$/.test(x.protocol)?x.href:null;}catch(e){return null;}}
 function extLink(u,text){const s=safeUrl(u);return s?'<a href="'+esc(s)+'" target="_blank" rel="noopener noreferrer">'+esc(text)+'</a>':esc(text);}
