@@ -144,7 +144,7 @@ See the [field guide](https://patrickiben.github.io/public-data-consoles/respons
 
 | Console | Data | Sources |
 |---|---|---|
-| [Free Clinic Finder](consoles/free-clinic-finder/) | Live listings | HRSA health center sites (sliding fee, not necessarily free, with the HRSA data load date), OpenStreetMap clinics via Overpass (partial coverage; "free" only where tagged fee=no; clinics whose name says free are shown as not confirmed) |
+| [Free Clinic Finder](consoles/free-clinic-finder/) | Live listings | HRSA health center sites (sliding fee, not necessarily free, with the HRSA data load date), OpenStreetMap clinics via Overpass (a very small, unverified set shown as possibly free; no clinic is labeled free outright), plus a link to the free and charitable clinic locator |
 | [Human Trafficking — Get Help](consoles/human-trafficking/) | Reference | Verified hotlines + Polaris / UNODC / ILO–Walk Free / CTDC (badge-framed) |
 | [Free Public Bathroom Finder](consoles/public-bathroom-finder/) | Live listings | Refuge Restrooms (crowd-sourced listings, each with its date), OpenStreetMap amenity=toilets via Overpass (partial coverage; "free" only where tagged fee=no and not customers only) |
 

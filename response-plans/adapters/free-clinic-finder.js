@@ -69,13 +69,13 @@
         });
       });
     });
-    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'Ten-dimension action checklist: '+cfg.title,context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
+    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'For planners: ten-part review of '+cfg.title.toLowerCase(),context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
       limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. Unavailable inputs never become an all-clear, and a failed source is unknown, never zero. No eligibility decision, availability forecast or travel-time estimate is produced.']};
   }
 
   var LISTS = [
     {key:'hrsa', id:'hrsa-count', label:'HRSA health center sites (sliding fee, not necessarily free)', noun:'HRSA health center sites', source:HRSA},
-    {key:'osm', id:'osm-count', label:'OpenStreetMap clinics listed as free or possibly free', noun:'OpenStreetMap clinics listed as free or possibly free', source:OSM}
+    {key:'osm', id:'osm-count', label:'OpenStreetMap clinics marked as free (not verified)', noun:'OpenStreetMap clinics marked as free (not verified)', source:OSM}
   ];
 
   function read() {
