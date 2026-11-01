@@ -605,7 +605,7 @@ try {
     }
     await finish(t, 'HRSA fails: ' + label);
   }
-  // 3b. A hung HRSA request (fake clock): a slow note at 8 s, then Unavailable at 20 s; OSM main and mirror hang to 50 s and 40 s.
+  // 3b. A hung HRSA request (fake clock): a slow note at 8 s, then Unavailable at 20 s; Overpass hangs to 75 s on each of its two tries.
   {
     const t = await open({ hang: new Set(['hrsa', 'overpass-main', 'overpass-mirror']), clock: true });
     const { page, log } = t;
@@ -618,7 +618,7 @@ try {
     assert.equal(await text(page, '#count-hrsa'), '(loading)');
     await page.clock.fastForward(8500);
     assert.match(await text(page, '#status-hrsa'), /Still loading; this source can take up to 20 seconds per step\./);
-    assert.match(await text(page, '#status-osm'), /This source is often slow; it can take up to 90 seconds\./);
+    assert.match(await text(page, '#status-osm'), /This source is often slow; it can take up to 3 minutes\./);
     await page.clock.fastForward(12000);
     await until(async () => (await state(page, 'hrsa')) === 'failed', 'HRSA timeout');
     const row = await text(page, '#status-hrsa');
@@ -627,14 +627,19 @@ try {
     assert.doesNotMatch(row, /None listed/);
     assert.equal(await state(page, 'osm'), 'loading');
     assert.equal((await bridge(page)).state, 'loading');
-    await page.clock.fastForward(25000);
+    await page.clock.fastForward(40000);
+    assert.equal(log.overpass.length, 1, 'the first Overpass try is still waiting at 60 seconds');
+    assert.doesNotMatch(await text(page, '#status-osm'), /trying once more/);
+    await page.clock.fastForward(15000);
     await until(async () => /trying once more/.test(await text(page, '#status-osm')), 'retry note');
     await page.clock.fastForward(4500);
     await until(() => log.overpass.length === 2, 'second request');
     assert.match(await text(page, '#status-osm'), /trying once more/);
-    await page.clock.fastForward(36000);
+    await page.clock.fastForward(60000);
+    assert.equal(await state(page, 'osm'), 'loading', 'the retry is still waiting at 60 seconds');
+    await page.clock.fastForward(16000);
     await until(async () => (await state(page, 'osm')) === 'failed', 'OSM timeout');
-    assert.match(await text(page, '#status-osm'), /Unavailable: no answer within 35 seconds \(tried overpass-api\.de twice\)/);
+    assert.match(await text(page, '#status-osm'), /Unavailable: no answer within 75 seconds \(tried overpass-api\.de twice\)/);
     await settled(page, 1);
     const b = await bridge(page);
     assert.deepEqual([b.sources.hrsa.status, b.sources.hrsa.count, b.sources.osm.status, b.sources.osm.count], ['failed', null, 'failed', null]);
