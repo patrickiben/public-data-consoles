@@ -39,6 +39,9 @@ for (const slug of ['food-desert-oases', 'free-clinic-finder', 'public-bathroom-
     assert.match(text, /The ten parts of this review/);
     assert.match(text, /What it would take to judge this:/, slug + ': the inputs are still listed once on each part');
     assert.match(text, /Unknown does not mean safe/, slug + ': the safety wording stays');
+    assert.match(text, /Unknown does not mean clear; current official instructions take precedence/, slug + ': trimming the inputs keeps this caution');
+    assert.match(text, /not official orders or medical advice/, slug + ': does not disclaim the emergency lines');
+    assert.doesNotMatch(text, /Nothing is sent or saved/, slug + ': location does leave the browser when searching, so only check marks are promised');
   }
   // A repaint must not bring the old wording back.
   await page.evaluate(() => document.getElementById('cr-track-public').click());
