@@ -85,6 +85,10 @@ async function open(options = {}, contextOptions = {}) {
   await context.route('**/*', async route => {
     const request = route.request();
     const url = new URL(request.url());
+    if (url.pathname.endsWith('/data/usda-farmers-markets.json')) {
+      if (options.failDirectory) return route.fulfill({ status: 503, contentType: 'text/plain', body: 'fixture outage' });
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ downloaded: '2026-10-31', fields: ['name', 'address', 'lat', 'lon', 'updated', 'programs'], rows: options.directoryRows || [['Far Away Market', 'Nome, AK', 64.5, -165.4, '2023-01-01', []]] }) });
+    }
     if (url.origin === origin) return route.continue();
     log.requests.push(url.href);
     const headers = { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' };
@@ -518,6 +522,42 @@ try {
     assert.doesNotMatch(summary, /No places are listed/);
     await page.waitForFunction(() => /Check unavailable sources directly/.test(document.getElementById('console-response').textContent), null, { timeout: 5000 });
     await finish(t, 'all lists failed');
+  }
+
+  // USDA's farmers market directory: a dated copy, only under Farmers markets, never a zero when it fails, and no request carries the point.
+  {
+    const p = PLACES.cleveland;
+    const rows = [['Directory Market', '1 Main St, Cleveland, OH', p.lat + 0.003, p.lon, '2023-03-20', ['SNAP or EBT', 'WIC']], ['Same As SNAP Market', '2 Main St', p.lat + 0.02, p.lon, '2025-01-01', []], ['Too Far Market', '3 Main St', p.lat + 2, p.lon, '2025-01-01', []]];
+    const t = await open({ directoryRows: rows });
+    const { page, log } = t;
+    await search(page, '1500 Euclid Ave, Cleveland, OH', 1);
+    assert.equal(await state(page, 'directory'), 'ok');
+    assert.match(await text(page, '#status-directory'), /OK: 2 markets within 50 miles\. Copy downloaded October 31, 2026\./);
+    assert.doesNotMatch(await text(page, '#results'), /Directory Market/, 'the dated copy stays out of the main list');
+    assert.match(await text(page, '#results-summary'), /USDA's directory lists 1 more farmers market with older dates: press Farmers markets to see it\./);
+    assert.match(await text(page, '#filters [data-filter="market"]'), /Farmers markets \(3\)/);
+    await page.click('#filters [data-filter="market"]');
+    const cards = await page.locator('#results > li.fa-card').allInnerTexts();
+    assert.equal(cards.length, 3, 'the directory row beside a SNAP market counts once');
+    const dir = cards.find(c => /Directory Market/.test(c));
+    for (const re of [/Farmers market, USDA directory/, /Food assistance listed: SNAP or EBT, WIC/, /listing last updated March 20, 2023/, /Confirm before you go\./, /no days or hours/]) assert.match(dir, re);
+    assert.match(await text(page, '#results-summary'), /USDA's farmers market directory \(dated copy\) adds 1 market within 50 miles/);
+    assert.equal(log.requests.filter(u => /usda-farmers-markets/.test(u)).length, 0, 'the directory file is on this site');
+    await finish(t, 'farmers market directory');
+
+    const down = await open({ failDirectory: true });
+    await search(down.page, '1500 Euclid Ave, Cleveland, OH', 1);
+    assert.equal(await state(down.page, 'directory'), 'failed');
+    assert.match(await text(down.page, '#status-directory'), /Unavailable: .*this is not a zero/);
+    assert.match(await text(down.page, '#filters [data-filter="market"]'), /Farmers markets \(2, partial\)/);
+    await down.page.click('#filters [data-filter="market"]');
+    assert.match(await text(down.page, '#results-summary'), /could not be loaded; this is not a zero\. Only SNAP-authorized markets are shown\./);
+    await finish(down, 'farmers market directory fails');
+
+    const real = JSON.parse(await readFile(path.join(root, 'consoles/food-desert-oases/data/usda-farmers-markets.json'), 'utf8'));
+    assert.deepEqual(real.fields, ['name', 'address', 'lat', 'lon', 'updated', 'programs']);
+    assert.ok(real.rows.length > 5000 && /^\d{4}-\d{2}-\d{2}$/.test(real.downloaded), 'the committed copy is whole and dated');
+    assert.ok(real.rows.every(r => r[0] && Number.isFinite(r[2]) && Number.isFinite(r[3]) && Math.abs(r[2]) <= 90 && Math.abs(r[3]) <= 180), 'every row has a name and a real point');
   }
 
   // 12. Headline names its measure and the other flagged measures; ZIP+4 forms; retry settle.

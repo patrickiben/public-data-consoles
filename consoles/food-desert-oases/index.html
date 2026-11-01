@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark light">
 <title>Food Desert Oases</title>
-<meta name="description" content="Enter an address, city or ZIP code to see whether the census tract is flagged low income and low access in the USDA Food Access Research Atlas (2025 SNAP-authorized Retailer Access Map), plus the nearest SNAP-authorized stores, SNAP-authorized farmers markets and OpenStreetMap-tagged food banks and meal programs. Unofficial; confirm hours and eligibility before you go.">
+<meta name="description" content="Enter an address, city or ZIP code to see whether the census tract is flagged low income and low access in the USDA Food Access Research Atlas (2025 SNAP-authorized Retailer Access Map), plus the nearest SNAP-authorized stores, USDA-listed farmers markets and OpenStreetMap-tagged food banks and meal programs. Unofficial; confirm hours and eligibility before you go.">
 <style>
 :root{
  --bg:#0f1b2a;--panel:#16273d;--panel2:#1b3050;--panel-end:#14253b;--ink:#eaf1f8;--ink2:#b3c3d5;--dim:#91a5bd;
@@ -1593,7 +1593,7 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
 <div class="fa-wrap">
   <header class="fa-header">
     <h1>Food Desert Oases</h1>
-    <div class="fa-sub">See how the USDA Food Access Research Atlas classifies a census tract, and find the nearest SNAP-authorized stores, SNAP-authorized farmers markets and listed food banks and meal programs.</div>
+    <div class="fa-sub">See how the USDA Food Access Research Atlas classifies a census tract, and find the nearest SNAP-authorized stores, farmers markets and listed food banks and meal programs.</div>
     <form id="search-form" class="fa-search" role="search" autocomplete="off" novalidate onsubmit="return false">
       <label for="q">U.S. address, city or ZIP code</label>
       <div class="fa-bar">
@@ -1606,7 +1606,7 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
       <div id="privacy" class="fa-privacy">
         <p><b>Privacy:</b> This page has no server of its own and saves nothing: no cookies, no browser storage, and your location is not added to the page address. Your location does leave this browser, because the search has to ask public services. They receive it rounded, or as you typed it.</p>
         <details><summary>Show what is sent, and to whom</summary>
-        <p>A ZIP code goes to the U.S. Census (tigerweb.geo.census.gov). Any other text you type goes, exactly as typed, to OpenStreetMap Nominatim (nominatim.openstreetmap.org). The searched point goes to the USDA Food Access Research Atlas (gisportal.ers.usda.gov), rounded to about 10 meters so the right census tract is found. It goes to USDA's SNAP retailer data on Esri's ArcGIS Online (services1.arcgis.com) and to an OpenStreetMap Overpass server (overpass-api.de, run by the German OpenStreetMap association FOSSGIS), rounded to about 100 meters. Map images come from tile.openstreetmap.org and show the area you view. The map code (Leaflet) loads from unpkg.com; that request carries no location. Each of these services can also see your IP address, as any website can. A Directions link opens Google Maps only if you tap it, and Google then sees that destination. Distances are calculated in your browser. Tip: a ZIP code or nearby intersection works if you prefer not to type a home address.</p></details>
+        <p>A ZIP code goes to the U.S. Census (tigerweb.geo.census.gov). Any other text you type goes, exactly as typed, to OpenStreetMap Nominatim (nominatim.openstreetmap.org). The searched point goes to the USDA Food Access Research Atlas (gisportal.ers.usda.gov), rounded to about 10 meters so the right census tract is found. It goes to USDA's SNAP retailer data on Esri's ArcGIS Online (services1.arcgis.com) and to an OpenStreetMap Overpass server (overpass-api.de, run by the German OpenStreetMap association FOSSGIS), rounded to about 100 meters. USDA's farmers market directory is a file on this site, searched inside your browser, so that list sends no location. Map images come from tile.openstreetmap.org and show the area you view. The map code (Leaflet) loads from unpkg.com; that request carries no location. Each of these services can also see your IP address, as any website can. A Directions link opens Google Maps only if you tap it, and Google then sees that destination. Distances are calculated in your browser. Tip: a ZIP code or nearby intersection works if you prefer not to type a home address.</p></details>
       </div>
     </form>
     <div id="place" role="status" aria-live="polite"><span class="fa-muted">Search for a place to begin.</span></div>
@@ -1615,7 +1615,7 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
 
   <section id="places" class="fa-section" aria-labelledby="places-title">
     <h2 id="places-title" tabindex="-1">Nearest places</h2>
-    <p class="fa-lede">One list, nearest first, by straight-line distance from the searched point. For free food, press Food banks and meals or dial <a href="tel:211">2-1-1</a>. Stores are those authorized to accept SNAP, and many are convenience stores: press Grocery and supermarkets for groceries. Farmers markets shown are only those authorized to accept SNAP.</p>
+    <p class="fa-lede">One list, nearest first, by straight-line distance from the searched point. For free food, press Food banks and meals or dial <a href="tel:211">2-1-1</a>. Stores are those authorized to accept SNAP, and many are convenience stores: press Grocery and supermarkets for groceries. This list has only the farmers markets authorized to accept SNAP; press Farmers markets to add the rest of USDA's directory, many of them seasonal.</p>
     <div class="fa-places">
       <div class="fa-list-col">
         <div id="filters" class="fa-chips" role="group" aria-label="Filter by type">
@@ -1653,6 +1653,7 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
       <li id="status-fara19" class="fa-st" data-state="idle"><span class="fa-st-name">Supermarket measure, 2019 data (USDA ERS)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
       <li id="status-snap" class="fa-st" data-state="idle"><span class="fa-st-name">SNAP-authorized retailers (USDA FNA)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
       <li id="status-markets" class="fa-st" data-state="idle"><span class="fa-st-name">SNAP-authorized farmers markets (USDA FNA)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
+      <li id="status-directory" class="fa-st" data-state="idle"><span class="fa-st-name">USDA farmers market directory (dated copy)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
       <li id="status-osm" class="fa-st" data-state="idle"><span class="fa-st-name">Food banks and meal programs (OpenStreetMap)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
     </ul>
   </section>
@@ -1662,7 +1663,7 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
     <ul class="fa-list">
       <li><b>No complete national food pantry list.</b> No complete, open national list of food pantries was found that this page can use. Pantries and meal programs appear here only where volunteers have tagged them in OpenStreetMap, so many are missing. For a full local list, dial <b>2-1-1</b> (or visit <a href="https://www.211.org/" target="_blank" rel="noopener noreferrer">211.org</a>) or contact your regional food bank, which you can find with the <a href="https://www.feedingamerica.org/find-your-local-foodbank" target="_blank" rel="noopener noreferrer">Feeding America food bank locator</a>.</li>
       <li><b>SNAP authorization only.</b> The SNAP retailer list shows that a store is authorized to accept SNAP. It does not show hours, stock or prices.</li>
-      <li><b>Farmers markets that take SNAP only.</b> This page does not include the full USDA farmers market directory (USDA AMS Local Food Portal): its search needs an access key, and its full download is not built in here. Markets that do not accept SNAP are missing. Listed markets and farmers can be seasonal.</li>
+      <li><b>Farmers markets come from two USDA lists.</b> SNAP-authorized markets and farmers are current and appear in the main list. USDA's full farmers market directory is a dated copy kept on this site, shown only under Farmers markets, because <span id="directory-age">many of its listings are years old</span> and it does not give days, hours or season here. Either list can miss a market, and markets can be seasonal.</li>
       <li><b>Restaurants are left out.</b> USDA's SNAP data also lists Restaurant Meals Program restaurants. This page leaves them out, because only certain households, in the states that run the program, can use SNAP there.</li>
       <li><b>United States and its territories only.</b> A place name from another country may match a U.S. place with the same name.</li>
       <li><b>Not listed:</b> WIC vendors, school meals and senior meal programs.</li>
@@ -1681,6 +1682,7 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
       <div class="fa-source"><h3>USDA ERS Food Access Research Atlas, supermarket measure (2019 data)</h3><p><a href="https://www.ers.usda.gov/data-products/food-access-research-atlas/" target="_blank" rel="noopener noreferrer">Food Access Research Atlas</a>, 2019 edition (map service FARA_2019, layer 30).</p><p>Date: 2019 edition; distance to supermarkets and large grocery stores; 2010 census tracts. Not comparable with the 2025 measure.</p></div>
       <div class="fa-source"><h3>SNAP-authorized retailers: USDA Food and Nutrition Administration</h3><p><a href="https://www.fna.usda.gov/snap/retailer-locator" target="_blank" rel="noopener noreferrer">SNAP Retailer Locator</a> data (<a href="https://usda-snap-retailers-usda-fns.hub.arcgis.com/datasets/8b260f9a10b0459aa441ad8588c2251c" target="_blank" rel="noopener noreferrer">public ArcGIS dataset</a>), excluding farmers markets and Restaurant Meals Program restaurants.</p><p>Date: <span id="src-date-snap">shown after a search, from the layer's last edit date</span>. The source says it updates every 2 weeks.</p></div>
       <div class="fa-source"><h3>SNAP-authorized farmers markets: USDA Food and Nutrition Administration</h3><p>The same SNAP retailer data, store type "Farmers and Markets". Only markets and farmers authorized to accept SNAP are included.</p><p>Date: <span id="src-date-markets">shown after a search, from the layer's last edit date</span>.</p></div>
+      <div class="fa-source"><h3>Farmers market directory: USDA Local Food Directories</h3><p><a href="https://www.usdalocalfoodportal.com/fe/datasharing/" target="_blank" rel="noopener noreferrer">USDA Local Food Directories</a> (USDA Agricultural Marketing Service), from the full download USDA offers on its Data Sharing page. A dated copy is kept on this site and searched inside your browser. Each card shows when its listing was last updated.</p><p>Date: <span id="src-date-directory">copy date shown after a search</span>.</p></div>
       <div class="fa-source"><h3>Food banks and meal programs: OpenStreetMap via Overpass</h3><p><a href="https://overpass-api.de/" target="_blank" rel="noopener noreferrer">overpass-api.de</a>, tried twice if it does not answer. Places tagged social_facility=food_bank, amenity=food_bank or social_facility=soup_kitchen within 50 km (31 miles).</p><p>&copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a>. Date: <span id="src-date-osm">shown after a search, from the OSM data timestamp</span>, plus each place's last edit date.</p></div>
       <div class="fa-source"><h3>Map tiles and map library</h3><p>Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> from tile.openstreetmap.org. Map library: <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> 1.9.4 from unpkg.com. Something wrong on the map? <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">Report a map problem to OpenStreetMap</a>.</p></div>
     </div>
@@ -1702,6 +1704,8 @@ const SNAP_LAYER_URL='https://services1.arcgis.com/RLQu0rK7h4kbsBq5/arcgis/rest/
 const OVERPASS_URL='https://overpass-api.de/api/interpreter';
 const OVERPASS_TIMEOUTS=[45000,35000],OVERPASS_RETRY_WAIT=4000;
 const LISTS={snap:{radii:[1,2,5,10,25,50],target:15,markets:false,noun:'stores'},markets:{radii:[5,10,25,50],target:10,markets:true,noun:'markets'}};
+// USDA's full directory, as a dated copy in this repository (scripts/build_farmers_markets.py). Searched in the browser, so no location is sent for it.
+const DIRECTORY_URL='data/usda-farmers-markets.json',DIRECTORY_MI=50,DIRECTORY_MAX=25;
 const OSM_RADIUS_M=50000,OSM_RADIUS_MI=31;
 const PHONE=window.innerWidth<768,PAGE=PHONE?10:25;
 // Coordinates are rounded before they leave the browser: about 100 meters for listings, about 10 meters for the census tract lookup.
@@ -1716,7 +1720,7 @@ const SNAP_FIELDS='Store_Name,Store_Street_Address,Additonal_Address,City,State,
 const MARKER={food:'#c2255c',market:'#2b8a3e',grocery:'#1864ab',other:'#6741d9'};
 const CAT_LABEL={all:'All',food:'Food banks and meals',market:'Farmers markets',grocery:'Grocery and supermarkets',other:'Other SNAP stores'};
 const GROCERY_TYPES=['Supermarket','Super Store','Grocery Store'];
-const LABELS={geocoder:'Place search (U.S. Census for ZIP codes, OpenStreetMap Nominatim for the rest)',fara25:'Any-SNAP-store measure, 2025 data (USDA ERS)',fara19:'Supermarket measure, 2019 data (USDA ERS)',snap:'SNAP-authorized retailers (USDA FNA)',markets:'SNAP-authorized farmers markets (USDA FNA)',osm:'Food banks and meal programs (OpenStreetMap)'};
+const LABELS={geocoder:'Place search (U.S. Census for ZIP codes, OpenStreetMap Nominatim for the rest)',fara25:'Any-SNAP-store measure, 2025 data (USDA ERS)',fara19:'Supermarket measure, 2019 data (USDA ERS)',snap:'SNAP-authorized retailers (USDA FNA)',markets:'SNAP-authorized farmers markets (USDA FNA)',directory:'USDA farmers market directory (dated copy)',osm:'Food banks and meal programs (OpenStreetMap)'};
 const BADGE={idle:'Waiting',notrun:'Not run',notused:'Not used',invalid:'Not sent',loading:'Loading',ok:'OK',empty:'None listed',partial:'Partial',failed:'Unavailable',notcovered:'Not covered'};
 const KEYS=Object.keys(LABELS);
 
@@ -1759,7 +1763,7 @@ const pointParams=pt=>({geometry:pt.lon.toFixed(6)+','+pt.lat.toFixed(6),geometr
 /* ---------- state (the searched point lives only in this closure) ---------- */
 let searchRun=0,selectionId=0,current=null,filter='all',shown=PAGE,revision=0,searchState='idle',checkedAt=null,locationType=null;
 const src={};
-const items={snap:[],markets:[],osm:[]};
+const items={snap:[],markets:[],osm:[],directory:[]};
 let tract25=null,tract19=null,snapDate=null,osmBase=null;
 function resetSources(state){KEYS.forEach(k=>{src[k]={state:state,attempt:(src[k]&&src[k].attempt||0)+1};});}
 resetSources('idle');
@@ -1932,7 +1936,7 @@ async function geocode(text,zip,id){
 
 /* ---------- searches ---------- */
 let lastQuery=null,scrolledFor=null,searchedArea=false;
-function clearResults(){items.snap=[];items.markets=[];items.osm=[];tract25=null;tract19=null;shown=PAGE;scrolledFor=null;searchedArea=false;}
+function clearResults(){items.snap=[];items.markets=[];items.osm=[];items.directory=[];tract25=null;tract19=null;shown=PAGE;scrolledFor=null;searchedArea=false;}
 function beginSearch(type){
  const id=++searchRun;selectionId++;current=null;locationType=type;searchState='loading';checkedAt=null;
  clearResults();resetSources('notrun');
@@ -2010,14 +2014,14 @@ function useLocation(){
 }
 function runAll(id,point,territory){
  current={id:id,point:point,territory:territory};
- const jobs=[runFara('fara25',id),runFara('fara19',id),runList('snap',id),runList('markets',id),runOsm(id)];
+ const jobs=[runFara('fara25',id),runFara('fara19',id),runList('snap',id),runList('markets',id),runDirectory(id),runOsm(id)];
  renderArea();renderResults();publish();
  Promise.allSettled(jobs).then(()=>{if(id!==searchRun)return;if(KEYS.some(k=>src[k].state==='loading'))return;searchState='settled';checkedAt=new Date().toISOString();publish();});
 }
 function retry(k){
  if(k==='geocoder'){search();return;}
  if(!current||current.id!==searchRun)return;
- const id=current.id,p=k==='fara25'||k==='fara19'?runFara(k,id):k==='osm'?runOsm(id):runList(k,id);
+ const id=current.id,p=k==='fara25'||k==='fara19'?runFara(k,id):k==='osm'?runOsm(id):k==='directory'?runDirectory(id):runList(k,id);
  searchState='loading';publish();
  p.then(()=>{if(id!==searchRun)return;if(KEYS.every(x=>src[x].state!=='loading')){searchState='settled';checkedAt=new Date().toISOString();}publish();});
 }
@@ -2196,6 +2200,42 @@ async function runList(k,id){
  }
 }
 
+/* ---------- USDA farmers market directory (dated copy on this site) ---------- */
+let directoryPromise=null;
+function loadDirectory(){
+ if(!directoryPromise){
+  directoryPromise=fetchJSON(DIRECTORY_URL,{timeout:20000,track:false}).then(j=>{
+   if(!j||!Array.isArray(j.rows)||!j.rows.length||!Array.isArray(j.fields)||j.fields.join()!=='name,address,lat,lon,updated,programs')throw new SourceError('the directory file had no usable list');
+   const when=Date.parse(j.downloaded+'T00:00:00Z');
+   return {rows:j.rows,downloaded:Number.isFinite(when)?fmtDate(when):null,downloadedMs:when};
+  }).catch(e=>{directoryPromise=null;throw e;});
+ }
+ return directoryPromise;
+}
+function directoryItem(r,pt){
+ const lat=+r[2],lon=+r[3];if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
+ const updated=Date.parse(r[4]+'T00:00:00Z');
+ return {src:'directory',cat:'market',name:clean(r[0],140)||'Name not listed',typeLabel:'Farmers market, USDA directory',lat:lat,lon:lon,dist:haversine(pt,{lat:lat,lon:lon}),address:clean(r[1],200)||'Address not listed',updated:Number.isFinite(updated)?fmtDate(updated):null,updatedMs:updated,programs:Array.isArray(r[5])?r[5].map(x=>clean(x,60)).filter(Boolean):[]};
+}
+async function runDirectory(id){
+ if(id!==searchRun||!current)return;
+ const pt=current.point;items.directory=[];
+ const alive=begin('directory','Searching the dated copy inside your browser...');publish();
+ let d;
+ try{d=await loadDirectory();}
+ catch(e){if(!alive())return;setSrc('directory',{state:'failed',reason:e.message,checkedAt:new Date().toISOString(),text:'Unavailable: '+e.message+'. No listings are shown from this source; this is not a zero.'});$('src-date-directory').textContent='unavailable';renderResults();publish();return;}
+ if(!alive())return;
+ const near=d.rows.map(r=>directoryItem(r,pt)).filter(it=>it&&it.dist<=DIRECTORY_MI).sort((a,b)=>a.dist-b.dist);
+ items.directory=near.slice(0,DIRECTORY_MAX);
+ const stale=near.filter(it=>Number.isFinite(it.updatedMs)&&d.downloadedMs-it.updatedMs>365.25*864e5).length;
+ $('src-date-directory').textContent=d.downloaded?'copy downloaded '+d.downloaded:'copy date unavailable';
+ $('directory-age').textContent=near.length?stale+' of the '+near.length+' listings near this point were last updated more than a year before this copy':'many of its listings are years old';
+ const copied=d.downloaded?' Copy downloaded '+d.downloaded+'.':'';
+ setSrc('directory',near.length?{state:'ok',count:near.length,radiusMi:DIRECTORY_MI,nearestMi:Math.round(near[0].dist*100)/100,dataDate:d.downloaded,checkedAt:new Date().toISOString(),text:'OK: '+(near.length>DIRECTORY_MAX?'the nearest '+DIRECTORY_MAX+' of '+near.length:near.length)+' '+plural(near.length,'market','markets')+' within '+DIRECTORY_MI+' miles.'+copied}
+  :{state:'empty',count:0,radiusMi:DIRECTORY_MI,nearestMi:null,dataDate:d.downloaded,checkedAt:new Date().toISOString(),text:'None listed in this copy within '+DIRECTORY_MI+' miles. This means none are listed here, not that none exist.'+copied});
+ renderResults();publish();
+}
+
 /* ---------- OpenStreetMap food banks and meal programs (Overpass) ---------- */
 function overpassQuery(pt){const a='(around:'+OSM_RADIUS_M+','+pt.lat.toFixed(6)+','+pt.lon.toFixed(6)+')';return '[out:json][timeout:25];(nwr["social_facility"="food_bank"]'+a+';nwr["amenity"="food_bank"]'+a+';nwr["social_facility"="soup_kitchen"]'+a+';);out center meta;';}
 function osmItem(el,pt){
@@ -2251,6 +2291,8 @@ async function runOsm(id){
 
 /* ---------- results list ---------- */
 function allItems(){return items.snap.concat(items.markets,items.osm).sort((a,b)=>a.dist-b.dist);}
+// Under Farmers markets, both USDA lists; a directory listing within about 100 meters of a SNAP-authorized market is treated as the same market.
+function marketItems(){const live=items.markets;return live.concat(items.directory.filter(it=>!live.some(m=>haversine(m,it)<0.06))).sort((a,b)=>a.dist-b.dist);}
 function card(it){
  // Google Maps opens directions on phones and computers alike; OpenStreetMap's directions page lands on a map of Europe on a phone.
  const dir='https://www.google.com/maps/dir/?api=1&destination='+it.lat.toFixed(5)+','+it.lon.toFixed(5);
@@ -2259,13 +2301,14 @@ function card(it){
   if(it.hours)extra+='<p class="fa-line">Listed hours (as tagged, may be out of date): '+esc(it.hours)+'</p>';
   if(it.phone)extra+='<p class="fa-line">Phone (as tagged): '+esc(it.phone)+'</p>';
   if(it.website)extra+='<p class="fa-line">Website (as tagged): '+extLink(it.website,it.website.replace(/^https?:\/\//,'').replace(/\/$/,''))+'</p>';
+ }else if(it.src==='directory'){extra+='<p class="fa-line">'+(it.programs.length?'Food assistance listed: '+esc(it.programs.join(', ')):'Food assistance: not listed')+'</p>';
  }else if(it.incentive){extra+='<p class="fa-line">SNAP healthy incentive program listed: '+esc(it.incentive)+'</p>';}
- const source=it.src==='osm'?'Source: OpenStreetMap contributors (ODbL)'+(it.edited?', place last edited '+esc(it.edited):'')+'; '+(it.osmBase?'OSM data as of '+esc(it.osmBase):'OSM data date unavailable'):'Source: USDA Food and Nutrition Administration SNAP retailer data; '+(snapDateState==='ok'&&snapDate?'list as of '+esc(snapDate):snapDateState==='pending'?'data date still loading':'data date unavailable');
+ const source=it.src==='directory'?'Source: USDA Local Food Directories, dated copy; '+(it.updated?'listing last updated '+esc(it.updated):'listing update date not given'):it.src==='osm'?'Source: OpenStreetMap contributors (ODbL)'+(it.edited?', place last edited '+esc(it.edited):'')+'; '+(it.osmBase?'OSM data as of '+esc(it.osmBase):'OSM data date unavailable'):'Source: USDA Food and Nutrition Administration SNAP retailer data; '+(snapDateState==='ok'&&snapDate?'list as of '+esc(snapDate):snapDateState==='pending'?'data date still loading':'data date unavailable');
  return '<li class="fa-card fa-c-'+it.cat+'"><div class="fa-card-head"><h3>'+esc(it.name)+'</h3><span class="fa-dist">'+esc(fmtDist(it.dist))+' <small>straight-line</small></span></div>'+
   '<div class="fa-type"><span class="fa-dot fa-c-'+it.cat+'" aria-hidden="true"></span>'+esc(it.typeLabel)+'</div>'+
   '<p class="fa-line">'+esc(it.address)+'</p>'+extra+
   '<p class="fa-src">'+source+'</p>'+
-  '<p class="fa-confirm"><b>Confirm before you go.</b> Hours, stock, eligibility and SNAP acceptance can change; call or check the place\'s own listing.'+(it.cat==='market'?' Markets and farm stands can be seasonal.':it.cat==='food'?' Some food banks are warehouses that do not hand out food directly, so call first.':'')+'</p>'+
+  '<p class="fa-confirm"><b>Confirm before you go.</b> '+(it.src==='directory'?'This copy gives no days or hours, and the market may have changed or closed since the listing date. Markets can be seasonal.':'Hours, stock, eligibility and SNAP acceptance can change; call or check the place\'s own listing.')+(it.src!=='directory'&&it.cat==='market'?' Markets and farm stands can be seasonal.':it.cat==='food'?' Some food banks are warehouses that do not hand out food directly, so call first.':'')+'</p>'+
   '<a class="fa-dir" href="'+esc(dir)+'" target="_blank" rel="noopener noreferrer">Directions (opens Google Maps)</a></li>';
 }
 const LIST_NAME={snap:'SNAP-authorized stores',markets:'SNAP-authorized farmers markets',osm:'OpenStreetMap food banks and meal programs'};
@@ -2290,14 +2333,16 @@ function dividers(list){
  return out.sort((a,b)=>a.at-b.at);
 }
 // Chip counts follow each list source's state: a failed source is never shown as a zero.
-const CHIP_SRC={all:LIST_KEYS,food:['osm'],market:['markets'],grocery:['snap'],other:['snap']};
+const CHIP_SRC={all:LIST_KEYS,food:['osm'],market:['markets','directory'],grocery:['snap'],other:['snap']};
 function chipCount(f,n){
  if(!current)return '';
  const st=CHIP_SRC[f].map(k=>src[k].state);
  if(st.every(x=>x==='failed'))return ' (unavailable)';
  if(f!=='all'){
-  if(st[0]==='loading'||st[0]==='idle')return ' (loading)';
-  return st[0]==='partial'?' ('+n+', partial)':' ('+n+')';
+  if(st.every(x=>x==='loading'||x==='idle'))return ' (loading)';
+  // With one of two lists failed, an empty result is unavailable, never a zero.
+  if(!n&&st.some(x=>x==='failed'))return ' (unavailable)';
+  return st.some(x=>x==='partial'||x==='failed')?' ('+n+', partial)':st.some(x=>x==='loading')?' ('+n+'+)':' ('+n+')';
  }
  const incomplete=st.some(x=>['failed','partial','loading','idle'].indexOf(x)>=0);
  if(!incomplete)return ' ('+n+')';
@@ -2326,8 +2371,9 @@ function renderResults(){
  renderJump();
  const all=allItems(),counts={all:all.length,food:0,market:0,grocery:0,other:0};
  all.forEach(it=>{counts[it.cat]++;});
+ const markets=marketItems();counts.market=markets.length;
  document.querySelectorAll('#filters [data-filter]').forEach(b=>{const f=b.getAttribute('data-filter');b.setAttribute('aria-pressed',String(f===filter));b.lastElementChild.textContent=CAT_LABEL[f]+chipCount(f,counts[f]);});
- const list=filter==='all'?all:all.filter(it=>it.cat===filter),visible=list.slice(0,shown);
+ const list=filter==='all'?all:filter==='market'?markets:all.filter(it=>it.cat===filter),visible=list.slice(0,shown);
  const loading=LIST_KEYS.filter(k=>src[k].state==='loading'),failed=LIST_KEYS.filter(k=>src[k].state==='failed'),partial=LIST_KEYS.filter(k=>src[k].state==='partial'),answered=LIST_KEYS.filter(k=>['ok','empty','partial'].indexOf(src[k].state)>=0);
  const scopes=LIST_KEYS.map(scopeText).filter(Boolean);
  const parts=[];
@@ -2339,6 +2385,12 @@ function renderResults(){
   else if(filter!=='all')parts.push('No places of this type are listed in the sources that answered. This means none are listed there, not that none exist.');
   else parts.push('No places are listed near this point in the sources that answered. This means none are listed there, not that none exist.');
   if(scopes.length)parts.push('Searched: '+scopes.join('; ')+'.');
+  const dirExtra=markets.length-items.markets.length;
+  if(filter==='market'){
+   if(src.directory.state==='ok')parts.push('USDA\'s farmers market directory (dated copy) adds '+dirExtra+' '+plural(dirExtra,'market','markets')+' within '+DIRECTORY_MI+' miles'+(src.directory.count>DIRECTORY_MAX?'; only its nearest '+DIRECTORY_MAX+' are shown':'')+'. Each card says when its listing was last updated.');
+   else if(src.directory.state==='failed')parts.push('USDA\'s farmers market directory could not be loaded; this is not a zero. Only SNAP-authorized markets are shown.');
+   else if(src.directory.state==='empty')parts.push('USDA\'s farmers market directory (dated copy) lists none within '+DIRECTORY_MI+' miles. This means none are listed there, not that none exist.');
+  }else if(filter==='all'&&dirExtra>0)parts.push('USDA\'s directory lists '+dirExtra+' more farmers '+plural(dirExtra,'market','markets')+' with older dates: press Farmers markets to see '+plural(dirExtra,'it','them')+'.');
   if(partial.length)parts.push('Partial: '+partial.map(k=>LIST_NAME[k]+(k==='osm'?' (the server stopped the query early)':' searched only within '+miles(src[k].radiusMi)+' ('+(src[k].retry?'the wider search failed':'the source returned only part of the list')+')')).join('; ')+'.');
   if(loading.length&&(list.length||answered.length))parts.push('Still loading: '+loading.map(k=>LIST_NAME[k]).join('; ')+'.');
   if(failed.length)parts.push('Unavailable: '+failed.map(k=>LABELS[k]).join('; ')+'.'+(answered.length||list.length?' A source that failed is not a zero; check the source status above.':' Check the source status above.'));
