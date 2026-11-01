@@ -20,6 +20,7 @@
     },
     {
       "slug": "food-desert-oases",
+      "plainWording": true,
       "native": false,
       "method": "Comparison and planning diagnostics only; the tract classification and listing counts supply no observed network topology, so source/sink accounting is withheld.",
       "impactMethod": "Public tract flags keep their Atlas edition, and listing counts keep their radius and source data date. A failed source stays unknown, never zero. The typed address and coordinates are excluded.",
@@ -27,6 +28,7 @@
     },
     {
       "slug": "free-clinic-finder",
+      "plainWording": true,
       "native": false,
       "method": "Comparison and planning diagnostics only; HRSA health center listings and OpenStreetMap clinic tags supply no observed network topology, so source/sink accounting is withheld.",
       "impactMethod": "Listing counts keep their source, search radius and data date. A failed source stays unknown, never zero. The typed address and coordinates are excluded.",
@@ -174,6 +176,7 @@
     },
     {
       "slug": "public-bathroom-finder",
+      "plainWording": true,
       "native": false,
       "method": "Comparison and planning diagnostics only; restroom listing counts supply no observed network topology, so source/sink accounting is withheld.",
       "impactMethod": "Listing counts keep their source, radius and data date. A failed source stays unknown, never zero. The typed address and coordinates are excluded.",

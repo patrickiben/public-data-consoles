@@ -48,7 +48,7 @@ for each paper's draft, code/data archive and related applications.
 
 ## Ten-parameter response plans
 
-Every console includes a checklist organized around the same ten numbered research dimensions.
+Every console includes a checklist organized around the same ten numbered research dimensions. The three finder pages (Food Desert Oases, Free Clinic Finder and Free Public Bathroom Finder) serve people looking for a place, so they show the same plan in plain words, without the research names.
 The **Response plan** shortcut opens the shared checklist; Coastal has its own **Response plan** tab, and Community Resilience builds its own native plan for the searched place: Prepare, Watch, Warning, Impact and Recovery, each with public and operator checklists for the hazards that lead there. Its public steps follow the linked official pages (Ready.gov, the National Weather Service, NOAA, USGS, CDC and Avalanche.org). No emergency manager or clinician has reviewed them yet, and the page says so. Its operator steps are planning prompts written for the page, and the page labels them that way.
 Each dimension shows the domain condition or numerical proxy, required inputs, analytical mitigation
 and practical next steps. Public and professional-operator tracks use the same evidence with different

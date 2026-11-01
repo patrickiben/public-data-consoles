@@ -89,6 +89,8 @@ def generate(root=ROOT, check=False):
             if priority.resolve().parent != (source / "priorities").resolve():
                 raise ValueError("Priority source must be in response-plans/priorities")
             adapter = priority.read_text() + "\n" + adapter
+        if entry.get("plainWording"):
+            adapter = adapter + "\n" + (source / "plain-wording.js").read_text()
         original = page.read_text()
         page_help = help_script
         if entry["slug"] in NO_EM_DASH_PAGES:
