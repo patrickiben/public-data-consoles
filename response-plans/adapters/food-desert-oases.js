@@ -121,7 +121,7 @@
     });
     var snap = counts.snap, nearestValue = null;
     if (snap.settled && !snap.partial) nearestValue = snap.value === 0 ? (snap.radius == null ? 'Beyond the searched radius' : 'Beyond ' + snap.radius + ' mi') : snap.nearest;
-    evidence.push(fact('snap-nearest','Straight-line distance to the nearest listed SNAP-authorized store',nearestValue,'mi straight-line',snap.measured,SNAP,snap.day ? 'current' : 'historical','measured','Straight-line distance from the searched point, not travel distance. A partial or failed list gives no nearest distance.',snap.checked));
+    evidence.push(fact('snap-nearest','Straight-line distance to the nearest listed SNAP-authorized store',nearestValue,typeof nearestValue === 'number' ? 'mi straight-line' : 'straight-line',snap.measured,SNAP,snap.day ? 'current' : 'historical','measured','Straight-line distance from the searched point, not travel distance. A partial or failed list gives no nearest distance.',snap.checked));
 
     var threshold = urban === 1 ? 1 : urban === 0 ? 10 : null, d9 = 'unknown';
     if (threshold != null && nearestValue != null) d9 = typeof nearestValue === 'string' ? (snap.radius != null && snap.radius >= threshold ? 'triggered' : 'unknown') : nearestValue > threshold ? 'triggered' : 'clear';
