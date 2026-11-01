@@ -392,6 +392,7 @@ try{
   assert.equal(await page.locator('[data-plan-check]').first().isChecked(),true);
   await page.click('#rs-track-operator');
   await page.waitForFunction(()=>/Move staff and equipment/.test(document.getElementById('rs-plan-body').innerText));
+  assert.match(await page.locator('#rs-plan-body').innerText(),/Planning prompts written for this page, not official instructions/,'operator steps are not presented as official guidance');
   await page.click('#rs-track-public');
   assert.ok(await page.locator('#rs-print-plan').isVisible());
   const plan=await page.evaluate(()=>window.CRPage.exportPlan());

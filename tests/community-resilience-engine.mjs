@@ -237,6 +237,22 @@ check('buildPlan: every hazard has guidance for every phase and track, and no st
  const op=E.buildPlan({place:tucson,ranking:pimaRanking,results:baseResults(),track:'operator',now:NOW});
  assert.notEqual(op.phases[0].modules[0].items[0].text,plan.phases[0].modules[0].items[0].text,'operators get their own steps');
 });
+check('buildPlan: public steps follow the official pages, and operator steps say they were written for this page',()=>{
+ const steps=(id,ph)=>E.PLAYBOOK[id].public[ph].join(' ');
+ assert.match(steps('heat','prepare'),/Do not rely on a fan as your main cooling/);
+ assert.doesNotMatch(Object.values(E.PLAYBOOK.heat.public).flat().filter(s=>!/Do not rely on a fan/.test(s)).join(' '),/\bfans?\b/i,'no other heat step leans on a fan');
+ assert.match(steps('volcanic','recovery'),/Do not get on your roof to remove ash unless you have guidance or training/);
+ assert.match(steps('inland-flood','warning'),/Depending on the type of flooding/);
+ assert.match(steps('inland-flood','prepare'),/up to 30 days/);
+ assert.match(steps('surge','warning'),/the leading cause of hurricane deaths/);
+ assert.match(steps('tropical','warning'),/Do not climb into a closed attic/);
+ assert.match(steps('earthquake','impact'),/immediately after the shaking stops/);
+ for(const b of Object.values(E.PLAYBOOK))for(const a of b.also||[]){assert.match(a.link,/^https:\/\//);assert.ok(a.source);}
+ const pub=E.buildPlan({place:tucson,ranking:pimaRanking,results:baseResults(),track:'public',now:NOW}),op=E.buildPlan({place:tucson,ranking:pimaRanking,results:baseResults(),track:'operator',now:NOW});
+ assert.equal(pub.stepNote,null);assert.match(op.stepNote,/^Planning prompts written for this page, not official instructions/);
+ assert.ok(pub.phases.every(p=>p.modules.every(m=>m.basis==='General guidance, not specific to this place'&&Array.isArray(m.also))));
+ assert.ok(op.phases.every(p=>p.modules.every(m=>m.basis==='Related public guidance'&&Array.isArray(m.also))));
+});
 check('buildPlan: advisories and statements do not set Watch; a watch or warning sets the phase whatever the ranking says; tide flood levels are converted to MLLW',()=>{
  for(const event of ['Flood Advisory','Flood Statement','Heat Advisory']){
   const results={...baseResults(),nwsAlerts:alertsResult([{...floodWatch,id:'adv-'+event,event}])},ranking=E.rankHazards({county:countyResult(NRI.pima),alerts:results.nwsAlerts,now:NOW});
