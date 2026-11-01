@@ -5,7 +5,7 @@ import test from 'node:test';
 
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
 const core=await read('response-plans/core.js'),priority=await read('response-plans/priorities/tools.js'),helpers=await read('response-plans/domain-helpers.js'),series=await read('response-plans/observed-series.js');
-const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain'];
+const slugs=['us-grid-strain','resilience-telemetry','usaid-consequence','prescription-savings','medical-cost-abroad','medical-debt-assistant','human-trafficking','va-strain','food-desert-oases','public-bathroom-finder','free-clinic-finder'];
 const adapters=Object.fromEntries(await Promise.all(slugs.map(async s=>[s,await read('response-plans/adapters/'+s+'.js')])));
 const source=await read('consoles/usaid-consequence/index.html'),agency=JSON.parse(source.match(/const SNAP = (\{[^\n]+\});/)[1]);
 let now=Math.max(Date.parse('2026-10-24T00:00:00Z'),Date.parse(agency.publicFinance.capturedAt)+3600000);
@@ -24,14 +24,28 @@ const featured=(p,track='public')=>p.actions.filter(a=>a.featured&&a.selected&&a
 const plain=x=>JSON.parse(JSON.stringify(x));
 function freeze(x){if(x&&typeof x==='object'){Object.values(x).forEach(freeze);Object.freeze(x);}return x;}
 function raw(f,slug,input){return plain(f.handlers.get(slug)(input));}
+function foodBridge(){
+ return {version:1,slug:'food-desert-oases',selectionId:1,state:'settled',context:'Census tract 12103024500 (2025 SNAP-authorized Retailer Access Map)',
+  tract:{status:'ok',geoid:'12103024500',urban:1,vintage:'2025 SNAP-authorized Retailer Access Map, released July 2026',flags:{lowIncome:1,la1and10:1,lila1and10:1,urban:1},checkedAt:checked},
+  tract2019:{status:'ok',geoid:'12103024500',flags:{lila1and10:0},checkedAt:checked},
+  sources:{snap:{status:'ok',count:3,nearestMi:0.8,radiusMi:5,dataDate:'October 21, 2026',partial:false,checkedAt:checked},markets:{status:'failed',count:null,reason:'HTTP 503',partial:false,checkedAt:checked},foodbanks:{status:'empty',count:0,radiusMi:31,nearestMi:null,dataDate:'2026-10-23T08:00:00Z',partial:false,checkedAt:checked}}};
+}
+function clinicBridge(){
+ return {version:1,slug:'free-clinic-finder',selectionId:1,state:'settled',locationType:'zip',checkedAt:checked,sources:{geocoder:{status:'ok',reason:null,checkedAt:checked},
+  hrsa:{status:'ok',count:12,radiusMi:25,nearestMi:3.4,dataDate:'2026-10-30',partial:false,reason:null,checkedAt:checked,lookalikeCount:1,mobileOrSeasonalCount:0},
+  osm:{status:'failed',count:null,radiusMi:null,nearestMi:null,dataDate:null,partial:false,reason:'timeout',checkedAt:checked,freeCount:null,conditionalCount:null,nameCount:null}}};
+}
 function publicPayload(f,slug){
  const context=f.context;
  const globals={
   'us-grid-strain':{STATE:{capturedAt:checked,demandThrough:hour.slice(0,13),ba:{A:{code:'A',name:'Public A',D:100,DF:90,TI:-5,period:hour.slice(0,13)}}},AGG:new Set(),GridResponseSelection:'A'},
+  'free-clinic-finder':{ClinicResponse:clinicBridge()},
   'resilience-telemetry':{NETSTATE:null,ASSET_IDS:[],STORE:{},L_LAG:4,SCEN:'none',SURR:false,DATA_VER:1,MODE:'live',SEL:'SPY',W_IND:252,MACRO:{UNRATE:{name:'Unemployment rate',unit:'pct',d:[Math.floor((now-86400000-Date.UTC(2000,0,1))/86400000)],v:[0]}},FRED_META:{capturedAt:checked,retrieved_on:checked.slice(0,10)}},
   'usaid-consequence':{DATA:structuredClone(agency),budgetPublicRecords:structuredClone(agency.publicFinance.records),budgetPublicStatus:structuredClone(agency.publicFinance.status),budgetDownloadedAt:null,budgetCheckedAt:null,feedStatus:{USAspending:'unavailable'}},
+  'public-bathroom-finder':{},
   'prescription-savings':{NADAC_DS:'public-dataset'},
   'medical-cost-abroad':{},'medical-debt-assistant':{},'human-trafficking':{},
+  'food-desert-oases':{FoodAccessResponse:foodBridge()},
   'va-strain':{STATUS_OVERRIDE:{},FACILITY:'Synthetic training facility',SCEN:'baseline',deepUnits:()=>({u:[{cap:10,census:10,rnAct:1,rnTgt:2},{cap:10,census:9,rnAct:2,rnTgt:2}]})}
  }[slug];
  Object.assign(context,globals);context.ConsoleResponse.connect=reader=>{context.publicReader=reader;};vm.runInContext(adapters[slug],context,{filename:slug+'.js'});return plain(context.publicReader());
@@ -49,6 +63,30 @@ for(const slug of slugs)test(slug+': actual public adapter payload produces comp
   for(const a of rows){for(const key of ['id','title','target','reason','nextStep','timing','escalateWhen','escalateTo','authorityUrl','reviewAfter'])assert.ok(typeof a[key]==='string'&&a[key].trim(),key);assert.ok(Number.isInteger(a.rank)&&a.rank>0);assert.notEqual(a.priority,'immediate');assert.notEqual(a.phase,'respond');assert.equal(a.withheldReasons.length,0);assert.match(a.authorityUrl,/^https:\/\//);}
  }
  assert.notEqual(featured(after,'public')[0].nextStep,featured(after,'operator')[0].nextStep,'audiences need different responsibilities');
+});
+test('food: a failed source is a data gap first, a successful zero stays zero, and the tract step needs usable tract evidence',()=>{
+ const f=load(),input=publicPayload(f,'food-desert-oases');f.install();
+ assert.doesNotMatch(JSON.stringify(input),/"(lat|lon|q|address|displayName)"/);
+ let p=f.evaluate(input),rows=featured(p);
+ assert.equal(rows[0].signal,'data-gap');assert.match(rows[0].id,/food-gap/);assert.match(rows[0].reason,/SNAP-authorized farmers markets/);assert.deepEqual(plain(rows[0].evidenceIds),['markets-count']);
+ for(const track of ['public','operator'])for(const a of featured(p,track)){assert.doesNotMatch(a.reason,/\bnone\b/i);assert.match(a.authorityUrl,/^https:\/\//);}
+ const zero=input.evidence.find(x=>x.id==='foodbanks-count');assert.equal(zero.value,0);assert.equal(zero.quality,'current');
+ const confirm=rows.find(a=>a.id.includes('food-confirm'));assert.match(confirm.reason,/OpenStreetMap food banks: 0 listed within 31 mi/);assert.match(confirm.reason,/SNAP-authorized farmers markets: unavailable/);assert.match(confirm.reason,/SNAP-authorized stores: 3 listed within 5 mi, data 2026-10-21/);
+ const item=id=>p.impacts.items.find(x=>x.id===id);
+ assert.equal(item('foodbanks-listed').value,0);assert.equal(item('foodbanks-listed').status,'available');
+ assert.equal(item('markets-listed').value,null);assert.equal(item('markets-listed').status,'unknown');
+ assert.equal(item('snap-listed').value,3);assert.equal(item('snap-nearest-distance').value,0.8);
+ assert.equal(p.diagnostics.find(d=>d.metricId===3).status,'triggered');assert.equal(p.diagnostics.find(d=>d.metricId===9).status,'clear');
+ assert.ok(rows.some(a=>a.id.includes('food-tract')));
+ rows=featured(f.evaluate({...input,evidence:input.evidence.map(x=>x.id==='tract-lila'?{...x,quality:'missing'}:x)}));
+ assert.ok(!rows.some(a=>a.id.includes('food-tract')));assert.match(rows[0].reason,/2025 Atlas tract flag/);
+ const ok=input.evidence.map(x=>x.id==='markets-count'?{...x,value:2,quality:'current',measuredAt:'2026-10-21'}:x);
+ rows=featured(f.evaluate({...input,evidence:ok}));assert.ok(!rows.some(a=>a.signal==='data-gap'),'all sources usable: no gap step');
+ rows=featured(f.evaluate({...input,evidence:ok.map(x=>x.id==='snap-count'?{...x,partial:true}:x)}));assert.equal(rows[0].signal,'data-gap');assert.deepEqual(plain(rows[0].evidenceIds),['snap-count']);
+ const startRows=featured(f.evaluate({...base('food-desert-oases'),context:'No search yet'}));assert.match(startRows[0].id,/food-start/);assert.ok(!startRows.some(a=>a.id.includes('food-gap')),'no source gap before a search');
+ const territory=input.evidence.map(x=>x.id==='tract-lila'?{...x,value:null,quality:'missing',sourceStatus:'not-covered'}:x);rows=featured(f.evaluate({...input,evidence:territory}));
+ assert.ok(rows.some(a=>a.id.includes('food-coverage')));assert.doesNotMatch(rows.find(a=>a.id.includes('food-gap')).reason,/2025 Atlas tract flag/);assert.match(rows.find(a=>a.id.includes('food-gap')).reason,/SNAP-authorized farmers markets \(failed\)/);
+ const idle=f.evaluate(base('food-desert-oases'));for(const track of ['public','operator']){const r=featured(idle,track);assert.ok(r.length>=2);assert.equal(r[0].signal,'data-gap');assert.ok(!r.some(a=>a.id.includes('food-tract')));}
 });
 test('grid ranks signed forecast differences by absolute MW within one exact source hour and responds to selection',()=>{
  const f=load();f.install();let input=base('us-grid-strain',[...ba('A',-30),...ba('B',20),...ba('OLD',95,-90,old)]),p=f.evaluate(input);
@@ -123,4 +161,15 @@ test('guidance steps remain reference-only, avoid invented deadlines and differ 
 test('VA numerical targets remain drills and disappear with withheld local overrides',()=>{
  const f=load(),input=publicPayload(f,'va-strain');f.install();let p=f.evaluate(input),rows=featured(p,'operator');assert.ok(rows.every(a=>a.practice&&a.priority==='planned'&&a.signal==='scenario'));assert.match(rows[1].reason,/Synthetic value/);assert.match(rows[1].target,/within 5 points/);
  input.evidence=input.evidence.map(x=>['balance','margin','scale'].includes(x.id)?{...x,value:null,quality:'missing'}:x);p=f.evaluate(input);rows=featured(p,'operator');assert.match(rows[0].reason,/overrides are withheld/);assert.match(rows[1].title,/authorized inputs needed/);assert.doesNotMatch(JSON.stringify(rows),/secret census|987654/);
+});
+test('clinic: a failed OpenStreetMap source is a data gap, HRSA is not called free, and no place text enters the payload',()=>{
+ const f=load(),input=publicPayload(f,'free-clinic-finder');f.install();
+ assert.doesNotMatch(JSON.stringify(input),/"(lat|lon|q|address|displayName)"/);
+ const hrsa=input.evidence.find(x=>x.id==='hrsa-count'),osm=input.evidence.find(x=>x.id==='osm-count');
+ assert.equal(hrsa.value,12);assert.equal(osm.value,null);assert.equal(osm.sourceStatus,'failed');
+ const rows=featured(f.evaluate(input));
+ assert.equal(rows[0].signal,'data-gap');assert.match(rows[0].id,/clinic-gap/);assert.match(rows[0].reason,/OpenStreetMap clinics listed as free or possibly free \(failed\)/);
+ for(const a of rows)assert.doesNotMatch(a.reason,/\bnone\b/i);
+ const confirm=rows.find(a=>a.id.includes('clinic-confirm'));assert.match(confirm.reason,/not necessarily free/);
+ const idle=featured(f.evaluate(base('free-clinic-finder')));assert.ok(idle.length>=2);
 });

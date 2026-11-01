@@ -1,6 +1,6 @@
 # Public-Data Consoles
 
-A collection of **32 self-contained, browser-only dashboards** built on **public data feeds and dated snapshots**.
+A collection of **36 self-contained, browser-only dashboards** built on **public data feeds and dated snapshots**.
 Every console is a single HTML file: open it (or visit the GitHub Pages URL) and it runs — no install,
 no account, no build step or server setup for visitors. Grid, Coastal, NHS Scotland and Resilience Telemetry also check published data files for
 automatic updates; embedded measurements remain available offline. See the
@@ -49,12 +49,12 @@ for each paper's draft, code/data archive and related applications.
 ## Ten-parameter response plans
 
 Every console includes a checklist organized around the same ten numbered research dimensions.
-The **Response plan** shortcut opens the shared checklist; Coastal has its own **Response plan** tab.
+The **Response plan** shortcut opens the shared checklist; Coastal has its own **Response plan** tab, and Community Resilience builds its own native plan for the searched place.
 Each dimension shows the domain condition or numerical proxy, required inputs, analytical mitigation
 and practical next steps. Public and professional-operator tracks use the same evidence with different
 responsibilities, escalation routes and verify/prepare/respond/review phases.
 
-A **Do next** preview now leads to a ranked live action checklist on all 31 shared consoles.
+A **Do next** preview now leads to a ranked live action checklist on all 34 shared consoles.
 Each step identifies the selected place or record, the data behind its priority, timing, escalation
 trigger and responsible contact, and when to recheck. Public and operator priorities update with
 selection, evidence and expiry. Current official warnings can lead; historical reports support
@@ -87,6 +87,7 @@ See the [field guide](https://patrickiben.github.io/public-data-consoles/respons
 | [River Flood Network](consoles/river-flood-network/) | Live, U.S. | USGS NLDI (network-linked data index) |
 | [Hazards Near You](consoles/us-local-hazards/) | Live, U.S. | NWS, NOAA SPC/NHC/Tides, USGS, FEMA NFHL, keyless EPA AirNow observations, U.S. Drought Monitor |
 | [Coastal Water Resilience](consoles/coastal-water-resilience/) | Live feeds + dated real-station register + modeled exercises | NOAA/NHC/NWS; City public wastewater GIS; County evacuation zones; USGS 3DEP terrain |
+| [Community Resilience](consoles/community-resilience/) | Live feeds + dated federal inventories, U.S. and Puerto Rico | FEMA NRI / OpenFEMA / NFHL / NSS, NWS (alerts, experimental HeatRisk), NOAA SPC/NHC/CO-OPS/NWPS, USGS, NIFC, AirNow, Census TIGERweb / ACS, CDC/ATSDR SVI, EPA SDWIS, ORNL ODIN, EIA, CMS, HRSA, BTS NBI; Nominatim for street addresses |
 | [U.S. Grid Strain](consoles/us-grid-strain/) | Automatically updated public reports, U.S. | Official keyless EIA-930 downloads; source timestamps and offline fallback |
 | [Global Outbreak & Emerging-Threat Tracker](consoles/global-outbreak-tracker/) | Live + snapshot | OWID (mpox), CDC (measles), disease.sh, curated WHO / Africa CDC watch |
 
@@ -143,7 +144,10 @@ See the [field guide](https://patrickiben.github.io/public-data-consoles/respons
 
 | Console | Data | Sources |
 |---|---|---|
+| [Free Clinic Finder](consoles/free-clinic-finder/) | Live listings | HRSA health center sites (sliding fee, not necessarily free, with the HRSA data load date), OpenStreetMap clinics via Overpass (partial coverage; "free" only where tagged fee=no; clinics whose name says free are shown as not confirmed) |
 | [Human Trafficking — Get Help](consoles/human-trafficking/) | Reference | Verified hotlines + Polaris / UNODC / ILO–Walk Free / CTDC (badge-framed) |
+| [Food Desert Oases](consoles/food-desert-oases/) | Live listings + dated tract atlas | USDA ERS Food Access Research Atlas tract flags (2025 SNAP-authorized Retailer Access Map, released July 2026, on 2020 census tracts), USDA FNS SNAP retailer locator data (SNAP-authorized stores and SNAP-authorized farmers markets, with the list's data date), OpenStreetMap-tagged food banks (partial coverage) |
+| [Free Public Bathroom Finder](consoles/public-bathroom-finder/) | Live listings | Refuge Restrooms (crowd-sourced listings, each with its date), OpenStreetMap amenity=toilets via Overpass (partial coverage; "free" only where tagged fee=no) |
 
 ## No visitor API keys
 
@@ -154,7 +158,10 @@ with observation time, reporting-area distance and freshness checks. U.S. Grid S
 on embedded EIA measurements and checks a same-origin public data file for updates. GitHub Actions
 checks EIA's keyless downloads every six hours; an open, visible dashboard checks the published file
 every 15 minutes. Neither visitors nor the scheduled job need an EIA key. These are **delayed public
-reports**, with measurement dates shown, rather than a real-time operational feed.
+reports**, with measurement dates shown, rather than a real-time operational feed. Food Desert Oases
+uses keyless USDA ArcGIS services, OpenStreetMap Nominatim and Overpass queries; each list shows its own
+source data date, and a failed source is shown as unavailable, never as zero.
+Free Public Bathroom Finder uses the keyless Refuge Restrooms API and OpenStreetMap Nominatim and Overpass queries; each result shows its source and data date, and a failed source is shown as unavailable, never as zero.
 
 ## How they work
 
@@ -187,7 +194,7 @@ medical, legal, financial, or predictive validity. GitHub Actions runs these che
 
 Run `python3 -m unittest discover -s tests -v` for source/credential regressions and snapshot checks.
 For browser checks, run `npm ci`, `npx playwright install --only-shell chromium`, then `npm test`.
-These exercise keyless startup, public-data fixtures, all 32 response plans and unavailable map/feed states. External requests
+These exercise keyless startup, public-data fixtures, all 36 response plans and unavailable map/feed states. External requests
 are intercepted; automated tests do not download OpenStreetMap tiles. Normal interactive maps follow
 the [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/).
 
@@ -328,7 +335,7 @@ still required because medication selection is a personal input.
 River plans now use NOAA's local stage thresholds and published impact statements where supplied,
 with observation/forecast basis and times. Earthquake plans include official USGS PAGER modeled
 population exposure. Those products do not establish actual outages, losses or casualties. The
-[update guide](https://patrickiben.github.io/public-data-consoles/data-updates.html) covers all 32 consoles,
+[update guide](https://patrickiben.github.io/public-data-consoles/data-updates.html) covers all 36 consoles,
 including public-reference and synthetic modules that cannot obtain real operational or personal inputs.
 
 ## Automatic macro updates and manual FRED replay

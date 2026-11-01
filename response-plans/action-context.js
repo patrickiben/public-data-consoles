@@ -5,6 +5,7 @@
   if (!R) return;
 
   const families = Object.freeze({
+    'public-bathroom-finder': 'restroom',
     'global-air-pollution': 'annual', 'global-demographic-transition': 'annual',
     'global-health-atlas': 'annual', 'global-health-systems': 'annual',
     'global-hiv-tb-malaria': 'annual', 'global-immunization': 'annual',
@@ -16,11 +17,14 @@
     'global-outbreak-tracker': 'outbreak', 'nhs-scotland-strain': 'nhs',
     'river-flood-network': 'riverNetwork', 'river-flood-propagation': 'riverChain',
     'us-local-hazards': 'local', 'quake-consequence': 'quake',
+    'free-clinic-finder': 'clinic',
     'us-grid-strain': 'grid', 'resilience-telemetry': 'market', 'usaid-consequence': 'aid',
     'prescription-savings': 'reference', 'medical-cost-abroad': 'reference',
-    'medical-debt-assistant': 'reference', 'human-trafficking': 'reference', 'va-strain': 'va'
+    'medical-debt-assistant': 'reference', 'human-trafficking': 'reference', 'va-strain': 'va',
+    'food-desert-oases': 'food'
   });
   const subjects = Object.freeze({
+    'public-bathroom-finder': 'the nearby restroom listings',
     'global-air-pollution': 'air-quality indicators',
     'global-demographic-transition': 'population and demographic indicators',
     'global-health-atlas': 'the selected health indicator',
@@ -34,15 +38,29 @@
     'global-wash': 'water, sanitation and hygiene service indicators',
     'antimicrobial-resistance': 'the published antimicrobial-resistance estimate',
     'global-cancer': 'the selected cancer estimate', 'global-ntds': 'the selected NTD reference',
+    'free-clinic-finder': 'the nearby clinic and health center listings',
     'prescription-savings': 'the named drug product and public acquisition-cost benchmark',
     'medical-cost-abroad': 'the procedure quote and cross-border follow-up pathway',
     'medical-debt-assistant': 'the public billing and financial-assistance pathway',
-    'human-trafficking': 'the public safeguarding and support pathway'
+    'human-trafficking': 'the public safeguarding and support pathway',
+    'food-desert-oases': 'the tract food-access classification and nearby food listings'
   });
 
   // Entries explain the maintained adapter's actual estimand or input gap. They do
   // not transfer Coastal thresholds, claim a fitted CRT model, or select actions.
   const reasons = {
+    restroom: [
+      'Counts in {subject} come from two sources around one searched point; they show where restrooms are listed, not how many people need one or who may use them.',
+      'A distance comparison for {subject} needs lists from the same source and search distance; Refuge Restrooms entries and OpenStreetMap entries are not samples of one distribution.',
+      'Counts in {subject} depend on the search distance and on volunteer coverage, so a low count is not a measured shortage of public restrooms.',
+      'Only the searched area is read for {subject}; describing a gap between listed restrooms needs complete local data and a defined walking network.',
+      'Each listing in {subject} carries its own update or last-edit date; an old entry may describe a restroom that has moved, closed or changed its access rules.',
+      'Counts for {subject} change with the distance each source was searched, so counts at different distances are not comparable densities.',
+      'No model of opening hours, access rules, cost or cleanliness is fitted for {subject}; a listing and a straight-line distance are not a measure of practical access.',
+      'Coverage of {subject} differs by source: Refuge Restrooms entries are crowd-sourced and OpenStreetMap restroom tags are partial, so a missing listing is not proof that none exist.',
+      'Straight-line distance to the nearest place in {subject} is not walking distance or travel time, and a failed source stays unknown rather than counting as none nearby.',
+      'Sending someone to a place in {subject} needs a confirmed location, hours and access rules; a list of places is not an observed network of who can use which restroom.'
+    ],
     annual: [
       'Country counts can overrepresent small populations in comparisons of {subject}; same-year resident totals clarify who the comparison represents, not who needs a service.',
       'The same-year income-group distribution shows whether {subject} differs beyond one country average; the empirical W1 does not identify a cause or a clinical cutoff.',
@@ -127,6 +145,18 @@
       'Gauge order does not locate a property-level flood frontier; inundation geometry, asset distances and consequence weights are needed.',
       'A verified link crossing elevated and non-elevated categories identifies two watchpoints to review; it is not measured contaminant leakage or routed arrival.'
     ],
+    clinic: [
+      'Counts in {subject} come from HRSA health center records and volunteer OpenStreetMap tags around one searched point; they show where care is listed, not how many people need it or who is eligible.',
+      'A distance comparison for {subject} needs lists from the same source and search radius; HRSA sliding-fee health centers and OpenStreetMap free clinics are not samples of one distribution.',
+      'Counts in {subject} depend on the search radius and on volunteer tagging, so a low count is not a measured shortage of clinics or health centers.',
+      'Only the searched area is read for {subject}; describing a gap between listed clinics needs complete local data and a defined travel network.',
+      'Each listing in {subject} carries its own data or last-edit date; an old entry may describe a clinic that has moved, closed or changed its fees or hours.',
+      'Counts for {subject} change with the radius the search covered, so counts at different radii are not comparable densities.',
+      'No model of appointment wait, eligibility, cost or services is fitted for {subject}; a listing and a straight-line distance are not a measure of practical access to care. Call to confirm.',
+      'Coverage of {subject} differs by source: HRSA sites charge on a sliding fee and are not necessarily free, and only some OpenStreetMap clinics are tagged free, so a missing listing is not proof that none exist.',
+      'Straight-line distance to the nearest place in {subject} is not travel time, and a failed source stays unknown rather than counting as none nearby. For an emergency call 911.',
+      'Sending someone to a place in {subject} needs a call to confirm cost, eligibility and hours; a list of places is not an observed network of who can be seen where. For a mental health crisis call or text 988.'
+    ],
     local: [
       'Point alerts and reporting-area AQI do not supply affected population or facility weights; those denominators are needed before comparing burden.',
       'AQI, river stages, storm categories and flood zones have different units; they cannot supply a common distribution distance without a justified outcome scale.',
@@ -199,6 +229,18 @@
       'Continuity planning for {subject} needs a qualified responsible contact and a practical alternative; no safe time, distance or buffer AUC is computed.',
       'A handoff in {subject} needs clear responsibility and minimum necessary information; no personal transfer or causal network is inferred.'
     ],
+    food: [
+      'Population and income context for {subject} comes from one census tract; comparing it with neighboring tracts needs the same Atlas edition, and one tract does not describe a household.',
+      'A distance comparison for {subject} needs lists from the same source, radius and data date; a store list and a food bank list are not samples of one distribution.',
+      'The density of listings for {subject} depends on the search radius, and the Atlas flag is a published June 2025 classification, not a measured density of current listings.',
+      'Only the searched tract is read for {subject}; a cluster of flagged neighboring tracts needs adjacent Atlas records and a defined adjacency rule.',
+      'The Atlas edition and the listing dates for {subject} differ; the 2025 and 2019 measures use different store definitions and tracts, so they are not a trend.',
+      'Counts for {subject} change with the radius the search widened to; counts at different radii are not comparable densities.',
+      'No travel-time, price, hours or eligibility model is fitted for {subject}; straight-line distance and a listing are not a measure of practical access.',
+      'Listings for {subject} come from sources with different completeness; OpenStreetMap food bank tags are partial and there is no complete national pantry list.',
+      'Straight-line distance to the nearest listed SNAP-authorized store in {subject} mirrors the Atlas distance test; it is not travel distance, and a failed list stays unknown.',
+      'Referral for {subject} needs verified contacts, hours and eligibility; a list of places is not an observed referral network.'
+    ],
     va: [
       'Synthetic census-weighted and unit-count summaries can rank drill units differently; they do not establish actual VA staffed capacity.',
       'A comparable occupancy-distribution comparison needs real matched services and case-mix definitions; the template supplies no validated care comparison.',
@@ -216,6 +258,18 @@
   // Why this particular comparison belongs before the next decision. These are
   // review dependencies, not source-derived response deadlines.
   const sequence = {
+    restroom: [
+      'Check who each listed restroom serves before describing local need.',
+      'Keep each source list separate before comparing distances between places.',
+      'Read the distance searched with each count before describing local availability.',
+      'Check the area beyond the searched point before drawing a service boundary.',
+      'Note each listing update or last-edit date before relying on an older entry.',
+      'Note the distance each source was searched before comparing one place with another.',
+      'Check hours, access rules and cost separately before treating a listing as usable.',
+      'Cross-check partial listings with the venue before sharing a list.',
+      'Confirm that both sources answered before reading the nearest restroom distance.',
+      'Confirm access and hours with each place before recommending it to someone.'
+    ],
     annual: [
       'Establish the resident denominator before prioritizing comparison groups.',
       'Inspect the full same-year distribution before treating one national average as typical.',
@@ -300,6 +354,18 @@
       'Locate actual inundation boundaries and assets before selecting frontier coverage.',
       'Verify both gauges on a category-crossing link before coordinating their local contacts.'
     ],
+    clinic: [
+      'Check who each listed clinic serves before describing local need.',
+      'Keep each source list separate before comparing distances between places.',
+      'Read the search radius with each count before describing local availability.',
+      'Check the area beyond the searched point before drawing a service boundary.',
+      'Note each listing date before relying on an older entry.',
+      'Note the radius of each count before comparing one place with another.',
+      'Check fees, eligibility and hours separately before treating a listing as usable.',
+      'Cross-check partial listings with the clinic before sharing a list.',
+      'Confirm the nearest-clinic source succeeded before reading the distance.',
+      'Call each place to confirm cost and eligibility before recommending it to someone.'
+    ],
     local: [
       'Identify affected groups and facilities before prioritizing burdens from point feeds.',
       'Keep unlike hazard units separate before comparing or combining their implications.',
@@ -371,6 +437,18 @@
       'Separate incompatible evidence types before relying on their combined implication.',
       'Identify a qualified contact and practical alternative before finalizing continuity arrangements.',
       'Clarify consent, minimum information and receiving responsibility before a handoff.'
+    ],
+    food: [
+      'Compare the tract with neighbors from the same Atlas edition before describing local need.',
+      'Keep each source list separate before comparing distances between places.',
+      'Read the tract flag with its edition and the listing radius before describing local access.',
+      'Check adjacent tracts in the official Atlas before drawing a service boundary.',
+      'Match the Atlas edition and each listing date before combining them in a briefing.',
+      'Note the radius of each count before comparing one place with another.',
+      'Check transport, hours and eligibility separately before treating a listing as reachable.',
+      'Cross-check partial food bank tags with 211 or the regional food bank before publishing a list.',
+      'Confirm the nearest store list succeeded and is complete before reading the distance test.',
+      'Confirm hours and eligibility with each place before making a referral.'
     ],
     va: [
       'Compare census-weighted and unit-count priorities during the drill before discussing allocation.',

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "st-petersburg-fl",
+  "name": "St. Petersburg, Florida",
+  "match": {
+    "placeGeoid": "1263000",
+    "placeName": "St. Petersburg city",
+    "countyFips": "12103"
+  },
+  "publishedBy": "Coastal Water Resilience console",
+  "leadingLocalModule": "water",
+  "pins": {
+    "nwsAlertPoint": {"lat": 27.773, "lon": -82.640, "note": "The same point the Coastal Water Resilience console uses for NWS alerts."},
+    "coopsStation": {"id": "8726520", "name": "St. Petersburg, FL", "note": "The same NOAA CO-OPS station the Coastal Water Resilience console reads."}
+  },
+  "files": {
+    "stations": "../coastal-water-resilience/data/public-stations.json",
+    "context": "../coastal-water-resilience/data/impact-context.json"
+  },
+  "links": [
+    {"label": "Coastal Water Resilience console", "href": "../coastal-water-resilience/"},
+    {"label": "Pinellas County Know Your Zone (find your evacuation zone)", "href": "https://pinellas.gov/services/find-your-evacuation-zone"}
+  ],
+  "modules": [
+    {
+      "id": "water",
+      "name": "Wastewater lift stations and coastal water level",
+      "hazardModules": ["surge", "tropical"],
+      "strains": ["water"],
+      "assetLabel": "lift stations",
+      "datum": {
+        "mllwToNavd88Ft": 1.48,
+        "basis": "NOAA CO-OPS station 8726520 datums: NAVD88 4.85 ft and MLLW 3.37 ft station datum (epoch 1983-2001), so a water level in ft MLLW minus 1.48 is the plane in ft NAVD88. The Coastal Water Resilience console uses the same offset."
+      },
+      "ladderFtMLLW": [3, 4, 5, 6, 7, 8, 10, 12],
+      "defaultLevelFtMLLW": 6,
+      "scopes": [
+        {"id": "city", "label": "City-owned", "default": true},
+        {"id": "all", "label": "All register records", "default": false}
+      ],
+      "zoneLabel": "Pinellas County evacuation zone at the station (Know Your Zone layer)",
+      "screenNote": "A station counts as screened when its ground elevation (USGS 3DEP terrain, ft NAVD88) is at or below the water plane. This compares terrain with a water level; it is not equipment flooding or operating status.",
+      "flowNote": "FDEP reported annual treatment throughput for the three City water reclamation facilities, shown as dated reference text only. It is not a spill, an outage or a flow at any station."
+    }
+  ],
+  "moduleFacts": {
+    "surge": [
+      {"text": "Pinellas County publishes evacuation zones A to E; storm surge evacuation orders are given by zone.", "source": "Pinellas County Know Your Zone", "link": "https://pinellas.gov/services/find-your-evacuation-zone", "date": "Zone layer edition May 29, 2026, as captured by the Coastal Water Resilience console"}
+    ],
+    "tropical": [
+      {"text": "St. Petersburg sits on a peninsula between Tampa Bay and the Gulf; evacuation follows the Pinellas County zones.", "source": "Pinellas County Know Your Zone", "link": "https://pinellas.gov/services/find-your-evacuation-zone", "date": "Zone layer edition May 29, 2026, as captured by the Coastal Water Resilience console"}
+    ]
+  }
+}
