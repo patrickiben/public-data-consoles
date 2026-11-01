@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-cr-separator=": ">
+<html lang="en" data-cr-separator=": " data-cr-after="#sources">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -162,6 +162,16 @@ body{padding-bottom:72px}
  #go,#loc{flex:1 1 0}
  .fa-row dd{text-align:left}
 }
+.fa-jump{margin:10px 0 0;padding:10px 12px;border:1px solid var(--line2);border-radius:8px;background:var(--panel2);font-size:14px;color:var(--ink);line-height:1.5}
+.fa-jump a{font-weight:650;display:inline-block;margin-right:12px}
+#list-retry{font-size:13px;color:var(--ink2);margin:0 0 8px}
+#list-retry .fa-btn{margin-left:6px}
+html body .fa-privacy p{margin:0}
+html body .fa-privacy summary{display:list-item;cursor:pointer;font-weight:650;padding:8px 0}
+html body .fa-privacy details p{margin:6px 0 0}
+html body #console-response-shortcut{position:static;display:block;width:max-content;margin:18px auto 0;box-shadow:none}
+#noscript-note{margin:12px;padding:12px;border:1px solid var(--line2);border-radius:8px}
+@media print{html,body,.fa-wrap,.fa-wrap *{color:#111!important;background:transparent!important;box-shadow:none!important}#search-form,.fa-map-col,.fa-jump,.fa-btn,#console-response-shortcut{display:none!important}}
 </style>
 <!-- CONSOLE_RESPONSE_HEAD_START -->
 <style>
@@ -477,7 +487,13 @@ body{padding-bottom:72px}
       panel.dataset.mounted = 'true';
       // Keep the console's identity and navigation before the shared plan.
       var heading = doc.querySelector('h1'), nativeHeader = heading && heading.closest('header');
-      if (nativeHeader && !panel.contains(nativeHeader)) nativeHeader.insertAdjacentElement('afterend', panel);
+      // A finder page may set <html data-cr-after="#section"> so its own results come before the plan.
+      var afterSelector = doc.documentElement.getAttribute('data-cr-after'), afterNode = afterSelector ? doc.querySelector(afterSelector) : null;
+      if (afterNode && !panel.contains(afterNode)) {
+        afterNode.insertAdjacentElement('afterend', panel);
+        var planLink = doc.getElementById('console-response-shortcut');
+        if (planLink) panel.insertAdjacentElement('beforebegin', planLink);
+      } else if (nativeHeader && !panel.contains(nativeHeader)) nativeHeader.insertAdjacentElement('afterend', panel);
       panel.addEventListener('click', function (event) {
         var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact],[data-cr-open-priorities]');
         if (!button) return;
@@ -1520,48 +1536,34 @@ body{padding-bottom:72px}
 <a id="console-response-shortcut" href="#console-response">Response plan</a>
 <!-- CONSOLE_RESPONSE_MOUNT_END -->
 
-<div id="disc"><b>Unofficial.</b> Built from public USDA and OpenStreetMap data, which can be out of date or incomplete. <b>Confirm before you go.</b> Need food today? Dial <b>2-1-1</b>. In an emergency, call 911.</div>
+<noscript><p id="noscript-note">This page needs JavaScript to search. To find food help today, dial 2-1-1. In an emergency, call 911.</p></noscript>
+<div id="disc"><b>Unofficial.</b> Built from public USDA and OpenStreetMap data, which can be out of date or incomplete. <b>Confirm before you go.</b> Need food today? Dial <a href="tel:211"><b>2-1-1</b></a>. In an emergency, call <a href="tel:911">911</a>.</div>
 <div class="fa-wrap">
   <header class="fa-header">
     <h1>Food Desert Oases</h1>
     <div class="fa-sub">See how the USDA Food Access Research Atlas classifies a census tract, and find the nearest SNAP-authorized stores, SNAP-authorized farmers markets and listed food banks and meal programs.</div>
     <form id="search-form" class="fa-search" role="search" autocomplete="off" novalidate onsubmit="return false">
-      <label for="q">Address, city or ZIP code</label>
+      <label for="q">U.S. address, city or ZIP code</label>
       <div class="fa-bar">
-        <input id="q" type="search" placeholder="e.g. 1500 Euclid Ave, Cleveland, OH or 59337" autocomplete="street-address" spellcheck="false" maxlength="200">
+        <input id="q" type="search" placeholder="e.g. 1500 Euclid Ave, Cleveland, OH or 59337" autocomplete="off" spellcheck="false" maxlength="200">
         <div class="fa-btns">
           <button id="go" type="submit">Search</button>
           <button id="loc" type="button">Use my location</button>
         </div>
       </div>
-      <p id="privacy" class="fa-privacy"><b>Privacy:</b> this page has no server of its own and saves nothing. Your location is not stored, not put in the page address and not kept after you leave. To search, your browser sends the text you type to OpenStreetMap Nominatim, and the searched point's coordinates to the USDA services (gisportal.ers.usda.gov and the SNAP retailer layer hosted on ArcGIS Online, services1.arcgis.com) and to the OpenStreetMap Overpass server listed under Sources (plus the maps.mail.ru Overpass mirror, only if the main server does not answer). Map tiles for the area you view load from tile.openstreetmap.org. Use my location skips the text search.</p>
+      <div id="privacy" class="fa-privacy">
+        <p><b>Privacy:</b> This page has no server of its own and saves nothing: no cookies, no browser storage, and your location is not added to the page address. Your location does leave this browser, because the search has to ask public services. They receive it rounded, or as you typed it.</p>
+        <details><summary>Show what is sent, and to whom</summary>
+        <p>A ZIP code goes to the U.S. Census (tigerweb.geo.census.gov). Any other text you type goes, exactly as typed, to OpenStreetMap Nominatim (nominatim.openstreetmap.org). The searched point goes to the USDA Food Access Research Atlas (gisportal.ers.usda.gov), rounded to about 10 meters so the right census tract is found. It goes to USDA's SNAP retailer data on Esri's ArcGIS Online (services1.arcgis.com) and to an OpenStreetMap Overpass server (overpass-api.de, run by the German OpenStreetMap association FOSSGIS), rounded to about 100 meters. Map images come from tile.openstreetmap.org and show the area you view. The map code (Leaflet) loads from unpkg.com; that request carries no location. Each of these services can also see your IP address, as any website can. A Directions link opens Google Maps only if you tap it, and Google then sees that destination. Distances are calculated in your browser. Tip: a ZIP code or nearby intersection works if you prefer not to type a home address.</p></details>
+      </div>
     </form>
     <div id="place" role="status" aria-live="polite"><span class="fa-muted">Search for a place to begin.</span></div>
+    <p id="jump" class="fa-jump" hidden></p>
   </header>
 
-  <section id="status-panel" class="fa-section" aria-labelledby="status-title">
-    <h2 id="status-title">Source status</h2>
-    <p class="fa-lede">Each source is checked on its own. A source that fails is marked unavailable; it never counts as zero.</p>
-    <ul id="status" class="fa-status">
-      <li id="status-geocoder" class="fa-st" data-state="idle"><span class="fa-st-name">Place search (OpenStreetMap Nominatim)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
-      <li id="status-fara25" class="fa-st" data-state="idle"><span class="fa-st-name">Area status, 2025 Atlas (USDA ERS)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
-      <li id="status-fara19" class="fa-st" data-state="idle"><span class="fa-st-name">Older 2019 Atlas measure (USDA ERS)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
-      <li id="status-snap" class="fa-st" data-state="idle"><span class="fa-st-name">SNAP-authorized retailers (USDA FNA)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
-      <li id="status-markets" class="fa-st" data-state="idle"><span class="fa-st-name">SNAP-authorized farmers markets (USDA FNA)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
-      <li id="status-osm" class="fa-st" data-state="idle"><span class="fa-st-name">Food banks and meal programs (OpenStreetMap)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
-    </ul>
-  </section>
-
-  <section id="area" class="fa-section" aria-labelledby="area-title">
-    <h2 id="area-title">Area status: USDA Food Access Research Atlas</h2>
-    <div id="area-body"><p class="fa-muted">Search for a place to see how the Atlas classifies its census tract.</p></div>
-    <div class="fa-box" id="area-vintage"><b>Data vintage:</b> 2025 SNAP-authorized Retailer Access Map, released July 2026; store locations as of June 2025; 2020 census tracts and population; 2020-2024 American Community Survey (ACS) income.<br><b>What it measures:</b> straight-line distance to the nearest SNAP-authorized store of any kind, including convenience stores. It is not the older supermarket-based measure. It describes the whole census tract, not any one household. Distances are straight-line, not travel distance. The Atlas covers the 50 states and DC only.</div>
-    <div id="area-2019" class="fa-older"><h3>Older measure: 2019 Atlas (supermarkets and large grocery stores, 2010 census tracts)</h3><p class="fa-muted">Waiting for a search.</p></div>
-  </section>
-
   <section id="places" class="fa-section" aria-labelledby="places-title">
-    <h2 id="places-title">Nearest places</h2>
-    <p class="fa-lede">One list, nearest first, by straight-line distance from the searched point. Farmers markets shown are only those authorized to accept SNAP.</p>
+    <h2 id="places-title" tabindex="-1">Nearest places</h2>
+    <p class="fa-lede">One list, nearest first, by straight-line distance from the searched point. For free food, press Food banks and meals or dial <a href="tel:211">2-1-1</a>. Stores are those authorized to accept SNAP, and many are convenience stores: press Grocery and supermarkets for groceries. Farmers markets shown are only those authorized to accept SNAP.</p>
     <div class="fa-places">
       <div class="fa-list-col">
         <div id="filters" class="fa-chips" role="group" aria-label="Filter by type">
@@ -1571,6 +1573,7 @@ body{padding-bottom:72px}
           <button type="button" class="fa-chip" data-filter="grocery" aria-pressed="false"><span class="fa-dot fa-c-grocery" aria-hidden="true"></span><span>Grocery and supermarkets</span></button>
           <button type="button" class="fa-chip" data-filter="other" aria-pressed="false"><span class="fa-dot fa-c-other" aria-hidden="true"></span><span>Other SNAP stores</span></button>
         </div>
+        <p id="list-retry" hidden></p>
         <p id="results-summary">Search for a place to list nearby food sources.</p>
         <ul id="results" class="fa-results"></ul>
         <button id="more" type="button" class="fa-btn" hidden>Show more</button>
@@ -1582,12 +1585,34 @@ body{padding-bottom:72px}
     </div>
   </section>
 
+  <section id="area" class="fa-section" aria-labelledby="area-title">
+    <h2 id="area-title">Area status: USDA Food Access Research Atlas</h2>
+    <div id="area-body"><p class="fa-muted">Search for a place to see how the Atlas classifies its census tract.</p></div>
+    <div class="fa-box" id="area-vintage"><b>Data vintage:</b> 2025 SNAP-authorized Retailer Access Map, released July 2026; store locations as of June 2025; 2020 census tracts and population; 2020-2024 American Community Survey (ACS) income.<br><b>What it measures:</b> straight-line distance to the nearest SNAP-authorized store of any kind, including convenience stores. USDA also publishes a second measure, shown below, that counts only supermarkets and large grocery stores. It describes the whole census tract, not any one household. Distances are straight-line, not travel distance. The Atlas covers the 50 states and DC only.</div>
+    <div id="area-2019" class="fa-older"><h3>Supermarket measure: 2019 data (supermarkets and large grocery stores, 2010 census tracts)</h3><p class="fa-muted">Waiting for a search.</p></div>
+  </section>
+
+  <section id="status-panel" class="fa-section" aria-labelledby="status-title">
+    <h2 id="status-title">Source status</h2>
+    <p class="fa-lede">Each source is checked on its own. A source that fails is marked unavailable; it never counts as zero.</p>
+    <ul id="status" class="fa-status">
+      <li id="status-geocoder" class="fa-st" data-state="idle"><span class="fa-st-name">Place search (U.S. Census for ZIP codes, OpenStreetMap Nominatim for the rest)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
+      <li id="status-fara25" class="fa-st" data-state="idle"><span class="fa-st-name">Any-SNAP-store measure, 2025 data (USDA ERS)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
+      <li id="status-fara19" class="fa-st" data-state="idle"><span class="fa-st-name">Supermarket measure, 2019 data (USDA ERS)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
+      <li id="status-snap" class="fa-st" data-state="idle"><span class="fa-st-name">SNAP-authorized retailers (USDA FNA)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
+      <li id="status-markets" class="fa-st" data-state="idle"><span class="fa-st-name">SNAP-authorized farmers markets (USDA FNA)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
+      <li id="status-osm" class="fa-st" data-state="idle"><span class="fa-st-name">Food banks and meal programs (OpenStreetMap)</span><span class="fa-badge">Waiting</span><span class="fa-st-text">Waiting for a search.</span></li>
+    </ul>
+  </section>
+
   <section id="coverage" class="fa-section" aria-labelledby="coverage-title">
     <h2 id="coverage-title">What this does not cover</h2>
     <ul class="fa-list">
       <li><b>No complete national food pantry list.</b> No complete, open national list of food pantries was found that this page can use. Pantries and meal programs appear here only where volunteers have tagged them in OpenStreetMap, so many are missing. For a full local list, dial <b>2-1-1</b> (or visit <a href="https://www.211.org/" target="_blank" rel="noopener noreferrer">211.org</a>) or contact your regional food bank, which you can find with the <a href="https://www.feedingamerica.org/find-your-local-foodbank" target="_blank" rel="noopener noreferrer">Feeding America food bank locator</a>.</li>
       <li><b>SNAP authorization only.</b> The SNAP retailer list shows that a store is authorized to accept SNAP. It does not show hours, stock or prices.</li>
-      <li><b>Farmers markets that take SNAP only.</b> The full USDA farmers market directory (USDA AMS Local Food Portal) is not available to this page without an access key, so markets that do not accept SNAP are missing.</li>
+      <li><b>Farmers markets that take SNAP only.</b> This page does not include the full USDA farmers market directory (USDA AMS Local Food Portal): its search needs an access key, and its full download is not built in here. Markets that do not accept SNAP are missing. Listed markets and farmers can be seasonal.</li>
+      <li><b>Restaurants are left out.</b> USDA's SNAP data also lists Restaurant Meals Program restaurants. This page leaves them out, because only certain households, in the states that run the program, can use SNAP there.</li>
+      <li><b>United States and its territories only.</b> A place name from another country may match a U.S. place with the same name.</li>
       <li><b>Not listed:</b> WIC vendors, school meals and senior meal programs.</li>
       <li><b>Territories.</b> The Food Access Research Atlas covers the 50 states and DC only. Puerto Rico, American Samoa and the Northern Mariana Islands use separate nutrition assistance programs instead of SNAP, so few or no SNAP stores are listed there.</li>
       <li><b>Straight-line distances.</b> All distances are straight-line ("as the crow flies"), not travel distance by road or transit.</li>
@@ -1599,12 +1624,12 @@ body{padding-bottom:72px}
     <h2 id="sources-title">Sources</h2>
     <p class="fa-lede">Every list shows its own data date from the source. Nothing on this page is cached from elsewhere or filled in when a source fails.</p>
     <div class="fa-sources">
-      <div class="fa-source"><h3>Place search: OpenStreetMap Nominatim</h3><p><a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">nominatim.openstreetmap.org</a>, used only when you press Search, at most one request per second (<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">usage policy</a>).</p><p>Data &copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a>. Date: live OpenStreetMap data, no release date.</p></div>
+      <div class="fa-source"><h3>Place search: U.S. Census and OpenStreetMap Nominatim</h3><p>ZIP codes: <a href="https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html" target="_blank" rel="noopener noreferrer">Census TIGERweb</a> ZIP code areas, including the territories. A ZIP code with no Census area, such as many PO box ZIP codes, is reported as not found. Everything else: <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">nominatim.openstreetmap.org</a>, used only when you press Search, at most one request per second (<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">usage policy</a>).</p><p>Data &copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a>. Date: live OpenStreetMap data, no release date.</p></div>
       <div class="fa-source"><h3>USDA ERS Food Access Research Atlas, 2025</h3><p><a href="https://www.ers.usda.gov/data-products/food-access-research-atlas/" target="_blank" rel="noopener noreferrer">Food Access Research Atlas</a>, SNAP-authorized Retailer Access Map, straight-line distance (map service FARA_2025_StraightLine, layer 4).</p><p>Date: 2025 edition, released July 2026; stores as of June 2025; 2020 census tracts and population; 2020-2024 ACS income. Citation: U.S. Department of Agriculture, Economic Research Service. Food Access Research Atlas, SNAP-authorized Retailer Access Map.</p></div>
-      <div class="fa-source"><h3>USDA ERS Food Access Research Atlas, 2019 (older measure)</h3><p><a href="https://www.ers.usda.gov/data-products/food-access-research-atlas/" target="_blank" rel="noopener noreferrer">Food Access Research Atlas</a>, 2019 edition (map service FARA_2019, layer 30).</p><p>Date: 2019 edition; distance to supermarkets and large grocery stores; 2010 census tracts. Not comparable with the 2025 measure.</p></div>
-      <div class="fa-source"><h3>SNAP-authorized retailers: USDA Food and Nutrition Administration</h3><p><a href="https://www.fna.usda.gov/snap/retailer-locator" target="_blank" rel="noopener noreferrer">SNAP Retailer Locator</a> data (<a href="https://usda-snap-retailers-usda-fns.hub.arcgis.com/datasets/8b260f9a10b0459aa441ad8588c2251c" target="_blank" rel="noopener noreferrer">public ArcGIS dataset</a>), excluding farmers markets.</p><p>Date: <span id="src-date-snap">shown after a search, from the layer's last edit date</span>. The source says it updates every 2 weeks.</p></div>
+      <div class="fa-source"><h3>USDA ERS Food Access Research Atlas, supermarket measure (2019 data)</h3><p><a href="https://www.ers.usda.gov/data-products/food-access-research-atlas/" target="_blank" rel="noopener noreferrer">Food Access Research Atlas</a>, 2019 edition (map service FARA_2019, layer 30).</p><p>Date: 2019 edition; distance to supermarkets and large grocery stores; 2010 census tracts. Not comparable with the 2025 measure.</p></div>
+      <div class="fa-source"><h3>SNAP-authorized retailers: USDA Food and Nutrition Administration</h3><p><a href="https://www.fna.usda.gov/snap/retailer-locator" target="_blank" rel="noopener noreferrer">SNAP Retailer Locator</a> data (<a href="https://usda-snap-retailers-usda-fns.hub.arcgis.com/datasets/8b260f9a10b0459aa441ad8588c2251c" target="_blank" rel="noopener noreferrer">public ArcGIS dataset</a>), excluding farmers markets and Restaurant Meals Program restaurants.</p><p>Date: <span id="src-date-snap">shown after a search, from the layer's last edit date</span>. The source says it updates every 2 weeks.</p></div>
       <div class="fa-source"><h3>SNAP-authorized farmers markets: USDA Food and Nutrition Administration</h3><p>The same SNAP retailer data, store type "Farmers and Markets". Only markets and farmers authorized to accept SNAP are included.</p><p>Date: <span id="src-date-markets">shown after a search, from the layer's last edit date</span>.</p></div>
-      <div class="fa-source"><h3>Food banks and meal programs: OpenStreetMap via Overpass</h3><p><a href="https://overpass-api.de/" target="_blank" rel="noopener noreferrer">overpass-api.de</a>, with the <a href="https://maps.mail.ru/osm/tools/overpass/" target="_blank" rel="noopener noreferrer">maps.mail.ru</a> mirror as a fallback. Places tagged social_facility=food_bank, amenity=food_bank or social_facility=soup_kitchen within 50 km (31 miles).</p><p>&copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a>. Date: <span id="src-date-osm">shown after a search, from the OSM data timestamp</span>, plus each place's last edit date.</p></div>
+      <div class="fa-source"><h3>Food banks and meal programs: OpenStreetMap via Overpass</h3><p><a href="https://overpass-api.de/" target="_blank" rel="noopener noreferrer">overpass-api.de</a>, tried twice if it does not answer. Places tagged social_facility=food_bank, amenity=food_bank or social_facility=soup_kitchen within 50 km (31 miles).</p><p>&copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a>. Date: <span id="src-date-osm">shown after a search, from the OSM data timestamp</span>, plus each place's last edit date.</p></div>
       <div class="fa-source"><h3>Map tiles and map library</h3><p>Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> from tile.openstreetmap.org. Map library: <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> 1.9.4 from unpkg.com.</p></div>
     </div>
   </section>
@@ -1622,10 +1647,13 @@ const GEOCODER_URL='https://nominatim.openstreetmap.org/search';
 const FARA25_URL='https://gisportal.ers.usda.gov/server/rest/services/FARA/FARA_2025_StraightLine/MapServer/4/query';
 const FARA19_URL='https://gisportal.ers.usda.gov/server/rest/services/FARA/FARA_2019/MapServer/30/query';
 const SNAP_LAYER_URL='https://services1.arcgis.com/RLQu0rK7h4kbsBq5/arcgis/rest/services/snap_retailer_location_data/FeatureServer/0';
-const OVERPASS_URLS=['https://overpass-api.de/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
-const OVERPASS_TIMEOUTS=[20000,40000];
+const OVERPASS_URL='https://overpass-api.de/api/interpreter';
+const OVERPASS_TIMEOUTS=[30000,30000],OVERPASS_RETRY_WAIT=4000;
 const LISTS={snap:{radii:[1,2,5,10,25,50],target:15,markets:false,noun:'stores'},markets:{radii:[5,10,25,50],target:10,markets:true,noun:'markets'}};
-const OSM_RADIUS_M=50000,OSM_RADIUS_MI=31,PAGE=25;
+const OSM_RADIUS_M=50000,OSM_RADIUS_MI=31;
+const PHONE=window.innerWidth<768,PAGE=PHONE?10:25;
+// Coordinates are rounded before they leave the browser: about 100 meters for listings, about 10 meters for the census tract lookup.
+const roundPt=(p,d)=>({lat:+p.lat.toFixed(d),lon:+p.lon.toFixed(d)});
 const TERRITORIES={pr:'Puerto Rico',gu:'Guam',vi:'the U.S. Virgin Islands',as:'American Samoa',mp:'the Northern Mariana Islands'};
 const NAP_TERRITORIES=['pr','as','mp'];
 const VINTAGE25='2025 SNAP-authorized Retailer Access Map, released July 2026; store locations as of June 2025; 2020 census tracts and population; 2020-2024 ACS income';
@@ -1636,7 +1664,7 @@ const SNAP_FIELDS='Store_Name,Store_Street_Address,Additonal_Address,City,State,
 const MARKER={food:'#c2255c',market:'#2b8a3e',grocery:'#1864ab',other:'#6741d9'};
 const CAT_LABEL={all:'All',food:'Food banks and meals',market:'Farmers markets',grocery:'Grocery and supermarkets',other:'Other SNAP stores'};
 const GROCERY_TYPES=['Supermarket','Super Store','Grocery Store'];
-const LABELS={geocoder:'Place search (OpenStreetMap Nominatim)',fara25:'Area status, 2025 Atlas (USDA ERS)',fara19:'Older 2019 Atlas measure (USDA ERS)',snap:'SNAP-authorized retailers (USDA FNA)',markets:'SNAP-authorized farmers markets (USDA FNA)',osm:'Food banks and meal programs (OpenStreetMap)'};
+const LABELS={geocoder:'Place search (U.S. Census for ZIP codes, OpenStreetMap Nominatim for the rest)',fara25:'Any-SNAP-store measure, 2025 data (USDA ERS)',fara19:'Supermarket measure, 2019 data (USDA ERS)',snap:'SNAP-authorized retailers (USDA FNA)',markets:'SNAP-authorized farmers markets (USDA FNA)',osm:'Food banks and meal programs (OpenStreetMap)'};
 const BADGE={idle:'Waiting',notrun:'Not run',notused:'Not used',invalid:'Not sent',loading:'Loading',ok:'OK',empty:'None listed',partial:'Partial',failed:'Unavailable',notcovered:'Not covered'};
 const KEYS=Object.keys(LABELS);
 
@@ -1694,7 +1722,8 @@ function initMap(){
  if(hasMap||!(window.L&&typeof window.L.map==='function'))return;
  const L=window.L,el=$('map');
  el.style.height='';el.innerHTML='';
- map=L.map(el,{zoomControl:true,worldCopyJump:true}).setView([39.5,-98.35],4);
+ // On touch screens one finger scrolls the page; the zoom buttons still work.
+ map=L.map(el,{zoomControl:true,worldCopyJump:true,dragging:!window.matchMedia('(pointer:coarse)').matches,tap:false}).setView([39.5,-98.35],4);
  const basemap=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'});
  basemap.on('tileerror',()=>{$('map-status').hidden=false;$('map-status').textContent='Basemap tiles unavailable. Markers, the list of places and the sources below still work.';});
  if(/^https?:$/.test(location.protocol))basemap.addTo(map);else{$('map-status').hidden=false;$('map-status').textContent='Map tiles load only over http or https. The list of places and the sources below still work.';}
@@ -1755,6 +1784,7 @@ function renderStatus(k){
 }
 function setSrc(k,patch){Object.assign(src[k],patch);renderStatus(k);}
 function renderAllStatus(){KEYS.forEach(renderStatus);}
+$('places').addEventListener('click',e=>{const b=e.target.closest('[data-retry]');if(b)retry(b.getAttribute('data-retry'));});
 $('status').addEventListener('click',e=>{const b=e.target.closest('[data-retry]');if(b)retry(b.getAttribute('data-retry'));});
 
 /* ---------- response-layer bridge: no address, query text or coordinates ever ---------- */
@@ -1799,22 +1829,47 @@ function territoryOf(a){
  if(st==='puerto rico')return 'pr';if(st==='guam')return 'gu';if(/virgin islands/.test(st))return 'vi';if(st==='american samoa')return 'as';if(/northern mariana/.test(st))return 'mp';
  return null;
 }
+const ZCTA_URL='https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/2/query';
+const TIGER_LAYER='https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/';
+// ZIP codes go to the Census ZIP code areas, not the place search, which can match phantom ZIP codes to unrelated places.
+async function lookupZip(zip){
+ const j=await fetchJSON(ZCTA_URL+'?'+qs({where:"ZCTA5='"+zip+"'",outFields:'ZCTA5,INTPTLAT,INTPTLON',returnGeometry:'false',f:'json'}),{timeout:15000});
+ if(!j||typeof j!=='object'||j.error||!Array.isArray(j.features))throw new SourceError('the Census ZIP code service did not return a list');
+ const a=j.features[0]&&j.features[0].attributes;if(!a)return null;
+ const lat=parseFloat(a.INTPTLAT),lon=parseFloat(a.INTPTLON);
+ if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)throw new SourceError('the Census ZIP code service returned an unusable point');
+ return {lat:lat,lon:lon};
+}
+// County and state names only make the place line easier to check; a failed name lookup never stops the search.
+async function zipArea(pt){
+ const ask=(id,fields)=>fetchJSON(TIGER_LAYER+id+'/query?'+qs({geometry:pt.lon+','+pt.lat,geometryType:'esriGeometryPoint',inSR:4326,spatialRel:'esriSpatialRelIntersects',outFields:fields,returnGeometry:'false',f:'json'}),{timeout:8000}).then(j=>j&&Array.isArray(j.features)&&j.features[0]&&j.features[0].attributes||null,()=>null);
+ const [county,state]=await Promise.all([ask(82,'NAME'),ask(80,'NAME,STUSAB')]);
+ return {county:county&&county.NAME?clean(county.NAME,80):'',state:state&&state.NAME?clean(state.NAME,60):'',stateCode:state&&state.STUSAB?clean(state.STUSAB,4):''};
+}
+// Matches that stand for a whole area; a census tract at its center says little about the rest of it.
+const AREA_TYPES=/^(city|town|village|hamlet|municipality|suburb|borough|quarter|neighbourhood|city_district|district|county|state_district|state|region|province|island|country)$/;
 async function geocode(text,zip,id){
  const key=zip?'zip:'+zip:'q:'+text.toLowerCase().replace(/\s+/g,' ');
  if(geoCache.has(key))return geoCache.get(key);
+ if(zip){
+  const pt=await lookupZip(zip);if(!pt){geoCache.set(key,null);return null;}
+  const area=await zipArea(pt),code=area.stateCode.toLowerCase();
+  const out={point:pt,name:'ZIP code '+zip+([area.county,area.state].filter(Boolean).length?', '+[area.county,area.state].filter(Boolean).join(', '):''),isZip:true,zip:zip,territory:TERRITORIES[code]?code:territoryAt(pt.lat,pt.lon)};
+  geoCache.set(key,out);return out;
+ }
  const start=Math.max(Date.now(),nextGeoSlot);nextGeoSlot=start+1000;
  if(start>Date.now())await sleep(start-Date.now());
  if(id!==searchRun)throw STALE;
  const p={format:'jsonv2',limit:1,addressdetails:1,countrycodes:'us,pr,gu,vi,as,mp'};
- if(zip)p.postalcode=zip;else p.q=text;
+ p.q=text;
  const j=await fetchJSON(GEOCODER_URL+'?'+qs(p),{timeout:15000});
  if(!Array.isArray(j))throw new SourceError('the response was not a list of places');
  const hit=j[0];let out=null;
  if(hit){
   const lat=+hit.lat,lon=+hit.lon;
   if(Number.isFinite(lat)&&Number.isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180){
-   const isZip=!!zip||hit.addresstype==='postcode'||hit.type==='postcode';
-   out={point:{lat:lat,lon:lon},name:clean(String(hit.display_name||'').replace(/^([^,;]*);[^,]*/,'$1'),300)||'an unnamed place',isZip:isZip,zip:zip||(isZip&&hit.address&&/^\d{5}$/.test(String(hit.address.postcode||''))?String(hit.address.postcode):null),territory:territoryOf(hit.address)};
+   const isZip=hit.addresstype==='postcode'||hit.type==='postcode',isArea=!isZip&&AREA_TYPES.test(String(hit.addresstype||''));
+   out={point:{lat:lat,lon:lon},name:clean(String(hit.display_name||'').replace(/^([^,;]*);[^,]*/,'$1'),300)||'an unnamed place',isZip:isZip,isArea:isArea,zip:(isZip&&hit.address&&/^\d{5}$/.test(String(hit.address.postcode||''))?String(hit.address.postcode):null),territory:territoryOf(hit.address)};
   }
  }
  geoCache.set(key,out);
@@ -1822,7 +1877,8 @@ async function geocode(text,zip,id){
 }
 
 /* ---------- searches ---------- */
-function clearResults(){items.snap=[];items.markets=[];items.osm=[];tract25=null;tract19=null;shown=PAGE;}
+let lastQuery=null,scrolledFor=null,searchedArea=false;
+function clearResults(){items.snap=[];items.markets=[];items.osm=[];tract25=null;tract19=null;shown=PAGE;scrolledFor=null;searchedArea=false;}
 function beginSearch(type){
  const id=++searchRun;selectionId++;current=null;locationType=type;searchState='loading';checkedAt=null;
  clearResults();resetSources('notrun');
@@ -1832,9 +1888,15 @@ function beginSearch(type){
 function endWithoutLocation(){searchState='settled';checkedAt=new Date().toISOString();renderArea();renderResults();publish();}
 async function search(){
  const text=clean($('q').value,200);
- if(!text){placeError('Type an address, city or ZIP code first, or use your location.');$('q').focus();return;}
- const zipM=/^(\d{5})(?:[-\s]?\d{4})?$/.exec(text);
+ if(text&&text===lastQuery&&searchState==='loading')return;
+ lastQuery=text;
+ const zipM=/^(?:zip(?:\s*code)?[\s:]*)?(\d{5})(?:[-\s]?\d{4})?$/i.exec(text);
  const id=beginSearch(zipM?'zip':'address');
+ if(!text){
+  setSrc('geocoder',{state:'invalid',text:'Not sent: nothing was typed.'});
+  placeError('Type an address, city or ZIP code first, or use your location.');$('q').focus();
+  endWithoutLocation();return;
+ }
  if(/^[\d\s-]+$/.test(text)&&!zipM){
   setSrc('geocoder',{state:'invalid',text:'Not sent: a ZIP code needs exactly 5 digits.'});
   placeError('That is not a valid ZIP code. A ZIP code has 5 digits, for example 59337. You can also type a street address or a city and state.');
@@ -1853,14 +1915,15 @@ async function search(){
  }
  if(id!==searchRun)return;
  if(!res){
-  setSrc('geocoder',{state:'empty',text:'No match found for that text in the United States or its territories.'});
-  placeError(zipM?'No place was found for ZIP code '+zipM[1]+'. Check the number, or type a street address or a city and state.':'No match was found for "'+text+'". Check the spelling, add a city and state, or try a 5-digit ZIP code.');
+  setSrc('geocoder',{state:'empty',text:zipM?'The U.S. Census has no ZIP code area for that ZIP code.':'No match found for that text in the United States or its territories.'});
+  placeError(zipM?'The U.S. Census has no ZIP code area for '+zipM[1]+'. Check the digits. Some PO box and single-building ZIP codes have no area, so try a city and state instead.':'No match was found for "'+text+'". Check the spelling, add a city and state, or try a 5-digit ZIP code.');
   endWithoutLocation();return;
  }
  setSrc('geocoder',{state:'ok',text:'OK: 1 match. Check the "Searched near" line below the search box.',checkedAt:new Date().toISOString()});
  let html='Searched near: <b>'+esc(res.name)+'</b>.';
  if(res.isZip)html+='<br><span class="fa-muted">This point is the approximate center of '+(res.zip?'ZIP code '+esc(res.zip):'that ZIP code')+', so the census tract and distances are approximate. Enter a street address for a precise result.</span>';
- html+='<br><span class="fa-muted">Not the place you meant? Add a city and state and search again.</span>';
+ if(res.isArea){searchedArea=true;html+='<br><span class="fa-muted">This is a whole area, so the census tract and distances come from one point near its center, and the area may hold many tracts. Enter a street address or ZIP code for your own part of it.</span>';}
+ html+='<br><span class="fa-muted">Not the place you meant? Add a city and state and search again. This page covers the United States and its territories.</span>';
  showPlace(html);
  runAll(id,res.point,res.territory);
 }
@@ -1882,7 +1945,7 @@ function useLocation(){
   if(settled||id!==searchRun)return;settled=true;clearTimeout(guard);
   const lat=+p.coords.latitude,lon=+p.coords.longitude,acc=+p.coords.accuracy;
   if(!Number.isFinite(lat)||!Number.isFinite(lon)){noFix();placeError('Your device returned an unusable location. Type an address, city or ZIP code instead.');endWithoutLocation();return;}
-  showPlace('Searched near: <b>your device location</b>'+(Number.isFinite(acc)?' (accuracy about '+esc(acc<1000?Math.round(acc)+' meters':(acc/1609.344).toFixed(1)+' miles')+')':'')+'. This page does not show or save it; its coordinates are sent only to the USDA, ArcGIS Online and OpenStreetMap services listed under Sources.');
+  showPlace('Searched near: <b>your device location</b>'+(Number.isFinite(acc)?' (accuracy about '+esc(acc<1000?Math.round(acc)+' meters':(acc/1609.344).toFixed(1)+' miles')+')':'')+'. To run this search, your location is sent, rounded, to USDA, to ArcGIS Online and to the OpenStreetMap Overpass server. The map below marks the searched point.');
   runAll(id,{lat:lat,lon:lon},territoryAt(lat,lon));
  },err=>{
   if(settled||id!==searchRun)return;settled=true;clearTimeout(guard);
@@ -1926,7 +1989,7 @@ async function runFara(k,id){
  }
  const alive=begin(k,is25?'Looking up the census tract...':'Looking up the 2010 census tract...');renderArea();publish();
  try{
-  const j=arcgis(await fetchJSON((is25?FARA25_URL:FARA19_URL)+'?'+qs(Object.assign(pointParams(current.point),{outFields:is25?FARA25_FIELDS:FARA19_FIELDS,f:'json'})),{timeout:20000}));
+  const j=arcgis(await fetchJSON((is25?FARA25_URL:FARA19_URL)+'?'+qs(Object.assign(pointParams(roundPt(current.point,4)),{outFields:is25?FARA25_FIELDS:FARA19_FIELDS,f:'json'})),{timeout:20000}));
   if(!alive())return;
   const now=new Date().toISOString();
   const f=j.features[0]&&j.features[0].attributes;
@@ -1947,7 +2010,7 @@ function row(label,value){return '<div class="fa-row"><dt>'+esc(label)+'</dt><dd
 function headline25(t){
  // The headline judges the main Atlas measure (1 mile urban, 10 miles rural) and says so; other measures are named when flagged.
  const f=t.flags,urban=t.urban===1,rural=t.urban===0,dist=urban?'1 mile':rural?'10 miles':'1 mile (urban) or 10 miles (rural)';
- const main='by the main measure (1 mile urban, 10 miles rural)';
+ const main='by the any-SNAP-store measure, where convenience stores count (1 mile urban, 10 miles rural)';
  const other=(list,what)=>{const yes=list.filter(x=>x[0]===1).map(x=>x[1]);return yes.length?' By '+plural(yes.length,'another measure','other measures')+' in the rows below, the tract is flagged '+what+': '+yes.join('; ')+'.':'';};
  const lilaOther=other([[f.lilaHalfAnd10,'1/2 mile urban or 10 miles rural'],[f.lila1and20,'1 mile urban or 20 miles rural'],[f.lilaVehicle,'the vehicle measure']],'low income and low access');
  const laOther=lilaOther?'':other([[f.laHalfAnd10,'1/2 mile urban or 10 miles rural'],[f.la1and20,'1 mile urban or 20 miles rural'],[f.laVehicleOr20,'the vehicle measure or 20 miles rural']],'low access');
@@ -1967,11 +2030,19 @@ function areaStateHtml(k,what){
  if(s.state==='notrun'||s.state==='idle')return '<p class="fa-muted">'+(searchState==='idle'?'Search for a place to see how the Atlas classifies its census tract.':'Not checked: no location yet.')+'</p>';
  return null;
 }
+// USDA publishes both measures. When they disagree, say so first: the answer depends on whether a gas station counts as food access.
+function measuresLead(){
+ if(!tract25||!tract19)return '';
+ const a=tract25.flags.la1and10,b=tract19.flags.la1and10;
+ if(a===0&&b===1)return '<p id="area-lead" class="fa-headline fa-flag">The two USDA measures disagree here. Not low access if any SNAP store counts, including convenience stores and gas stations (2025 data). Low access if only supermarkets and large grocery stores count (2019 data).</p>';
+ if(a===1&&b===0)return '<p id="area-lead" class="fa-headline">The two USDA measures disagree here. Low access even when any SNAP store counts (2025 data), but not by the supermarket measure (2019 data, older census tracts).</p>';
+ return '';
+}
 function renderArea(){
  let html=areaStateHtml('fara25','Area status');
  if(html==null&&tract25){
   const t=tract25,f=t.flags,h=headline25(t);
-  html='<p id="area-headline" class="fa-headline'+(h.flag?' fa-flag':'')+'">'+esc(h.text)+'</p><dl class="fa-rows">'+
+  html=(searchedArea?'<p class="fa-note">This describes one census tract near the center of the area you searched, not the whole area.</p>':'')+measuresLead()+'<p id="area-headline" class="fa-headline'+(h.flag?' fa-flag':'')+'">'+esc(h.text)+'</p><dl class="fa-rows">'+
    row('Census tract (2020)',esc(t.geoid||'Not reported'))+
    row('County',esc([t.county,t.stateName].filter(Boolean).join(', ')||'Not reported'))+
    row('Urban or rural (per the Atlas)',t.urban===1?'Urban':t.urban===0?'Rural':'<span class="fa-muted">Not reported</span>')+
@@ -1993,7 +2064,7 @@ function renderArea(){
   const t=tract19,f=t.flags;
   h19='<dl class="fa-rows">'+row('Census tract (2010)',esc(t.geoid||'Not reported'))+row('Low income and low access: 1 mile urban or 10 miles rural',yn(f.lila1and10))+row('Low access: 1 mile urban or 10 miles rural',yn(f.la1and10))+row('Low income and low access: 1/2 mile urban or 10 miles rural',yn(f.lilaHalfAnd10))+'</dl>';
  }
- $('area-2019').innerHTML='<h3>Older measure: 2019 Atlas (supermarkets and large grocery stores, 2010 census tracts)</h3>'+(h19||'')+'<p class="fa-note">Shown for comparison only. It measured distance to supermarkets and large grocery stores, on 2010 tract boundaries, so it is not comparable with the 2025 measure above.</p>';
+ $('area-2019').innerHTML='<h3>Supermarket measure: 2019 data (supermarkets and large grocery stores, 2010 census tracts)</h3>'+(h19||'')+'<p class="fa-note">USDA still publishes this as a current measure, but its data is older and its tracts differ, so the two cannot be compared number for number. It measured distance to supermarkets and large grocery stores, on 2010 tract boundaries, so it is not comparable with the 2025 measure above.</p>';
 }
 $('area').addEventListener('click',e=>{const b=e.target.closest('[data-retry]');if(b)retry(b.getAttribute('data-retry'));});
 
@@ -2014,7 +2085,7 @@ function showSnapDate(){
  $('src-date-markets').textContent=d?'list as of '+d:pending?'data date still loading':'data date unavailable';
 }
 const snapDateText=()=>snapDateState==='ok'&&snapDate?'SNAP retailer list as of '+snapDate+'.':snapDateState==='pending'?'Data date still loading.':'Data date unavailable.';
-function snapUrl(pt,r,markets){return SNAP_LAYER_URL+'/query?'+qs(Object.assign({where:markets?"Store_Type='Farmers and Markets'":"Store_Type<>'Farmers and Markets'"},pointParams(pt),{distance:r,units:'esriSRUnit_StatuteMile',outFields:SNAP_FIELDS,resultRecordCount:1000,f:'json'}));}
+function snapUrl(pt,r,markets){return SNAP_LAYER_URL+'/query?'+qs(Object.assign({where:markets?"Store_Type='Farmers and Markets'":"Store_Type NOT IN ('Farmers and Markets','Restaurant Meals Program')"},pointParams(roundPt(pt,3)),{distance:r,units:'esriSRUnit_StatuteMile',outFields:SNAP_FIELDS,resultRecordCount:1000,f:'json'}));}
 function snapItem(a,k,pt){
  if(!a)return null;
  const lat=+a.Latitude,lon=+a.Longitude;
@@ -2023,7 +2094,7 @@ function snapItem(a,k,pt){
  const cat=k==='markets'?'market':GROCERY_TYPES.indexOf(type)>=0?'grocery':'other';
  const street=[clean(a.Store_Street_Address,120),clean(a.Additonal_Address,80)].filter(Boolean).join(', ');
  const cityLine=[clean(a.City,60),[clean(a.State,4),clean(a.Zip_Code,10)].filter(Boolean).join(' ')].filter(Boolean).join(', ');
- return {src:k,cat:cat,name:clean(a.Store_Name,140)||'Name not listed',typeLabel:k==='markets'?'SNAP-authorized farmers market':type+', SNAP-authorized',lat:lat,lon:lon,dist:haversine(pt,{lat:lat,lon:lon}),
+ return {src:k,cat:cat,name:clean(a.Store_Name,140)||'Name not listed',typeLabel:k==='markets'?'SNAP-authorized farmers market or farmer':type+', SNAP-authorized',lat:lat,lon:lon,dist:haversine(pt,{lat:lat,lon:lon}),
   address:[street,cityLine].filter(Boolean).join(', ')||'Address not listed',incentive:clean(a.Incentive_Program,120)};
 }
 function listText(k){
@@ -2050,9 +2121,12 @@ async function runList(k,id){
    renderResults();publish();return;
   }
   if(!alive())return;
+  // A wider answer that hit the source's limit must not replace the complete nearer list.
+  if(j.exceededTransferLimit&&found){partialReason='the source could not return every '+cfg.noun.replace(/s$/,'')+' within '+miles(r)+', so only those within '+miles(radius)+' are shown';break;}
   found=j.features.map(f=>snapItem(f&&f.attributes,k,pt)).filter(Boolean);radius=r;
   if(j.exceededTransferLimit){partialReason='the source returned only part of the '+cfg.noun+' within '+miles(r)+', so some nearer ones may be missing';break;}
-  if(found.length>=cfg.target)break;
+  // Keep widening until the list holds a few real grocery stores, not only convenience stores.
+  if(found.length>=cfg.target&&(cfg.markets||found.filter(it=>it.cat==='grocery').length>=3))break;
  }
  // Show the list as soon as it is in; the layer's data date follows when its own request settles.
  found.sort((a,b)=>a.dist-b.dist);items[k]=found;
@@ -2087,20 +2161,21 @@ async function runOsm(id){
  if(id!==searchRun||!current)return;
  const pt=current.point;items.osm=[];renderResults();
  const alive=begin('osm','Loading from overpass-api.de. This source can be slow: it can take up to a minute while the other sections fill in.');publish();
- const body='data='+encodeURIComponent(overpassQuery(pt));
+ const body='data='+encodeURIComponent(overpassQuery(roundPt(pt,3)));
  let j=null,last=null;
- for(let i=0;i<OVERPASS_URLS.length;i++){
-  if(i)setSrc('osm',{text:'The main Overpass server did not answer ('+last.message+'); trying the maps.mail.ru mirror, which can take up to '+Math.round(OVERPASS_TIMEOUTS[i]/1000)+' more seconds...'});
+ for(let i=0;i<OVERPASS_TIMEOUTS.length;i++){
+  if(i){setSrc('osm',{text:'The Overpass server did not answer ('+last.message+'); trying once more, which can take up to '+Math.round(OVERPASS_TIMEOUTS[i]/1000)+' more seconds...'});await sleep(OVERPASS_RETRY_WAIT);if(!alive())return;}
   try{
-   const r=await fetchJSON(OVERPASS_URLS[i],{method:'POST',body:body,headers:{'Content-Type':'application/x-www-form-urlencoded'},timeout:OVERPASS_TIMEOUTS[i]});
+   const r=await fetchJSON(OVERPASS_URL,{method:'POST',body:body,headers:{'Content-Type':'application/x-www-form-urlencoded'},timeout:OVERPASS_TIMEOUTS[i]});
    if(!r||!Array.isArray(r.elements))throw new SourceError('the response had no list of places');
    if(r.remark&&/error/i.test(r.remark)&&!r.elements.length)throw new SourceError('the server stopped the query');
+   if(r.elements.length&&!r.elements.some(el=>el&&typeof el==='object'&&/^(node|way|relation)$/.test(el.type)))throw new SourceError('the response had no usable places');
    j=r;break;
   }catch(e){if(!alive())return;last=e;}
  }
  if(!alive())return;
  const now=new Date().toISOString();
- if(!j){$('src-date-osm').textContent='unavailable: the OpenStreetMap query failed for this search';setSrc('osm',{state:'failed',reason:last.message+' (tried overpass-api.de and the maps.mail.ru mirror)',checkedAt:now,text:'Unavailable: '+last.message+' (tried overpass-api.de and the maps.mail.ru mirror). No results are shown from this source; this is not a zero.'});renderResults();publish();return;}
+ if(!j){$('src-date-osm').textContent='unavailable: the OpenStreetMap query failed for this search';setSrc('osm',{state:'failed',reason:last.message+' (tried overpass-api.de twice)',checkedAt:now,text:'Unavailable: '+last.message+' (tried overpass-api.de twice). No results are shown from this source; this is not a zero.'});renderResults();publish();return;}
  const base=j.osm3s&&fmtStamp(j.osm3s.timestamp_osm_base);osmBase=base;
  $('src-date-osm').textContent=base?'OSM data as of '+base:'OSM data date unavailable';
  const seen=new Set(),list=[];
@@ -2118,7 +2193,8 @@ async function runOsm(id){
 /* ---------- results list ---------- */
 function allItems(){return items.snap.concat(items.markets,items.osm).sort((a,b)=>a.dist-b.dist);}
 function card(it){
- const dir='https://www.openstreetmap.org/directions?route='+encodeURIComponent(';'+it.lat.toFixed(5)+','+it.lon.toFixed(5));
+ // Google Maps opens directions on phones and computers alike; OpenStreetMap's directions page lands on a map of Europe on a phone.
+ const dir='https://www.google.com/maps/dir/?api=1&destination='+it.lat.toFixed(5)+','+it.lon.toFixed(5);
  let extra='';
  if(it.src==='osm'){
   if(it.hours)extra+='<p class="fa-line">Listed hours (as tagged, may be out of date): '+esc(it.hours)+'</p>';
@@ -2130,8 +2206,8 @@ function card(it){
   '<div class="fa-type"><span class="fa-dot fa-c-'+it.cat+'" aria-hidden="true"></span>'+esc(it.typeLabel)+'</div>'+
   '<p class="fa-line">'+esc(it.address)+'</p>'+extra+
   '<p class="fa-src">'+source+'</p>'+
-  '<p class="fa-confirm"><b>Confirm before you go.</b> Hours, stock, eligibility and SNAP acceptance can change; call or check the place\'s own listing.</p>'+
-  '<a class="fa-dir" href="'+esc(dir)+'" target="_blank" rel="noopener noreferrer">Directions on OpenStreetMap</a></li>';
+  '<p class="fa-confirm"><b>Confirm before you go.</b> Hours, stock, eligibility and SNAP acceptance can change; call or check the place\'s own listing.'+(it.cat==='market'?' Markets and farm stands can be seasonal.':it.cat==='food'?' Some food banks are warehouses that do not hand out food directly, so call first.':'')+'</p>'+
+  '<a class="fa-dir" href="'+esc(dir)+'" target="_blank" rel="noopener noreferrer">Directions (opens Google Maps)</a></li>';
 }
 const LIST_NAME={snap:'SNAP-authorized stores',markets:'SNAP-authorized farmers markets',osm:'OpenStreetMap food banks and meal programs'};
 const LIST_KEYS=['snap','markets','osm'];
@@ -2168,7 +2244,27 @@ function chipCount(f,n){
  if(!incomplete)return ' ('+n+')';
  return n?' ('+n+'+)':'';
 }
+// The first screen says what was found and links to it, so a phone visitor is not left guessing.
+function renderJump(){
+ const el=$('jump'),box=$('list-retry'),names={snap:'SNAP stores',markets:'SNAP farmers markets',osm:'Food banks and meals'};
+ const failed=current?['snap','markets','osm'].filter(k=>src[k].state==='failed'):[];
+ box.hidden=!failed.length;
+ box.innerHTML=failed.map(k=>esc(names[k])+' did not answer.<button type="button" class="fa-btn" data-retry="'+k+'">Try again</button>').join(' ');
+ if(!current){el.hidden=true;el.textContent='';return;}
+ const all=allItems(),food=items.osm.slice().sort((a,b)=>a.dist-b.dist)[0];
+ const bits=[];
+ bits.push(all.length?all.length+' '+plural(all.length,'place','places')+' listed.':['snap','markets','osm'].some(k=>src[k].state==='loading')?'Still searching.':'No places listed in the sources that answered.');
+ bits.push(src.osm.state==='failed'?'Food banks: unavailable, dial 2-1-1.':src.osm.state==='loading'?'Food banks: still loading.':food?'Nearest food bank or meal program: '+food.name+', '+fmtDist(food.dist)+'.':'Food banks: none listed, dial 2-1-1.');
+ el.hidden=false;
+ el.innerHTML=esc(bits.join(' '))+'<br><a href="#places">Go to results</a><a href="#area">Go to area status</a><a href="#map">Go to map</a>';
+ if(PHONE&&scrolledFor!==current.id&&all.length&&window.scrollY<160){
+  scrolledFor=current.id;
+  $('places').scrollIntoView({block:'start'});
+  $('places-title').focus({preventScroll:true});
+ }
+}
 function renderResults(){
+ renderJump();
  const all=allItems(),counts={all:all.length,food:0,market:0,grocery:0,other:0};
  all.forEach(it=>{counts[it.cat]++;});
  document.querySelectorAll('#filters [data-filter]').forEach(b=>{const f=b.getAttribute('data-filter');b.setAttribute('aria-pressed',String(f===filter));b.lastElementChild.textContent=CAT_LABEL[f]+chipCount(f,counts[f]);});
@@ -2352,12 +2448,13 @@ if(document.readyState==='complete')loadLeaflet();else window.addEventListener('
       groups.push(pair('food-place',track=>({title:failed?'The place search is unavailable: try again':'No place matched the search: try again',target:input.context,reason:failed?'The place search (OpenStreetMap Nominatim) did not answer, so no location was found and no food source was checked. Nothing here is a result.':'The place search found no match for the text entered, so no food source was checked. Nothing here is a result.',evidenceIds:ids([byId(e,'fara-method')]),signal:'data-gap',priority:'next',timing:'Now, before using this page',authorityUrl:urls.snap,nextStep:track==='operator'?(failed?'Try the search again in a moment or use Use my location; meanwhile refer people to 211 and the official USDA SNAP retailer locator.':'Add a city and state or try a 5-digit ZIP code, then read each source status before using the lists.'):(failed?'Try again in a moment, or press Use my location. If you need food today, dial 2-1-1.':'Check the spelling, add a city and state, or try a 5-digit ZIP code. You can also press Use my location. If you need food today, dial 2-1-1.'),escalateWhen:'Someone needs food today.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck after the next search.'})));
     }else if(idle){
       groups.push(pair('food-start',track=>({title:'Search for a place to begin',target:'No search yet',reason:'No place has been searched, so no source has been checked and nothing here is a result yet. After a search, each source shows its own status and data date.',evidenceIds:ids([byId(e,'fara-method')]),signal:'planning',priority:'planned',timing:'When you are ready to search',authorityUrl:urls.snap,nextStep:track==='operator'?'Search the address, city or ZIP code you are planning for, then read each source status before using the lists.':'Type an address, city or ZIP code, or use your location. If you need food today, you can also dial 2-1-1.',escalateWhen:'Someone needs food today.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck after the first search.'})));
-    }else if(gaps.length)groups.push(pair('food-gap',track=>({title:'Check unavailable sources directly',target:input.context||'Searched location',reason:gaps.length+' of '+keys.length+' public sources have no complete result in this view: '+gaps.map(id=>names[id]+' ('+gapWhy(id)+')').join(', ')+'. An unavailable source is unknown, not zero nearby.',evidenceIds:ids(gaps.map(id=>byId(e,id))),signal:'data-gap',priority:'next',timing:'Before relying on the lists on this page',authorityUrl:urls.snap,nextStep:track==='operator'?'Record which sources failed and when, try the search again later, and refer people to 211 and the official USDA SNAP retailer locator in the meantime.':'Use the official USDA SNAP retailer locator, the Feeding America food bank locator or call 211. A missing list here does not mean there are no places nearby.',escalateWhen:'Someone needs food today and the lists here are unavailable or incomplete.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck after Try again succeeds or on the next search.'})));
+    }
+    groups.push(pair('food-help',track=>({title:'Use 211 or the food bank network for help today',target:'Local food assistance referral',reason:'There is no complete national food pantry list. OpenStreetMap food bank tags are partial, and 211 and regional food banks keep local lists with hours and eligibility.',evidenceIds:ids([byId(e,'foodbanks-count')]),signal:'reference',priority:'planned',timing:'Whenever food is needed today or the lists here are thin',authorityUrl:urls.help,nextStep:track==='operator'?'Refer through 211 or the regional food bank network, and keep this page as a dated starting list only.':'Dial 2-1-1 or visit 211.org to find food pantries and meal programs near you.',escalateWhen:'Someone has no food today or cannot reach a listed place.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck when circumstances or local programs change.'})));
+    if(!noPlace&&!idle&&gaps.length)groups.push(pair('food-gap',track=>({title:'Check unavailable sources directly',target:input.context||'Searched location',reason:gaps.length+' of '+keys.length+' public sources have no complete result in this view: '+gaps.map(id=>names[id]+' ('+gapWhy(id)+')').join(', ')+'. An unavailable source is unknown, not zero nearby.',evidenceIds:ids(gaps.map(id=>byId(e,id))),signal:'data-gap',priority:'next',timing:'Before relying on the lists on this page',authorityUrl:urls.snap,nextStep:track==='operator'?'Record which sources failed and when, try the search again later, and refer people to 211 and the official USDA SNAP retailer locator in the meantime.':'Use the official USDA SNAP retailer locator, the Feeding America food bank locator or call 211. A missing list here does not mean there are no places nearby.',escalateWhen:'Someone needs food today and the lists here are unavailable or incomplete.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck after Try again succeeds or on the next search.'})));
     if(!idle&&uncovered)groups.push(pair('food-coverage',track=>({title:'Note that the Atlas has no tract result here',target:'2025 Atlas coverage',reason:tract.sourceStatus==='not-covered'?'The searched point is in a U.S. territory. The 2025 Atlas covers the 50 states and DC only, so no tract classification exists here. This is not a "not low access" result.':'No census tract was found at the searched point. The 2025 Atlas covers the 50 states and DC only, and points in water have no tract. This is not a "not low access" result.',evidenceIds:ids([byId(e,'fara-method')]),signal:'reference',priority:'planned',timing:'Before describing food access for this place',authorityUrl:urls.food,nextStep:track==='operator'?'Use local sources for access planning here; do not record the missing tract result as low or not low access.':'Use the lists on this page and call ahead. The missing tract result says nothing about access here.',escalateWhen:'A plan needs a tract classification for a place the Atlas does not cover.',escalateTo:track==='operator'?'The local food policy or outreach lead':'211 or the regional food bank network',reviewAfter:'Recheck when USDA ERS publishes a new Atlas edition.'})));
     if(usable(tract))groups.push(pair('food-tract',track=>({title:'Read the tract classification as dated background',target:'Census tract classification, Atlas data '+tract.measuredAt,reason:'USDA Food Access Research Atlas (2025 SNAP-authorized Retailer Access Map, released July 2026), low income and low access at 1 mile urban or 10 miles rural: '+tract.value+'. It uses June 2025 store locations and describes the census tract, not current store access or any household.',evidenceIds:[tract.id],signal:'reference',priority:'planned',timing:'Before using the tract result in a plan or a conversation',authorityUrl:urls.food,nextStep:track==='operator'?'Use the flag for outreach planning next to the current listings; do not present it as current store availability or a household eligibility test.':'Use the flag as context only. Check the current lists and call ahead before you travel.',escalateWhen:'A decision treats the tract flag as if it described current access or a specific household.',escalateTo:track==='operator'?'The local food policy or outreach lead, using the USDA ERS documentation':'The USDA ERS Atlas documentation',reviewAfter:'Recheck when USDA ERS publishes a new Atlas edition.'})));
     const summary=lists.map((f,i)=>{const label=names[['snap-count','markets-count','foodbanks-count'][i]];return usable(f)?label+': '+fmt(f.value)+' '+(f.unit||'listed')+(f.partial?' (partial)':'')+', data '+f.measuredAt:label+': unavailable';}).join('; ');
     if(!idle&&!noPlace)groups.push(pair('food-confirm',track=>({title:'Call ahead to confirm hours, stock and eligibility',target:'Listed places from the usable sources',reason:(ok.length?summary+'. ':'No listing source has a usable result in this view. ')+'Listings can be outdated or incomplete, SNAP listings have no hours, and distances are straight-line, not travel distance.',evidenceIds:ids(ok),signal:ok.length?'planning':'data-gap',priority:'planned',timing:'Before you travel to a listed place',authorityUrl:urls.snap,nextStep:track==='operator'?'Verify hours, eligibility rules and current operation with each place before adding it to a referral list.':'Phone the place or check its own website for hours and what to bring before you go.',escalateWhen:'A listed place is closed, moved or does not serve the person.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck on each new search or when a place changes its hours.'})));
-    groups.push(pair('food-help',track=>({title:'Use 211 or the food bank network for help today',target:'Local food assistance referral',reason:'There is no complete national food pantry list. OpenStreetMap food bank tags are partial, and 211 and regional food banks keep local lists with hours and eligibility.',evidenceIds:ids([byId(e,'foodbanks-count')]),signal:'reference',priority:'planned',timing:'Whenever food is needed today or the lists here are thin',authorityUrl:urls.help,nextStep:track==='operator'?'Refer through 211 or the regional food bank network, and keep this page as a dated starting list only.':'Dial 2-1-1 or visit 211.org to find food pantries and meal programs near you.',escalateWhen:'Someone has no food today or cannot reach a listed place.',escalateTo:'211 or the regional food bank network',reviewAfter:'Recheck when circumstances or local programs change.'})));
     return ranked(groups);
   }
   R.registerPrioritizer('us-grid-strain',grid);
@@ -2444,7 +2541,7 @@ if(document.readyState==='complete')loadLeaflet();else window.addEventListener('
         });
       });
     });
-    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'Ten-dimension action checklist: '+cfg.title,context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
+    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'For planners: ten-part review of '+cfg.title.toLowerCase(),context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
       limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. Unavailable inputs never become an all-clear, and a failed source is unknown, never zero. No fitted causal effect, eligibility decision or travel-time estimate is produced.']};
   }
 
@@ -2516,7 +2613,7 @@ if(document.readyState==='complete')loadLeaflet();else window.addEventListener('
     var records = [{id:'fara-reference',label:'USDA Food Access Research Atlas edition',kind:'context',evidenceIds:['fara-method'],summary:VINTAGE+'. Low access is distance to any SNAP-authorized store, including convenience stores.'}];
     if (lila19 != null) records.push({id:'fara-2019-reference',label:'2019 Atlas measure (older method)',kind:'context',evidenceIds:['tract-2019'],summary:'The 2019 measure on 2010 tracts, counting supermarkets and large grocery stores only, is '+(lila19 === 1 ? 'flagged' : 'not flagged')+' for this location. It is not comparable with the 2025 measure.'});
     payload.impacts = {title:'Tract food-access classification and nearby food listings',scope:'Census tract flags and listing counts only; the typed address and coordinates are excluded',
-      summary:'The tract flag is a dated USDA classification, not current access. Listing counts come from the USDA SNAP retailer list and OpenStreetMap; a failed source is unknown, never zero, and a successful zero is a real zero within its radius.',
+      summary:'The tract flag is a dated USDA classification, not current access. Listing counts come from the USDA SNAP retailer list and OpenStreetMap; a failed source is unknown, never zero, and a successful zero means none are listed in that source within its radius, not that none exist.',
       items:items,records:records,
       limitations:[cfg.limit,'Farmers markets shown are only those authorized to accept SNAP. OpenStreetMap food bank tags are partial, and there is no complete national pantry list; dial 2-1-1 for local help.']};
     return payload;

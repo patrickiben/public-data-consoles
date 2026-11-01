@@ -73,7 +73,7 @@
         });
       });
     });
-    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'Ten-dimension action checklist: '+cfg.title,context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
+    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'For planners: ten-part review of '+cfg.title.toLowerCase(),context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
       limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. Unavailable inputs never become an all-clear, and a failed source is unknown, never zero. No fitted causal effect, eligibility decision or travel-time estimate is produced.']};
   }
 
@@ -145,7 +145,7 @@
     var records = [{id:'fara-reference',label:'USDA Food Access Research Atlas edition',kind:'context',evidenceIds:['fara-method'],summary:VINTAGE+'. Low access is distance to any SNAP-authorized store, including convenience stores.'}];
     if (lila19 != null) records.push({id:'fara-2019-reference',label:'2019 Atlas measure (older method)',kind:'context',evidenceIds:['tract-2019'],summary:'The 2019 measure on 2010 tracts, counting supermarkets and large grocery stores only, is '+(lila19 === 1 ? 'flagged' : 'not flagged')+' for this location. It is not comparable with the 2025 measure.'});
     payload.impacts = {title:'Tract food-access classification and nearby food listings',scope:'Census tract flags and listing counts only; the typed address and coordinates are excluded',
-      summary:'The tract flag is a dated USDA classification, not current access. Listing counts come from the USDA SNAP retailer list and OpenStreetMap; a failed source is unknown, never zero, and a successful zero is a real zero within its radius.',
+      summary:'The tract flag is a dated USDA classification, not current access. Listing counts come from the USDA SNAP retailer list and OpenStreetMap; a failed source is unknown, never zero, and a successful zero means none are listed in that source within its radius, not that none exist.',
       items:items,records:records,
       limitations:[cfg.limit,'Farmers markets shown are only those authorized to accept SNAP. OpenStreetMap food bank tags are partial, and there is no complete national pantry list; dial 2-1-1 for local help.']};
     return payload;

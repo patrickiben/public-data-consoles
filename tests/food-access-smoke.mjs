@@ -97,6 +97,14 @@ async function open(options = {}, contextOptions = {}) {
       return route.fulfill({ headers, contentType: js ? 'application/javascript' : 'text/css', body: js ? leafletJS : leafletCSS });
     }
     if (url.hostname === 'tile.openstreetmap.org') return route.fulfill({ headers, contentType: 'image/png', body: pixel });
+    if (url.hostname === 'tigerweb.geo.census.gov') {
+      if (opt.fail?.has('nominatim')) return fail();
+      if (url.pathname.endsWith('/MapServer/2/query')) {
+        const zip = (/ZCTA5='(\d{5})'/.exec(url.searchParams.get('where') || '') || [])[1], key = { 59337: 'jordan' }[zip], p = PLACES[key];
+        return json({ features: p ? [{ attributes: { ZCTA5: zip, INTPTLAT: '+' + p.lat, INTPTLON: String(p.lon) } }] : [] });
+      }
+      return json({ features: [{ attributes: url.pathname.endsWith('/MapServer/82/query') ? { NAME: 'Garfield County' } : { NAME: 'Montana', STUSAB: 'MT' } }] });
+    }
     if (url.hostname === 'nominatim.openstreetmap.org') {
       log.nominatimTimes.push(Date.now());
       if (opt.fail?.has('nominatim')) return fail();
@@ -125,19 +133,20 @@ async function open(options = {}, contextOptions = {}) {
         return json({ name: 'snap_retailer_location_data', editingInfo: { lastEditDate: 1792613414412 } });
       }
       const where = url.searchParams.get('where') || '', markets = where.includes("Store_Type='Farmers and Markets'");
-      assert.ok(markets || where.includes("Store_Type<>'Farmers and Markets'"), 'SNAP query must split farmers markets');
+      assert.ok(markets || where.includes("Store_Type NOT IN ('Farmers and Markets','Restaurant Meals Program')"), 'SNAP query must split farmers markets');
       const key = placeForLon(+url.searchParams.get('geometry').split(',')[0]);
       if (key === 'slow' && opt.slow) await delay(2500);
       if (opt.fail?.has(markets ? 'markets' : 'snap')) return fail();
       if (opt.empty) return json({ features: [] });
       const radius = +url.searchParams.get('distance');
       if (!markets && opt.snapFailAbove && radius > opt.snapFailAbove) return json({ error: { code: 400, message: 'Cannot perform query. Invalid query parameters.' } });
-      let list = stores(key, markets ? 2 : (opt.snapCount ?? 30), markets);
+      let list = opt.snapList && !markets ? opt.snapList(PLACES[key]) : stores(key, markets ? 2 : (opt.snapCount ?? 30), markets);
       if (opt.honorRadius) list = list.filter(f => Math.abs(f.attributes.Latitude - PLACES[key].lat) * 69.05 <= radius);
       return json({ features: list });
     }
     if (url.hostname === 'overpass-api.de' || url.hostname === 'maps.mail.ru') {
-      if (opt.fail?.has('overpass') || (url.hostname === 'overpass-api.de' && opt.fail?.has('overpass-main'))) return fail();
+      // 'overpass-main' fails only the first of the page's two tries.
+      if (opt.fail?.has('overpass') || (opt.fail?.has('overpass-main') && !log.overpassTried)) { log.overpassTried = true; return fail(); }
       const body = decodeURIComponent((request.postData() || '').replace(/^data=/, '').replace(/\+/g, ' '));
       const m = /around:\d+,([-\d.]+),([-\d.]+)/.exec(body);
       const key = m ? placeForLon(+m[2]) : null;
@@ -184,10 +193,12 @@ try {
     assert.equal(idle.tract.status, 'idle');
     for (const k of ['geocoder', 'atlas2025', 'atlas2019', 'snap', 'markets', 'foodbanks']) assert.equal(idle.sources[k].status, 'idle', 'idle ' + k);
     for (const k of ['geocoder', 'fara25', 'fara19', 'snap', 'markets', 'osm']) assert.match(await text(page, '#status-' + k), /Waiting for a search/);
-    const privacy = await text(page, '#privacy');
+    const privacy = await page.locator('#privacy').textContent();
     assert.match(privacy, /has no server of its own and saves nothing/);
-    assert.doesNotMatch(privacy, /stays in your browser/);
-    assert.match(privacy, /coordinates to the USDA services/);
+    assert.match(privacy, /Your location does leave this browser/);
+    assert.match(privacy, /tigerweb\.geo\.census\.gov/);
+    assert.match(privacy, /FOSSGIS/);
+    assert.doesNotMatch(privacy, /mail\.ru/);
     assert.match(privacy, /tile\.openstreetmap\.org/);
     assert.equal(await page.locator('#search-form [name]').count(), 0, 'no named field can reach a URL through a native submit');
     assert.equal(await page.getAttribute('#search-form', 'onsubmit'), 'return false');
@@ -226,7 +237,7 @@ try {
     assert.match(first, /Confirm before you go/);
     assert.match(first, /straight-line/);
     assert.match(first, /Source: USDA Food and Nutrition Administration SNAP retailer data; list as of October 21, 2026/);
-    assert.ok(await page.$('#results a.fa-dir[href^="https://www.openstreetmap.org/directions?route="]'));
+    assert.ok(await page.$('#results a.fa-dir[href^="https://www.google.com/maps/dir/?api=1&destination="]'));
     // Escaping and link safety for crowd-sourced text.
     assert.equal(await page.evaluate(() => window.__xss), undefined);
     assert.equal(await page.locator('#results img').count(), 0);
@@ -264,17 +275,14 @@ try {
 
     // Rural ZIP: postalcode parameter, approximate-center wording, 1 request per second.
     await search(page, '59337', 2);
-    const zipUrl = new URL(log.requests.filter(u => u.includes('nominatim')).at(-1));
-    assert.equal(zipUrl.searchParams.get('postalcode'), '59337');
-    assert.equal(zipUrl.searchParams.get('q'), null);
+    assert.ok(log.requests.some(u => decodeURIComponent(u).includes("ZCTA5='59337'")), 'a ZIP code goes to the Census');
+    assert.equal(log.requests.filter(u => u.includes('nominatim') && u.includes('59337')).length, 0, 'a ZIP code never goes to the place search');
     assert.match(await text(page, '#place'), /approximate center of ZIP code 59337/);
     assert.match(await text(page, '#area-headline'), /Low access, but not low income/);
     assert.match(await text(page, '#area'), /Rural/);
-    const gaps = log.nominatimTimes.slice(1).map((t0, i) => t0 - log.nominatimTimes[i]);
-    assert.ok(gaps.every(g => g >= 950), 'Nominatim spacing ' + gaps);
     // Repeating a search uses the in-memory cache, not the network.
     await search(page, '59337', 3);
-    assert.equal(log.nominatimTimes.length, 2);
+    assert.equal(log.nominatimTimes.length, 1, "only the street address used the place search");
     const visible = await page.evaluate(() => document.body.innerText);
     assert.ok(!visible.includes(EM_DASH), 'no em dash in visible text');
     assert.equal((await readFile(path.join(root, 'consoles/food-desert-oases/index.html'), 'utf8')).includes(EM_DASH), false);
@@ -307,8 +315,8 @@ try {
       assert.match(await text(page, '#results-summary'), /Unavailable:/);
     }
     if (row === 'osm') {
-      assert.ok(t.log.requests.some(u => u.includes('maps.mail.ru')), 'mirror tried');
-      assert.match(rowText, /tried overpass-api\.de and the maps\.mail\.ru mirror/);
+      assert.ok(!t.log.requests.some(u => u.includes('maps.mail.ru')), 'no other Overpass host is used');
+      assert.match(rowText, /tried overpass-api\.de twice/);
     }
     await finish(t, 'fail ' + failKey);
   }
@@ -344,7 +352,7 @@ try {
     const bridge = await page.evaluate(() => window.FoodAccessResponse);
     assert.deepEqual([bridge.sources.snap.status, bridge.sources.snap.count, bridge.sources.snap.radiusMi], ['empty', 0, 50]);
     assert.equal(bridge.tract.status, 'no-tract');
-    assert.equal(t.log.requests.filter(u => u.includes('services1.arcgis.com') && u.includes("Store_Type%3C%3E")).length, 6, 'SNAP radius expanded through 1, 2, 5, 10, 25, 50 miles');
+    assert.equal(t.log.requests.filter(u => u.includes('services1.arcgis.com') && u.includes("Store_Type%20NOT%20IN")).length, 6, 'SNAP radius expanded through 1, 2, 5, 10, 25, 50 miles');
     await finish(t, 'empty');
   }
 
@@ -525,14 +533,14 @@ try {
     assert.ok(!(mid.state === 'settled' && mid.tract.status === 'loading'), 'never settled while a retried source loads');
     await settled(page, 1);
     const head = await text(page, '#area-headline');
-    assert.match(head, /Low income, but not low access by the main measure \(1 mile urban, 10 miles rural\)/);
+    assert.match(head, /Low income, but not low access by the any-SNAP-store measure, where convenience stores count \(1 mile urban, 10 miles rural\)/);
     assert.match(head, /flagged low income and low access: 1\/2 mile urban or 10 miles rural/);
     delete opts.fara25Delay;
     for (const [zip, n] of [['59337 1234', 2], ['593371234', 3]]) {
       await search(page, zip, n);
       assert.equal(await state(page, 'geocoder'), 'ok', zip);
     }
-    assert.equal(log.requests.filter(u => u.includes('postalcode=59337')).length, 1, 'ZIP+4 forms send the 5-digit ZIP (second one cached)');
+    assert.equal(log.requests.filter(u => decodeURIComponent(u).includes("ZCTA5='59337'")).length, 1, 'ZIP+4 forms send the 5-digit ZIP (second one cached)');
     await finish(t, 'headline, zip and retry');
   }
 
@@ -544,7 +552,7 @@ try {
     await settled(page, 1);
     assert.equal(await state(page, 'fara25'), 'notcovered');
     assert.equal(log.requests.filter(u => u.includes('gisportal')).length, 0, 'territory device point skips the Atlas');
-    assert.match(await text(page, '#place'), /does not show or save it; its coordinates are sent only to the USDA, ArcGIS Online and OpenStreetMap services/);
+    assert.match(await text(page, '#place'), /your location is sent, rounded, to USDA, to ArcGIS Online and to the OpenStreetMap Overpass server/);
     await page.evaluate(() => { navigator.geolocation.getCurrentPosition = (ok, err) => setTimeout(() => err({ code: 1, message: 'denied' }), 10); });
     await page.click('#loc');
     await settled(page, 2);
@@ -564,6 +572,42 @@ try {
       assert.equal(bg, 'rgb(243, 246, 249)', 'light background');
     }
     await finish(t, `layout ${width} ${colorScheme}`);
+  }
+  // QC: the page's main answers. These fail if distances, flags or headlines are wrong, not only if the page breaks.
+  {
+    const store = (p, name, type, dLat, dLon) => ({ attributes: { Store_Name: name, Store_Street_Address: '1 Main St', Additonal_Address: null, City: 'Fixture City', State: 'OH', Zip_Code: '44115', Store_Type: type, Latitude: p.lat + dLat, Longitude: p.lon + dLon, Incentive_Program: null } });
+    const snapList = p => [store(p, 'East Grocer', 'Grocery Store', 0, 0.05), store(p, 'North Market', 'Supermarket', 0.03, 0), store(p, 'Third Grocer', 'Super Store', -0.1, 0)].concat(Array.from({ length: 14 }, (_, i) => store(p, 'Corner ' + i, 'Convenience Store', 0.2, 0.01 * i)));
+    const t = await open({ snapList });
+    const { page, log } = t;
+    const saved25 = ATLAS25.cleveland, saved19 = ATLAS19.cleveland;
+    await search(page, '1500 Euclid Ave, Cleveland, OH', 1);
+    // 0.05 degrees of longitude at this latitude is 2.6 miles; 0.03 degrees of latitude is 2.1 miles. Longitude has to count.
+    const cards = await page.$$eval('#results > li.fa-card', els => els.map(e => e.innerText));
+    const east = cards.find(c => c.includes('East Grocer')), north = cards.find(c => c.includes('North Market'));
+    assert.match(east, /2\.6 mi/, 'distance uses longitude and miles: ' + east);
+    assert.match(north, /2\.1 mi/, 'distance in miles: ' + north);
+    assert.ok(cards.indexOf(north) < cards.indexOf(east), 'nearest first');
+    assert.ok(log.requests.some(u => decodeURIComponent(u).includes("Store_Type NOT IN ('Farmers and Markets','Restaurant Meals Program')")), 'restaurants are not requested');
+    // The headline reads the 1 mile and 10 mile flags, not the 20 mile ones.
+    ATLAS25.cleveland = { ...saved25, LowIncomeTracts: 0, SD_SRAM_LA1and10: 0, SD_SRAM_LA1and20: 1, SD_SRAM_LILATracts_1And10: 0, SD_SRAM_LILATracts_1And20: 1 };
+    await search(page, 'Fast Town', 2);
+    assert.match(await text(page, '#area-headline'), /^Not low income and not low access by the any-SNAP-store measure/);
+    ATLAS25.cleveland = { ...saved25, LowIncomeTracts: 1, SD_SRAM_LA1and10: 1, SD_SRAM_LILATracts_1And10: 1 };
+    await page.fill('#q', 'Cleveland Ohio');
+    await search(page, 'Cleveland, Ohio', 3);
+    assert.match(await text(page, '#area-headline'), /^Low income and low access by the any-SNAP-store measure/);
+    // When the two USDA measures disagree, the page says so first.
+    ATLAS25.cleveland = { ...saved25, SD_SRAM_LA1and10: 0, SD_SRAM_LILATracts_1And10: 0 };
+    ATLAS19.cleveland = { ...saved19, LA1and10: 1 };
+    await search(page, '1500 Euclid Avenue, Cleveland, OH', 4);
+    assert.match(await text(page, '#area-lead'), /The two USDA measures disagree here\. Not low access if any SNAP store counts/);
+    ATLAS25.cleveland = saved25; ATLAS19.cleveland = saved19;
+    // A phantom ZIP code searches nothing and never reaches the place search.
+    const nom = log.nominatimTimes.length;
+    await search(page, '99999', 5);
+    assert.match(await text(page, '#place'), /The U\.S\. Census has no ZIP code area for 99999/);
+    assert.equal(log.nominatimTimes.length, nom);
+    await finish(t, 'qc main answers');
   }
 
   console.log(`PASS ${passed} food access smoke scenarios`);
