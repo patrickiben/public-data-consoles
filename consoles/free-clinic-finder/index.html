@@ -2201,7 +2201,7 @@ function hrsaItem(f,pt){
  const oper=clean(a.HCC_OPER_SCHD_DESC,40),cal=clean(a.HCC_CLND_SCHD_DIM_DESC,40),sched=[unknownish(oper)?'':oper,unknownish(cal)?'':cal].filter(Boolean);
  if(sched.length)facts.push(['Schedule type (HRSA record): '+sched.join(', '),'']);
  const pos={lat:lat,lon:lon},dist=haversine(pt,pos);
- return {src:'hrsa',key:'hrsa:'+(Number.isInteger(oid)?oid:Math.round(lat*1e5)+','+Math.round(lon*1e5)+':'+name),name:name,lookalike:look,fixed:!(mobile||seasonal||school),permanent:!(mobile||seasonal),regular:!(mobile||seasonal||school||restricted),phoneDigits:String(ph||'').replace(/\D/g,''),approx:approx,noDir:approx||withheld,hasPhone:!!ph,adminOnly:/^admin(istrative)?( office)?( only)?$/i.test(siteName)||/\badmin only\b/i.test(siteName),
+ return {src:'hrsa',key:'hrsa:'+(Number.isInteger(oid)?oid:Math.round(lat*1e5)+','+Math.round(lon*1e5)+':'+name),name:name,lookalike:look,fixed:!(mobile||seasonal||school),permanent:!(mobile||seasonal),regular:!(mobile||seasonal||school||restricted),phoneDigits:String(a.SITE_PHONE_NUM||'').replace(/\D/g,''),approx:approx,noDir:approx||withheld,hasPhone:!!ph,adminOnly:/^admin(istrative)?( office)?( only)?$/i.test(siteName)||/\badmin only\b/i.test(siteName),
   tag:'Sliding fee, not necessarily free',typeLabel:look?'Health center look-alike (meets HRSA program rules, not HRSA-funded)':'HRSA-funded health center',
   lat:lat,lon:lon,dist:dist,dir:dist>=0.01&&!approx?compass(pt,pos):'',address:[street,cityLine].filter(Boolean).join(', ')||'Address not listed',
   facts:facts,dupKey:[name,street,city].join('|').toLowerCase()};

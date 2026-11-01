@@ -219,6 +219,7 @@ async function open(options = {}, contextOptions = {}) {
       const m = /around:(\d+),([-\d.]+),([-\d.]+)/.exec(q);
       const rec = { host: url.hostname, method: request.method(), body: request.postData() || '', query: q, radiusM: m ? +m[1] : null, key: m ? placeNear(+m[2], +m[3]) : null };
       log.overpass.push(rec); log.referers.push(request.headers().referer || '');
+      if (opt.overpassBad) return json(opt.overpassBad);
       return reply(main ? 'overpass-main' : 'overpass-mirror', async () => {
         const elements = rec.key === 'chicago' ? cityOsm().concat(opt.extraOsm || []) : rec.key === 'slow' ? (await sleep(2500), slowOsm()) : [];
         return { version: 0.6, generator: 'fixture', osm3s: { timestamp_osm_base: BASE_TS }, elements };
@@ -1261,6 +1262,44 @@ try {
     assert.deepEqual(log.hrsa.map(r => r.radius), [10, 25], 'keeps widening past school clinics');
     assert.match(await text(page, '#status-hrsa'), /widened from 10 miles because fewer than 5 regular sites were found closer/);
     await finish(t, 'qc widening');
+  }
+
+  // East-west distance and compass, one name at two addresses, next-door addresses, dates in another time zone, foreign text.
+  {
+    const p = PLACES.chicago, east = miles => p.lon + miles / (69.172 * Math.cos(p.lat * Math.PI / 180));
+    const at = (f, lon) => { f.geometry = { x: lon, y: p.lat }; return f; };
+    const extraHrsa = [
+      at(hrsaFeat('chicago', 8101, 0, { SITE_NM: 'East Fixture Clinic', SITE_ADDRESS: '1 East St', SITE_PHONE_NUM: '312-555-0101' }), east(1)),
+      at(hrsaFeat('chicago', 8102, 0, { SITE_NM: 'West Fixture Clinic', SITE_ADDRESS: '1 West St', SITE_PHONE_NUM: '312-555-0102' }), east(-2)),
+      at(hrsaFeat('chicago', 8103, 0, { SITE_NM: 'Chain Fixture Clinic', SITE_ADDRESS: '1 First St', SITE_PHONE_NUM: '312-555-0103' }), east(3)),
+      at(hrsaFeat('chicago', 8104, 0, { SITE_NM: 'Chain Fixture Clinic', SITE_ADDRESS: '9 Far St', SITE_PHONE_NUM: '312-555-0103' }), east(5)),
+      at(hrsaFeat('chicago', 8105, 0, { SITE_NM: 'Campus Fixture Clinic', SITE_ADDRESS: '10 Campus Way', SITE_PHONE_NUM: '312-555-0105' }), east(6)),
+      at(hrsaFeat('chicago', 8106, 0, { SITE_NM: 'Campus Fixture Clinic', SITE_ADDRESS: '12 Campus Way', SITE_PHONE_NUM: '312-555-0105' }), east(6.05)),
+    ];
+    const t = await open({ extraHrsa }, { timezoneId: 'America/Los_Angeles' });
+    const { page } = t;
+    await search(page, CITY_QUERY, 1);
+    await page.click('#results-hrsa ~ * [data-more], #more-hrsa').catch(() => {});
+    const cards = await page.locator('#results-hrsa > li.pb-card').allInnerTexts();
+    assert.match(cards.find(c => c.includes('East Fixture Clinic')), /1\.0 mi E straight-line/);
+    assert.match(cards.find(c => c.includes('West Fixture Clinic')), /2\.0 mi W straight-line/);
+    assert.equal(cards.filter(c => c.includes('Chain Fixture Clinic')).length, 2, 'one name at two far-apart addresses stays two sites');
+    const campus = cards.filter(c => c.includes('Campus Fixture Clinic'));
+    assert.equal(campus.length, 1, 'next-door addresses with one phone fold into one card');
+    assert.match(campus[0], /Also listed at 1 nearby address with the same phone number\./);
+    assert.equal(await text(page, '#src-date-hrsa'), 'HRSA data warehouse last loaded Oct 30, 2026 (related table)', 'dates are UTC, whatever the visitor time zone');
+    await finish(t, 'east-west distance, same names, time zone');
+
+    const noPoint = await open({ overpassBad: { version: 0.6, elements: [{ foo: 1 }, { type: 'node' }, null] } });
+    await search(noPoint.page, CITY_QUERY, 1);
+    assert.equal(await state(noPoint.page, 'osm'), 'failed', 'rows with no point are a failure, not none listed');
+    await finish(noPoint, 'Overpass rows with no point');
+
+    const abroad = await open();
+    await abroad.page.fill('#q', 'Toronto, Canada');
+    await abroad.page.press('#q', 'Enter');
+    await abroad.page.waitForFunction(() => /outside the United States/.test(document.getElementById('place').textContent));
+    await finish(abroad, 'foreign place');
   }
 
   console.log(`PASS ${passed} clinic finder smoke scenarios`);

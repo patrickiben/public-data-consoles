@@ -151,6 +151,7 @@ async function open(options = {}, contextOptions = {}) {
         const key = placeNear(+url.searchParams.get('lat'), +url.searchParams.get('lng'));
         if (key === 'slow') return sleep(2500).then(slowRefuge);
         if (key !== 'chicago') return [];
+        if (Array.isArray(opt.refugeRows)) return opt.refugeRows;
         if (opt.refugeRows === 100) return Array.from({ length: 100 }, (_, i) => refugeRow('chicago', 200 + i, 0.1537 * (i + 1)));
         return cityRefuge();
       });
@@ -166,6 +167,7 @@ async function open(options = {}, contextOptions = {}) {
         rec.radiusMi = Math.round((((n - s) / 2) * 111.32 - 0.2) / 1.609344);
       }
       log.overpass.push(rec); log.referers.push(request.headers().referer || '');
+      if (opt.overpassBody) return json(opt.overpassBody);
       return reply(main ? 'overpass-main' : 'overpass-mirror', () => {
         const elements = rec.key === 'chicago' ? cityOsm().concat(opt.extraOsm || []) : rec.key === 'slow' ? sleep(2500).then(slowOsm) : [];
         return Promise.resolve(elements).then(els => ({ version: 0.6, generator: 'fixture', osm3s: { timestamp_osm_base: BASE_TS }, elements: els }));
@@ -808,6 +810,49 @@ try {
     assert.match(await text(page, '#live'), /^Search stopped, no location\./, 'no location is not announced as zero listings');
     assert.equal(log.nominatim.length, 1, 'a phantom ZIP code never reaches the place search');
     await finish(t, 'qc fixes');
+  }
+
+  // East-west distance and compass, markup in popups, the rounded Overpass box, down-voted and unapproved rows, foreign text.
+  {
+    const p = PLACES.chicago, east = miles => p.lon + miles / (69.172 * Math.cos(p.lat * Math.PI / 180));
+    const rows = [
+      { ...refugeRow('chicago', 901, 0), name: 'East Fixture <img src=x onerror="window.__xss=1">', latitude: p.lat, longitude: east(1) },
+      { ...refugeRow('chicago', 902, 0), name: 'West Fixture', latitude: p.lat, longitude: east(-2) },
+      { ...refugeRow('chicago', 903, 0.1), name: 'Voted Down Fixture', upvote: 0, downvote: 3 },
+    ];
+    const t = await open({ refugeRows: rows });
+    const { page, log } = t;
+    await search(page, CITY_QUERY, 1);
+    const cards = await page.locator('#results > li.pb-card').allInnerTexts();
+    assert.match(cards.find(c => c.includes('East Fixture')), /1\.0 mi E straight-line/);
+    assert.match(cards.find(c => c.includes('West Fixture')), /2\.0 mi W straight-line/);
+    assert.ok(!cards.some(c => c.includes('Voted Down Fixture')), 'a heavily down-voted listing is left out');
+    assert.match(await text(page, '#results-summary'), /1 Refuge listing left out because its users voted it down/);
+    const box = /\(([-\d.]+),([-\d.]+),([-\d.]+),([-\d.]+)\)/.exec(decodeURIComponent(log.overpass[0].body.replace(/^data=/, '').replace(/\+/g, ' '))).slice(1).map(Number);
+    const r3 = v => Math.round(v * 1000) / 1000;
+    assert.ok(Math.abs((box[0] + box[2]) / 2 - r3(p.lat)) < 1e-6 && Math.abs((box[1] + box[3]) / 2 - r3(p.lon)) < 1e-6, 'the Overpass box is centered on the rounded point, not the exact one');
+    await page.locator('.leaflet-marker-icon').first().click({ force: true });
+    await page.waitForSelector('.leaflet-popup-content');
+    assert.equal(await page.locator('.leaflet-popup-content img').count(), 0, 'map popups escape listing text');
+    assert.equal(await page.evaluate(() => window.__xss), undefined);
+    await finish(t, 'east-west distance, popups, Overpass box');
+
+    const stopped = await open({ overpassBody: { version: 0.6, elements: [], remark: 'runtime error: Query timed out in "query" at line 1 after 26 seconds.' } });
+    await search(stopped.page, CITY_QUERY, 1);
+    assert.equal(await state(stopped.page, 'osm'), 'failed', 'a query the server stopped is not none listed');
+    assert.match(await text(stopped.page, '#status-osm'), /the server stopped the query/);
+    await finish(stopped, 'Overpass stopped early');
+
+    const noPoint = await open({ overpassBody: { version: 0.6, elements: [{ foo: 1 }, { type: 'node' }, { type: 'node', id: 5 }, null, 7] } });
+    await search(noPoint.page, CITY_QUERY, 1);
+    assert.equal(await state(noPoint.page, 'osm'), 'failed', 'rows with no point are a failure, not none listed');
+    await finish(noPoint, 'Overpass rows with no point');
+
+    const abroad = await open();
+    await abroad.page.fill('#q', 'Toronto, Canada');
+    await abroad.page.press('#q', 'Enter');
+    await abroad.page.waitForFunction(() => /outside the United States/.test(document.getElementById('place').textContent));
+    await finish(abroad, 'foreign place');
   }
 
   console.log(`PASS ${passed} bathroom finder smoke scenarios`);

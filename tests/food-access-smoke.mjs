@@ -37,6 +37,7 @@ const PLACES = {
   jordan: { lat: 47.3205365, lon: -106.9109964, name: '59337, Jordan, Garfield County, Montana, United States', addresstype: 'postcode', address: { country_code: 'us', state: 'Montana', postcode: '59337' } },
   hazard: { lat: 37.2498, lon: -83.1932, name: 'Hazard, Perry County, Kentucky, United States', addresstype: 'town', address: { country_code: 'us', state: 'Kentucky' } },
   slow: { lat: 40.25, lon: -80.25, name: 'Slow Town, Pennsylvania, United States', addresstype: 'town', address: { country_code: 'us', state: 'Pennsylvania' } },
+  flagged: { lat: 39.05, lon: -95.7, name: 'Flagged Town, Shawnee County, Kansas, United States', addresstype: 'town', address: { country_code: 'us', state: 'Kansas' } },
   sanjuan: { lat: 18.4655, lon: -66.1057, name: 'San Juan, Puerto Rico', addresstype: 'city', address: { country_code: 'pr', state: 'Puerto Rico' } },
 };
 function placeForLon(lon) {
@@ -46,11 +47,13 @@ const ATLAS25 = {
   cleveland: { CensusTract20: '39035107701', State: 'Ohio', County20: 'Cuyahoga County', Urban: 1, POP2020: 5524, LowIncomeTracts: 1, PovertyRate: 21.9, SD_SRAM_LILATracts_1And10: 0, SD_SRAM_LILATracts_halfAnd10: 0, SD_SRAM_LILATracts_1And20: 0, SD_SRAM_LILATracts_Vehicle: 0, SD_SRAM_HUNVFlag: 0, SD_SRAM_LA1and10: 0, SD_SRAM_LAhalfand10: 0, SD_SRAM_LA1and20: 0, SD_SRAM_LATractsVehicle_20: 0 },
   jordan: { CensusTract20: '30033000100', State: 'Montana', County20: 'Garfield County', Urban: 0, POP2020: 1173, LowIncomeTracts: 0, PovertyRate: 13.4, SD_SRAM_LILATracts_1And10: 0, SD_SRAM_LILATracts_halfAnd10: 0, SD_SRAM_LILATracts_1And20: 0, SD_SRAM_LILATracts_Vehicle: 0, SD_SRAM_HUNVFlag: 0, SD_SRAM_LA1and10: 1, SD_SRAM_LAhalfand10: 1, SD_SRAM_LA1and20: 1, SD_SRAM_LATractsVehicle_20: 1 },
   hazard: { CensusTract20: '21193970602', State: 'Kentucky', County20: 'Perry County', Urban: 1, LowIncomeTracts: 1, PovertyRate: 41.8, SD_SRAM_LILATracts_1And10: 0, SD_SRAM_LILATracts_halfAnd10: 1, SD_SRAM_LILATracts_1And20: 0, SD_SRAM_LILATracts_Vehicle: 0, SD_SRAM_HUNVFlag: 0, SD_SRAM_LA1and10: 0, SD_SRAM_LAhalfand10: 1, SD_SRAM_LA1and20: 0, SD_SRAM_LATractsVehicle_20: 0 },
+  flagged: { CensusTract20: '20177000100', State: 'Kansas', County20: 'Shawnee County', Urban: 1, POP2020: 4000, LowIncomeTracts: 1, PovertyRate: 30.5, SD_SRAM_LILATracts_1And10: 1, SD_SRAM_LILATracts_halfAnd10: 1, SD_SRAM_LILATracts_1And20: 0, SD_SRAM_LILATracts_Vehicle: 0, SD_SRAM_HUNVFlag: 0, SD_SRAM_LA1and10: 1, SD_SRAM_LAhalfand10: 1, SD_SRAM_LA1and20: 0, SD_SRAM_LATractsVehicle_20: 0 },
   slow: { CensusTract20: '42999999999', State: 'Pennsylvania', County20: 'Slow County', Urban: 0, LowIncomeTracts: 1, SD_SRAM_LILATracts_1And10: 1, SD_SRAM_LA1and10: 1 },
 };
 const ATLAS19 = {
   cleveland: { CensusTract: '39035107701', St_Name: 'Ohio', Cnty_Name: 'Cuyahoga', Urban: 1, LowIncomeTracts: 1, LILATracts_1And10: 0, LILATracts_halfAnd10: 0, LILATracts_1And20: 0, LILATracts_Vehicle: 0, LA1and10: 0, LAhalfand10: 0, LA1and20: 0 },
   jordan: { CensusTract: '30033000100', St_Name: 'Montana', Cnty_Name: 'Garfield', Urban: 0, LowIncomeTracts: 0, LILATracts_1And10: 0, LILATracts_halfAnd10: 0, LILATracts_1And20: 0, LILATracts_Vehicle: 0, LA1and10: 1, LAhalfand10: 1, LA1and20: 1 },
+  flagged: { CensusTract: '20177000100', St_Name: 'Kansas', Cnty_Name: 'Shawnee', Urban: 1, LowIncomeTracts: 1, LILATracts_1And10: 1, LILATracts_halfAnd10: 1, LILATracts_1And20: 0, LILATracts_Vehicle: 0, LA1and10: 1, LAhalfand10: 1, LA1and20: 0 },
   slow: { CensusTract: '42999999998', Urban: 0, LowIncomeTracts: 1, LILATracts_1And10: 1, LA1and10: 1 },
 };
 const TYPES = ['Supermarket', 'Convenience Store', 'Grocery Store', 'Specialty Store', 'Super Store', 'Other'];
@@ -109,13 +112,14 @@ async function open(options = {}, contextOptions = {}) {
         const zip = (/ZCTA5='(\d{5})'/.exec(url.searchParams.get('where') || '') || [])[1], key = { 59337: 'jordan' }[zip], p = PLACES[key];
         return json({ features: p ? [{ attributes: { ZCTA5: zip, INTPTLAT: '+' + p.lat, INTPTLON: String(p.lon) } }] : [] });
       }
+      if (opt.abroad && url.pathname.endsWith('/MapServer/80/query')) return json({ features: [] });
       return json({ features: [{ attributes: url.pathname.endsWith('/MapServer/82/query') ? { NAME: 'Garfield County' } : { NAME: 'Montana', STUSAB: 'MT' } }] });
     }
     if (url.hostname === 'nominatim.openstreetmap.org') {
       log.nominatimTimes.push(Date.now());
       if (opt.fail?.has('nominatim')) return fail();
       const q = (url.searchParams.get('q') || '').toLowerCase(), zip = url.searchParams.get('postalcode');
-      const key = zip === '59337' ? 'jordan' : q.includes('cleveland') ? 'cleveland' : q.includes('slow town') ? 'slow' : q.includes('fast town') ? 'cleveland' : q.includes('san juan') ? 'sanjuan' : q.includes('hazard') ? 'hazard' : null;
+      const key = zip === '59337' ? 'jordan' : q.includes('cleveland') ? 'cleveland' : q.includes('flagged town') ? 'flagged' : q.includes('slow town') ? 'slow' : q.includes('fast town') ? 'cleveland' : q.includes('san juan') ? 'sanjuan' : q.includes('hazard') ? 'hazard' : null;
       if (key === 'slow' && opt.slow) await delay(1200);
       if (!key) return json([]);
       const p = PLACES[key];
@@ -144,6 +148,8 @@ async function open(options = {}, contextOptions = {}) {
       if (key === 'slow' && opt.slow) await delay(2500);
       if (opt.fail?.has(markets ? 'markets' : 'snap')) return fail();
       if (opt.empty) return json({ features: [] });
+      if (opt.hangSnap && !markets) return;
+      if (opt.snapBody && !markets) return json(opt.snapBody);
       const radius = +url.searchParams.get('distance');
       if (!markets && opt.snapFailAbove && radius > opt.snapFailAbove) return json({ error: { code: 400, message: 'Cannot perform query. Invalid query parameters.' } });
       let list = opt.snapList && !markets ? opt.snapList(PLACES[key]) : stores(key, markets ? 2 : (opt.snapCount ?? 30), markets);
@@ -164,6 +170,7 @@ async function open(options = {}, contextOptions = {}) {
     log.unexpected.push(url.href);
     return route.fulfill({ status: 503, headers, body: '' });
   });
+  if (options.clock) await page.clock.install();
   await page.goto(pageUrl);
   return { context, page, log };
 }
@@ -522,6 +529,68 @@ try {
     assert.doesNotMatch(summary, /No places are listed/);
     await page.waitForFunction(() => /Check unavailable sources directly/.test(document.getElementById('console-response').textContent), null, { timeout: 5000 });
     await finish(t, 'all lists failed');
+  }
+
+  // A flagged tract, its Yes and No rows, real east-west distances, store types, and broken or hung answers.
+  {
+    const eastLon = (p, miles) => p.lon + miles / (69.172 * Math.cos(p.lat * Math.PI / 180));
+    const store = (name, type, lat, lon) => ({ attributes: { Store_Name: name, Store_Street_Address: '1 Main St', Additonal_Address: null, City: 'Topeka', State: 'KS', Zip_Code: '66603', Store_Type: type, Latitude: lat, Longitude: lon, Incentive_Program: null } });
+    const snapList = p => [store('East Market', 'Supermarket', p.lat, eastLon(p, 1)), store('North Mart', 'Convenience Store', p.lat + 1.5 / 69.05, p.lon), store('West Grocer', 'Grocery Store', p.lat, eastLon(p, -2)), store('Dollar Fixture', 'Other', p.lat, eastLon(p, 3))];
+    const t = await open({ snapList });
+    const { page } = t;
+    await search(page, 'Flagged Town, KS', 1);
+    assert.match(await text(page, '#area .fa-headline'), /^Low income and low access/);
+    const area = await text(page, '#area');
+    assert.match(area, /Low income and low access: 1 mile urban or 10 miles rural\s*Yes/);
+    assert.match(area, /Low income and low access: 1 mile urban or 20 miles rural\s*No/);
+    const cards = await page.locator('#results > li.fa-card').allInnerTexts();
+    const at = name => cards.find(c => c.includes(name));
+    assert.match(at('East Market'), /1\.0 mi/, 'east-west distance');
+    assert.match(at('North Mart'), /1\.5 mi/);
+    assert.match(at('West Grocer'), /2\.0 mi/, 'east-west distance');
+    assert.ok(cards.indexOf(at('East Market')) < cards.indexOf(at('North Mart')) && cards.indexOf(at('North Mart')) < cards.indexOf(at('West Grocer')), 'nearest first across directions');
+    assert.match(at('Dollar Fixture'), /often a dollar store or pharmacy/);
+    assert.match(await text(page, '#filters [data-filter="grocery"]'), /\(2\)/, 'Supermarket and Grocery Store are groceries');
+    assert.match(await text(page, '#filters [data-filter="other"]'), /\(2\)/);
+    await finish(t, 'flagged tract, rows and distances');
+
+    const noDate = await open({ fail: new Set(['meta']) });
+    await search(noDate.page, 'Flagged Town, KS', 1);
+    assert.match(await text(noDate.page, '#results > li.fa-card:nth-of-type(1)'), /date (still loading|unavailable)|OSM data/);
+    assert.match(await text(noDate.page, '#status-snap'), /Data date unavailable|data date unavailable/);
+    await finish(noDate, 'no data date is ever printed as a date');
+
+    for (const [label, snapBody, reason] of [['no list', { foo: 1 }, /Unavailable: /], ['rows with no point', { features: [{ attributes: { Store_Name: 'No Point' } }] }, /no usable rows/]]) {
+      const bad = await open({ snapBody });
+      await search(bad.page, 'Flagged Town, KS', 1);
+      assert.equal(await state(bad.page, 'snap'), 'failed', label);
+      assert.match(await text(bad.page, '#status-snap'), reason, label);
+      assert.match(await text(bad.page, '#filters [data-filter="grocery"]'), /unavailable/, label);
+      await finish(bad, 'broken SNAP answer: ' + label);
+    }
+
+    const hung = await open({ hangSnap: true, clock: true });
+    await hung.page.fill('#q', 'Flagged Town, KS');
+    await hung.page.press('#q', 'Enter');
+    await hung.page.waitForFunction(() => document.getElementById('status-snap').getAttribute('data-state') === 'loading');
+    await hung.page.clock.fastForward(21000);
+    await hung.page.waitForFunction(() => document.getElementById('status-snap').getAttribute('data-state') === 'failed');
+    assert.match(await text(hung.page, '#status-snap'), /no answer within 20 seconds/);
+    await hung.context.close();passed++;
+
+    const abroad = await open();
+    await abroad.page.fill('#q', 'Toronto, Canada');
+    await abroad.page.press('#q', 'Enter');
+    await abroad.page.waitForFunction(() => /outside the United States/.test(document.getElementById('place').textContent));
+    assert.equal(abroad.log.nominatimTimes.length, 0, 'a foreign place is not sent to the place search');
+    await finish(abroad, 'foreign place');
+
+    const away = await open({ abroad: true });
+    await away.page.evaluate(() => { navigator.geolocation.getCurrentPosition = ok => setTimeout(() => ok({ coords: { latitude: 43.65, longitude: -79.38, accuracy: 20 } }), 10); });
+    await away.page.click('#loc');
+    await away.page.waitForFunction(() => /outside the United States/.test(document.getElementById('place').textContent));
+    assert.equal(await away.page.locator('#results > li.fa-card').count(), 0, 'no U.S. places listed for a device abroad');
+    await finish(away, 'device abroad');
   }
 
   // USDA's farmers market directory: a dated copy, only under Farmers markets, never a zero when it fails, and no request carries the point.
