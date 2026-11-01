@@ -1504,6 +1504,8 @@ header .s{color:var(--ink2);font-size:15px;margin:8px auto 0;max-width:620px}
 /* AirNow's public reporting-area file is keyless. Only hourly observations are used.
    Format: https://docs.airnowapi.org/docs/ReportingAreaFactSheet.pdf */
 const AIRNOW_FILE='https://files.airnowtech.org/airnow/today/reportingarea.dat';
+/* AirNow asks that values appear with the official Air Quality Index names and colors. */
+const AQI_BANDS=[[50,'Good','#00e400','#000'],[100,'Moderate','#ffff00','#000'],[150,'Unhealthy for Sensitive Groups','#ff7e00','#000'],[200,'Unhealthy','#ff0000','#000'],[300,'Very Unhealthy','#8f3f97','#fff'],[Infinity,'Hazardous','#7e0023','#fff']];
 let airFilePromise=null, airFetchedAt=0;
 
 const $=id=>document.getElementById(id);
@@ -1552,7 +1554,7 @@ const CARDS=[
 const ICOL={alerts:C.alert,wx:C.info,spc:C.high,air:C.ok,water:C.info,fire:C.high,quake:C.purple,drought:C.watch,tropics:C.alert,volcano:C.high};
 function buildCards(){$('grid').innerHTML=CARDS.map(c=>`<div class="card" id="card-${c[0]}"><div class="ch"><div class="ic" style="background:${ICOL[c[0]]}22;color:${ICOL[c[0]]}"><i class="ti ${c[1]}" aria-hidden="true"></i></div><div><h2>${c[2]}</h2><div class="sub">${c[3]}</div></div><span class="lvl" id="lvl-${c[0]}" style="display:none"></span></div><div id="${c[0]}"><div class="muted"><span class="spin"></span> loading…</div></div></div>`).join('')
  +`<div class="card wide res-card"><div class="ch"><div class="ic" style="background:#3fa9f522;color:#3fa9f5"><i class="ti ti-shield-half"></i></div><div><h2>Your local resources</h2><div class="sub">official sources for this place</div></div></div><div class="res" id="res"></div></div>`;}
-function lvl(id,txt,col){const e=$('lvl-'+id);if(!e)return;if(!txt){e.style.display='none';return;}e.style.display='';e.textContent=txt;e.style.background=col+'22';e.style.color=col;}
+function lvl(id,txt,col,ink){const e=$('lvl-'+id);if(!e)return;if(!txt){e.style.display='none';return;}e.style.display='';e.textContent=txt;e.style.background=ink?col:col+'22';e.style.color=ink||col;}
 
 /* ================= NATIONAL DEFAULT VIEW ================= */
 let lastNationalHTML=null;
@@ -1658,17 +1660,16 @@ async function loadAir(lat,lon,runId){const el=$('air');
   for(const line of file.text.split(/\r?\n/)){const f=line.split('|');if(f.length<17||f[5]!=='O'||!states.has(f[8])||!f[12].trim()||!f[9].trim()||!f[10].trim())continue;
    const aqi=Number(f[12]),x=Number(f[9]),y=Number(f[10]),stamp=airStamp(f[1],f[2],f[3]);
    if(!Number.isFinite(aqi)||aqi<0||aqi>500||!Number.isFinite(x)||Math.abs(x)>90||!Number.isFinite(y)||Math.abs(y)>180||!Number.isFinite(stamp))continue;
-   const distance=airMiles(lat,lon,x,y);if(distance<=60)rows.push({aqi,stamp,distance,name:f[7],state:f[8],pollutant:f[11],when:f[1]+' '+f[2]+' '+f[3],key:f[7]+'|'+f[8]+'|'+f[9]+'|'+f[10]});
+   const distance=airMiles(lat,lon,x,y);if(distance<=60)rows.push({aqi,stamp,distance,name:f[7],state:f[8],pollutant:f[11],agency:f[16].trim(),when:f[1]+' '+f[2]+' '+f[3],key:f[7]+'|'+f[8]+'|'+f[9]+'|'+f[10]});
   }
   if(!rows.length){responseState.air=null;lvl('air','unavailable',C.dim);el.innerHTML='<div class="muted">No usable hourly AirNow reporting-area observation within 60 miles. No local AQI is inferred. '+links+'.</div>';return;}
   rows.sort((a,b)=>a.distance-b.distance);const nearest=rows[0].key,near=rows.filter(r=>r.key===nearest),latest=Math.max(...near.map(r=>r.stamp));
   const latestRows=near.filter(r=>r.stamp===latest),w=latestRows.reduce((a,b)=>b.aqi>a.aqi?b:a),age=(Date.now()-latest)/3600000;
-  if(age>6||age< -1){responseState.air={aqi:null,observedAt:new Date(latest).toISOString(),checkedAt:new Date(file.fetched).toISOString(),quality:'stale',name:w.name,distance:w.distance,pollutant:w.pollutant};lvl('air','stale / unavailable',C.dim);el.innerHTML='<div class="muted">Nearest reporting area: '+airEscape(w.name)+', '+airEscape(w.state)+'. Its latest hourly observation is '+airEscape(w.when)+'; no current AQI is shown. '+links+'.</div>';return;}
-  const category=w.aqi<=50?'Good':w.aqi<=100?'Moderate':w.aqi<=150?'Unhealthy for sensitive groups':w.aqi<=200?'Unhealthy':w.aqi<=300?'Very unhealthy':'Hazardous';
-  const col=w.aqi<=50?C.ok:w.aqi<=100?C.watch:w.aqi<=150?C.high:C.alert;
-  responseState.air={aqi:w.aqi,category,observedAt:new Date(latest).toISOString(),checkedAt:new Date(file.fetched).toISOString(),quality:'current',name:w.name,distance:w.distance,pollutant:w.pollutant};
-  lvl('air',category,col);el.innerHTML='<div class="big" style="color:'+col+'">AQI '+Math.round(w.aqi)+' · '+category+'</div>'+
-   '<div class="small" style="margin-top:6px"><b>MEASURED · preliminary AirNow observation</b><br>Reporting area: '+airEscape(w.name)+', '+airEscape(w.state)+' (about '+Math.round(w.distance)+' mi from its centroid). Highest AQI among pollutants reported for that area/hour: '+airEscape(w.pollutant)+'.</div>'+
+  if(age>6||age< -1){responseState.air={aqi:null,observedAt:new Date(latest).toISOString(),checkedAt:new Date(file.fetched).toISOString(),quality:'stale',name:w.name,distance:w.distance,pollutant:w.pollutant,agency:w.agency};lvl('air','stale / unavailable',C.dim);el.innerHTML='<div class="muted">Nearest reporting area: '+airEscape(w.name)+', '+airEscape(w.state)+'. Its latest hourly observation is '+airEscape(w.when)+'; no current AQI is shown. '+links+'.</div>';return;}
+  const band=AQI_BANDS.find(b=>w.aqi<=b[0]),category=band[1];
+  responseState.air={aqi:w.aqi,category,observedAt:new Date(latest).toISOString(),checkedAt:new Date(file.fetched).toISOString(),quality:'current',name:w.name,distance:w.distance,pollutant:w.pollutant,agency:w.agency};
+  lvl('air',category,band[2],band[3]);el.innerHTML='<div class="big">AQI '+Math.round(w.aqi)+' · <span style="display:inline-block;font-size:.7em;line-height:1.35;vertical-align:.12em;background:'+band[2]+';color:'+band[3]+';border-radius:6px;padding:1px 8px">'+category+'</span></div>'+
+   '<div class="small" style="margin-top:6px"><b>MEASURED · preliminary AirNow observation</b><br>Data from '+(w.agency?airEscape(w.agency)+' via ':'')+'U.S. EPA AirNow. Reporting area: '+airEscape(w.name)+', '+airEscape(w.state)+' (about '+Math.round(w.distance)+' mi from its centroid). Highest AQI among pollutants reported for that area/hour: '+airEscape(w.pollutant)+'.</div>'+
    '<div class="muted" style="margin-top:6px">Observed '+airEscape(w.when)+' · fetched '+new Date(file.fetched).toISOString().slice(0,16).replace('T',' ')+' UTC. Reporting-area values may differ from conditions at your address. These preliminary data can be revised. Forecast and yesterday-maximum records are excluded. '+links+'.</div>';
  }catch(error){if(!sameLocation(lat,lon,runId))return;responseState.air=null;lvl('air','unavailable',C.dim);feedFailure('air','AirNow hourly observations are unavailable right now.');}
 }
@@ -1905,7 +1906,7 @@ loadNational();
   const recent=stamp=>fresh(stamp,0.5);
   const alertsKnown=!!a&&recent(a.checkedAt),airKnown=air&&air.quality==='current'&&Number.isFinite(air.aqi)&&fresh(air.observedAt,6);
   evidence.push({id:'alerts',label:'Active official NWS alerts at selected point',value:a?a.features.length:'Unavailable',unit:'alerts',measuredAt:a?.updated||a?.checkedAt||null,checkedAt:a?.checkedAt,basis:'measured',quality:alertsKnown?'current':a?'stale':'missing',source:'https://api.weather.gov/alerts/active',note:'Query result as of its collection update/check time at this point; that time is not an individual alert issue time. Official alert instructions take precedence.'});
-  evidence.push({id:'air',label:air?.name?'AirNow reporting area: '+air.name:'AirNow reporting-area observation',value:air?.aqi??'Unavailable',unit:'AQI',measuredAt:air?.observedAt,checkedAt:air?.checkedAt,basis:'measured',quality:airKnown?'current':air?.quality||'missing',source:'https://files.airnowtech.org/airnow/today/reportingarea.dat',note:air?'Preliminary '+air.pollutant+' observation; reporting-area centroid approximately '+Math.round(air.distance)+' miles away. This is not an address-level monitor.':'No current AQI substituted.'});
+  evidence.push({id:'air',label:air?.name?'AirNow reporting area: '+air.name:'AirNow reporting-area observation',value:air?.aqi??'Unavailable',unit:'AQI',measuredAt:air?.observedAt,checkedAt:air?.checkedAt,basis:'measured',quality:airKnown?'current':air?.quality||'missing',source:'https://files.airnowtech.org/airnow/today/reportingarea.dat',note:air?'Preliminary '+air.pollutant+' observation; reporting-area centroid approximately '+Math.round(air.distance)+' miles away. This is not an address-level monitor. Data from '+(air.agency?air.agency+' via ':'')+'U.S. EPA AirNow.':'No current AQI substituted.'});
   evidence.push({id:'fema',label:'FEMA flood-zone planning context',value:w?.zone||'Unavailable',checkedAt:w?.checkedAt,basis:'measured',quality:w?.zone?'historical':'missing',source:'https://msc.fema.gov/portal/home',note:'Mapped susceptibility, not a current flood or evacuation trigger.'});
   diagnostics.push({id:'warnings',pillar:'comparison',label:'Official alerts need local review',status:alertsKnown?(a.features.length?'triggered':'clear'):'unknown',evidenceIds:['alerts'],rule:'Any unexpired NWS alert returned for the point; use its severity, urgency, certainty and instructions.',explanation:'Different official hazards retain their own scales; the console does not add unlike risk scores.'});
   diagnostics.push({id:'air-quality',pillar:'comparison',label:'Air quality warrants EPA activity-guidance review',status:airKnown?(air.aqi>100?'triggered':'clear'):'unknown',evidenceIds:['air'],rule:'Current reported AQI above100, EPA\'s unhealthy-for-sensitive-groups boundary.',explanation:'EPA category guidance depends on pollutant and affected group; no personal medical advice is inferred.'});
