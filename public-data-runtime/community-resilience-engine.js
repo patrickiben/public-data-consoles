@@ -68,13 +68,15 @@
    return {code:h.code,name:h.name,module:h.module,eal,ealRank:null,rating,score,tractEal:tattrs?num(tattrs[h.code+'_EALT']):null,tractRating:tattrs?text(tattrs[h.code+'_RISKR']):null,applicable:rating!=='Not Applicable',insufficient:INSUFFICIENT.has(rating),
     activeAlerts:active.filter(a=>alertHazards(a.event).includes(h.code)).map(a=>({id:a.id||null,event:a.event,severity:a.severity||null,headline:a.headline||null,senderName:a.senderName||null,sent:a.sent||null,onset:a.onset||null,ends:a.ends||null,expires:a.expires||null}))};});
   const ranked=rows.filter(r=>r.applicable&&r.eal>0).sort((a,b)=>b.eal-a.eal);ranked.forEach((r,i)=>r.ealRank=i+1);
-  rows.sort((a,b)=>(a.ealRank??99)-(b.ealRank??99)||a.name.localeCompare(b.name));
+  // A hazard with an active alert leads, then expected annual loss.
+  const alerted=r=>r.activeAlerts&&r.activeAlerts.length?0:1;
+  rows.sort((a,b)=>alerted(a)-alerted(b)||(a.ealRank??99)-(b.ealRank??99)||a.name.localeCompare(b.name));
   const noRatings=num(attrs.RISK_SCORE)==null&&rows.every(r=>r.score==null);
   return {status:'ok',message:'Ranked by expected annual loss for '+(text(attrs.COUNTY)||'this county')+(text(attrs.STATE)?', '+attrs.STATE:'')+'.',
    method:'FEMA National Risk Index'+(version?', version '+version:'')+': hazards ranked by county expected annual loss (dollars per year). The rating beside each is the NRI percentile class among U.S. counties. Tract figures are local detail and never replace county figures.',
    version,dataDate,county:{fips:String(attrs.STCOFIPS),name:text(attrs.COUNTY),state:text(attrs.STATE),population:num(attrs.POPULATION),buildingValue:num(attrs.BUILDVALUE),ealTotal:num(attrs.EAL_VALT),riskScore:num(attrs.RISK_SCORE),riskRating:text(attrs.RISK_RATNG),soviRating:text(attrs.SOVI_RATNG),reslRating:text(attrs.RESL_RATNG)},
    tract:tattrs?{fips:text(tattrs.TRACTFIPS),population:num(tattrs.POPULATION),ealTotal:num(tattrs.EAL_VALT),riskRating:text(tattrs.RISK_RATNG)}:null,tractNote,
-   rows,leading:ranked.slice(0,5).map(r=>r.code),notApplicable:rows.filter(r=>!r.applicable).map(r=>r.code),insufficient:rows.filter(r=>r.insufficient).map(r=>r.code),noRatings,
+   rows,leading:ranked.slice().sort((a,b)=>alerted(a)-alerted(b)||a.ealRank-b.ealRank).slice(0,5).map(r=>r.code),notApplicable:rows.filter(r=>!r.applicable).map(r=>r.code),insufficient:rows.filter(r=>r.insufficient).map(r=>r.code),noRatings,
    noRatingsNote:noRatings?'FEMA does not publish risk scores or ratings, social vulnerability or community resilience for this place; hazards are ranked by expected annual loss only.':null};
  }
 
@@ -311,7 +313,7 @@
     add(m.id,'nwsAlerts',{text:'NWS '+a.event+' in effect'+(until?' until '+fd(until):'')+'. '+(pub?'Follow the instructions in the alert.':'Review the alert text and coordinate with '+(a.senderName||'the NWS forecast office')+'.'),basis:a.headline||a.event,source:'National Weather Service alerts (api.weather.gov)',dataDate:a.sent||a.effective||null,escalateTo:pub?'Local emergency management; call 911 in an emergency':a.senderName||'NWS forecast office',reviewAfter:until?iso(timeOf(until)):after('nwsAlerts')});}
    const r=get,live=[];
    /* Only a storm within 1,500 km is named as an action; a storm on the far side of the world is not one. */
-   if(m.id==='tropical'&&ok('tropical')?.data.storms?.length){const s=r('tropical').data.storms[0];if(finite(s.distanceKm)&&s.distanceKm<=1500)live.push(['tropical',(s.name||'A tropical cyclone')+(finite(s.intensity)?' ('+s.intensity+' kt)':'')+' is '+dist(s.distanceKm)+' away (advisory '+fd(s.advisoryTime)+'). Follow NHC advisories.',s.advisoryTime]);}
+   if(m.id==='tropical'&&ok('tropical')?.data.storms?.length){const s=r('tropical').data.storms[0];if(finite(s.distanceKm)&&s.distanceKm<=1500)live.push(['tropical',(s.name||'A tropical cyclone')+(finite(s.intensity)?' ('+s.intensity+' kt)':'')+' is '+dist(s.distanceKm)+' away (advisory '+fd(s.advisoryTime)+'). Follow local National Weather Service advisories.',s.advisoryTime]);}
    if(m.id==='surge'&&ok('tideStation')?.data.station){const d=r('tideStation').data,st=d.station,fl=d.floodLevels||{};live.push(['tideStation','NOAA tide station '+st.name+' ('+st.id+'), '+dist(st.distanceKm)+' away'+(d.latest&&finite(d.latest.v)?': '+d.latest.v.toFixed(2)+' ft MLLW at '+fd(d.latest.t):'')+(finite(floodLevelsMllw(fl).nwsMinor)?'. NWS minor flood level about '+floodLevelsMllw(fl).nwsMinor.toFixed(2)+' ft MLLW (converted from station datum; NOAA does not name the datum of its flood levels)':'')+'.',d.latest?.t]);}
    if(m.id==='surge'&&ok('ofsForecast')&&res.ofsPeak?.levelFtMLLW!=null)live.push(['ofsForecast','NOAA OFS forecast peak '+res.ofsPeak.levelFtMLLW.toFixed(2)+' ft MLLW at '+fd(res.ofsPeak.peakAt)+' (model guidance, not an observation).',res.ofsPeak.peakAt]);
    if(m.id==='inland-flood'&&ok('riverGauges')?.data.items?.length){const g=r('riverGauges').data.items[0];live.push(['riverGauges','River gauge '+(g.name||g.lid)+' ('+g.lid+'), '+dist(g.distanceKm)+' away'+(finite(g.observedFt)?': '+g.observedFt+' ft at '+fd(g.observedTime):'')+(g.category?', flood category '+String(g.category).replace(/_/g,' '):'')+(finite(g.minor)?'; minor flood stage '+g.minor+' ft':'')+'.',g.observedTime]);}

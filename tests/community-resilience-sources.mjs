@@ -50,7 +50,8 @@ const sortedNear=items=>items.every((x,i)=>typeof x.distanceKm==='number'&&(i===
 // ---------- parseQuery ----------
 await check('parseQuery',()=>{
  const q=S.parseQuery;
- for(const [t,name,st] of [['Fort Washington','Fort','WA'],['Port Washington','Port','WA'],['West Virginia','West','VA']]){const r=q(t);assert.deepEqual([r.name,r.stateAbbr,r.unsplit],[name,st,t],t+' keeps the whole text for the retry');}
+ for(const [t,name,st] of [['Fort Washington','Fort','WA'],['Port Washington','Port','WA']]){const r=q(t);assert.deepEqual([r.name,r.stateAbbr,r.unsplit],[name,st,t],t+' keeps the whole text for the retry');}
+ {const r=q('West Virginia');assert.deepEqual([r.name,r.stateAbbr],['West Virginia',undefined],'a whole state name is never split into a town and a state');}
  assert.equal(q('Moore, OK').unsplit,undefined,'a comma split is not retried');
  assert.deepEqual([q('33701').kind,q('33701').zip],['zip','33701']);
  assert.deepEqual([q('33701-1234').kind,q('33701-1234').zip],['zip','33701']);

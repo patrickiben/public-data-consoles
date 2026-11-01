@@ -93,7 +93,7 @@ def generate(root=ROOT, check=False):
         page_help = help_script
         if entry["slug"] in NO_EM_DASH_PAGES:
             # This page's brief forbids em dashes even in code strings; the shared source keeps its text so other pages stay unchanged.
-            page_help = help_script.replace(" \u2014 ", ": ").replace("\u2014", "-")
+            page_help = help_script.replace(" \u2014 ", ": ").replace("\u2014", "-").replace("Contamination AUC", "Exposure AUC").replace("the probability of contamination or damage", "the probability of damage")
         expected = embed_help(build(original, entry, core, style, adapter), page_help, help_style)
         if expected != original:
             outputs[page] = expected

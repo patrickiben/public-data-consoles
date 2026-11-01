@@ -179,7 +179,7 @@ try{
   await everyPanelHasStatus(page);
   assert.match(await text(page,'#rs-search-form'),/OpenStreetMap contributors, via Nominatim/);
   assert.equal(await page.locator('a[href="https://operations.osmfoundation.org/policies/nominatim/"]').count()>0,true);
-  assert.match(await text(page,'#rs-privacy'),/stays in this browser/);
+  assert.match(await text(page,'#rs-privacy'),/Your location does leave this browser/);
  });
 
  await scenario('ZIP 33701 finds St. Petersburg with the local tier, matching the published files',{},async(page,log)=>{
@@ -217,7 +217,7 @@ try{
   assert.equal(await page.locator('#rs-modules details[data-rs-module][open]').count(),1,'only the top leading module opens by default');
   assert.equal(await page.locator('#rs-metrics-fold').evaluate(d=>d.open),false,'Diagnostics start collapsed');assert.equal(await page.locator('#rs-about-fold').evaluate(d=>d.open),false,'About starts collapsed');
   assert.match(await text(page,'#rs-metrics'),/Not run yet: 0 of 10 metrics computed/);
-  assert.equal(await page.locator('#rs-examples-box').evaluate(d=>d.open),false,'examples collapse after a search');assert.match(await text(page,'#rs-privacy'),/stays in this browser/);
+  assert.equal(await page.locator('#rs-examples-box').evaluate(d=>d.open),false,'examples collapse after a search');assert.match(await text(page,'#rs-privacy'),/Your location does leave this browser/);
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
   const tall=await page.evaluate(()=>document.documentElement.scrollHeight);console.log('INFO phone page height after 33701: '+tall+' px');
   if(process.env.CR_HEIGHTS)console.log(JSON.stringify(await page.evaluate(()=>[...document.querySelectorAll('header,.rs-section,.rs-two')].map(e=>[e.id||e.className,e.offsetHeight]).concat([...document.querySelectorAll('#rs-plan-body>*,#rs-lifelines-body>*,#rs-modules-body>*,#rs-live-body>*')].map(e=>[e.tagName+'.'+e.className,e.offsetHeight]).filter(x=>x[1]>300)))));
@@ -336,7 +336,7 @@ try{
   await page.waitForFunction(()=>/Tucson city, Pima County, Arizona/.test(document.querySelector('#rs-place').textContent));
   await settled(page);
   assert.equal(await page.locator('#rs-chooser').isHidden(),true,'One city plus its CCD is one place');
-  const summary=await text(page,'#rs-summary');assert.match(summary,/Leading hazards\s*Inland Flooding \(\$/);assert.match(summary,/Active alerts\s*None listed at this point/);
+  const summary=await text(page,'#rs-summary');assert.match(summary,/Leading hazards, by county-wide yearly loss\s*Inland Flooding \(\$/);assert.match(summary,/Active alerts\s*None listed at this point/);
   assert.equal(await page.locator('#rs-modules [data-rs-module="surge"]').getAttribute('data-status'),'not-applicable');
   assert.match(await text(page,'#rs-modules'),/Coastal Flooding as Not Applicable in Pima/);
   assert.equal(await page.locator('#rs-local [data-rs-local="none"]').count(),1);
@@ -403,6 +403,17 @@ try{
   await page.locator('#rs-modules details[data-rs-module="'+id+'"] summary').click();await page.waitForFunction(id=>window.CRPage.state.open.has(id),id);
  });
 
+ await scenario('an active warning is named first, its instruction is shown and its hazard leads; lifelines never read OK',{alerts:[{id:'tw-1',event:'Tornado Warning',severity:'Extreme',headline:'Tornado Warning until soon',instruction:'TAKE COVER NOW!'}]},async page=>{
+  await page.fill('#rs-q','Tucson, AZ');await page.click('#rs-search');
+  await page.waitForFunction(()=>/Tornado Warning/.test(document.getElementById('rs-summary').innerText),null,{timeout:20000});
+  const summary=await text(page,'#rs-summary');
+  assert.ok(summary.indexOf('Active alerts')<summary.indexOf('Leading hazards'),'alerts come first');
+  assert.match(summary,/Tornado Warning \(Extreme\)/);
+  assert.match(await text(page,'#rs-live'),/TAKE COVER NOW!/);
+  await page.waitForFunction(()=>document.querySelectorAll('[data-rs-lifeline] .rs-badge').length>=6,null,{timeout:20000});
+  const badges=await page.$$eval('[data-rs-lifeline] .rs-card-head .rs-badge',els=>els.map(e=>e.innerText.trim()));
+  assert.ok(!badges.includes('OK'),'a lifeline never reads OK: '+badges);
+ });
  await scenario('a Flood Advisory is listed but does not set the Watch phase',{alerts:[{id:'fa-1',event:'Flood Advisory'}]},async page=>{
   await search(page,'Tucson, AZ');
   await page.waitForFunction(()=>/Tucson city, Pima County, Arizona/.test(document.querySelector('#rs-place').textContent));
