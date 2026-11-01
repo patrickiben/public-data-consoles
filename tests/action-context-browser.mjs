@@ -59,6 +59,7 @@ async function scenario(name, {slug = 'nhs-scotland-strain', width = 1280, touch
     passed++; console.log('PASS action context: ' + name);
   } finally { await context.close(); }
 }
+const plainPages = new Set(JSON.parse(await readFile(new URL('response-plans/manifest.json', root), 'utf8')).consoles.filter(c => c.plainWording).map(c => c.slug));
 async function assertRendered(page) {
   let last;
   for (const track of ['public', 'operator']) {
@@ -98,6 +99,14 @@ async function assertRendered(page) {
       for (const link of a.parameterLinks) {
         const d = plan.diagnostics.find(d => d.metricId === link.metricId), rows = article.links.filter(row => row.metricId === link.metricId);
         assert.equal(rows.length, 1); const row = rows[0];
+        // Finder pages show the same links in plain words (manifest: plainWording); finder-plain-wording.mjs covers their wording.
+        if (plainPages.has(plan.slug)) {
+          assert.ok(row.text.includes(d.plainLabel) && !row.text.includes(d.canonicalLabel), plan.slug + ': plain name only');
+          assert.ok(row.text.includes(link.why.slice(0, 24)) && row.text.includes(link.whyNow.slice(0, 24)), plan.slug + ': visible explanations follow the export');
+          assert.match(row.text, /Why it matters:/); assert.match(row.text, /Why now:/);
+          assert.equal(row.contextTitle, undefined, plan.slug + ': no research definition behind a help button');
+          continue;
+        }
         assert.ok(row.text.includes(d.canonicalLabel), plan.slug + ': full canonical name stays visible');
         assert.ok(row.text.includes(link.why) && row.text.includes(link.whyNow), plan.slug + ': visible explanations equal export');
         assert.match(row.text, /Why this parameter:/); assert.match(row.text, /Why at this stage:/);

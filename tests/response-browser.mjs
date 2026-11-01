@@ -154,7 +154,8 @@ try{
           await page.waitForFunction(slug=>window.ConsoleResponse?.exportPlan().plan.slug===slug,entry.slug,{timeout:45000});
           assert.equal(await page.locator('#console-response').count(),1);
           assert.equal(await page.locator('[data-cr-metric]').count(),10,entry.slug+' needs all ten canonical dimensions');
-          for(let metric=1;metric<=10;metric++)assert.equal(await page.locator('[data-cr-metric="'+metric+'"] [data-metric-help="'+metric+'"]').count(),1,entry.slug+' offers help for parameter '+metric);
+          // Finder pages show the ten parts in plain words, with no research definition behind a help button.
+          for(let metric=1;metric<=10;metric++)assert.equal(await page.locator('[data-cr-metric="'+metric+'"] [data-metric-help="'+metric+'"]').count(),entry.plainWording?0:1,entry.slug+(entry.plainWording?' shows no research help for parameter ':' offers help for parameter ')+metric);
           assert.equal(await page.locator('#console-response-shortcut').count(),1);
           const exported=await page.evaluate(()=>ConsoleResponse.exportPlan());
           assert.equal(exported.plan.diagnostics.filter(d=>d.metricId).length,10);

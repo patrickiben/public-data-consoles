@@ -102,7 +102,7 @@ Source-record and official-notice actions without canonical links show their `de
 instead of assigning a parameter. Preserve source periods, genuine deadlines, modeled/practice
 labels and unknown inputs; do not transfer Coastal’s storm clock to unrelated domains.
 
-Action cards show full parameter names, text statuses and both explanations. Their hover/focus/tap
+Action cards show full parameter names, text statuses and both explanations, except on consoles that set `plainWording` in the manifest. Those pages serve people looking for a place, so `plain-wording.js` shows plain part names and plain labels instead, with no parameter help. It changes only what is shown; evidence, ranking and the exported plan stay the same. Their hover/focus/tap
 help names the review stage. The ten-parameter register links back to applicable actions and
 explains the same relationship. These explanations also remain in the exported plan.
 
