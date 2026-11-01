@@ -250,6 +250,10 @@ check('buildPlan: public steps follow the official pages, and operator steps say
  assert.match(steps('heat','impact'),/may be dry or damp/);assert.match(steps('heat','impact'),/fainting/);assert.match(steps('heat','impact'),/Do not give fluids/);
  assert.match(steps('severe','warning'),/closest sturdy shelter/);assert.match(steps('severe','warning'),/no safe option/);assert.match(steps('severe','warning'),/noticeably lower than the road/);
  assert.match(steps('tsunami','impact'),/first wave may not be the last or the largest/);
+ assert.match(steps('tsunami','prepare'),/Do not wait for an official warning/,'with no alert the page opens on Prepare');
+ assert.match(steps('inland-flood','warning'),/If water starts to rise/);assert.match(steps('tropical','impact'),/eye passes over/);assert.match(steps('severe','warning'),/face-down on low ground/);
+ assert.match(steps('winter','impact'),/perform CPR/);assert.match(steps('winter','warning'),/carbon monoxide poisoning/);assert.match(steps('winter','warning'),/First aid steps are under Impact/);assert.match(steps('heat','warning'),/First aid steps are under Impact/);
+ assert.match(steps('volcanic','warning'),/N95/);assert.match(steps('landslide','watch'),/Leave if you are told to evacuate/);assert.match(steps('tropical','recovery'),/Do not enter your home if you smell gas/);
  for(const b of Object.values(E.PLAYBOOK))for(const a of b.also||[]){assert.match(a.link,/^https:\/\//);assert.ok(a.source);}
  const pub=E.buildPlan({place:tucson,ranking:pimaRanking,results:baseResults(),track:'public',now:NOW}),op=E.buildPlan({place:tucson,ranking:pimaRanking,results:baseResults(),track:'operator',now:NOW});
  assert.match(pub.stepNote,/no emergency manager or clinician has reviewed this list/);assert.match(op.stepNote,/^Planning prompts written for this page, not official instructions/);
