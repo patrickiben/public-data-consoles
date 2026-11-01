@@ -175,7 +175,7 @@ main.rs-idle .rs-needs-place{display:none}
 .rs-phase{display:inline-block;font-weight:760;font-size:14px;padding:3px 12px;border-radius:999px;background:var(--ok-bg);color:var(--ok)}
 .rs-phase.rs-p-watch{background:var(--watch-bg);color:var(--watch)}
 .rs-phase.rs-p-warning{background:var(--alert-bg);color:var(--alert)}
-.rs-summary{max-width:680px;margin:10px auto 0;text-align:left;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:8px 12px;font-size:13.5px}p a,li a,dd a,td a,#disc a,#rs-foot a{text-decoration:underline;text-underline-offset:2px}
+.rs-summary{max-width:680px;margin:10px auto 0;text-align:left;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:8px 12px;font-size:13.5px}a:not([class]){text-decoration:underline;text-underline-offset:2px}#rs-nav a{text-decoration:none}
 @media (max-height:500px){#rs-map{height:60vh}}
 .rs-summary .rs-dl{margin:0}
 .rs-now-row{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}
@@ -2666,7 +2666,7 @@ function renderSummary(){
  const al=ast==='loading'?'Loading...':ast==='ok'||ast==='empty'?(liveAlerts.length?named+'.':'None listed at this point.'):'Unavailable: NWS alerts did not answer.';
  const down=Object.values(state.results).filter(r=>r&&r.status==='unavailable').length;
  $('rs-nav').hidden=false;
- // Readings at a glance: what the sources say, never a judgment that anything is safe, so nothing here is green.
+ // Readings at a glance: what the sources say, never a judgment that anything is safe. The only green is the official AQI color, which AirNow asks for.
  const nowChip=(label,text,tone,dot)=>'<span class="rs-now" data-tone="'+tone+'"><i aria-hidden="true"'+(dot?' style="background:'+dot+'"':'')+'></i><b>'+esc(label)+':</b> '+esc(text)+'</span>';
  const chips=[nowChip('Alerts',ast==='loading'?'loading':ast==='ok'||ast==='empty'?(liveAlerts.length?liveAlerts.length+' active':'none listed'):'unavailable',urgent?'bad':liveAlerts.length?'warn':'muted')];
  const fz=okData('floodZone'),dr=okData('drought'),aq=okData('airQuality'),eq=okData('earthquakes'),ou=okData('outages');
@@ -2674,7 +2674,7 @@ function renderSummary(){
  if(dr&&finite(dr.d1))chips.push(nowChip('Drought',dr.d1>0?Math.round(dr.d1)+'% of county':'none mapped',dr.d1>0?'warn':'muted'));
  if(aq&&aq.items&&aq.items.length){const w=aq.items.reduce((x,y)=>(y.aqi??-1)>(x.aqi??-1)?y:x);chips.push(nowChip('Air',w.category+' (AQI '+w.aqi+')','muted',AQI_COLORS.find(c=>w.aqi<=c[0])[1]));}
  if(eq&&finite(eq.count))chips.push(nowChip('Earthquakes, 30 days',String(eq.count),'muted'));
- if(ou&&ou.items&&ou.items.length){const meters=ou.items.reduce((s,x)=>s+(finite(x.metersAffected)?x.metersAffected:0),0);chips.push(nowChip('Outages',num(meters)+' meters','warn'));}
+ if(ou&&ou.items&&ou.items.length){const meters=ou.items.reduce((s,x)=>s+(finite(x.metersAffected)?x.metersAffected:0),0);chips.push(nowChip('Outages',num(meters)+(meters===1?' meter':' meters'),'warn'));}
  paint('rs-summary','<div class="rs-now-row" data-rs-now>'+chips.join('')+'</div><dl class="rs-dl"><dt>Active alerts</dt><dd'+(urgent?' class="rs-err"':'')+'>'+(urgent?'<b>'+esc(al)+'</b>':esc(al))+' <a href="#rs-live">Live now</a></dd><dt>Leading hazards, by county-wide yearly loss</dt><dd>'+hz+' <a href="#rs-ranking">Ranking</a></dd><dt>Sources</dt><dd>'+(down?'<b>'+esc(plural(down,'source'))+' unavailable.</b> ':'None unavailable so far. ')+'<a href="#rs-sources">Sources and status</a></dd></dl>');
 }
 const RENDERERS=[renderSummary,renderChooser,renderGeo,renderRanking,renderLive,renderModules,renderLocal,renderLifelines,renderContext,renderMetrics,renderPlan,renderSources];
