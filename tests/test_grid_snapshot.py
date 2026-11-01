@@ -237,6 +237,23 @@ class AutomationTests(unittest.TestCase):
         existing["interchange"].append(["OLD", "ABC", 10, "2026-10-15T07"])
         grid.validate_candidate(first, existing, automated=True)
 
+    def test_a_ba_that_stops_reporting_only_loses_hours_the_window_passed(self):
+        output, first = self.seeded()
+        # Keep the count change small, as for one quiet BA in the real network.
+        for i in range(8):
+            first["history"]["BA" + str(i)] = [r[:] for r in first["history"]["ABC"]]
+        start = grid.period_time(first["historyStart"])
+        stamp = lambda hours: (start + grid.dt.timedelta(hours=hours)).strftime("%Y-%m-%dT%H")
+        existing = json.loads(json.dumps(first))
+        existing["history"]["QUIET"] = [[stamp(h), 50] for h in range(-10, 4)]
+        # The window moved past ten of its fourteen hours. That is not a truncated download.
+        first["history"]["QUIET"] = [[stamp(h), 50] for h in range(0, 4)]
+        grid.validate_candidate(first, existing, automated=True)
+        # Losing hours the window still covers is.
+        first["history"]["QUIET"] = [[stamp(h), 50] for h in range(2, 4)]
+        with self.assertRaisesRegex(ValueError, "Demand history truncated for QUIET"):
+            grid.validate_candidate(first, existing, automated=True)
+
     def test_short_automated_history_is_rejected_before_publish(self):
         self.complete_balance(hours=24)
         self.complete_interchange(hours=24)

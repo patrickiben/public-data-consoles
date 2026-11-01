@@ -366,7 +366,9 @@ def validate_candidate(data: dict, existing: dict, *, automated=False) -> None:
         old, new = existing["history"][code], data["history"][code]
         if max(p for p, _ in new) < max(p for p, _ in old):
             raise ValueError(f"Demand timestamp regressed for {code}")
-        if len(new) < math.ceil(0.8 * len(old)):
+        # Compare only the hours both windows cover: a BA that stops reporting loses old hours as the window slides.
+        still_current = sum(1 for p, _ in old if p >= boundary)
+        if len(new) < math.ceil(0.8 * still_current):
             raise ValueError(f"Demand history truncated for {code}")
     old_dates = [period_time(p) for series in existing["history"].values() for p, value in series]
     required_span = min(max(old_dates) - min(old_dates), dt.timedelta(hours=167))
