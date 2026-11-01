@@ -146,8 +146,7 @@ See the [field guide](https://patrickiben.github.io/public-data-consoles/respons
 |---|---|---|
 | [Free Clinic Finder](consoles/free-clinic-finder/) | Live listings | HRSA health center sites (sliding fee, not necessarily free, with the HRSA data load date), OpenStreetMap clinics via Overpass (partial coverage; "free" only where tagged fee=no; clinics whose name says free are shown as not confirmed) |
 | [Human Trafficking — Get Help](consoles/human-trafficking/) | Reference | Verified hotlines + Polaris / UNODC / ILO–Walk Free / CTDC (badge-framed) |
-| [Food Desert Oases](consoles/food-desert-oases/) | Live listings + dated tract atlas | USDA ERS Food Access Research Atlas tract flags (2025 SNAP-authorized Retailer Access Map, released July 2026, on 2020 census tracts), USDA FNS SNAP retailer locator data (SNAP-authorized stores and SNAP-authorized farmers markets, with the list's data date), OpenStreetMap-tagged food banks (partial coverage) |
-| [Free Public Bathroom Finder](consoles/public-bathroom-finder/) | Live listings | Refuge Restrooms (crowd-sourced listings, each with its date), OpenStreetMap amenity=toilets via Overpass (partial coverage; "free" only where tagged fee=no) |
+| [Free Public Bathroom Finder](consoles/public-bathroom-finder/) | Live listings | Refuge Restrooms (crowd-sourced listings, each with its date), OpenStreetMap amenity=toilets via Overpass (partial coverage; "free" only where tagged fee=no and not customers only) |
 
 ## No visitor API keys
 

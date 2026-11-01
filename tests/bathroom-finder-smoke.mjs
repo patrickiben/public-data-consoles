@@ -41,6 +41,7 @@ const PLACES = {
   rural: { lat: 47.3205365, lon: -106.9109964, name: '59337, Jordan, Garfield County, Montana, United States', addresstype: 'postcode', address: { country_code: 'us', state: 'Montana', postcode: '59337' } },
   slow: { lat: 40.25, lon: -80.25, name: 'Slow Town, Pennsylvania, United States', addresstype: 'town', address: { country_code: 'us', state: 'Pennsylvania' } },
 };
+const ZIP_PLACES = { 59337: 'rural' };
 const placeNear = (lat, lon) => Object.entries(PLACES).find(([, p]) => Math.abs(p.lat - lat) < 0.2 && Math.abs(p.lon - lon) < 0.2)?.[0] || null;
 const north = (p, miles, dLon = 0) => ({ lat: p.lat + miles / MI, lon: p.lon + dLon });
 const LONG_DIRECTIONS = 'Enter through the side door on the north side of the building, walk past the front desk, take the elevator to the second floor and follow the signs to the restroom at the end of the hall. Ask the front desk to unlock the door if it is closed.';
@@ -92,7 +93,7 @@ async function open(options = {}, contextOptions = {}) {
   const opt = options;
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1280, height: 900 }, timezoneId: 'UTC', locale: 'en-US', ...contextOptions });
   const page = await context.newPage();
-  const log = { requests: [], nominatim: [], nominatimTimes: [], refuge: [], overpass: [], bodies: [], referers: [], tiles: [], unexpected: [], errors: [], hung: [] };
+  const log = { requests: [], census: [], nominatim: [], nominatimTimes: [], refuge: [], overpass: [], bodies: [], referers: [], tiles: [], unexpected: [], errors: [], hung: [] };
   page.on('pageerror', e => log.errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) log.errors.push(m.text()); });
   const handle = async route => {
@@ -122,6 +123,16 @@ async function open(options = {}, contextOptions = {}) {
       return route.fulfill({ headers, contentType: js ? 'application/javascript' : 'text/css', body: js ? leafletJS : leafletCSS });
     }
     if (url.hostname === 'tile.openstreetmap.org') { log.tiles.push(url.href); return route.fulfill({ headers, contentType: 'image/png', body: pixel }); }
+    if (url.hostname === 'tigerweb.geo.census.gov') {
+      log.census.push(url.href); log.referers.push(request.headers().referer || '');
+      return reply('census', () => {
+        if (url.pathname.endsWith('/MapServer/2/query')) {
+          const zip = (/ZCTA5='(\d{5})'/.exec(url.searchParams.get('where') || '') || [])[1], key = ZIP_PLACES[zip];
+          return { features: key ? [{ attributes: { ZCTA5: zip, INTPTLAT: '+' + PLACES[key].lat, INTPTLON: String(PLACES[key].lon) } }] : [] };
+        }
+        return { features: [{ attributes: url.pathname.endsWith('/MapServer/82/query') ? { NAME: 'Garfield County' } : { NAME: 'Montana', STUSAB: 'MT' } }] };
+      });
+    }
     if (url.hostname === 'nominatim.openstreetmap.org') {
       log.nominatim.push(url.href); log.nominatimTimes.push(Date.now()); log.referers.push(request.headers().referer || '');
       return reply('nominatim', () => {
@@ -143,7 +154,8 @@ async function open(options = {}, contextOptions = {}) {
       });
     }
     if (url.hostname === 'overpass-api.de' || url.hostname === 'maps.mail.ru') {
-      const main = url.hostname === 'overpass-api.de';
+      // The page tries overpass-api.de twice; a second try in a row is answered as the fallback attempt.
+      const main = !log.overpassRetry;log.overpassRetry = !log.overpassRetry;
       const m = /\(([-\d.]+),([-\d.]+),([-\d.]+),([-\d.]+)\)/.exec(decodeURIComponent((request.postData() || '').replace(/^data=/, '').replace(/\+/g, ' ')));
       const rec = { host: url.hostname, method: request.method(), body: request.postData() || '', radiusMi: null, key: null };
       if (m) {
@@ -153,7 +165,7 @@ async function open(options = {}, contextOptions = {}) {
       }
       log.overpass.push(rec); log.referers.push(request.headers().referer || '');
       return reply(main ? 'overpass-main' : 'overpass-mirror', () => {
-        const elements = rec.key === 'chicago' ? cityOsm() : rec.key === 'slow' ? sleep(2500).then(slowOsm) : [];
+        const elements = rec.key === 'chicago' ? cityOsm().concat(opt.extraOsm || []) : rec.key === 'slow' ? sleep(2500).then(slowOsm) : [];
         return Promise.resolve(elements).then(els => ({ version: 0.6, generator: 'fixture', osm3s: { timestamp_osm_base: BASE_TS }, elements: els }));
       });
     }
@@ -204,12 +216,12 @@ try {
     assert.equal(idle.slug, 'public-bathroom-finder');
     for (const k of ['geocoder', 'refuge', 'osm']) assert.equal(idle.sources[k].status, 'idle', 'idle ' + k);
     for (const k of ['geocoder', 'refuge', 'osm']) assert.match(await text(page, '#status-' + k), /Waiting for a search/);
-    const privacy = await text(page, '#privacy');
-    for (const part of [/Your exact location stays in this browser/, /Nothing is saved, added to the page address, or sent to this site/, /rounded to about 100 meters/, /Nominatim/, /Refuge Restrooms/, /overpass-api\.de/, /maps\.mail\.ru/, /tile\.openstreetmap\.org/, /unpkg\.com/, /Distances are calculated in your browser/]) assert.match(privacy, part);
+    const privacy = await page.locator('#privacy').textContent();
+    for (const part of [/Your location does leave this browser/, /tigerweb\.geo\.census\.gov/, /IP address/, /FOSSGIS/, /rounded to about 100 meters/, /Nominatim/, /Refuge Restrooms/, /overpass-api\.de/, /tile\.openstreetmap\.org/, /unpkg\.com/, /Distances are calculated in your browser/]) assert.match(privacy, part);
     assert.equal(await page.locator('#search-form [name]').count(), 0, 'no named field can reach a URL through a native submit');
     assert.equal(await page.getAttribute('#search-form', 'onsubmit'), 'return false');
     assert.equal(await page.getAttribute('label[for="q"]', 'for'), 'q');
-    assert.equal(await text(page, 'label[for="q"]'), 'Address, city or ZIP code');
+    assert.equal(await text(page, 'label[for="q"]'), 'U.S. address, city or ZIP code');
     await page.waitForFunction(() => document.getElementById('console-response').textContent.length > 100, null, { timeout: 8000 });
     assert.doesNotMatch(await text(page, '#console-response'), /Some lists are incomplete: check the sources directly/, 'idle response plan is neutral');
     const coverage = await text(page, '#coverage');
@@ -221,12 +233,12 @@ try {
 
     await search(page, CITY_QUERY, 1);
     assert.equal(await state(page, 'geocoder'), 'ok');
-    assert.match(await text(page, '#place'), /Searching near: 233, South Wacker Drive/);
+    assert.match(await text(page, '#place'), /Near: 233, South Wacker Drive/);
     assert.doesNotMatch(await text(page, '#place'), /center of the ZIP code area/);
     assert.equal(await state(page, 'refuge'), 'ok');
     assert.equal(await state(page, 'osm'), 'ok');
     assert.match(await text(page, '#status-refuge'), /OK: 4 listings, all those within 20 miles\. Crowd-sourced and unverified.*Newest update in this list: November 20, 2024/);
-    assert.match(await text(page, '#status-osm'), /OK: 6 listed within 3 miles.*2 private or no-access listings hidden\. Database as of October 30, 2026, 17:17 UTC/);
+    assert.match(await text(page, '#status-osm'), /OK: 6 listed within 3 miles.*2 private, closed or no-access listings hidden\. Database as of October 30, 2026, 17:17 UTC/);
     assert.equal(log.overpass.length, 1, 'one Overpass query when 5 or more are listed within 3 miles');
     assert.equal(log.overpass[0].radiusMi, 3);
     assert.equal(log.overpass[0].method, 'POST');
@@ -250,20 +262,20 @@ try {
     const dists = await page.$$eval('#results .pb-dist', els => els.map(e => parseFloat(e.textContent.replace('under ', ''))));
     assert.deepEqual(dists, [...dists].sort((a, b) => a - b), 'nearest first');
     assert.match(await text(page, '#results > li.pb-card:first-child .pb-dist'), /^0\.1 mi N straight-line/);
-    assert.match(await text(page, '#results-summary'), /Showing 10 of 10 restrooms, nearest first\. Distances are straight-line\. Searched: Refuge Restrooms: all listings within 20 miles; OpenStreetMap: public toilets within 3 miles\. 2 private or no-access OpenStreetMap listings hidden\./);
+    assert.match(await text(page, '#results-summary'), /Showing 10 of 10 restrooms, nearest first\. Distances are straight-line\. Searched: Refuge Restrooms: all listings within 20 miles; OpenStreetMap: toilets within 3 miles\. 2 private, closed or no-access OpenStreetMap listings hidden\./);
     assert.equal(await page.locator('#results > li.pb-card[data-k="osm:node/9007"], #results > li.pb-card[data-k="osm:node/9008"], #results > li.pb-card[data-k="osm:node/9009"]').count(), 0, 'private, no-access and out-of-radius places are not listed');
-    const free = new Set(['osm:node/9001', 'osm:way/9002', 'osm:node/9006']);
+    const free = new Set(['osm:node/9001', 'osm:node/9006']);
     for (const key of order) {
       const c = await cardText(page, key);
       assert.match(c, /Source: /, key);
       assert.match(c, /(Updated|Added) [A-Z][a-z]+ \d{1,2}, \d{4}|Last edited in OpenStreetMap [A-Z][a-z]+ \d{1,2}, \d{4}/, key + ' data date');
       assert.match(c, /Confirm before you go: listings can be out of date, and hours, access and cost can change\./, key);
-      assert.match(c, /Directions on OpenStreetMap/, key);
+      assert.match(c, /Directions \(opens Google Maps\)/, key);
       assert.match(c, /(under 0\.1|\d+\.\d) mi [NESW]{1,2} straight-line/, key + ' distance and direction');
       if (free.has(key)) assert.match(c, /Free \(fee=no in OpenStreetMap\)/, key);
       else {
         assert.doesNotMatch(c, /\bFree\b/, key + ' must not say Free');
-        assert.match(c, /Cost unknown|Fee charged/, key);
+        assert.match(c, /Cost unknown|Fee charged|No fee tagged, but for customers only/, key);
       }
       if (key.startsWith('refuge:')) {
         assert.match(c, /Crowd-sourced listing \(Refuge Restrooms\)/, key);
@@ -271,7 +283,7 @@ try {
         assert.match(c, /Hours not listed/, key);
         assert.match(c, /Source: Refuge Restrooms, a crowd-sourced listing\. Updated /, key);
       } else {
-        assert.match(c, /Public toilet \(OpenStreetMap amenity=toilets\)/, key);
+        assert.match(c, /(Public toilet|Customers-only toilet|Toilet, access not tagged) \(OpenStreetMap amenity=toilets\)/, key);
         assert.match(c, /© OpenStreetMap contributors/, key);
       }
     }
@@ -286,16 +298,16 @@ try {
     assert.ok(c.includes('Not listed as accessible') && !c.includes('(added'), 'refuge 102');
     assert.equal(await page.locator('#results details[data-k="refuge:102"]').count(), 1, 'long notes sit inside details');
     assert.equal(await page.locator('#results details[data-k="refuge:102"]').evaluate(d => d.open), false);
-    for (const key of ['refuge:103', 'refuge:104']) assert.match(await cardText(page, key), /Location may be approximate: 2 listings share this exact point/);
+    for (const key of ['refuge:103', 'refuge:104']) assert.match(await cardText(page, key), /Location may be approximate: 2 different listings share this exact point/);
     assert.doesNotMatch(await cardText(page, 'refuge:101'), /Location may be approximate/);
     c = await cardText(page, 'osm:node/9001');
     for (const part of ['Millennium Fixture Restroom', 'Free (fee=no in OpenStreetMap)', 'Wheelchair accessible (listed)', 'Open 24 hours (listed)', 'Gender neutral (listed)', 'Changing table (listed)', 'Last edited in OpenStreetMap August 14, 2025. Last checked by a mapper 2025-06-01', 'Database as of October 30, 2026, 17:17 UTC', 'View on OpenStreetMap']) assert.ok(c.includes(part), 'osm 9001 missing: ' + part);
     c = await cardText(page, 'osm:way/9002');
-    for (const part of ['Free (fee=no in OpenStreetMap)', 'Customers only (a purchase may be required)', 'Limited wheelchair access (listed)', 'Hours listed: Mo-Fr 09:00-17:00']) assert.ok(c.includes(part), 'osm 9002 missing: ' + part);
+    for (const part of ['No fee tagged, but for customers only', 'Customers only (a purchase may be required)', 'Limited wheelchair access (listed)', 'Hours listed: Mo-Fr 09:00-17:00']) assert.ok(c.includes(part), 'osm 9002 missing: ' + part);
     c = await cardText(page, 'osm:node/9003');
     for (const part of ['City Parks Fixture', 'Fee charged: 0.50 USD', 'Not wheelchair accessible (listed)', 'Hours not listed']) assert.ok(c.includes(part), 'osm 9003 missing: ' + part);
     c = await cardText(page, 'osm:node/9004');
-    for (const part of ['Unnamed public toilet', 'Cost unknown', 'Accessibility not listed', 'Hours not listed', 'No address tagged']) assert.ok(c.includes(part), 'osm 9004 missing: ' + part);
+    for (const part of ['Unnamed toilet', 'Cost unknown', 'Accessibility not listed', 'Hours not listed', 'No address tagged']) assert.ok(c.includes(part), 'osm 9004 missing: ' + part);
     c = await cardText(page, 'osm:node/9005');
     assert.ok(c.includes('Plain <b>Bold</b> Toilet') && c.includes('Wheelchair accessible (listed)'), 'osm 9005 escaped name and designated access');
     // Escaping and link safety for crowd-sourced text.
@@ -307,13 +319,13 @@ try {
     assert.ok(hrefs.some(([h]) => h === 'https://www.refugerestrooms.org/restrooms/101'));
     assert.ok(hrefs.some(([h]) => h === 'https://www.openstreetmap.org/node/9001') && hrefs.some(([h]) => h === 'https://www.openstreetmap.org/way/9002'));
     assert.ok(hrefs.some(([h]) => h === 'https://www.openstreetmap.org/copyright'));
-    assert.ok(hrefs.some(([h]) => h.startsWith('https://www.openstreetmap.org/directions?route=')));
+    assert.ok(hrefs.some(([h]) => h.startsWith('https://www.google.com/maps/dir/?api=1&destination=')));
     // Filters and source toggles with counts.
-    assert.equal(await text(page, '#filters [data-filter="free"]'), 'Free (fee=no) (3)');
+    assert.equal(await text(page, '#filters [data-filter="free"]'), 'Free (fee=no) (2)');
     assert.equal(await text(page, '#filters [data-filter="all"]'), 'All (10)');
     assert.equal(await text(page, '#src-filters [data-source="refuge"]'), 'Refuge Restrooms (4)');
     assert.equal(await text(page, '#src-filters [data-source="osm"]'), 'OpenStreetMap (6)');
-    for (const [filter, expected] of [['free', ['osm:node/9001', 'osm:way/9002', 'osm:node/9006']], ['wheelchair', ['osm:node/9001', 'refuge:101', 'osm:node/9005']], ['neutral', ['osm:node/9001', 'refuge:101']], ['changing', ['osm:node/9001']]]) {
+    for (const [filter, expected] of [['free', ['osm:node/9001', 'osm:node/9006']], ['wheelchair', ['osm:node/9001', 'refuge:101', 'osm:node/9005']], ['neutral', ['osm:node/9001', 'refuge:101']], ['changing', ['osm:node/9001']]]) {
       await page.click(`#filters [data-filter="${filter}"]`);
       assert.equal(await page.getAttribute(`#filters [data-filter="${filter}"]`, 'aria-pressed'), 'true');
       assert.deepEqual(await keys(page), expected, 'filter ' + filter);
@@ -331,8 +343,8 @@ try {
     assert.equal(await page.locator('#results details[data-k="refuge:102"]').evaluate(d => d.open), true, 'open note survives a re-render');
     assert.match(await text(page, '#results details[data-k="refuge:102"]'), /Directions: Enter through the side door/);
     // Map: one marker per listing, a distinct style per source, free listings distinguishable, legend and attribution.
-    assert.equal(await page.locator('#map .leaflet-marker-icon .pb-mk-free').count(), 3);
-    assert.equal(await page.locator('#map .leaflet-marker-icon .pb-mk-osm').count(), 3);
+    assert.equal(await page.locator('#map .leaflet-marker-icon .pb-mk-free').count(), 2);
+    assert.equal(await page.locator('#map .leaflet-marker-icon .pb-mk-osm').count(), 4);
     assert.equal(await page.locator('#map .leaflet-marker-icon .pb-mk-refuge').count(), 4);
     assert.match(await text(page, '#map .pb-legend'), /Refuge Restrooms \(crowd-sourced\)[\s\S]*OpenStreetMap/);
     assert.ok(await page.isVisible('.leaflet-control-attribution a[href="https://www.openstreetmap.org/copyright"]'));
@@ -348,7 +360,7 @@ try {
     assert.equal(b.selectionId, 1);
     assert.equal(b.locationType, 'address');
     assert.deepEqual([b.sources.geocoder.status, b.sources.refuge.status, b.sources.osm.status], ['ok', 'ok', 'ok']);
-    assert.deepEqual([b.sources.refuge.count, b.sources.refuge.radiusMi, b.sources.refuge.partial, b.sources.refuge.dataDate], [4, 20, false, '2024-11-20']);
+    assert.deepEqual([b.sources.refuge.count, b.sources.refuge.radiusMi, b.sources.refuge.partial, b.sources.refuge.dataDate], [4, 20, false, null]);
     assert.deepEqual([b.sources.osm.count, b.sources.osm.radiusMi, b.sources.osm.partial, b.sources.osm.dataDate], [6, 3, false, BASE_TS]);
     assert.ok(Math.abs(b.sources.refuge.nearestMi - 0.45) < 0.02 && Math.abs(b.sources.osm.nearestMi - 0.12) < 0.02);
     assert.ok(Number(await page.getAttribute('#status', 'data-revision')) > 3, 'revision bumps on every publish');
@@ -367,15 +379,14 @@ try {
     assert.ok(!/Wacker|Chicago|41\.88|87\.63/.test(plan), 'response plan holds no query or coordinates');
     // Throttle, ZIP+4 and the in-memory geocoder cache.
     await search(page, '59337-1234', 2);
-    const zipUrl = new URL(log.nominatim.at(-1));
-    assert.equal(zipUrl.searchParams.get('postalcode'), '59337');
+    assert.match(decodeURIComponent(log.census[0]), /ZCTA5='59337'/);
+    const zipUrl = new URL(log.census[0]);
     assert.equal(zipUrl.searchParams.get('q'), null);
     assert.match(await text(page, '#place'), /\(center of the ZIP code area, approximate\)/);
     assert.equal((await bridge(page)).locationType, 'zip');
-    const gaps = log.nominatimTimes.slice(1).map((t0, i) => t0 - log.nominatimTimes[i]);
-    assert.ok(gaps.every(g => g >= 900), 'Nominatim spacing ' + gaps);
     await search(page, '59337', 3);
-    assert.equal(log.nominatim.length, 2, 'a repeated search uses the in-memory cache');
+    assert.equal(log.nominatim.length, 1, 'a ZIP code never goes to the place search');
+    assert.equal(log.census.filter(u => u.includes('ZCTA5')).length, 1, 'a repeated search uses the in-memory cache');
     // No em dash anywhere, raw or rendered.
     assert.equal(rawPage.includes(EM_DASH), false, 'no em dash in the page source');
     assert.ok(!new RegExp('key ' + 'needed', 'i').test(rawPage), 'no banned key wording');
@@ -388,7 +399,7 @@ try {
     const t = await open();
     const { page, log } = t;
     await search(page, '59337-1234', 1);
-    assert.equal(new URL(log.nominatim[0]).searchParams.get('postalcode'), '59337');
+    assert.equal(log.nominatim.length, 0, 'a ZIP code never goes to the place search');
     assert.equal(await state(page, 'refuge'), 'empty');
     assert.equal(await state(page, 'osm'), 'empty');
     assert.match(await text(page, '#status-refuge'), /None listed in Refuge Restrooms within 20 miles\. This does not mean none exist\./);
@@ -398,7 +409,7 @@ try {
     assert.match(await text(page, '#results-summary'), /Refuge Restrooms: none listed within 20 miles; OpenStreetMap: none listed within 15 miles/);
     assert.equal(await page.locator('#results > li').count(), 0);
     assert.equal(await text(page, '#filters [data-filter="all"]'), 'All (0)');
-    assert.match(await text(page, '#place'), /Searching near: 59337, Jordan.*\(center of the ZIP code area, approximate\)/);
+    assert.match(await text(page, '#place'), /Near: ZIP code 59337, Garfield County, Montana \(center of the ZIP code area, approximate\)/);
     const b = await bridge(page);
     assert.deepEqual([b.sources.refuge.status, b.sources.refuge.count, b.sources.refuge.radiusMi], ['empty', 0, 20]);
     assert.deepEqual([b.sources.osm.status, b.sources.osm.count, b.sources.osm.radiusMi], ['empty', 0, 15]);
@@ -411,14 +422,14 @@ try {
     const t = await open();
     const { page, log } = t;
     await search(page, '00000', 1);
-    assert.match(await text(page, '#place'), /No place matched "00000"\. Check the ZIP code or try a street address or city\./);
+    assert.match(await text(page, '#place'), /The U\.S\. Census has no ZIP code area for 00000\. Check the digits\./);
     assert.equal(await state(page, 'geocoder'), 'empty');
-    assert.match(await text(page, '#status-geocoder'), /No match found/);
+    assert.match(await text(page, '#status-geocoder'), /has no ZIP code area/);
     assert.equal(await text(page, '#status-geocoder .pb-badge'), 'No match');
     assert.deepEqual([await state(page, 'refuge'), await state(page, 'osm')], ['notrun', 'notrun']);
     assert.match(await text(page, '#status-refuge'), /Not run: no location to check yet/);
     assert.equal(log.refuge.length + log.overpass.length, 0, 'no listings requested without a place');
-    assert.equal(new URL(log.nominatim[0]).searchParams.get('postalcode'), '00000');
+    assert.equal(log.nominatim.length, 0, 'an unknown ZIP code never reaches the place search');
     let b = await bridge(page);
     assert.deepEqual([b.state, b.sources.geocoder.status, b.sources.refuge.status, b.sources.osm.status], ['settled', 'empty', 'not-run', 'not-run']);
     await page.waitForFunction(() => /No place found for the search/.test(document.getElementById('console-response').textContent), null, { timeout: 8000 });
@@ -427,13 +438,13 @@ try {
     assert.match(await text(page, '#place'), /That is not a valid ZIP code\. A ZIP code has 5 digits/);
     assert.equal(await state(page, 'geocoder'), 'invalid');
     assert.match(await text(page, '#status-geocoder'), /Not sent: a ZIP code needs exactly 5 digits/);
-    assert.equal(log.nominatim.length, 1, 'an invalid ZIP is never sent');
+    assert.equal(log.nominatim.length + log.census.length, 1, 'an invalid ZIP is never sent');
     b = await bridge(page);
     assert.deepEqual([b.sources.geocoder.status, b.sources.refuge.status], ['invalid', 'not-run']);
     await page.fill('#q', '   ');
     await page.click('#go');
     assert.match(await text(page, '#place'), /Type an address, city or ZIP code first/);
-    assert.equal(log.nominatim.length, 1);
+    assert.equal(log.nominatim.length + log.census.length, 1);
     await finish(t, 'no match and invalid input');
   }
 
@@ -503,9 +514,9 @@ try {
     assert.equal(await state(page, 'osm'), 'failed');
     assert.equal(await state(page, 'refuge'), 'ok');
     const row = await text(page, '#status-osm');
-    assert.match(row, /Unavailable: the service answered with HTTP 504 \(tried overpass-api\.de and the maps\.mail\.ru mirror\)\. No OpenStreetMap listings are shown; this is not a zero\./);
+    assert.match(row, /Unavailable: the service answered with HTTP 504 \(tried overpass-api\.de twice\)\. No OpenStreetMap listings are shown; this is not a zero\./);
     assert.match(row, /Try again/);
-    assert.deepEqual(log.overpass.map(o => o.host), ['overpass-api.de', 'maps.mail.ru']);
+    assert.deepEqual(log.overpass.map(o => o.host), ['overpass-api.de', 'overpass-api.de']);
     assert.equal((await keys(page)).length, 4);
     assert.match(await text(page, '#results-summary'), /Unavailable: OpenStreetMap/);
     assert.equal(await text(page, '#filters [data-filter="free"]'), 'Free (fee=no) (unavailable)');
@@ -521,7 +532,7 @@ try {
     const { page, log } = t;
     await search(page, CITY_QUERY, 1);
     assert.equal(await state(page, 'osm'), 'ok');
-    assert.deepEqual(log.overpass.map(o => o.host), ['overpass-api.de', 'maps.mail.ru']);
+    assert.deepEqual(log.overpass.map(o => o.host), ['overpass-api.de', 'overpass-api.de']);
     assert.equal((await keys(page)).length, 10);
     assert.match(await text(page, '#status-osm'), /OK: 6 listed within 3 miles/);
     await finish(t, 'overpass mirror');
@@ -541,7 +552,7 @@ try {
     assert.doesNotMatch(summary, /None listed|none listed|No restrooms are listed/);
     assert.equal(await page.locator('#results > li').count(), 0);
     for (const sel of ['#filters [data-filter="all"]', '#filters [data-filter="free"]', '#src-filters [data-source="refuge"]', '#src-filters [data-source="osm"]']) assert.match(await text(page, sel), /\(unavailable\)$/, sel);
-    assert.equal(await text(page, '#live'), 'Search finished. 0 restroom listings found; 2 of 2 sources unavailable.');
+    assert.equal(await text(page, '#live'), 'Search finished. All restroom sources are unavailable. This is not a zero.');
     const b = await bridge(page);
     assert.equal(b.state, 'settled');
     for (const k of ['refuge', 'osm']) assert.deepEqual([b.sources[k].status, b.sources[k].count, b.sources[k].radiusMi, b.sources[k].partial], ['failed', null, null, false], k);
@@ -570,18 +581,20 @@ try {
     assert.equal((await bridge(page)).state, 'loading', 'the bridge does not settle while a source loads');
     await page.clock.fastForward(8500);
     assert.match(await text(page, '#status-refuge'), /Still loading; this source can take up to 30 seconds\./);
-    assert.match(await text(page, '#status-osm'), /OpenStreetMap servers are slow today; this can take up to 90 seconds\./);
+    assert.match(await text(page, '#status-osm'), /This source is often slow; it can take a minute or more\./);
     await page.clock.fastForward(22000);
     await until(async () => (await state(page, 'refuge')) === 'failed', 'refuge timeout');
     assert.match(await text(page, '#status-refuge'), /Unavailable: no answer within 30 seconds\. No Refuge Restrooms listings are shown; this is not a zero\./);
     assert.equal(await state(page, 'osm'), 'loading');
     assert.equal((await bridge(page)).state, 'loading');
     await page.clock.fastForward(20000);
-    await until(() => log.overpass.length === 2, 'mirror request');
-    assert.match(await text(page, '#status-osm'), /trying the maps\.mail\.ru mirror/);
+    await until(async () => /trying once more/.test(await text(page, '#status-osm')), 'retry note');
+    await page.clock.fastForward(4500);
+    await until(() => log.overpass.length === 2, 'second request');
+    assert.match(await text(page, '#status-osm'), /trying once more/);
     await page.clock.fastForward(41000);
     await until(async () => (await state(page, 'osm')) === 'failed', 'osm timeout');
-    assert.match(await text(page, '#status-osm'), /Unavailable: no answer within 40 seconds \(tried overpass-api\.de and the maps\.mail\.ru mirror\)/);
+    assert.match(await text(page, '#status-osm'), /Unavailable: no answer within 35 seconds \(tried overpass-api\.de twice\)/);
     await settled(page, 1);
     const b = await bridge(page);
     assert.deepEqual([b.sources.refuge.status, b.sources.refuge.count, b.sources.osm.status, b.sources.osm.count], ['failed', null, 'failed', null]);
@@ -611,7 +624,7 @@ try {
     assert.equal(await state(page, 'refuge'), 'failed');
     assert.match(await text(page, '#status-refuge'), /Unavailable: the response was not valid data/);
     assert.equal(await state(page, 'osm'), 'failed');
-    assert.match(await text(page, '#status-osm'), /Unavailable: the response had no list of places \(tried overpass-api\.de and the maps\.mail\.ru mirror\)/);
+    assert.match(await text(page, '#status-osm'), /Unavailable: the response had no list of places \(tried overpass-api\.de twice\)/);
     assert.equal(await page.locator('#results > li').count(), 0);
     assert.doesNotMatch(await text(page, '#results-summary'), /none listed|No restrooms are listed/i);
     await finish(t, 'malformed json');
@@ -622,14 +635,13 @@ try {
     const t = await open({ refugeRows: 100 });
     const { page } = t;
     await search(page, CITY_QUERY, 1);
-    assert.equal(await state(page, 'refuge'), 'partial');
-    assert.match(await text(page, '#status-refuge'), /Partial: the nearest 100 listings only, out to 15\.3 mi\./);
+    assert.equal(await state(page, 'refuge'), 'ok', 'asking for the nearest 100 is not a failure of the source');
+    assert.match(await text(page, '#status-refuge'), /OK: this page asks for the nearest 100 listings, which reach 15\.3 mi\./);
     assert.match(await text(page, '#results-summary'), /Refuge Restrooms: the nearest 100 listings only, out to 15\.3 mi/);
-    assert.match(await text(page, '#results-summary'), /Partial: Refuge Restrooms returned only its nearest 100 listings\./);
-    assert.equal(await text(page, '#src-filters [data-source="refuge"]'), 'Refuge Restrooms (100, partial)');
-    assert.equal(await text(page, '#filters [data-filter="all"]'), 'All (106+)');
+    assert.equal(await text(page, '#src-filters [data-source="refuge"]'), 'Refuge Restrooms (100)');
+    assert.equal(await text(page, '#filters [data-filter="all"]'), 'All (106)');
     const b = await bridge(page);
-    assert.deepEqual([b.sources.refuge.status, b.sources.refuge.count, b.sources.refuge.partial], ['partial', 100, true]);
+    assert.deepEqual([b.sources.refuge.status, b.sources.refuge.count, b.sources.refuge.partial], ['ok', 100, false]);
     assert.ok(b.sources.refuge.radiusMi > 15.3 && b.sources.refuge.radiusMi < 15.5, 'partial radius is the farthest returned distance: ' + b.sources.refuge.radiusMi);
     assert.equal(await page.locator('#results > li.pb-card').count(), 25, 'first page of 25');
     assert.ok(await page.isVisible('#more'));
@@ -646,7 +658,7 @@ try {
     const { page, log } = t;
     await page.click('#loc');
     await settled(page, 1);
-    assert.match(await text(page, '#place'), /Searching near: your device location \(accuracy about 35 m\)/);
+    assert.match(await text(page, '#place'), /Near: your device location \(accuracy about 35 m\)/);
     assert.equal(log.nominatim.length, 0, 'no place search for a device location');
     assert.equal(await state(page, 'geocoder'), 'notused');
     assert.equal(await state(page, 'refuge'), 'ok');
@@ -718,7 +730,7 @@ try {
     await page.press('#q', 'Enter');
     await settled(page, 2);
     assert.deepEqual((await keys(page)).length, 10);
-    assert.match(await text(page, '#place'), /Searching near: 233, South Wacker Drive/);
+    assert.match(await text(page, '#place'), /Near: 233, South Wacker Drive/);
     await sleep(3000); // the slow answers would land here
     assert.equal((await keys(page)).length, 10);
     assert.ok((await keys(page)).every(k => !/301|9301/.test(k)), 'stale listings never render');
@@ -768,6 +780,31 @@ try {
       }
     }
     await finish(t, `layout ${width} ${colorScheme}`);
+  }
+  // QC fixes: restricted, closed and customers-only toilets; contradictory cost; phantom ZIP codes; failures are never announced as zero.
+  {
+    const extraOsm = [
+      osmEl('chicago', 'node', 9801, 0.2, { amenity: 'toilets', fee: 'no', access: 'customers', name: 'Cafe Toilet' }),
+      osmEl('chicago', 'node', 9802, 0.2, { amenity: 'toilets', access: 'employees', name: 'Staff Toilet' }),
+      osmEl('chicago', 'node', 9803, 0.2, { amenity: 'toilets', disused: 'yes', name: 'Closed Toilet' }),
+      osmEl('chicago', 'node', 9804, 0.2, { amenity: 'toilets', opening_hours: 'closed', name: 'Shut Toilet' }),
+      osmEl('chicago', 'node', 9805, 0.2, { amenity: 'toilets', fee: 'donation', access: 'yes', name: 'Donation Toilet' }),
+    ];
+    const t = await open({ extraOsm });
+    const { page, log } = t;
+    await search(page, CITY_QUERY, 1);
+    let c = await cardText(page, 'osm:node/9801');
+    assert.ok(c.includes('Customers-only toilet') && c.includes('No fee tagged, but for customers only') && !c.includes('Free (fee=no'), 'customers only is never free: ' + c);
+    for (const id of [9802, 9803, 9804]) assert.equal(await page.locator(`li[data-k="osm:node/${id}"]`).count(), 0, 'hidden: ' + id);
+    c = await cardText(page, 'osm:node/9805');
+    assert.ok(c.includes('Public toilet') && c.includes('Cost unclear (listed as: donation)') && !c.includes('Free (fee=no'), 'unclear cost: ' + c);
+    assert.match(await cardText(page, 'refuge:101'), /it may be for customers only/, 'Refuge access is not promised');
+    assert.ok(log.overpass.every(o => o.host === 'overpass-api.de'), 'no other Overpass host is used');
+    await search(page, '99999', 2);
+    assert.match(await text(page, '#place'), /The U\.S\. Census has no ZIP code area for 99999/);
+    assert.match(await text(page, '#live'), /^Search stopped, no location\./, 'no location is not announced as zero listings');
+    assert.equal(log.nominatim.length, 1, 'a phantom ZIP code never reaches the place search');
+    await finish(t, 'qc fixes');
   }
 
   console.log(`PASS ${passed} bathroom finder smoke scenarios`);
