@@ -38,8 +38,10 @@
  const MODULE=new Map(MODULES.map(m=>[m.id,m]));
 
  /* NWS event names (2025 renames included) to NRI hazard codes. First matching rule wins. */
- const ALERT_RULES=[[/storm surge/i,['CFLD']],[/coastal flood|lakeshore flood/i,['CFLD']],[/extreme wind/i,['HRCN','SWND']],[/hurricane|tropical storm|tropical cyclone|typhoon/i,['HRCN']],[/flood/i,['IFLD']],[/tsunami/i,['TSUN']],[/avalanche/i,['AVLN']],[/red flag|fire weather|extreme fire|fire warning/i,['WFIR']],[/heat/i,['HWAV']],[/extreme cold|cold weather|wind chill|\bfreeze\b/i,['CWAV']],[/ice storm|freezing rain/i,['ISTM']],[/winter storm|winter weather|blizzard|lake effect snow|snow squall/i,['WNTW']],[/tornado/i,['TRND']],[/severe thunderstorm/i,['HAIL','SWND']],[/high wind|wind advisory/i,['SWND']],[/ashfall|volcan/i,['VLCN']],[/earthquake/i,['ERQK']]];
- function alertHazards(event){const name=text(event);if(!name)return [];const rule=ALERT_RULES.find(([re])=>re.test(name));return rule?rule[1].slice():[];}
+ const ALERT_RULES=[[/storm surge/i,['CFLD']],[/coastal flood|lakeshore flood/i,['CFLD']],[/extreme wind/i,['HRCN','SWND']],[/hurricane|tropical storm|tropical cyclone|typhoon/i,['HRCN']],[/flood/i,['IFLD']],[/tsunami/i,['TSUN']],[/avalanche/i,['AVLN']],[/red flag|fire weather|extreme fire|fire warning|dense smoke/i,['WFIR']],[/heat/i,['HWAV']],[/extreme cold|cold weather|wind chill|\bfreeze\b/i,['CWAV']],[/ice storm|freezing rain/i,['ISTM']],[/winter storm|winter weather|blizzard|lake effect snow|snow squall/i,['WNTW']],[/tornado/i,['TRND']],[/severe thunderstorm/i,['HAIL','SWND']],[/high wind|wind advisory/i,['SWND']],[/ashfall|volcan/i,['VLCN']],[/earthquake/i,['ERQK']]];
+ /* An Air Quality Alert names no cause, and many are for ozone or particles with no fire, so it counts as wildfire smoke only when its own text says so. */
+ function alertHazards(event,detail){const name=text(event);if(!name)return [];const rule=ALERT_RULES.find(([re])=>re.test(name));if(rule)return rule[1].slice();return /air quality/i.test(name)&&/smoke|wildfire/i.test(text(detail)||'')?['WFIR']:[];}
+ const alertCodes=a=>alertHazards(a?.event,[a?.headline,a?.description,a?.instruction].filter(Boolean).join(' '));
  /* A Warning or Emergency sets the Warning phase and a Watch sets the Watch phase; advisories, statements and outlooks do not. Three exceptions:
     Evacuation Immediate orders people to leave though its name has no "warning". An AMBER alert is not a hazard phase. NOAA ranks a tsunami advisory above a watch, but expects no widespread flooding, so it sets Watch rather than Warning. */
  const alertLevel=event=>/child abduction/i.test(event||'')?'advisory':/warning|emergency|evacuation immediate/i.test(event||'')?'warning':/watch|tsunami advisory/i.test(event||'')?'watch':'advisory';
@@ -67,7 +69,7 @@
   const active=alertItems(alerts,now);
   const rows=HAZARDS.map(h=>{const rating=text(attrs[h.code+'_RISKR']),eal=num(attrs[h.code+'_EALT']),score=num(attrs[h.code+'_RISKS']);
    return {code:h.code,name:h.name,module:h.module,eal,ealRank:null,rating,score,tractEal:tattrs?num(tattrs[h.code+'_EALT']):null,tractRating:tattrs?text(tattrs[h.code+'_RISKR']):null,applicable:rating!=='Not Applicable',insufficient:INSUFFICIENT.has(rating),
-    activeAlerts:active.filter(a=>alertHazards(a.event).includes(h.code)).map(a=>({id:a.id||null,event:a.event,severity:a.severity||null,headline:a.headline||null,senderName:a.senderName||null,sent:a.sent||null,onset:a.onset||null,ends:a.ends||null,expires:a.expires||null}))};});
+    activeAlerts:active.filter(a=>alertCodes(a).includes(h.code)).map(a=>({id:a.id||null,event:a.event,severity:a.severity||null,headline:a.headline||null,senderName:a.senderName||null,sent:a.sent||null,onset:a.onset||null,ends:a.ends||null,expires:a.expires||null}))};});
   const ranked=rows.filter(r=>r.applicable&&r.eal>0).sort((a,b)=>b.eal-a.eal);ranked.forEach((r,i)=>r.ealRank=i+1);
   // A hazard with an active alert leads, then expected annual loss.
   const alerted=r=>r.activeAlerts&&r.activeAlerts.length?0:1;
@@ -334,7 +336,7 @@
   const top=watches.sort((x,y)=>(y.level==='warning')-(x.level==='warning')||(timeOf(y.until)||0)-(timeOf(x.until)||0))[0];
   const advLine=advisories.length?' Active advisories or statements (these do not set the Watch or Warning phase): '+[...new Set(advisories)].join(', ')+'.':'';
   const alertsOk=get('nwsAlerts')?.status==='ok'||get('nwsAlerts')?.status==='empty';
-  const topCodes=top?alertHazards(top.a.event):[];
+  const topCodes=top?alertCodes(top.a):[];
   const phase=top?{id:top.level,label:top.level==='warning'?'Warning':'Watch',basis:'NWS '+top.a.event+(top.a.senderName?' from '+top.a.senderName:'')+(top.until?', in effect until '+fd(top.until):'')+'.'+(topCodes.length?' It maps to '+topCodes.map(c=>HAZARD.get(c).name).join(', ')+' in the FEMA hazard list.':' It has no matching hazard in the FEMA hazard list; follow the alert.')+advLine,until:top.until?iso(timeOf(top.until)):null,alertId:top.a.id||null}
    :!alertsOk?(get('nwsAlerts')?{id:'unknown',label:'Phase not set: NWS alerts unavailable',basis:'NWS alerts did not answer, so the phase cannot be known: a watch or warning may be in effect. Check weather.gov directly.',until:null,alertId:null}
     :{id:'unknown',label:'Phase not set: NWS alerts loading',basis:'NWS alerts are still loading, so the phase cannot be known yet.',until:null,alertId:null})
@@ -350,10 +352,10 @@
   const add=(module,key,o)=>{const r=res[key]&&typeof res[key]==='object'?res[key]:null,general=o.source==='General guidance';actions.push({id:module+'-'+key+'-'+actions.length,track:tr,module,text:o.text,basis:o.basis||null,source:o.source||null,dataDate:o.dataDate||null,dataDateText:general?null:o.dataDate?null:r?.dataDateText||'Data date not published by this source',checkedAt:general?null:r?.fetchedAt||null,escalateTo:o.escalateTo||null,reviewAfter:o.reviewAfter||null});};
   const pub=tr==='public',confirm=' Confirm before you go.';
   /* An alert with no leading module (a dust storm, an evacuation order, or any alert while FEMA's ranking is down) still leads the actions. */
-  const alertAction=(module,a)=>{const until=a.ends||a.expires||null;add(module,'nwsAlerts',{text:'NWS '+a.event+' in effect'+(until?' until '+fd(until):'')+'. '+(pub?'Follow the instructions in the alert.':'Review the alert text and coordinate with '+(a.senderName||'the NWS forecast office')+'.'),basis:a.headline||a.event,source:'National Weather Service alerts (api.weather.gov)',dataDate:a.sent||a.effective||null,escalateTo:pub?'Local emergency management; call 911 in an emergency':a.senderName||'NWS forecast office',reviewAfter:until?iso(timeOf(until)):after('nwsAlerts')});};
-  for(const a of alerts.filter(a=>!mods.some(m=>MODULE.get(m.id)?.hazards.some(c=>alertHazards(a.event).includes(c)))))alertAction('alerts',a);
+  const alertAction=(module,a)=>{const until=a.ends||a.expires||null;add(module,'nwsAlerts',{text:'NWS '+a.event+' in effect'+(until?' until '+fd(until):'')+'. '+(pub?'Follow the instructions in the alert.'+(/smoke|air quality/i.test(a.event)&&alertCodes(a).includes('WFIR')?' Smoke steps are under Wildfire and smoke, in the Impact phase.':''):'Review the alert text and coordinate with '+(a.senderName||'the NWS forecast office')+'.'),basis:a.headline||a.event,source:'National Weather Service alerts (api.weather.gov)',dataDate:a.sent||a.effective||null,escalateTo:pub?'Local emergency management; call 911 in an emergency':a.senderName||'NWS forecast office',reviewAfter:until?iso(timeOf(until)):after('nwsAlerts')});};
+  for(const a of alerts.filter(a=>!mods.some(m=>MODULE.get(m.id)?.hazards.some(c=>alertCodes(a).includes(c)))))alertAction('alerts',a);
   for(const m of mods){const def=MODULE.get(m.id);if(!def)continue;
-   for(const a of alerts.filter(a=>alertHazards(a.event).some(c=>def.hazards.includes(c))))alertAction(m.id,a);
+   for(const a of alerts.filter(a=>alertCodes(a).some(c=>def.hazards.includes(c))))alertAction(m.id,a);
    const r=get,live=[];
    /* Only a storm within 1,500 km is named as an action; a storm on the far side of the world is not one. */
    if(m.id==='tropical'&&ok('tropical')?.data.storms?.length){const s=r('tropical').data.storms[0];if(finite(s.distanceKm)&&s.distanceKm<=1500)live.push(['tropical',(s.name||'A tropical cyclone')+(finite(s.intensity)?' ('+s.intensity+' kt)':'')+' is '+dist(s.distanceKm)+' away (advisory '+fd(s.advisoryTime)+'). Follow local National Weather Service advisories.',s.advisoryTime]);}

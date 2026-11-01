@@ -91,9 +91,9 @@ function synthetic(u,method,body){
 const browser=await chromium.launch({headless:true,channel:process.env.CHROME_CHANNEL||undefined});
 let passed=0;
 /* mode: 'fixtures' (recorded, then synthetic), 'feeds-down' (geography answers, every other source fails), 'offline' (everything fails). */
-async function scenario(name,{mode='fixtures',width=1280,colorScheme='light',alerts=[],down=[]}={},verify){
+async function scenario(name,{mode='fixtures',width=1280,colorScheme='light',alerts=[],down=[],mobile=false}={},verify){
  ALERTS=alerts;
- const context=await browser.newContext({viewport:{width,height:900},colorScheme,acceptDownloads:true,serviceWorkers:'block',timezoneId:'America/New_York',locale:'en-US'});
+ const context=await browser.newContext({viewport:{width,height:900},...(mobile?{isMobile:true,hasTouch:true}:{}),colorScheme,acceptDownloads:true,serviceWorkers:'block',timezoneId:'America/New_York',locale:'en-US'});
  const log=[],errors=[],html=await read('consoles/community-resilience/index.html');
  await context.route('**/*',async route=>{
   const req=route.request(),u=new URL(req.url()),method=req.method(),body=req.postData();
@@ -516,6 +516,17 @@ try{
   assert.equal(await page.locator('#rs-ranking .rs-spin').count(),0,'no spinner while waiting for a pick');
  });
 
+ await scenario('200% text on a phone: nothing runs off the screen',{width:390,mobile:true},async page=>{
+  await page.addStyleTag({content:'html{-webkit-text-size-adjust:200%!important;text-size-adjust:200%!important}'});
+  const sideways=()=>page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+  assert.equal(await sideways(),0,'before a search');
+  await search(page,'33701');
+  await page.waitForFunction(()=>/Checklist for this phase/.test(document.getElementById('rs-plan-body')?.innerText||''));
+  await page.waitForTimeout(1500);
+  await page.evaluate(()=>document.querySelectorAll('details:not([open])').forEach(d=>{d.open=true;}));
+  assert.ok(await page.evaluate(()=>parseFloat(getComputedStyle(document.querySelector('.rs-note')).fontSize)>=20),'the text really is scaled');
+  assert.equal(await sideways(),0,'after a search with every panel open');
+ });
  await scenario('dark color scheme at 390 px',{colorScheme:'dark',width:390},async page=>{
   await search(page,'59337');
   await page.waitForFunction(()=>/Garfield County, Montana/.test(document.querySelector('#rs-place').textContent));

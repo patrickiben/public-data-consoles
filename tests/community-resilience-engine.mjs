@@ -261,6 +261,20 @@ check('buildPlan: official NWS alert names set the right phase and hazard',()=>{
  for(const [event,want] of [['Evacuation Immediate','warning'],['Shelter In Place Warning','warning'],['Civil Emergency Message','warning'],['Earthquake Warning','warning'],['Volcano Warning','warning'],['Tsunami Advisory','watch'],['Tsunami Watch','watch'],['Child Abduction Emergency','prepare'],['Blue Alert','prepare'],['Coastal Flood Advisory','prepare']])assert.equal(phaseFor(event),want,event);
  for(const [event,want] of [['Earthquake Warning',['ERQK']],['Freeze Warning',['CWAV']],['Freezing Fog Advisory',[]],['Tropical Cyclone Local Statement',['HRCN']]])assert.deepEqual(plain(E.alertHazards(event)),want,event);
 });
+check('smoke alerts: Dense Smoke maps to wildfire, and an Air Quality Alert only when its own text names smoke',()=>{
+ assert.deepEqual(plain(E.alertHazards('Dense Smoke Advisory')),['WFIR']);
+ assert.deepEqual(plain(E.alertHazards('Air Quality Alert')),[]);
+ assert.deepEqual(plain(E.alertHazards('Air Quality Alert','A Local Air Quality Advisory for PM 2.5')),[]);
+ assert.deepEqual(plain(E.alertHazards('Air Quality Alert','limit outdoor exposure to wildfire smoke')),['WFIR']);
+ const run=(event,description)=>{const results={...baseResults(),nwsAlerts:alertsResult([{...floodWatch,id:'aq-'+event,event,headline:event,description}])},ranking=E.rankHazards({county:countyResult(NRI.pima),alerts:results.nwsAlerts,now:NOW});return {ranking,plan:E.buildPlan({place:tucson,ranking,results,track:'public',now:NOW})};};
+ const ozone=run('Air Quality Alert','Ozone is expected to reach unhealthy levels.'),smoke=run('Air Quality Alert','Avoid outdoor exposure to wildfire smoke.'),dense=run('Dense Smoke Advisory','Smoke will reduce visibility.');
+ const wfir=r=>r.ranking.rows.find(x=>x.code==='WFIR').activeAlerts.length;
+ assert.equal(wfir(ozone),0,'an ozone alert does not raise wildfire');assert.equal(wfir(smoke),1);assert.equal(wfir(dense),1);
+ for(const r of [ozone,smoke,dense]){assert.equal(r.plan.phase.id,'prepare','smoke alerts stay advisories and do not set a phase');}
+ assert.ok(ozone.plan.actions.some(a=>/NWS Air Quality Alert/.test(a.text)&&!/Smoke steps/.test(a.text)),'an ozone alert is still listed, with no smoke pointer');
+ assert.ok(smoke.plan.actions.some(a=>/NWS Air Quality Alert/.test(a.text)&&/Smoke steps are under Wildfire and smoke/.test(a.text)));
+ assert.ok(dense.plan.actions.some(a=>/NWS Dense Smoke Advisory/.test(a.text)&&/Smoke steps are under Wildfire and smoke/.test(a.text)));
+});
 check('buildPlan: advisories and statements do not set Watch; a watch or warning sets the phase whatever the ranking says; tide flood levels are converted to MLLW',()=>{
  for(const event of ['Flood Advisory','Flood Statement','Heat Advisory']){
   const results={...baseResults(),nwsAlerts:alertsResult([{...floodWatch,id:'adv-'+event,event}])},ranking=E.rankHazards({county:countyResult(NRI.pima),alerts:results.nwsAlerts,now:NOW});
