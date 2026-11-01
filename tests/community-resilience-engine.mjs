@@ -242,16 +242,24 @@ check('buildPlan: public steps follow the official pages, and operator steps say
  assert.match(steps('heat','prepare'),/Do not rely on a fan as your main cooling/);
  assert.doesNotMatch(Object.values(E.PLAYBOOK.heat.public).flat().filter(s=>!/Do not rely on a fan/.test(s)).join(' '),/\bfans?\b/i,'no other heat step leans on a fan');
  assert.match(steps('volcanic','recovery'),/Do not get on your roof to remove ash unless you have guidance or training/);
- assert.match(steps('inland-flood','warning'),/Depending on the type of flooding/);
+ assert.match(steps('inland-flood','warning'),/move immediately to high ground/);assert.match(steps('inland-flood','warning'),/depending on the type of flooding/);
  assert.match(steps('inland-flood','prepare'),/up to 30 days/);
  assert.match(steps('surge','warning'),/the leading cause of hurricane deaths/);
  assert.match(steps('tropical','warning'),/Do not climb into a closed attic/);
- assert.match(steps('earthquake','impact'),/immediately after the shaking stops/);
+ assert.match(steps('earthquake','impact'),/immediately after the shaking stops, no matter how big/);
+ assert.match(steps('heat','impact'),/may be dry or damp/);assert.match(steps('heat','impact'),/fainting/);assert.match(steps('heat','impact'),/Do not give fluids/);
+ assert.match(steps('severe','warning'),/closest sturdy shelter/);assert.match(steps('severe','warning'),/no safe option/);assert.match(steps('severe','warning'),/noticeably lower than the road/);
+ assert.match(steps('tsunami','impact'),/first wave may not be the last or the largest/);
  for(const b of Object.values(E.PLAYBOOK))for(const a of b.also||[]){assert.match(a.link,/^https:\/\//);assert.ok(a.source);}
  const pub=E.buildPlan({place:tucson,ranking:pimaRanking,results:baseResults(),track:'public',now:NOW}),op=E.buildPlan({place:tucson,ranking:pimaRanking,results:baseResults(),track:'operator',now:NOW});
- assert.equal(pub.stepNote,null);assert.match(op.stepNote,/^Planning prompts written for this page, not official instructions/);
+ assert.match(pub.stepNote,/no emergency manager or clinician has reviewed this list/);assert.match(op.stepNote,/^Planning prompts written for this page, not official instructions/);
  assert.ok(pub.phases.every(p=>p.modules.every(m=>m.basis==='General guidance, not specific to this place'&&Array.isArray(m.also))));
  assert.ok(op.phases.every(p=>p.modules.every(m=>m.basis==='Related public guidance'&&Array.isArray(m.also))));
+});
+check('buildPlan: official NWS alert names set the right phase and hazard',()=>{
+ const phaseFor=event=>{const results={...baseResults(),nwsAlerts:alertsResult([{...floodWatch,id:'x-'+event,event}])},ranking=E.rankHazards({county:countyResult(NRI.pima),alerts:results.nwsAlerts,now:NOW});return E.buildPlan({place:tucson,ranking,results,track:'public',now:NOW}).phase.id;};
+ for(const [event,want] of [['Evacuation Immediate','warning'],['Shelter In Place Warning','warning'],['Civil Emergency Message','warning'],['Earthquake Warning','warning'],['Volcano Warning','warning'],['Tsunami Advisory','watch'],['Tsunami Watch','watch'],['Child Abduction Emergency','prepare'],['Blue Alert','prepare'],['Coastal Flood Advisory','prepare']])assert.equal(phaseFor(event),want,event);
+ for(const [event,want] of [['Earthquake Warning',['ERQK']],['Freeze Warning',['CWAV']],['Freezing Fog Advisory',[]],['Tropical Cyclone Local Statement',['HRCN']]])assert.deepEqual(plain(E.alertHazards(event)),want,event);
 });
 check('buildPlan: advisories and statements do not set Watch; a watch or warning sets the phase whatever the ranking says; tide flood levels are converted to MLLW',()=>{
  for(const event of ['Flood Advisory','Flood Statement','Heat Advisory']){
