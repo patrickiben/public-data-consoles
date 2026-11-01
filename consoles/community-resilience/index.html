@@ -178,6 +178,14 @@ main.rs-idle .rs-needs-place{display:none}
 .rs-summary{max-width:680px;margin:10px auto 0;text-align:left;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:8px 12px;font-size:13.5px}a:not([class]){text-decoration:underline;text-underline-offset:2px}#rs-nav a{text-decoration:none}
 @media (max-height:500px){#rs-map{height:60vh}}
 .rs-summary .rs-dl{margin:0}
+.rs-phases{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 6px}
+.rs-ph-now{font-size:11px;font-weight:700;margin-left:4px;text-transform:uppercase;letter-spacing:.04em}
+.rs-check-mod{margin:8px 0 12px}
+.rs-checks{list-style:none;padding:0;margin:4px 0}
+.rs-checks li{margin:7px 0}
+.rs-checks label{display:flex;gap:9px;align-items:flex-start;cursor:pointer}
+.rs-checks input{width:20px;height:20px;flex:none;margin:1px 0 0}
+@media print{html.rs-printing-plan body *{visibility:hidden}html.rs-printing-plan #rs-plan,html.rs-printing-plan #rs-plan *{visibility:visible}html.rs-printing-plan #rs-plan{position:absolute;left:0;top:0;width:100%;color:#111;background:#fff}html.rs-printing-plan #rs-plan .rs-row,html.rs-printing-plan #rs-plan .rs-phases{display:none}}
 .rs-now-row{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}
 .rs-now{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:999px;padding:3px 10px;font-size:12.5px;color:var(--ink)}
 .rs-now i{width:9px;height:9px;border-radius:50%;background:var(--ink2);flex:none}
@@ -405,7 +413,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
   <header class="rs-header">
     <div class="rs-top"><a href="../../">All consoles</a><button id="rs-theme" type="button" aria-label="Theme: Auto, follows your device. Activate to switch.">Theme: Auto</button></div>
     <h1>Community Resilience</h1>
-    <p class="rs-sub">Which natural hazards matter most where you live, what is active now, and which lifelines those hazards would strain, from public federal data.</p>
+    <p class="rs-sub">Which natural hazards matter most where you live, what is active now, which lifelines they would strain, and a response plan for each phase, from public federal data.</p>
     <div class="rs-emerg" role="note" aria-label="Emergency number">
       <p><b>In an emergency, call <a href="tel:911">911</a>.</b></p>
       <p>This page is for planning. It does not issue warnings; follow official alerts and local emergency management.</p>
@@ -438,7 +446,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
       </div>
     </form>
   </header>
-  <nav id="rs-nav" aria-label="Sections of this page" hidden><a href="#rs-live">Alerts</a><a href="#rs-plan">What to do</a><a href="#rs-ranking">Hazards</a><a href="#rs-lifelines">Lifelines</a><a href="#rs-map-title">Map</a><a href="#rs-sources">Sources</a></nav>
+  <nav id="rs-nav" aria-label="Sections of this page" hidden><a href="#rs-live">Alerts</a><a href="#rs-plan">Response plan</a><a href="#rs-ranking">Hazards</a><a href="#rs-lifelines">Lifelines</a><a href="#rs-map-title">Map</a><a href="#rs-sources">Sources</a></nav>
   <main id="rs-main">
 
   <div id="rs-noplace" class="rs-section rs-noplace" role="status"></div>
@@ -456,12 +464,13 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
 
   <section id="rs-plan" class="rs-section" aria-labelledby="rs-plan-title">
     <h2 id="rs-plan-title">Response plan</h2>
-    <p class="rs-lede">A plan built from the evidence on this page: the phase, ten dimensions and actions, each with its source and date.</p>
+    <p class="rs-lede">What to do here, phase by phase, for the hazards that lead this place: a checklist you can step through, what the data says, and the ten dimensions behind it, each with its source and date.</p>
     <div class="rs-row" role="group" aria-label="Plan audience">
-      <button id="rs-track-public" type="button" class="rs-btn" aria-pressed="true">Public</button>
-      <button id="rs-track-operator" type="button" class="rs-btn" aria-pressed="false">Operator</button>
+      <button id="rs-track-public" type="button" class="rs-btn" aria-pressed="true">Public / local decision makers</button>
+      <button id="rs-track-operator" type="button" class="rs-btn" aria-pressed="false">Professional operators</button>
       <button id="rs-export-plan" type="button" class="rs-btn">Export plan (JSON)</button>
       <button id="rs-export-text" type="button" class="rs-btn">Export plan (text)</button>
+      <button id="rs-print-plan" type="button" class="rs-btn">Print plan</button>
     </div>
     <div id="rs-plan-body"></div>
   </section>
@@ -822,20 +831,59 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
   {mitigation:'Integrate exposure across the declared intensity range so one scenario does not decide the picture.',public:'Know what changes for you at higher levels of the hazard, not only the forecast one.',operator:'Review long-term exposure across the range with official hazard maps; no automatic trigger follows.'},
   {mitigation:'Measure how close other assets sit to the exposed group within a declared buffer range.',public:'Areas next to an affected area can be cut off; plan routes that avoid it.',operator:'Review assets near the exposed group for access and warning; distance is not travel time or spread.'},
   {mitigation:'Needs a verified directed network with capacities and operating state; no network is inferred or modeled as real.',public:'Follow your utility\'s notices for service status.',operator:'Follow utility escalation channels; field verification requires the responsible operator.'}];
- const GENERAL={
-  tropical:['Know your evacuation zone, where you would go and how long the trip takes.','Confirm evacuation zones, shelter openings and generator fuel with local emergency management before the storm.'],
-  surge:['Storm surge is the leading cause of hurricane deaths; leave when officials order it for your zone.','Check low-lying assets against the NOAA water-level forecast and the local evacuation zones.'],
-  'inland-flood':['Turn around, do not drown: never drive or walk through flood water.','Review low-lying facilities and river gauge forecasts with the local floodplain manager.'],
-  severe:['Pick a shelter room on the lowest floor, away from windows, and keep a way to get warnings.','Confirm warning reception, backup power and staff shelter areas for each facility.'],
-  heat:['Drink water, limit midday activity and check on people who live alone.','Confirm cooling-center hours, backup power for cooling and outreach to people at higher risk.'],
-  wildfire:['Keep a go-bag ready and know two ways out; follow evacuation orders right away.','Confirm defensible space, evacuation routes and air filtration for sensitive facilities.'],
-  drought:['Follow local water-use restrictions.','Review supply, demand and conservation stages with the water system.'],
-  earthquake:['Drop, cover and hold on; secure heavy furniture and water heaters.','Confirm post-earthquake inspection lists for critical buildings and bridges.'],
-  winter:['Keep heat, food, water and medicine for several days; never run a generator indoors.','Confirm warming-center plans, road treatment and backup heat for critical facilities.'],
-  landslide:['Watch for new cracks, tilting trees or sudden changes in creek water during heavy rain.','Review slopes above roads and facilities with the local geologist or public works.'],
-  tsunami:['If you feel a strong earthquake near the coast, move to high ground right away.','Confirm tsunami evacuation routes and signage with local emergency management.'],
-  volcanic:['Follow USGS and local guidance on ashfall; protect your lungs and electronics.','Review ash cleanup, air filtration and transport plans with the responsible agencies.'],
-  avalanche:['Check the avalanche forecast before travel in avalanche terrain.','Coordinate road closures and control work with the avalanche center and transportation agency.']};
+ /* Phases follow official notices, not a storm clock (response-plans/CONTRACT.md:101). Only Prepare, Watch and Warning can be suggested from a public feed. */
+ const PLAN_PHASES=[
+  {id:'prepare',label:'Prepare',when:'Before anything is forecast. No NWS watch or warning is active at this point.'},
+  {id:'watch',label:'Watch',when:'An NWS watch is active: the hazard is possible.'},
+  {id:'warning',label:'Warning',when:'An NWS warning is active: the hazard is happening or about to.'},
+  {id:'impact',label:'Impact, first 72 hours',when:'While it happens and right after. No public feed declares this phase, so choose it when it applies.'},
+  {id:'recovery',label:'Recovery',when:'Cleanup and rebuilding. Choose it once officials say re-entry or recovery has begun.'}];
+ /* Which of the ten dimensions inform which phase, carried over from the Coastal plan's mapping without its storm clock. */
+ const DIM_PHASES={1:['impact','recovery'],2:['prepare'],3:['prepare','watch','warning','impact','recovery'],4:['watch','warning'],5:['prepare'],6:['watch'],7:['recovery'],8:['prepare'],9:['warning','impact'],10:['prepare','impact']};
+ /* General guidance by hazard and phase, from each hazard's Ready.gov page. It is never specific to a place, and the page says so. */
+ const PLAYBOOK={
+  tropical:{link:'https://www.ready.gov/hurricanes',source:'Ready.gov: hurricanes',
+   public:{prepare:['Know your evacuation zone, where you would go and how long the trip takes.','Keep water, food, medicine and copies of documents for several days.'],watch:['Fill prescriptions, fuel the car and charge phones.','Bring in outdoor items and review your evacuation route.'],warning:['Leave right away if officials order it for your zone.','If you stay, shelter in a small interior room away from windows.'],impact:['Stay inside until officials say it is safe. The calm of the eye is not the end.','Stay out of flood water and away from downed power lines. Never run a generator indoors.'],recovery:['Return only when officials say it is safe.','Photograph damage for insurance, and report utility problems to the utility.']},
+   operator:{prepare:['Confirm evacuation zones, shelter openings and generator fuel with local emergency management.','Review staffing, mutual aid and contact lists.'],watch:['Pre-position crews, fuel and supplies, and confirm who can order closures.','Check backup power at critical facilities.'],warning:['Move staff and equipment out of surge and flood zones, following local emergency management.','Confirm shelter staffing and accessible transport.'],impact:['Hold field work until officials declare it safe, and log damage reports with time and source.','Report verified service problems through the emergency operations center.'],recovery:['Inspect critical facilities before restoring service, and document damage for federal assistance.','Review what worked with the responsible agencies.']}},
+  surge:{link:'https://www.ready.gov/hurricanes',source:'Ready.gov: hurricanes',
+   public:{prepare:['Find out whether your address is in a storm surge evacuation zone.'],watch:['Move valuables up and plan to leave early: coastal roads can flood before a storm arrives.'],warning:['Leave when officials order it for your zone. Storm surge is a leading cause of hurricane deaths.'],impact:['Stay away from coastal water, and do not walk or drive through it.'],recovery:['Wait for officials before returning: flood water can hide damaged roads and contamination.']},
+   operator:{prepare:['Check low-lying assets against NOAA water levels and local evacuation zones.'],watch:['Review the NOAA water-level forecast, protect or raise movable equipment and confirm who can close low roads.'],warning:['Move crews and equipment out of surge zones.'],impact:['Hold coastal field work until officials declare it safe.'],recovery:['Inspect low-lying assets, including for salt-water damage, before restoring them.']}},
+  'inland-flood':{link:'https://www.ready.gov/floods',source:'Ready.gov: floods',
+   public:{prepare:['Check your flood risk on the FEMA flood map, and ask about flood insurance, which usually takes 30 days to start.','Keep valuables and documents above likely flood levels.'],watch:['Know your way to higher ground, and keep alerts on.','Do not camp or park beside streams.'],warning:['Move to higher ground now.','Turn around, do not drown: never drive or walk through flood water.'],impact:['Stay off flooded roads. Six inches of moving water can knock you down.'],recovery:['Return only when officials say so.','Avoid flood water, which can be contaminated, and throw out food it touched.']},
+   operator:{prepare:['Review low-lying facilities and river gauge forecasts with the local floodplain manager.'],watch:['Check drains and pumps, and stage barricades at roads that flood.'],warning:['Close flooded roads, and move crews and equipment to high ground.'],impact:['Log high-water marks and road closures with time and source.'],recovery:['Inspect bridges and culverts before reopening, and document damage.']}},
+  severe:{link:'https://www.ready.gov/tornadoes',source:'Ready.gov: tornadoes',
+   public:{prepare:['Pick a shelter room on the lowest floor, away from windows, and keep a way to get warnings.'],watch:['Stay alert, know where you would go and bring in loose objects.'],warning:['Go to your shelter now. In a vehicle or mobile home, get to a sturdy building if you can.','When thunder roars, go indoors.'],impact:['Stay sheltered until the warning ends.','Watch for downed power lines and debris.'],recovery:['Stay out of damaged buildings, and report gas leaks and downed lines.']},
+   operator:{prepare:['Confirm warning reception, backup power and staff shelter areas for each facility.'],watch:['Alert staff, and check backup communications.'],warning:['Move staff to shelter, and stop outdoor work.'],impact:['Account for staff, then log damage with time and source.'],recovery:['Clear critical routes, and inspect facilities before reopening.']}},
+  heat:{link:'https://www.ready.gov/heat',source:'Ready.gov: extreme heat',
+   public:{prepare:['Find where you can cool off, such as a library or cooling center, and plan for people who live alone.'],watch:['Move outdoor work to early morning, and check that fans and air conditioning work.'],warning:['Drink water, stay in air conditioning if you can and check on neighbors.','Never leave people or pets in a parked car.'],impact:['Heat stroke is an emergency: call 911 for confusion, fainting or very hot skin.'],recovery:['Keep checking on people at higher risk until nights cool down.']},
+   operator:{prepare:['Confirm cooling-center hours, backup power for cooling and outreach to people at higher risk.'],watch:['Plan to open cooling centers early, and adjust outdoor work schedules.'],warning:['Extend cooling-center hours, and check on residents at higher risk.'],impact:['Track heat illness and power problems with the health department.'],recovery:['Review who was not reached, and fix the outreach list.']}},
+  wildfire:{link:'https://www.ready.gov/wildfires',source:'Ready.gov: wildfires',
+   public:{prepare:['Clear brush near your home, keep a go-bag ready and know two ways out.'],watch:['Avoid anything that can spark, and keep your phone charged and alerts on.'],warning:['Follow evacuation orders right away.','If smoke gets in, close windows and use the cleanest air you can.'],impact:['Limit time outdoors in heavy smoke. N95 masks help; cloth masks do not.'],recovery:['Return only when officials say so, and watch for hot spots and ash.','Burned slopes can flood and slide, even in light rain.']},
+   operator:{prepare:['Confirm defensible space, evacuation routes and air filtration for sensitive facilities.'],watch:['Stage crews, and limit work that can spark.'],warning:['Support evacuation traffic and shelters, and protect critical facilities.'],impact:['Track air quality at sensitive facilities, and log closures.'],recovery:['Check water systems and slopes: burned areas flood and slide more easily.']}},
+  drought:{link:'https://www.ready.gov/drought',source:'Ready.gov: drought',
+   public:{prepare:['Fix leaks, and learn your water system\'s drought stages.'],watch:['Drought has no NWS watch. Follow your water system\'s announced stage.'],warning:['Drought has no NWS warning. Follow local water-use restrictions.'],impact:['Keep following restrictions, and report water quality problems to your water system.'],recovery:['Keep saving water until your water system lifts its restrictions.']},
+   operator:{prepare:['Review supply, demand and conservation stages with the water system.'],watch:['Track the U.S. Drought Monitor weekly, and prepare customer notices.'],warning:['Move to the next conservation stage as your drought plan directs.'],impact:['Coordinate backup supplies, and watch wildfire and agricultural effects.'],recovery:['Review which stages worked before the next dry period.']}},
+  earthquake:{link:'https://www.ready.gov/earthquakes',source:'Ready.gov: earthquakes',
+   public:{prepare:['Secure heavy furniture and water heaters, and practice drop, cover and hold on.'],watch:['Earthquakes have no watch. Keep your kit ready.'],warning:['If you feel shaking or get an early warning on your phone: drop, cover and hold on.'],impact:['Expect aftershocks. Near the coast, move to high ground after strong shaking.','Leave the building if you smell gas.'],recovery:['Stay out of damaged buildings until they are inspected.']},
+   operator:{prepare:['Confirm post-earthquake inspection lists for critical buildings and bridges.'],watch:['Earthquakes have no watch. Keep inspection lists and contacts current.'],warning:['Stop hazardous work if an early warning arrives.'],impact:['Inspect priority bridges, water lines and gas lines, and log findings with time and source.'],recovery:['Clear buildings only after inspection, and document damage.']}},
+  winter:{link:'https://www.ready.gov/winter-weather',source:'Ready.gov: winter weather',
+   public:{prepare:['Keep heat, food, water and medicine for several days, and a kit in the car.'],watch:['Stock up, fuel the car and protect pipes.'],warning:['Stay off the roads if you can.','Never run a generator or grill indoors.'],impact:['Keep one room warm, watch for frostbite and hypothermia, and check on neighbors.'],recovery:['Clear vents, shovel slowly and take care on ice.']},
+   operator:{prepare:['Confirm warming-center plans, road treatment and backup heat for critical facilities.'],watch:['Pretreat priority roads, and check fuel supplies.'],warning:['Open warming centers, and run priority plowing.'],impact:['Track outages and people who need heat, and log road closures.'],recovery:['Check facilities for burst pipes and heavy snow on roofs.']}},
+  landslide:{link:'https://www.ready.gov/landslides-debris-flow',source:'Ready.gov: landslides',
+   public:{prepare:['Learn whether your area has slid before, and know a way out that avoids steep slopes.'],watch:['During heavy rain, watch for new cracks, tilting trees or sudden changes in creek water.'],warning:['If you are told to leave or hear rumbling, leave right away and move out of the path.'],impact:['Stay away from the slide, because more can follow, and report broken utility lines.'],recovery:['Have the ground and foundation checked before returning.']},
+   operator:{prepare:['Review slopes above roads and facilities with the local geologist or public works.'],watch:['Monitor known slide areas during heavy rain, and check drains.'],warning:['Close threatened roads, and evacuate as ordered.'],impact:['Keep crews clear of unstable slopes, and log closures.'],recovery:['Have a geologist clear slopes before reopening.']}},
+  tsunami:{link:'https://www.ready.gov/tsunamis',source:'Ready.gov: tsunamis',
+   public:{prepare:['Learn your tsunami evacuation route to high ground.'],watch:['Stay out of the water, and keep alerts on.'],warning:['Move to high ground or inland right away.','If you feel a strong earthquake near the coast or see the sea pull back, go without waiting.'],impact:['Stay on high ground until officials say it is safe. Waves can keep coming for hours.'],recovery:['Return only when officials say so, and avoid flood water and damaged buildings.']},
+   operator:{prepare:['Confirm tsunami evacuation routes and signs with local emergency management.'],watch:['Prepare to clear beaches and harbors.'],warning:['Clear beaches and harbors, and direct traffic inland.'],impact:['Keep crews out of the flooded zone until the all-clear.'],recovery:['Inspect ports, bridges and water systems before reopening.']}},
+  volcanic:{link:'https://www.ready.gov/volcanoes',source:'Ready.gov: volcanoes',
+   public:{prepare:['Know your evacuation route, and keep masks and goggles for ashfall.'],watch:['Follow USGS alert levels and local guidance.'],warning:['Follow evacuation orders, and stay indoors during ashfall.'],impact:['Protect your lungs and electronics, and avoid driving in ash.'],recovery:['Clear ash from roofs carefully: it is heavy.']},
+   operator:{prepare:['Review ash cleanup, air filtration and transport plans with the responsible agencies.'],watch:['Follow USGS alert levels, and stage equipment.'],warning:['Close roads as ordered, and support evacuation.'],impact:['Protect water intakes and air filters from ash.'],recovery:['Clean filters, and check water, power and transport before restoring service.']}},
+  avalanche:{link:'https://avalanche.org/',source:'Avalanche.org',
+   public:{prepare:['Check the avalanche forecast before travel in avalanche terrain, and carry a beacon, probe and shovel.'],watch:['Avoid steep slopes and the areas below them.'],warning:['Stay out of avalanche terrain.'],impact:['If someone is buried, call 911 and start searching right away.'],recovery:['Wait for the next forecast before going back.']},
+   operator:{prepare:['Coordinate road closures and control work with the avalanche center and transportation agency.'],watch:['Review control plans, and warn road crews.'],warning:['Close exposed roads and trails.'],impact:['Keep rescuers out of slide paths until the area is assessed.'],recovery:['Clear and inspect roads before reopening.']}},
+  all:{link:'https://www.ready.gov/plan',source:'Ready.gov: make a plan',
+   public:{prepare:['Sign up for local alerts, and keep water, food and medicine for several days.'],watch:['Keep alerts on, and review what you would do and where you would go.'],warning:['Follow the instructions in the alert right away.'],impact:['Stay safe where you are until officials say otherwise. In an emergency, call 911.'],recovery:['Return only when officials say it is safe, and report damage to local officials.']},
+   operator:{prepare:['Review contact lists, backup power and mutual aid with local emergency management.'],watch:['Confirm staffing, and check backup systems.'],warning:['Follow the emergency operations plan and official instructions.'],impact:['Log damage and service problems with time and source.'],recovery:['Inspect facilities before restoring service, and document damage.']}}};
  const REVIEW_HOURS={nwsAlerts:1,shelters:6,riverGauges:1,tideStation:1,ofsForecast:6,heatRisk:12,wildfires:3,airQuality:1,tropical:3,earthquakes:6,drought:168,outages:1,volcanoes:24};
  const nameOf=it=>text(it?.name)||text(it?.shelterName)||text(it?.shelter_name)||text(it?.facilityName)||text(it?.NAME)||null;
  const placeOf=it=>[text(it?.address),text(it?.city),text(it?.state)].filter(Boolean).join(', ');
@@ -867,7 +915,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
   const screenLine=summary&&finite(summary.exposed)?' ('+summary.exposed+' of '+summary.total+' assets exposed by the '+summary.label+' screen'+(typeof summary.source==='string'?', '+summary.source:'')+')':'';
   const dimensions=DIMENSIONS.map((d,i)=>{const n=i+1,m=mlist.find(x=>x.id===n),status=m?m.status:'not-available';
    const condition=!m?'Not available here: '+(n===7?NEVER_7:n===10?NEVER_10:'no exposure screen has been run for this place')+'.':status==='computed'?'Computed here: '+m.display+screenLine+'.'+(m.review?' Flagged for review.':''):(status==='not-applicable'?'Not applicable here: ':'Not available here: ')+m.reason+'.';
-   return {id:n,name:METRIC_NAMES[i],technicalName:METRIC_TECH[i],pillar:pillarOf(n),status,condition,inputs:m?.requires||'',mitigation:d.mitigation,nextSteps:d[tr]};});
+   return {id:n,name:METRIC_NAMES[i],technicalName:METRIC_TECH[i],pillar:pillarOf(n),phases:DIM_PHASES[n].slice(),review:!!m?.review,status,condition,inputs:m?.requires||'',mitigation:d.mitigation,nextSteps:d[tr]};});
   /* Actions: real records first, then labeled general guidance */
   const mods=(Array.isArray(modules)?modules:moduleStatus({ranking,place,results:res})).filter(m=>m.status==='leading'),actions=[],used=new Set();
   const add=(module,key,o)=>{const r=res[key]&&typeof res[key]==='object'?res[key]:null,general=o.source==='General guidance';actions.push({id:module+'-'+key+'-'+actions.length,track:tr,module,text:o.text,basis:o.basis||null,source:o.source||null,dataDate:o.dataDate||null,dataDateText:general?null:o.dataDate?null:r?.dataDateText||'Data date not published by this source',checkedAt:general?null:r?.fetchedAt||null,escalateTo:o.escalateTo||null,reviewAfter:o.reviewAfter||null});};
@@ -907,7 +955,6 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
     if(life==='transport'&&!pub&&ok('bridges')?.data.total){used.add('life:transport');const b=r('bridges').data;
      add(m.id,'bridges',{text:b.poor+' of '+b.total+' bridges nearby have a poor structural rating (a condition rating, not a closure).',source:srcName(r('bridges')),dataDate:dateOf(r('bridges')),escalateTo:'State transportation agency',basis:'National Bridge Inventory records.'});}
    }
-   const g=GENERAL[m.id];if(g)add(m.id,'general',{text:'General guidance: '+g[pub?0:1],basis:'General preparedness guidance, not specific to this place.',source:'General guidance',dataDate:null});
   }
   /* Limitations */
   const limitations=['FEMA NRI expected annual loss is a long-term average, not a forecast of the next event.','Asset records are inventories, not live operating condition: the plan cannot know whether a facility, plant, hospital, bridge or road is open or working right now.','No keyless national source covers communications networks, substations, live road closures or hospital capacity.','The phase follows active NWS watches and warnings at this point; it does not use the Coastal storm clock and does not predict an event.','Metrics 7 and 10 need '+NEVER_7+' and '+NEVER_10+'; neither is available or inferred.'];
@@ -917,10 +964,13 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
   /* Revision: evidence only (fetch times excluded so a polling update with the same evidence keeps the key). */
   const evidence={place:place?[place.county?.fips,place.tract?.geoid,finite(place.lat)?place.lat.toFixed(4):null,finite(place.lon)?place.lon.toFixed(4):null]:null,track:tr,ranking:ranking?[ranking.status,ranking.version,ranking.dataDate,ranking.leading]:null,phase:[phase.id,phase.until,phase.alertId],alerts:alerts.map(a=>[a.id,a.event,a.sent,a.ends,a.expires]),
    metrics:mlist.map(m=>[m.id,m.status,m.value,m.reason]),screen:summary,results:Object.keys(res).sort().map(k=>{const r=res[k];return [k,r?.status,r?.dataDate,fnv(JSON.stringify(r&&'data' in r?r.data:r)??'')];})};
-  return {phase,dimensions,actions,limitations,revision:'rev-'+fnv(JSON.stringify(evidence))};
+  /* The checklist for every phase, so someone can read ahead; the page opens on the phase the sources point to. */
+  const suggestedPhase=['prepare','watch','warning'].includes(phase.id)?phase.id:null,checklistMods=mods.length?mods.map(m=>m.id).filter(id=>PLAYBOOK[id]):['all'];
+  const phases=PLAN_PHASES.map(p=>({id:p.id,label:p.label,when:p.when,suggested:p.id===suggestedPhase,modules:checklistMods.map(id=>({id,name:id==='all'?'Any hazard':MODULE.get(id).name,authority:PLAYBOOK[id].link,authorityName:PLAYBOOK[id].source,items:PLAYBOOK[id][tr][p.id].map((text,i)=>({id:id+'-'+p.id+'-'+i,text}))}))}));
+  return {phase,suggestedPhase,phases,dimensions,actions,limitations,revision:'rev-'+fnv(JSON.stringify(evidence))};
  }
 
- root.CREngine={HAZARDS,MODULES,LIFELINES,PILLARS,METRIC_NAMES,METRIC_TECH,alertHazards,rankHazards,moduleStatus,sourceCoverage,screenFrom,nfhlRank,spcRank,computeMetrics,coastalScope,coastalLevelScreen,ofsPeak,buildPlan,floodLevelsMllw,format,distanceKm,nearest};
+ root.CREngine={HAZARDS,MODULES,LIFELINES,PILLARS,METRIC_NAMES,METRIC_TECH,PLAN_PHASES,PLAYBOOK,alertHazards,rankHazards,moduleStatus,sourceCoverage,screenFrom,nfhlRank,spcRank,computeMetrics,coastalScope,coastalLevelScreen,ofsPeak,buildPlan,floodLevelsMllw,format,distanceKm,nearest};
 })(typeof window!=='undefined'?window:globalThis);
 </script>
 <!-- END COMMUNITY RESILIENCE ENGINE -->
@@ -2372,7 +2422,7 @@ function focusPlace(){const el=$('rs-place');el.focus({preventScroll:true});el.s
 function begin(phase){
  const ex=$('rs-examples-box');if(ex&&ex.open)ex.open=false;
  state.run++;state.phase=phase;state.place=null;state.info=null;state.results={};state.pending={};state.message=null;state.chooser=null;
- state.ranking=null;state.modules=[];state.open=new Set();state.openedFirst=false;state.spcCategory=null;state.ofsPeak=null;state.plan=null;state.checkedAt=null;
+ state.planPhase=null;state.planChecks=new Set();state.planRevision=null;state.ranking=null;state.modules=[];state.open=new Set();state.openedFirst=false;state.spcCategory=null;state.ofsPeak=null;state.plan=null;state.checkedAt=null;
  state.local={scope:'city',level:null};state.diag={asset:'',screen:'',status:'idle',result:null,screen_:null,note:null};
  Object.keys(painted).forEach(k=>delete painted[k]);loadedModules.clear();
  schedule();return state.run;
@@ -2675,7 +2725,7 @@ function renderSummary(){
  if(aq&&aq.items&&aq.items.length){const w=aq.items.reduce((x,y)=>(y.aqi??-1)>(x.aqi??-1)?y:x);chips.push(nowChip('Air',w.category+' (AQI '+w.aqi+')','muted',AQI_COLORS.find(c=>w.aqi<=c[0])[1]));}
  if(eq&&finite(eq.count))chips.push(nowChip('Earthquakes, 30 days',String(eq.count),'muted'));
  if(ou&&ou.items&&ou.items.length){const meters=ou.items.reduce((s,x)=>s+(finite(x.metersAffected)?x.metersAffected:0),0);chips.push(nowChip('Outages',num(meters)+(meters===1?' meter':' meters'),'warn'));}
- paint('rs-summary','<div class="rs-now-row" data-rs-now>'+chips.join('')+'</div><dl class="rs-dl"><dt>Active alerts</dt><dd'+(urgent?' class="rs-err"':'')+'>'+(urgent?'<b>'+esc(al)+'</b>':esc(al))+' <a href="#rs-live">Live now</a></dd><dt>Leading hazards, by county-wide yearly loss</dt><dd>'+hz+' <a href="#rs-ranking">Ranking</a></dd><dt>Sources</dt><dd>'+(down?'<b>'+esc(plural(down,'source'))+' unavailable.</b> ':'None unavailable so far. ')+'<a href="#rs-sources">Sources and status</a></dd></dl>');
+ paint('rs-summary','<div class="rs-now-row" data-rs-now>'+chips.join('')+'</div><dl class="rs-dl"><dt>Active alerts</dt><dd'+(urgent?' class="rs-err"':'')+'>'+(urgent?'<b>'+esc(al)+'</b>':esc(al))+' <a href="#rs-live">Live now</a></dd><dt>Response plan</dt><dd>'+esc(state.ranking?'Phase: '+currentPlan().phase.label.replace(/^Phase not set: .*$/,'not set')+'.':'Loading.')+' <a href="#rs-plan">Open the plan</a></dd><dt>Leading hazards, by county-wide yearly loss</dt><dd>'+hz+' <a href="#rs-ranking">Ranking</a></dd><dt>Sources</dt><dd>'+(down?'<b>'+esc(plural(down,'source'))+' unavailable.</b> ':'None unavailable so far. ')+'<a href="#rs-sources">Sources and status</a></dd></dl>');
 }
 const RENDERERS=[renderSummary,renderChooser,renderGeo,renderRanking,renderLive,renderModules,renderLocal,renderLifelines,renderContext,renderMetrics,renderPlan,renderSources];
 // Until a place is found, one banner stands in for the place panels (they would each say the same thing).
@@ -3216,7 +3266,7 @@ function currentPlan(){
 }
 function dimensionsHtml(dims){
  const help=window.ConsoleMetricHelp;
- return dims.map(dm=>'<div class="rs-dim" data-rs-dimension="'+dm.id+'" data-status="'+esc(dm.status)+'"><h4>'+dm.id+'. '+(help?help.label(dm.id,dm.name,dm.condition):esc(dm.name))+' <span class="rs-muted">('+esc(dm.pillar)+')</span></h4><p>'+esc(dm.condition)+'</p><p><b>How it is used:</b> '+esc(dm.mitigation)+'</p><p><b>Next steps:</b> '+esc(dm.nextSteps)+'</p></div>').join('');
+ return dims.map(dm=>'<div class="rs-dim" data-rs-dimension="'+dm.id+'" data-status="'+esc(dm.status)+'"><h4>'+dm.id+'. '+(help?help.label(dm.id,dm.name,dm.condition):esc(dm.name))+' <span class="rs-muted">('+esc(dm.pillar)+')</span></h4><p>'+esc(dm.condition)+'</p><p><b>How it is used:</b> '+esc(dm.mitigation)+'</p><p><b>Next steps:</b> '+esc(dm.nextSteps)+'</p>'+(dm.phases&&dm.phases.length?'<p><b>Phases:</b> '+esc(dm.phases.map(id=>(E.PLAN_PHASES.find(x=>x.id===id)||{}).label).join(', '))+'</p>':'')+'</div>').join('');
 }
 function renderPlan(){
  $('rs-track-public').setAttribute('aria-pressed',String(state.track==='public'));
@@ -3229,14 +3279,30 @@ function renderPlan(){
   paint('rs-plan-body',waitingBox()+'<details class="rs-more" data-keep="plan-dims"><summary><b>Ten dimensions</b> (search for a place first)</summary>'+dimensionsHtml(shell)+'</details>');return;
  }
  const plan=state.plan=currentPlan(),ph=plan.phase;
+ // As on the Coastal plan, a check is a review of this evidence, so new evidence clears the checks. Nothing is saved.
+ if(state.planRevision!==plan.revision){state.planRevision=plan.revision;state.planChecks=new Set();}
+ const selected=plan.phases.find(x=>x.id===(state.planPhase||plan.suggestedPhase||'prepare'))||plan.phases[0];
+ const nowLabel=(plan.phases.find(x=>x.suggested)||{}).label;
  let html='<p><span class="rs-phase rs-p-'+esc(ph.id)+'">'+esc(/^Phase/.test(ph.label)?ph.label:'Phase: '+ph.label)+'</span> <span class="rs-muted">'+esc(state.track==='public'?'Public track':'Operator track')+(state.track==='operator'?'; revision '+esc(plan.revision):'')+'</span></p><p class="rs-note">'+esc(ph.basis)+(ph.until?' Review at '+esc(when(ph.until))+'.':'')+'</p>';
  if(!state.ranking)html+='<p class="rs-note rs-muted">The hazard ranking is still loading; the plan updates as data arrives.</p>';
- html+='<h3>Actions</h3>';
- const actionSrc=a=>'<p class="rs-src">Source: '+esc(a.source||'not stated')+'. '+esc(a.source==='General guidance'?'General preparedness guidance, not specific to this place':a.dataDate?'Data date '+when(a.dataDate):a.dataDateText||S.NO_DATE)+'.'+(a.checkedAt?' Checked '+esc(when(a.checkedAt))+'.':'')+(a.escalateTo?' Escalate to: '+esc(a.escalateTo)+'.':'')+(a.reviewAfter?' Review after '+esc(when(a.reviewAfter))+'.':'')+'</p>';
- const actionLi=a=>'<li data-rs-action="'+esc(a.id)+'"><b>'+esc(a.module==='alerts'?'Active alert':(MODULE_DEF[a.module]||{}).name||a.module)+':</b> '+esc(a.text)+(isPhone()?(a.source==='General guidance'?'':'<details class="rs-srcfold" data-keep="act-'+esc(a.id)+'"><summary>Source and date</summary>'+actionSrc(a)+'</details>'):actionSrc(a))+'</li>';
- const firstActions=isPhone()?plan.actions.slice(0,6):plan.actions,moreActions=isPhone()?plan.actions.slice(6):[];
- html+=plan.actions.length?'<ul class="rs-facts">'+firstActions.map(actionLi).join('')+'</ul>'+(moreActions.length?'<details class="rs-more" data-keep="plan-more"><summary>Show '+esc(moreActions.length)+' more actions</summary><ul class="rs-facts">'+moreActions.map(actionLi).join('')+'</ul></details>':''):'<ul class="rs-status">'+stRow('Actions',state.ranking?(state.ranking.status==='ok'?'empty':'unavailable'):'loading',state.ranking?(state.ranking.status==='ok'?'No leading hazard here, so no hazard actions were generated.':'The actions could not be built, because the hazard ranking did not load. This says nothing about the hazards here.'):'Waiting for the hazard ranking.')+'</ul>';
- html+='<details class="rs-more" data-keep="plan-dims"><summary><b>Ten dimensions, for planners</b>: '+(plan.dimensions.some(d=>d.status==='computed')?esc(plan.dimensions.filter(d=>d.status==='computed').length)+' computed':'not run yet (see Diagnostics)')+'</summary>'+dimensionsHtml(plan.dimensions)+'</details>';
+ html+='<div class="rs-phases" role="group" aria-label="Plan phase">'+plan.phases.map(x=>'<button type="button" class="rs-btn rs-ph" data-plan-phase="'+esc(x.id)+'" data-focus="phase-'+esc(x.id)+'" aria-pressed="'+(x.id===selected.id)+'">'+esc(x.label)+(x.suggested?' <span class="rs-ph-now">now</span>':'')+'</button>').join('')+'</div>';
+ html+='<p class="rs-note"><b>'+esc(selected.label)+':</b> '+esc(selected.when)+(nowLabel&&!selected.suggested?' The sources point to '+esc(nowLabel)+' right now.':'')+'</p>';
+ html+='<h3>Checklist for this phase</h3>'+selected.modules.map(m=>'<div class="rs-check-mod" data-rs-plan-module="'+esc(m.id)+'"><h4 class="rs-h4">'+esc(m.name)+'</h4><ul class="rs-checks">'+m.items.map(it=>'<li><label><input type="checkbox" data-plan-check="'+esc(it.id)+'" data-focus="chk-'+esc(it.id)+'"'+(state.planChecks.has(it.id)?' checked':'')+'> <span>'+esc(it.text)+'</span></label></li>').join('')+'</ul><p class="rs-src">General guidance, not specific to this place: '+extLink(m.authority,m.authorityName)+'.</p></div>').join('');
+ html+='<p class="rs-muted">Checks are for your own review in this tab. They are not saved, they clear when the evidence changes, and they do not mean a step was done.</p>';
+ // Flagged dimensions for this phase, with what triggered them.
+ const flagged=plan.dimensions.filter(d=>d.review&&d.phases.includes(selected.id));
+ const ran=plan.dimensions.some(d=>d.status==='computed');
+ html+='<h3>Dimensions flagged for this phase</h3>'+(flagged.length?'<ul class="rs-facts">'+flagged.map(d=>'<li data-rs-flag="'+d.id+'"><b>'+d.id+'. '+esc(d.name)+':</b> '+esc(d.condition)+' <b>Next steps:</b> '+esc(d.nextSteps)+'</li>').join('')+'</ul>':'<p class="rs-note">'+(ran?'No dimension is flagged for this phase in the last screen run. Unknown dimensions still need verifying, and the phase guidance still applies.':'None yet: no screen has been run. <a href="#rs-metrics">Run one under Diagnostics</a> to flag dimensions for this phase.')+'</p>');
+ // Real records for this place: alerts, gauges and the nearest facilities, each with its source.
+ const actionSrc=a=>'<p class="rs-src">Source: '+esc(a.source||'not stated')+'. '+esc(a.dataDate?'Data date '+when(a.dataDate):a.dataDateText||S.NO_DATE)+'.'+(a.checkedAt?' Checked '+esc(when(a.checkedAt))+'.':'')+(a.escalateTo?' Escalate to: '+esc(a.escalateTo)+'.':'')+(a.reviewAfter?' Review after '+esc(when(a.reviewAfter))+'.':'')+'</p>';
+ const actionLi=a=>'<li data-rs-action="'+esc(a.id)+'"><b>'+esc(a.module==='alerts'?'Active alert':(MODULE_DEF[a.module]||{}).name||a.module)+':</b> '+esc(a.text)+(isPhone()?'<details class="rs-srcfold" data-keep="act-'+esc(a.id)+'"><summary>Source and date</summary>'+actionSrc(a)+'</details>':actionSrc(a))+'</li>';
+ const firstActions=isPhone()?plan.actions.slice(0,4):plan.actions,moreActions=isPhone()?plan.actions.slice(4):[];
+ html+='<h3>What the data says here now</h3>'+(plan.actions.length?'<ul class="rs-facts">'+firstActions.map(actionLi).join('')+'</ul>'+(moreActions.length?'<details class="rs-more" data-keep="plan-more"><summary>Show '+esc(moreActions.length)+' more</summary><ul class="rs-facts">'+moreActions.map(actionLi).join('')+'</ul></details>':''):'<ul class="rs-status">'+stRow('Actions',state.ranking?(state.ranking.status==='ok'?'empty':'unavailable'):'loading',state.ranking?(state.ranking.status==='ok'?'No leading hazard here, so no hazard actions were generated.':'The actions could not be built, because the hazard ranking did not load. This says nothing about the hazards here.'):'Waiting for the hazard ranking.')+'</ul>');
+ // Assets behind the plan.
+ const lc=localData(),cfg=localModule(),screened=lc&&cfg?localScreen(localLevel()):null;
+ html+='<h3>Assets behind this plan</h3><p class="rs-note">'+(screened?screenLine(screened,cfg,lc)+' ':'')+'See <a href="#rs-lifelines">what these hazards would strain</a>'+(state.place&&state.place.local?' and <a href="#rs-local">local data</a>':'')+'. These are records, not reported failures or live operating condition.</p>';
+ const unknown=plan.dimensions.filter(d=>d.status!=='computed');
+ html+='<details class="rs-more" data-keep="plan-dims"><summary><b>All ten dimensions: metric, condition, mitigation, action and phase</b> ('+(plan.dimensions.some(d=>d.status==='computed')?esc(plan.dimensions.filter(d=>d.status==='computed').length)+' computed, ':'not run yet, ')+esc(unknown.length)+' still need evidence)</summary>'+dimensionsHtml(plan.dimensions)+'</details>';
  html+='<details class="rs-more" data-keep="plan-limits"><summary><b>Limits of this plan</b> ('+esc(plan.limitations.length)+'): a long-term average, not a forecast; records, not live condition</summary><ul class="rs-list">'+plan.limitations.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul></details>';
  paint('rs-plan-body',html);
 }
@@ -3246,14 +3312,15 @@ function exportPlan(){
  return {title:'Community Resilience response plan',exportedAt:new Date().toISOString(),track:state.track,
   place:{label:p.label,county:p.county,state:p.state?p.state.name:null,tract:p.tract?p.tract.geoid:null,localConfiguration:p.local?p.local.id:null},
   ranking:state.ranking&&state.ranking.status==='ok'?{method:state.ranking.method,version:state.ranking.version,dataDate:state.ranking.dataDate,leading:state.ranking.leading.map(c=>HAZARD_NAME[c])}:{status:state.ranking?state.ranking.status:'loading'},
-  phase:plan.phase,dimensions:plan.dimensions,actions:plan.actions,limitations:plan.limitations,revision:plan.revision,
+  phase:plan.phase,suggestedPhase:plan.suggestedPhase,checklist:plan.phases,dimensions:plan.dimensions,actions:plan.actions,limitations:plan.limitations,revision:plan.revision,
   sources:Object.keys(state.results).map(k=>{const r=state.results[k];return {id:r.id,title:r.title,status:r.status,dataDate:r.dataDate,dataDateText:r.dataDateText,checkedAt:r.fetchedAt};}),
   note:'Planning context from public data. Not a warning. Confirm before you go. In an emergency, call 911.'};
 }
 function planText(x){
  const L=[x.title,'Exported '+x.exportedAt+' ('+x.track+' track)','Place: '+x.place.label+(x.place.tract?' (tract '+x.place.tract+')':''),'Phase: '+x.phase.label+'. '+x.phase.basis,'',
-  'Leading hazards: '+(x.ranking.leading?x.ranking.leading.join(', '):'not available'),'','Actions:'];
+  'Leading hazards: '+(x.ranking.leading?x.ranking.leading.join(', '):'not available'),'','What the data says here now:'];
  x.actions.forEach(a=>L.push('- '+a.text+' [Source: '+(a.source||'not stated')+'; '+(a.dataDate||a.dataDateText||'general guidance')+']'));
+ L.push('','Checklist by phase (general guidance, not specific to this place):');x.checklist.forEach(ph=>{L.push(ph.label+(ph.suggested?' (the sources point here now)':'')+': '+ph.when);ph.modules.forEach(m=>{m.items.forEach(it=>L.push('  [ ] '+m.name+': '+it.text));L.push('    Source: '+m.authorityName+' '+m.authority);});});
  L.push('','Ten dimensions:');x.dimensions.forEach(d=>L.push(d.id+'. '+d.name+': '+d.condition,'   Next steps: '+d.nextSteps));
  L.push('','Limits:');x.limitations.forEach(l=>L.push('- '+l));
  L.push('','Revision '+x.revision,x.note);
@@ -3298,6 +3365,10 @@ $('rs-local').addEventListener('click',e=>{
 $('rs-asset-set').addEventListener('change',e=>{state.diag.asset=e.target.value;schedule();});
 $('rs-screen').addEventListener('change',e=>{state.diag.screen=e.target.value;schedule();});
 $('rs-run').addEventListener('click',runDiagnostics);
+$('rs-plan').addEventListener('click',e=>{const b=e.target.closest('[data-plan-phase]');if(b){state.planPhase=b.getAttribute('data-plan-phase');schedule();}});
+$('rs-plan').addEventListener('change',e=>{const c=e.target.closest('[data-plan-check]');if(!c)return;const id=c.getAttribute('data-plan-check');if(c.checked)state.planChecks.add(id);else state.planChecks.delete(id);});
+// Printing keeps the plan and leaves the rest of the page out.
+$('rs-print-plan').addEventListener('click',()=>{const r=document.documentElement,open=[...$('rs-plan').querySelectorAll('details:not([open])')];open.forEach(d=>{d.open=true;});r.classList.add('rs-printing-plan');const done=()=>{r.classList.remove('rs-printing-plan');open.forEach(d=>{d.open=false;});window.removeEventListener('afterprint',done);};window.addEventListener('afterprint',done);window.print();});
 $('rs-track-public').addEventListener('click',()=>{state.track='public';schedule();});
 $('rs-track-operator').addEventListener('click',()=>{state.track='operator';schedule();});
 $('rs-export-plan').addEventListener('click',()=>{const x=exportPlan();if(x)download(fileBase()+'.json','application/json',JSON.stringify(x,null,1));});

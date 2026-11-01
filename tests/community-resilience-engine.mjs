@@ -224,6 +224,19 @@ check('buildPlan with a Flood Watch: watch phase until the alert ends, real aler
  const down=E.buildPlan({place:tucson,ranking:pimaRanking,results:{nwsAlerts:{status:'unavailable',title:'NWS active alerts',message:'HTTP 503.'}},track:'public',now:NOW});assert.equal(down.phase.id,'unknown','failed alerts never read as Prepare');assert.equal(down.phase.label,'Phase not set: NWS alerts unavailable');assert.match(down.phase.basis,/may be in effect/);
  const loading=E.buildPlan({place:tucson,ranking:pimaRanking,results:{},track:'public',now:NOW});assert.equal(loading.phase.id,'unknown','pending alerts never read as Prepare');assert.equal(loading.phase.label,'Phase not set: NWS alerts loading');assert.match(loading.phase.basis,/still loading/);
 });
+check('buildPlan: every hazard has guidance for every phase and track, and no storm clock',()=>{
+ const phaseIds=plain(E.PLAN_PHASES.map(p=>p.id));
+ assert.deepEqual(phaseIds,['prepare','watch','warning','impact','recovery']);
+ for(const m of E.MODULES){const b=E.PLAYBOOK[m.id];assert.ok(b,'guidance for '+m.id);assert.match(b.link,/^https:\/\//);
+  for(const tr of ['public','operator'])for(const ph of phaseIds){assert.ok(Array.isArray(b[tr][ph])&&b[tr][ph].length>0,m.id+' '+tr+' '+ph);for(const s of b[tr][ph]){assert.match(s,/\.$/);assert.doesNotMatch(s,/\u2014|T-\d|\bhours? before\b/);}}}
+ const plan=E.buildPlan({place:tucson,ranking:pimaRanking,results:baseResults(),track:'public',now:NOW});
+ assert.equal(plan.suggestedPhase,'prepare');assert.equal(plan.phases.filter(p=>p.suggested).length,1);
+ assert.ok(plan.phases.every(p=>p.modules.length>0),'every phase has a checklist');
+ const none=E.buildPlan({place:tucson,ranking:{status:'unavailable',rows:[],leading:[]},results:baseResults(),track:'public',now:NOW});
+ assert.deepEqual(plain(none.phases[0].modules.map(m=>m.id)),['all'],'with FEMA down the plan still gives steps for any hazard');
+ const op=E.buildPlan({place:tucson,ranking:pimaRanking,results:baseResults(),track:'operator',now:NOW});
+ assert.notEqual(op.phases[0].modules[0].items[0].text,plan.phases[0].modules[0].items[0].text,'operators get their own steps');
+});
 check('buildPlan: advisories and statements do not set Watch; a watch or warning sets the phase whatever the ranking says; tide flood levels are converted to MLLW',()=>{
  for(const event of ['Flood Advisory','Flood Statement','Heat Advisory']){
   const results={...baseResults(),nwsAlerts:alertsResult([{...floodWatch,id:'adv-'+event,event}])},ranking=E.rankHazards({county:countyResult(NRI.pima),alerts:results.nwsAlerts,now:NOW});

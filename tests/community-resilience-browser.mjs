@@ -370,6 +370,36 @@ try{
   await noOverflow(page,390);
  });
 
+ await scenario('response plan: phases, checklist by hazard, reset on new evidence, print and export',{},async page=>{
+  assert.match(await page.locator('.rs-sub, header').first().innerText(),/response plan for each phase/,'the header says the page gives a plan');
+  await page.fill('#rs-q','33701');await page.click('#rs-search');
+  await page.waitForSelector('[data-plan-phase]');
+  await page.waitForFunction(()=>document.querySelectorAll('[data-rs-plan-module]').length>0&&window.CRPage.state.ranking&&Object.keys(window.CRPage.state.pending||{}).length===0,null,{timeout:45000});
+  await page.waitForFunction(()=>/now/i.test(document.querySelector('[data-plan-phase="prepare"]').innerText),null,{timeout:15000});
+  assert.deepEqual(await page.locator('[data-plan-phase]').evaluateAll(b=>b.map(x=>x.getAttribute('data-plan-phase'))),['prepare','watch','warning','impact','recovery']);
+  assert.equal(await page.locator('[data-plan-phase="prepare"]').getAttribute('aria-pressed'),'true','opens on the phase the sources point to');
+  assert.match(await page.locator('[data-plan-phase="prepare"]').innerText(),/now/i);
+  const prepare=await page.locator('#rs-plan-body').innerText();
+  assert.match(prepare,/Checklist for this phase/);assert.match(prepare,/Know your evacuation zone/);assert.match(prepare,/General guidance, not specific to this place/);assert.match(prepare,/What the data says here now/);assert.match(prepare,/Assets behind this plan/);
+  // Reading ahead changes the checklist, not what the sources say now.
+  await page.click('[data-plan-phase="warning"]');
+  await page.waitForFunction(()=>/Leave right away/.test(document.getElementById('rs-plan-body').innerText));
+  assert.match(await page.locator('#rs-plan-body').innerText(),/The sources point to Prepare right now/);
+  assert.match(await page.locator('.rs-phase').innerText(),/Prepare/);
+  // Checks stay through repaints, and each track has its own steps.
+  const box=page.locator('[data-plan-check]').first();await box.check();
+  await page.click('[data-plan-phase="prepare"]');await page.click('[data-plan-phase="warning"]');
+  assert.equal(await page.locator('[data-plan-check]').first().isChecked(),true);
+  await page.click('#rs-track-operator');
+  await page.waitForFunction(()=>/Move staff and equipment/.test(document.getElementById('rs-plan-body').innerText));
+  await page.click('#rs-track-public');
+  assert.ok(await page.locator('#rs-print-plan').isVisible());
+  const plan=await page.evaluate(()=>window.CRPage.exportPlan());
+  assert.deepEqual(plan.checklist.map(p=>p.id),['prepare','watch','warning','impact','recovery'],'the export carries every phase');
+  assert.ok(plan.checklist.every(p=>p.modules.length&&p.modules.every(m=>m.items.length&&/^https:/.test(m.authority))),'every phase has steps and a source');
+  assert.ok(plan.dimensions.every(d=>Array.isArray(d.phases)&&d.phases.length),'every dimension maps to a phase');
+ });
+
  await scenario('everything offline: the search stops with a status in every panel',{mode:'offline'},async page=>{
   await search(page,'33701');
   await page.waitForFunction(()=>/did not answer/.test(document.querySelector('#rs-place').textContent));
