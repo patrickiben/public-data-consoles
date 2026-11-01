@@ -31,3 +31,15 @@ The page lists these nearest first, as records. It never reads them as live oper
 ## A water-level register, like St. Petersburg
 
 Set `files.stations` and `files.context`, `pins.coopsStation` (a NOAA tide station) and optionally `pins.nwsAlertPoint`. This also adds the water-level screen. See `st-petersburg-fl.json`.
+
+## Adding a hazard module
+
+A new hazard needs three lines in `public-data-runtime/community-resilience-engine.js`, and no change to the page:
+
+1. In `HAZARDS`, add its code, name and module id, for example `['DUST','Dust Storm','dust']`.
+2. In `MODULES`, add the module: `{id:'dust',name:'Dust storm',hazards:['DUST'],strains:['transport','health'],liveSources:['nwsAlerts','airQuality'],staticSources:[],screens:[],notCovered:{}}`.
+3. In `ALERT_RULES`, add which National Weather Service alerts belong to it: `[/dust storm|blowing dust/i,['DUST']]`.
+
+Then run `python3 scripts/embed_community_resilience.py`.
+
+FEMA's National Risk Index only covers its own 18 hazards, so a new hazard has no yearly loss figure. Its card says so, and an active alert for it still leads the page and sets the plan's phase. Only use sources the page already knows in `liveSources` and `staticSources`. A new data source also needs a function in `public-data-runtime/community-resilience-sources.js`.

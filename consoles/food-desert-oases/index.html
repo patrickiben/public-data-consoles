@@ -435,7 +435,7 @@ p a,li a,dd a,td a{text-decoration:underline;text-underline-offset:2px}
     el.scrollIntoView({ behavior: root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   }
   function metricLabel(d, label, actionContext, contextTitle) {
-    var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.plainLabel || d.canonicalLabel || d.label);
+    var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.plainLabel ? d.plainLabel + (d.canonicalLabel ? ' (' + d.canonicalLabel + ')' : '') : d.canonicalLabel || d.label);
     var context = d.label + (d.status === 'unknown' ? separator() + 'not assessable with the available inputs.' : d.scope === 'planning' ? separator() + 'planning comparison.' : '');
     return d.metricId && root.ConsoleMetricHelp ? root.ConsoleMetricHelp.label(d.metricId, value, actionContext || context, contextTitle) : esc(value);
   }
@@ -1265,7 +1265,7 @@ p a,li a,dd a,td a{text-decoration:underline;text-underline-offset:2px}
       if (unknown) {
         whyNow = stageReason + ' ' + (input.track === 'operator' ? 'Verify the missing or unqualified inputs.' : 'Check the missing or unqualified inputs.');
         whyNow += inputs ? ' Required inputs: ' + inputs + '.' : ' The current row does not establish a supported assessment.';
-        whyNow += ' Unknown does not mean clear; current official instructions take precedence.';
+        whyNow = whyNow.replace(/\.+$/, '.') + ' Unknown does not mean clear; current official instructions take precedence.';
       } else if (input.phase === 'respond') {
         whyNow = stageReason + ' Use currently applicable official instructions or approved local activation rules; this screen does not authorize action or set its deadline.';
       } else if (input.phase === 'review') {
@@ -1647,7 +1647,7 @@ p a,li a,dd a,td a{text-decoration:underline;text-underline-offset:2px}
   <section id="area" class="fa-section" aria-labelledby="area-title">
     <h2 id="area-title">Area status: USDA Food Access Research Atlas</h2>
     <div id="area-body"><p class="fa-muted">Search for a place to see how the Atlas classifies its census tract.</p></div>
-    <div class="fa-box" id="area-vintage"><b>Data vintage:</b> 2025 SNAP-authorized Retailer Access Map, released July 2026; store locations as of June 2025; 2020 census tracts and population; 2020-2024 American Community Survey (ACS) income.<br><b>What it measures:</b> straight-line distance to the nearest SNAP-authorized store of any kind, including convenience stores. USDA also publishes a second measure, shown below, that counts only supermarkets, supercenters and large grocery stores. It describes the whole census tract, not any one household. Distances are straight-line, not travel distance. The Atlas covers the 50 states and DC only.</div>
+    <div class="fa-box" id="area-vintage"><b>Data vintage:</b> 2025 SNAP-authorized Retailer Access Map, released July 2026; store locations as of June 2025; 2020 census tracts and population; 2020-2024 American Community Survey (ACS) income.<br><b>What it measures:</b> straight-line distance to the nearest SNAP-authorized store of any type except farmers markets, including convenience stores and gas stations. USDA also publishes a second measure, shown below, that counts only supermarkets, supercenters and large grocery stores. It describes the whole census tract, not any one household. Distances are straight-line, not travel distance. The Atlas covers the 50 states and DC only.</div>
     <div id="area-2019" class="fa-older"><h3>Supermarket measure: 2019 data (supermarkets, supercenters and large grocery stores, 2010 census tracts)</h3><p class="fa-muted">Waiting for a search.</p></div>
   </section>
 
@@ -1790,7 +1790,10 @@ function initMap(){
  // On touch screens one finger scrolls the page; the zoom buttons still work.
  map=L.map(el,{zoomControl:true,worldCopyJump:true,dragging:!window.matchMedia('(pointer:coarse)').matches,tap:false}).setView([39.5,-98.35],4);
  const basemap=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'});
- basemap.on('tileerror',()=>{$('map-status').hidden=false;$('map-status').textContent='Basemap tiles unavailable. Markers, the list of places and the sources below still work.';});
+ // Tiles that hang never fire an error, so a map with none after 20 seconds says so.
+ let tileSeen=false;basemap.on('tileload',()=>{tileSeen=true;$('map-status').hidden=true;});
+ setTimeout(()=>{if(hasMap&&!tileSeen){$('map-status').hidden=false;$('map-status').textContent='Basemap tiles have not loaded. Markers, the list of places and the sources below still work.';}},20000);
+ basemap.on('tileerror',()=>{if(tileSeen)return;$('map-status').hidden=false;$('map-status').textContent='Basemap tiles unavailable. Markers, the list of places and the sources below still work.';});
  if(/^https?:$/.test(location.protocol))basemap.addTo(map);else{$('map-status').hidden=false;$('map-status').textContent='Map tiles load only over http or https. The list of places and the sources below still work.';}
  layer=L.layerGroup().addTo(map);
  const legend=L.control({position:'bottomleft'});
@@ -1857,7 +1860,7 @@ $('status').addEventListener('click',e=>{const b=e.target.closest('[data-retry]'
 function bridgeStatus(s){return ({ok:'ok',empty:'empty',notcovered:'empty',partial:'partial',failed:'failed',loading:'loading'})[s]||'idle';}
 function listBridge(k){const s=src[k];return {status:bridgeStatus(s.state),count:Number.isFinite(s.count)?s.count:null,radiusMi:Number.isFinite(s.radiusMi)?s.radiusMi:null,nearestMi:Number.isFinite(s.nearestMi)?s.nearestMi:null,dataDate:s.dataDate||null,partial:s.state==='partial',reason:s.state==='failed'||s.state==='partial'?(s.reason||null):null,checkedAt:s.checkedAt||null};}
 function tractBridge(k,t,vintage,source){
- const s=src[k];let status=({ok:'ok',failed:'failed',loading:'loading',empty:'no-tract',notcovered:'not-covered'})[s.state]||'idle';
+ const s=src[k];let status=({ok:'ok',partial:'ok',failed:'failed',loading:'loading',empty:'no-tract',notcovered:'not-covered'})[s.state]||'idle';
  const out={status:status,vintage:vintage,source:source,checkedAt:s.checkedAt||null,coverage:s.coverage||null,geoid:null,county:null,state:null,urban:null,flags:null,reason:s.state==='failed'?(s.reason||null):null};
  if(status==='ok'&&t){out.geoid=t.geoid;out.county=t.county;out.state=t.stateName;out.urban=t.urban;out.flags=Object.assign({},t.flags);}
  return out;
@@ -1956,7 +1959,7 @@ async function geocode(text,zip,id){
 
 /* ---------- searches ---------- */
 let lastQuery=null,scrolledFor=null,searchedArea=false;
-function clearResults(){items.snap=[];items.markets=[];items.osm=[];items.directory=[];tract25=null;tract19=null;shown=PAGE;scrolledFor=null;searchedArea=false;}
+function clearResults(){items.snap=[];items.markets=[];items.osm=[];items.directory=[];filter='all';tract25=null;tract19=null;shown=PAGE;scrolledFor=null;searchedArea=false;}
 function beginSearch(type){
  const id=++searchRun;selectionId++;current=null;locationType=type;searchState='loading';checkedAt=null;
  clearResults();resetSources('notrun');
@@ -2088,7 +2091,9 @@ async function runFara(k,id){
   else{
    const t=is25?parse25(f):parse19(f);
    if(is25)tract25=t;else tract19=t;
-   setSrc(k,{state:'ok',checkedAt:now,text:'OK: '+(is25?'2020':'2010')+' census tract '+(t.geoid||'(ID not reported)')+'. '+(is25?'2025 edition, released July 2026; stores as of June 2025.':'2019 edition, supermarkets, supercenters and large grocery stores.')});
+   // An answer with no usable values is not a green OK.
+   if(!Object.values(t.flags||{}).some(v=>v===0||v===1))setSrc(k,{state:'partial',checkedAt:now,text:'Partial: the Atlas answered for census tract '+(t.geoid||'(ID not reported)')+', but with no usable values.'});
+   else setSrc(k,{state:'ok',checkedAt:now,text:'OK: '+(is25?'2020':'2010')+' census tract '+(t.geoid||'(ID not reported)')+'. '+(is25?'2025 edition, released July 2026; stores as of June 2025.':'2019 edition, supermarkets, supercenters and large grocery stores.')});
   }
  }catch(e){
   if(!alive())return;
@@ -2289,7 +2294,7 @@ function osmItem(el,pt){
  const cityLine=[clean(t['addr:city'],60),[clean(t['addr:state'],20),clean(t['addr:postcode'],12)].filter(Boolean).join(' ')].filter(Boolean).join(', ');
  const edited=Date.parse(el.timestamp);
  return {src:'osm',cat:'food',name:clean(t.name,140)||'Unnamed '+(meal?'meal program':'food bank')+' (no name tagged)',typeLabel:/\bWIC\b/i.test(clean(t.name,140))?'Tagged as a food bank in OpenStreetMap, but the name suggests a WIC store: call first':kind+', listed in OpenStreetMap',lat:lat,lon:lon,dist:haversine(pt,{lat:lat,lon:lon}),
-  address:[street,cityLine].filter(Boolean).join(', ')||'No address tagged',hours:clean(t.opening_hours,200),phone:clean(t.phone||t['contact:phone'],60),website:safeUrl(t.website||t['contact:website']||''),edited:Number.isFinite(edited)?new Date(edited).toISOString().slice(0,10):null,
+  address:[street,cityLine].filter(Boolean).join(', ')||'No address tagged',hours:clean(t.opening_hours,200),phone:clean(t.phone||t['contact:phone'],60),website:safeUrl((v=>/^[\w-]+(\.[\w-]+)+(\/|$)/.test(v)?'https://'+v:v)(String(t.website||t['contact:website']||'').trim())),edited:Number.isFinite(edited)?new Date(edited).toISOString().slice(0,10):null,
   osmType:/^(node|way|relation)$/.test(el.type)?el.type:null,osmId:Number.isFinite(+el.id)?+el.id:null};
 }
 // Overpass asks clients to pause 30 seconds after an HTTP error such as 429 or 406, and to cache answers.

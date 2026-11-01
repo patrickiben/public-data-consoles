@@ -156,7 +156,7 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
  #q,#go,#loc{min-height:44px}
  .pb-btn,.pb-chip{min-height:44px}
  .pb-dir{display:inline-flex;align-items:center;min-height:44px;padding:0 4px}
- .pb-card summary{display:flex;align-items:center;min-height:44px}
+ .pb-card summary{display:list-item;min-height:44px;padding-top:10px}
  /* Higher specificity than the shared panel's 16px checkbox rule, which loads later. */
  html #console-response input[type="checkbox"]{width:22px;height:22px;margin:0 8px 0 0;flex:none}
  html #console-response label:has(> input[type="checkbox"]){display:flex;align-items:center;min-height:44px}
@@ -444,7 +444,7 @@ p a,li a,dd a,td a{text-decoration:underline;text-underline-offset:2px}
     el.scrollIntoView({ behavior: root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   }
   function metricLabel(d, label, actionContext, contextTitle) {
-    var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.plainLabel || d.canonicalLabel || d.label);
+    var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.plainLabel ? d.plainLabel + (d.canonicalLabel ? ' (' + d.canonicalLabel + ')' : '') : d.canonicalLabel || d.label);
     var context = d.label + (d.status === 'unknown' ? separator() + 'not assessable with the available inputs.' : d.scope === 'planning' ? separator() + 'planning comparison.' : '');
     return d.metricId && root.ConsoleMetricHelp ? root.ConsoleMetricHelp.label(d.metricId, value, actionContext || context, contextTitle) : esc(value);
   }
@@ -1274,7 +1274,7 @@ p a,li a,dd a,td a{text-decoration:underline;text-underline-offset:2px}
       if (unknown) {
         whyNow = stageReason + ' ' + (input.track === 'operator' ? 'Verify the missing or unqualified inputs.' : 'Check the missing or unqualified inputs.');
         whyNow += inputs ? ' Required inputs: ' + inputs + '.' : ' The current row does not establish a supported assessment.';
-        whyNow += ' Unknown does not mean clear; current official instructions take precedence.';
+        whyNow = whyNow.replace(/\.+$/, '.') + ' Unknown does not mean clear; current official instructions take precedence.';
       } else if (input.phase === 'respond') {
         whyNow = stageReason + ' Use currently applicable official instructions or approved local activation rules; this screen does not authorize action or set its deadline.';
       } else if (input.phase === 'review') {
@@ -1758,7 +1758,7 @@ async function fetchJSON(url,opt){
   try{return await r.json();}catch(e){throw new SourceError(timedOut?'no answer within '+Math.round(timeout/1000)+' seconds':'the response was not valid data');}
  }catch(e){
   if(e instanceof SourceError)throw e;
-  throw new SourceError(timedOut?'no answer within '+Math.round(timeout/1000)+' seconds':c.signal.aborted?'the request was cancelled':'network error, or the service blocked the request');
+  throw new SourceError(timedOut?'no answer within '+Math.round(timeout/1000)+' seconds':c.signal.aborted?'the request was canceled':'network error, or the service blocked the request');
  }finally{clearTimeout(timer);inflight.delete(c);}
 }
 
@@ -1787,7 +1787,11 @@ function initMap(){
  // On touch screens one finger scrolls the page; the zoom buttons still work.
  map=L.map(el,{zoomControl:true,worldCopyJump:true,dragging:!window.matchMedia('(pointer:coarse)').matches,tap:false}).setView([39.5,-98.35],4);
  const basemap=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'});
- basemap.on('tileerror',()=>{if(tileFailed)return;tileFailed=true;$('map-status').hidden=false;$('map-status').textContent='Basemap tiles unavailable. Markers, the list and the sources below still work.';setSrc('map',{state:'partial',text:'Basemap tiles from tile.openstreetmap.org did not load. Markers, the list and the sources below still work.'});});
+ // Partial only after several tiles in a row fail; one later tile that loads clears it. Tiles that hang never fire an error, so a map with none after 20 seconds says so.
+ let tileStreak=0,tileSeen=false;
+ setTimeout(()=>{if(hasMap&&!tileSeen&&!tileFailed){tileFailed=true;$('map-status').hidden=false;$('map-status').textContent='Basemap tiles have not loaded. Markers, the list and the sources below still work.';setSrc('map',{state:'partial',text:'Basemap tiles from tile.openstreetmap.org have not loaded. Markers, the list and the sources below still work.'});}},20000);
+ basemap.on('tileload',()=>{tileStreak=0;tileSeen=true;if(!tileFailed)return;tileFailed=false;$('map-status').hidden=true;setSrc('map',{state:'ok',text:'Ready. Map images come from tile.openstreetmap.org and show the area you view.'});});
+ basemap.on('tileerror',()=>{tileStreak++;if(tileFailed||tileStreak<3)return;tileFailed=true;$('map-status').hidden=false;$('map-status').textContent='Basemap tiles unavailable. Markers, the list and the sources below still work.';setSrc('map',{state:'partial',text:'Basemap tiles from tile.openstreetmap.org did not load. Markers, the list and the sources below still work.'});});
  if(/^https?:$/.test(location.protocol)){basemap.addTo(map);setSrc('map',{state:'ok',text:'Ready. Map images come from tile.openstreetmap.org and show the area you view.'});}
  else{$('map-status').hidden=false;$('map-status').textContent='Map tiles load only over http or https. The list and the sources below still work.';setSrc('map',{state:'partial',text:'Map tiles load only over http or https. The list still works.'});}
  layer=L.layerGroup().addTo(map);
@@ -1936,7 +1940,7 @@ async function geocode(text,zip,id){
 }
 
 /* ---------- searches ---------- */
-function clearResults(){items.refuge=[];items.osm=[];shown=PAGE;scrolledFor=null;}
+function clearResults(){items.refuge=[];items.osm=[];shown=PAGE;scrolledFor=null;filter='all';srcOn.refuge=true;srcOn.osm=true;}
 function beginSearch(type){
  inflight.forEach(c=>c.abort());inflight.clear();
  const id=++searchRun;selectionId++;current=null;locationType=type;searchState='loading';checkedAt=null;

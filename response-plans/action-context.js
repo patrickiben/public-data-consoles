@@ -486,7 +486,7 @@
       if (unknown) {
         whyNow = stageReason + ' ' + (input.track === 'operator' ? 'Verify the missing or unqualified inputs.' : 'Check the missing or unqualified inputs.');
         whyNow += inputs ? ' Required inputs: ' + inputs + '.' : ' The current row does not establish a supported assessment.';
-        whyNow += ' Unknown does not mean clear; current official instructions take precedence.';
+        whyNow = whyNow.replace(/\.+$/, '.') + ' Unknown does not mean clear; current official instructions take precedence.';
       } else if (input.phase === 'respond') {
         whyNow = stageReason + ' Use currently applicable official instructions or approved local activation rules; this screen does not authorize action or set its deadline.';
       } else if (input.phase === 'review') {

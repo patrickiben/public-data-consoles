@@ -831,7 +831,9 @@ try {
     const box = /\(([-\d.]+),([-\d.]+),([-\d.]+),([-\d.]+)\)/.exec(decodeURIComponent(log.overpass[0].body.replace(/^data=/, '').replace(/\+/g, ' '))).slice(1).map(Number);
     const r3 = v => Math.round(v * 1000) / 1000;
     assert.ok(Math.abs((box[0] + box[2]) / 2 - r3(p.lat)) < 1e-6 && Math.abs((box[1] + box[3]) / 2 - r3(p.lon)) < 1e-6, 'the Overpass box is centered on the rounded point, not the exact one');
-    await page.locator('.leaflet-marker-icon').first().click({ force: true });
+    // Clicks the marker element directly, so a map still settling cannot make the click miss.
+    await page.waitForSelector('.leaflet-marker-icon');
+    await page.evaluate(() => document.querySelector('.leaflet-marker-icon').click());
     await page.waitForSelector('.leaflet-popup-content');
     assert.equal(await page.locator('.leaflet-popup-content img').count(), 0, 'map popups escape listing text');
     assert.equal(await page.evaluate(() => window.__xss), undefined);
