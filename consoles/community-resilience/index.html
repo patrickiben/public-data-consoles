@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-cr-separator=": ">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -149,10 +149,10 @@ main.rs-idle .rs-needs-place{display:none}
 #rs-map .rs-map-off{padding:18px;margin:0;color:var(--ink2)}
 #rs-map-status{margin:8px 0 0}
 .rs-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0 0;font-size:12px;color:var(--ink2)}
-.rs-legend span{display:inline-flex;align-items:center;gap:6px}
+.rs-legend span{display:inline-flex;align-items:center;gap:6px}.rs-legend span[hidden]{display:none}
 .rs-mk-wrap{background:none;border:none}
 .rs-mk{display:inline-block;width:13px;height:13px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);vertical-align:middle;flex:none;border-radius:50%}
-.rs-mk-wrap .rs-mk{display:block;margin:3px}
+.rs-mk-wrap .rs-mk{display:block;margin:5.5px}
 .rs-mk-here{background:#111;border-width:3px}
 .rs-mk-health{background:#c92a2a;border-radius:3px}
 .rs-mk-shelter{background:#2b8a3e}
@@ -175,7 +175,12 @@ main.rs-idle .rs-needs-place{display:none}
 .rs-phase{display:inline-block;font-weight:760;font-size:14px;padding:3px 12px;border-radius:999px;background:var(--ok-bg);color:var(--ok)}
 .rs-phase.rs-p-watch{background:var(--watch-bg);color:var(--watch)}
 .rs-phase.rs-p-warning{background:var(--alert-bg);color:var(--alert)}
-.rs-summary{max-width:680px;margin:10px auto 0;text-align:left;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:8px 12px;font-size:13.5px}.rs-summary .rs-dl{margin:0}
+.rs-summary{max-width:680px;margin:10px auto 0;text-align:left;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:8px 12px;font-size:13.5px}p a,li a,dd a,td a,#disc a,#rs-foot a{text-decoration:underline;text-underline-offset:2px}
+.rs-summary .rs-dl{margin:0}
+.rs-now-row{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}
+.rs-now{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:999px;padding:3px 10px;font-size:12.5px;color:var(--ink)}
+.rs-now i{width:9px;height:9px;border-radius:50%;background:var(--ink2);flex:none}
+.rs-now[data-tone="bad"] i{background:#e03131}.rs-now[data-tone="warn"] i{background:#f08c00}
 .rs-more{margin:10px 0}.rs-more>summary{cursor:pointer;font-weight:650;color:var(--sea);padding:4px 0}
 .rs-sources-table td{overflow-wrap:normal;word-break:normal}
 .rs-phase.rs-p-unknown{background:var(--dim-bg);color:var(--ink2)}
@@ -394,7 +399,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
 <!-- CONSOLE_METRIC_HELP_END -->
 </head>
 <body>
-<div id="disc"><b>Unofficial</b> planning view built from public federal data. <b>Confirm before you go.</b> In an emergency, call 911.</div>
+<aside id="disc" aria-label="Notice"><b>Unofficial</b> planning view built from public federal data. <b>Confirm before you go.</b> In an emergency, call <a href="tel:911">911</a>.</aside>
 <div class="rs-wrap">
   <header class="rs-header">
     <div class="rs-top"><a href="../../">All consoles</a><button id="rs-theme" type="button" aria-label="Theme: Auto, follows your device. Activate to switch.">Theme: Auto</button></div>
@@ -499,7 +504,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
     <section class="rs-section" aria-labelledby="rs-map-title">
       <h2 id="rs-map-title">Map</h2>
       <div id="rs-map" role="region" aria-label="Map of the searched point, active alert areas and nearby lifeline facilities"></div>
-      <div class="rs-legend" aria-label="Map legend"><span><i class="rs-mk rs-mk-here"></i>Searched point</span><span><i class="rs-mk rs-mk-alert"></i>Active NWS alert area</span><span><i class="rs-mk rs-mk-health"></i>Hospital or health center</span><span><i class="rs-mk rs-mk-shelter"></i>Open shelter</span><span><i class="rs-mk rs-mk-power"></i>Power plant</span><span><i class="rs-mk rs-mk-fire"></i>Wildfire incident</span><span><i class="rs-mk rs-mk-station"></i>Local asset</span><span><i class="rs-mk rs-mk-screened"></i>Local asset screened at the selected level</span></div>
+      <div class="rs-legend" aria-label="Map legend"><span><i class="rs-mk rs-mk-here"></i>Searched point</span><span><i class="rs-mk rs-mk-alert"></i>Active NWS alert area</span><span><i class="rs-mk rs-mk-health"></i>Hospital or health center</span><span><i class="rs-mk rs-mk-shelter"></i>Open shelter</span><span><i class="rs-mk rs-mk-power"></i>Power plant</span><span><i class="rs-mk rs-mk-fire"></i>Wildfire incident</span><span data-legend-local hidden><i class="rs-mk rs-mk-station"></i>Local asset</span><span data-legend-local hidden><i class="rs-mk rs-mk-screened"></i>Local asset screened at the selected level</span></div>
       <div id="rs-map-status" class="rs-muted" role="status"></div>
     </section>
   </div>
@@ -551,7 +556,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
     </details>
   </section>
 
-  <div id="rs-foot">An unofficial, volunteer tool. It reads public data for the place you search, in your browser. It is not a warning service and it does not know whether any facility is open. In an emergency, call 911.</div>
+  <footer id="rs-foot">An unofficial, volunteer tool. It reads public data for the place you search, in your browser. It is not a warning service and it does not know whether any facility is open. In an emergency, call <a href="tel:911">911</a>.</footer>
   </main>
   <div id="rs-live-say" class="rs-sr" role="status" aria-live="polite"></div>
 </div>
@@ -882,7 +887,7 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
    if((m.id==='wildfire')&&ok('wildfires')?.data.incidents?.length){const f=r('wildfires').data.incidents[0];live.push(['wildfires',(f.name||'A wildfire')+(finite(f.acres)?', '+Math.round(f.acres).toLocaleString('en-US')+' acres':'')+(finite(f.containment)?', '+f.containment+'% contained':'')+', is '+dist(f.distanceKm)+' away (updated '+fd(f.modified)+').',f.modified]);}
    if((m.id==='wildfire'||m.id==='heat')&&ok('airQuality')?.data.items?.length&&!used.has('airQuality')){used.add('airQuality');const q=r('airQuality').data,w=q.items.reduce((a,b)=>(b.aqi??-1)>(a.aqi??-1)?b:a);live.push(['airQuality','AirNow '+q.area+': '+w.parameter+' AQI '+w.aqi+' ('+w.category+') for '+w.validDate+'.',null]);}
    if(m.id==='drought'&&ok('drought')){const d=r('drought').data;live.push(['drought','U.S. Drought Monitor map of '+d.mapDate+': '+format.pct(d.d1,0)+' of the county in moderate drought or worse (D1+), '+format.pct(d.d3,0)+' in extreme drought or worse (D3+).',d.mapDate]);}
-   if(m.id==='earthquake'&&ok('earthquakes')?.data.items?.length){const q=r('earthquakes').data,e=q.items[0];live.push(['earthquakes',(q.count??q.items.length)+' earthquakes of magnitude 2.5 or more within 250 km in the last 30 days; latest M'+e.mag+' '+e.place+' on '+fd(e.time)+'.',e.time]);}
+   if(m.id==='earthquake'&&ok('earthquakes')?.data.items?.length){const q=r('earthquakes').data,e=q.items[0];live.push(['earthquakes',(q.count??q.items.length)+((q.count??q.items.length)===1?' earthquake':' earthquakes')+' of magnitude 2.5 or more within 250 km in the last 30 days; latest M'+e.mag+' '+e.place+' on '+fd(e.time)+'.',e.time]);}
    if(m.id==='earthquake'&&!pub&&ok('seismicDesign')){const s=r('seismicDesign').data;live.push(['seismicDesign','ASCE 7-22 seismic design category '+s.sdc+' at this point (Ss '+s.ss+', S1 '+s.s1+').',null]);}
    if(m.id==='volcanic'&&ok('volcanoes')?.data.items?.length){const v=r('volcanoes').data.items;live.push(['volcanoes','USGS lists '+v.length+' volcano'+(v.length===1?'':'es')+' at an elevated alert level: '+v.map(x=>nameOf(x)||'unnamed').join(', ')+'.',null]);}
    for(const [name,line,date] of live)add(m.id,name,{text:line,basis:srcName(r(name))+' result for this place',source:srcName(r(name)),dataDate:date||dateOf(r(name)),escalateTo:pub?null:'Responsible agency for this source',reviewAfter:name==='spcOutlook'?r(name).data.expires||null:after(name)});
@@ -2310,6 +2315,8 @@ const painted={};
 // Repaint a panel only when its HTML changed, so focus and open cards survive unrelated updates.
 function paint(id,html){
  if(painted[id]===html)return;
+ // A name that ends in a period (Tesla Inc.) must not read as two.
+ html=String(html).replace(/([A-Za-z])\.\.(?=[\s<])/g,'$1.');
  const el=$(id),ae=document.activeElement,key=ae&&el.contains(ae)?ae.getAttribute('data-focus'):null;
  // Disclosures marked data-keep keep the visitor's open or closed choice across repaints.
  const keep=new Map([...el.querySelectorAll('details[data-keep]')].map(d=>[d.getAttribute('data-keep'),d.open]));
@@ -2543,6 +2550,7 @@ function renderGeo(){
  if(p.kind==='location')html+='<p class="rs-note">Your position is sent to the public services listed under Sources, to run this search. This page does not save it.</p>';
  html+='<p class="rs-note">'+(p.local?'Local configuration: <b>'+esc(p.local.name)+'</b> matches this place, so local data is added below.':'No local place configuration matches this place; the national tier is shown.')+'</p>';
  html+=srcLine(state.results.pointGeography);
+ showLocalLegend();
  paint('rs-geo-body',phoneFold('geo','Point used and census geography for '+esc(p.county.name),html));
 }
 
@@ -2626,7 +2634,8 @@ function loadLeaflet(){
  document.head.appendChild(css);document.head.appendChild(js);
  setTimeout(()=>{if(!hasMap&&cssOk!==false&&jsOk!==false)mapDown('The map library did not load within '+Math.round(LEAFLET_TIMEOUT/1000)+' seconds.');},LEAFLET_TIMEOUT);
 }
-function mk(L,cls,lat,lon,title,popup){return L.marker([lat,lon],{icon:L.divIcon({className:'rs-mk-wrap',html:'<span class="rs-mk '+cls+'"></span>',iconSize:[19,19],iconAnchor:[9,9],popupAnchor:[0,-9]}),title,alt:title,keyboard:true}).bindPopup(popup);}
+function showLocalLegend(){document.querySelectorAll('[data-legend-local]').forEach(e=>{e.hidden=!(state.place&&state.place.local);});}
+function mk(L,cls,lat,lon,title,popup){return L.marker([lat,lon],{icon:L.divIcon({className:'rs-mk-wrap',html:'<span class="rs-mk '+cls+'"></span>',iconSize:[24,24],iconAnchor:[12,12],popupAnchor:[0,-12]}),title,alt:title,keyboard:true}).bindPopup(popup);}
 function drawMap(){
  if(!hasMap)return;
  const L=leaf,p=state.place,items=p?mapItems():[];
@@ -2656,7 +2665,16 @@ function renderSummary(){
  const al=ast==='loading'?'Loading...':ast==='ok'||ast==='empty'?(liveAlerts.length?named+'.':'None listed at this point.'):'Unavailable: NWS alerts did not answer.';
  const down=Object.values(state.results).filter(r=>r&&r.status==='unavailable').length;
  $('rs-nav').hidden=false;
- paint('rs-summary','<dl class="rs-dl"><dt>Active alerts</dt><dd'+(urgent?' class="rs-err"':'')+'>'+(urgent?'<b>'+esc(al)+'</b>':esc(al))+' <a href="#rs-live">Live now</a></dd><dt>Leading hazards, by county-wide yearly loss</dt><dd>'+hz+' <a href="#rs-ranking">Ranking</a></dd><dt>Sources</dt><dd>'+(down?'<b>'+esc(plural(down,'source'))+' unavailable.</b> ':'None unavailable so far. ')+'<a href="#rs-sources">Sources and status</a></dd></dl>');
+ // Readings at a glance: what the sources say, never a judgment that anything is safe, so nothing here is green.
+ const nowChip=(label,text,tone,dot)=>'<span class="rs-now" data-tone="'+tone+'"><i aria-hidden="true"'+(dot?' style="background:'+dot+'"':'')+'></i><b>'+esc(label)+':</b> '+esc(text)+'</span>';
+ const chips=[nowChip('Alerts',ast==='loading'?'loading':ast==='ok'||ast==='empty'?(liveAlerts.length?liveAlerts.length+' active':'none listed'):'unavailable',urgent?'bad':liveAlerts.length?'warn':'muted')];
+ const fz=okData('floodZone'),dr=okData('drought'),aq=okData('airQuality'),eq=okData('earthquakes'),ou=okData('outages');
+ if(fz)chips.push(nowChip('Flood zone',fz.zone+(fz.sfha?', high risk':''),fz.sfha?'warn':'muted'));
+ if(dr&&finite(dr.d1))chips.push(nowChip('Drought',dr.d1>0?Math.round(dr.d1)+'% of county':'none mapped',dr.d1>0?'warn':'muted'));
+ if(aq&&aq.items&&aq.items.length){const w=aq.items.reduce((x,y)=>(y.aqi??-1)>(x.aqi??-1)?y:x);chips.push(nowChip('Air',w.category+' (AQI '+w.aqi+')','muted',AQI_COLORS.find(c=>w.aqi<=c[0])[1]));}
+ if(eq&&finite(eq.count))chips.push(nowChip('Earthquakes, 30 days',String(eq.count),'muted'));
+ if(ou&&ou.items&&ou.items.length){const meters=ou.items.reduce((s,x)=>s+(finite(x.metersAffected)?x.metersAffected:0),0);chips.push(nowChip('Outages',num(meters)+' meters','warn'));}
+ paint('rs-summary','<div class="rs-now-row" data-rs-now>'+chips.join('')+'</div><dl class="rs-dl"><dt>Active alerts</dt><dd'+(urgent?' class="rs-err"':'')+'>'+(urgent?'<b>'+esc(al)+'</b>':esc(al))+' <a href="#rs-live">Live now</a></dd><dt>Leading hazards, by county-wide yearly loss</dt><dd>'+hz+' <a href="#rs-ranking">Ranking</a></dd><dt>Sources</dt><dd>'+(down?'<b>'+esc(plural(down,'source'))+' unavailable.</b> ':'None unavailable so far. ')+'<a href="#rs-sources">Sources and status</a></dd></dl>');
 }
 const RENDERERS=[renderSummary,renderChooser,renderGeo,renderRanking,renderLive,renderModules,renderLocal,renderLifelines,renderContext,renderMetrics,renderPlan,renderSources];
 // Until a place is found, one banner stands in for the place panels (they would each say the same thing).
@@ -2757,7 +2775,7 @@ function items(list,n,fn){return list&&list.length?'<ul class="rs-list">'+list.s
 const DETAIL={
  tropical:d=>items(d.storms,3,s=>'<li><b>'+esc(clean(s.name,60)||s.id)+'</b>'+(s.type?' ('+esc(String(s.type).replace(/([A-Za-z])(\d)/,'$1 $2'))+')':'')+(finite(s.intensity)?', '+esc(s.intensity)+' kt':'')+', about '+esc(dist(s.distanceKm))+' away. Advisory '+esc(when(s.advisoryTime))+'.</li>'),
  tideStation:d=>{const st=d.station||{},l=d.latest,f=d.floodLevels||{};
-  return '<p class="rs-note">NOAA station <b>'+esc(st.name)+'</b> ('+esc(st.id)+')'+(finite(st.distanceKm)?', '+esc(dist(st.distanceKm))+' away':'')+(l?': '+esc(l.v.toFixed(2))+' ft MLLW at '+esc(when(l.t)):'')+'.</p>'+
+  return '<p class="rs-muted">MLLW is mean lower low water, the tide reference NOAA uses. A reading of 0 ft MLLW is not sea level.</p><p class="rs-note">NOAA station <b>'+esc(st.name)+'</b> ('+esc(st.id)+')'+(finite(st.distanceKm)?', '+esc(dist(st.distanceKm))+' away':'')+(l?': '+esc(l.v.toFixed(2))+' ft MLLW at '+esc(when(l.t)):'')+'.</p>'+
   floodLevelsText(f);},
  ofsForecast:()=>{const o=state.ofsPeak;return o&&o.status==='ok'?'<p class="rs-note">Highest model value in the next 48 hours: <b>'+esc(o.levelFtMLLW.toFixed(2))+' ft MLLW</b> at '+esc(when(o.peakAt))+' ('+esc(plural(o.window.sampleCount,'forecast sample'))+'). Model guidance, not an observation or a warning.</p>':'<p class="rs-note">'+esc(o?o.message:'No forecast sample in the next 48 hours.')+'</p>';},
  riverGauges:d=>items(d.items,4,g=>'<li><b>'+esc(clean(g.name,80)||g.lid)+'</b> ('+esc(g.lid)+'), '+esc(dist(g.distanceKm))+' away: '+(finite(g.observedFt)?'observed '+esc(g.observedFt)+' ft at '+esc(when(g.observedTime)):'no recent observation')+(finite(g.forecastFt)?'; forecast '+esc(g.forecastFt)+' ft at '+esc(when(g.forecastTime)):'')+(g.category?'; flood category '+esc(String(g.category).replace(/_/g,' ')):'')+(finite(g.minor)?'; minor flood stage '+esc(g.minor)+' ft':'')+'.</li>'),
@@ -2839,7 +2857,7 @@ function renderRanking(){
 function alertCard(a){
  const warn=/warning|emergency/i.test(a.event||'');
  const until=a.ends||a.expires;
- return '<div class="rs-alert'+(warn?' rs-a-warning':'')+'"><h4>'+esc(clean(a.event,80))+'</h4><p>'+esc(clean(a.headline,240)||'')+'</p><p>'+esc([a.severity,a.urgency,a.certainty].filter(Boolean).join(', '))+(a.areaDesc?' for '+esc(clean(a.areaDesc,200)):'')+'.</p><p>'+(a.onset?'From '+esc(when(a.onset))+'. ':'')+(until?'Until '+esc(when(until))+'. ':'')+'Issued by '+esc(a.senderName||'the National Weather Service')+(a.sent?' at '+esc(when(a.sent)):'')+'. '+extLink('https://www.weather.gov/','weather.gov')+'</p>'+(a.instruction?'<p><b>What the National Weather Service says to do:</b> '+esc(clean(a.instruction,700))+'</p>':'')+'</div>';
+ return '<div class="rs-alert'+(warn?' rs-a-warning':'')+'"><h4>'+esc(clean(a.event,80))+'</h4><p>'+esc(clean(a.headline,240)||'')+'</p><p>'+esc([a.severity?'Severity: '+a.severity:'',a.urgency?'Urgency: '+a.urgency:'',a.certainty?'Certainty: '+a.certainty:''].filter(Boolean).join('. '))+(a.areaDesc?'. Area: '+esc(clean(a.areaDesc,200)):'')+'.</p><p>'+(a.onset?'From '+esc(when(a.onset))+'. ':'')+(until?'Until '+esc(when(until))+'. ':'')+'Issued by '+esc(a.senderName||'the National Weather Service')+(a.sent?' at '+esc(when(a.sent)):'')+'. '+extLink('https://www.weather.gov/','weather.gov')+'</p>'+(a.instruction?'<p><b>What the National Weather Service says to do:</b> '+esc(clean(a.instruction,700))+'</p>':'')+'</div>';
 }
 function renderLive(){
  const p=state.place;
@@ -3210,7 +3228,7 @@ function renderPlan(){
   paint('rs-plan-body',waitingBox()+'<details class="rs-more" data-keep="plan-dims"><summary><b>Ten dimensions</b> (search for a place first)</summary>'+dimensionsHtml(shell)+'</details>');return;
  }
  const plan=state.plan=currentPlan(),ph=plan.phase;
- let html='<p><span class="rs-phase rs-p-'+esc(ph.id)+'">'+esc(/^Phase/.test(ph.label)?ph.label:'Phase: '+ph.label)+'</span> <span class="rs-muted">'+esc(state.track==='public'?'Public track':'Operator track')+'; revision '+esc(plan.revision)+'</span></p><p class="rs-note">'+esc(ph.basis)+(ph.until?' Review at '+esc(when(ph.until))+'.':'')+'</p>';
+ let html='<p><span class="rs-phase rs-p-'+esc(ph.id)+'">'+esc(/^Phase/.test(ph.label)?ph.label:'Phase: '+ph.label)+'</span> <span class="rs-muted">'+esc(state.track==='public'?'Public track':'Operator track')+(state.track==='operator'?'; revision '+esc(plan.revision):'')+'</span></p><p class="rs-note">'+esc(ph.basis)+(ph.until?' Review at '+esc(when(ph.until))+'.':'')+'</p>';
  if(!state.ranking)html+='<p class="rs-note rs-muted">The hazard ranking is still loading; the plan updates as data arrives.</p>';
  html+='<h3>Actions</h3>';
  const actionSrc=a=>'<p class="rs-src">Source: '+esc(a.source||'not stated')+'. '+esc(a.source==='General guidance'?'General preparedness guidance, not specific to this place':a.dataDate?'Data date '+when(a.dataDate):a.dataDateText||S.NO_DATE)+'.'+(a.checkedAt?' Checked '+esc(when(a.checkedAt))+'.':'')+(a.escalateTo?' Escalate to: '+esc(a.escalateTo)+'.':'')+(a.reviewAfter?' Review after '+esc(when(a.reviewAfter))+'.':'')+'</p>';
