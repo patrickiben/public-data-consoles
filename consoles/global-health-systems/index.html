@@ -489,7 +489,7 @@ footer b{color:var(--ink2)}
     el.scrollIntoView({ behavior: root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   }
   function metricLabel(d, label, actionContext, contextTitle) {
-    var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.canonicalLabel || d.label);
+    var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.plainLabel || d.canonicalLabel || d.label);
     var context = d.label + (d.status === 'unknown' ? separator() + 'not assessable with the available inputs.' : d.scope === 'planning' ? separator() + 'planning comparison.' : '');
     return d.metricId && root.ConsoleMetricHelp ? root.ConsoleMetricHelp.label(d.metricId, value, actionContext || context, contextTitle) : esc(value);
   }
@@ -711,7 +711,9 @@ footer b{color:var(--ink2)}
       networkHTML += '<p>' + esc((net.limitations || []).join(' ')) + '</p>';
     }
     h += section('network', '4. Directed accounting and method limits', networkHTML, 'interpretive');
-    h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p><p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
+    h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p>';
+      // A finder page (it sets data-cr-after) leaves out the research links: they would mean nothing to someone looking for a clinic.
+      if (!doc.documentElement.hasAttribute('data-cr-after')) h += '<p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
     h += '</details>';
     panel.innerHTML = h;
     if (focused) {

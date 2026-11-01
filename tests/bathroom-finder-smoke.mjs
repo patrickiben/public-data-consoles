@@ -274,7 +274,7 @@ try {
       assert.match(c, /Confirm before you go: listings can be out of date, and hours, access and cost can change\./, key);
       assert.match(c, /Directions \(opens Google Maps\)/, key);
       assert.match(c, /(under 0\.1|\d+\.\d) mi [NESW]{1,2} straight-line/, key + ' distance and direction');
-      if (free.has(key)) assert.match(c, /Free \(fee=no in OpenStreetMap\)/, key);
+      if (free.has(key)) assert.match(c, /Free, as listed in OpenStreetMap/, key);
       else {
         assert.doesNotMatch(c, /\bFree\b/, key + ' must not say Free');
         assert.match(c, /Cost unknown|Fee charged|No fee tagged, but for customers only/, key);
@@ -283,9 +283,9 @@ try {
         assert.match(c, /Crowd-sourced listing \(Refuge Restrooms\)/, key);
         assert.match(c, /Cost unknown \(Refuge Restrooms does not record cost\)/, key);
         assert.match(c, /Hours not listed/, key);
-        assert.match(c, /Source: Refuge Restrooms, a crowd-sourced listing\. Updated /, key);
+        assert.match(c, /Source: Refuge Restrooms, a crowd-sourced listing\. (Updated|Added) /, key);
       } else {
-        assert.match(c, /(Public toilet|Customers-only toilet|Toilet, access not tagged) \(OpenStreetMap amenity=toilets\)/, key);
+        assert.match(c, /(Public toilet|Customers-only toilet|Toilet, access not tagged) \(OpenStreetMap\)/, key);
         assert.match(c, /© OpenStreetMap contributors/, key);
       }
     }
@@ -303,9 +303,9 @@ try {
     for (const key of ['refuge:103', 'refuge:104']) assert.match(await cardText(page, key), /Location may be approximate: 2 different listings share this exact point/);
     assert.doesNotMatch(await cardText(page, 'refuge:101'), /Location may be approximate/);
     c = await cardText(page, 'osm:node/9001');
-    for (const part of ['Millennium Fixture Restroom', 'Free (fee=no in OpenStreetMap)', 'Wheelchair accessible (listed)', 'Open 24 hours (listed)', 'Gender neutral (listed)', 'Changing table (listed)', 'Last edited in OpenStreetMap August 14, 2025. Last checked by a mapper 2025-06-01', 'Database as of October 30, 2026, 17:17 UTC', 'View on OpenStreetMap']) assert.ok(c.includes(part), 'osm 9001 missing: ' + part);
+    for (const part of ['Millennium Fixture Restroom', 'Free, as listed in OpenStreetMap', 'Wheelchair accessible (listed)', 'Open 24 hours (listed)', 'Gender neutral (listed)', 'Changing table (listed)', 'Last edited in OpenStreetMap August 14, 2025. Last checked by a mapper 2025-06-01', 'Database as of October 30, 2026, 17:17 UTC', 'View on OpenStreetMap']) assert.ok(c.includes(part), 'osm 9001 missing: ' + part);
     c = await cardText(page, 'osm:way/9002');
-    for (const part of ['No fee tagged, but for customers only', 'Customers only (a purchase may be required)', 'Limited wheelchair access (listed)', 'Hours listed: Mo-Fr 09:00-17:00']) assert.ok(c.includes(part), 'osm 9002 missing: ' + part);
+    for (const part of ['No fee tagged, but for customers only', 'Customers only (a purchase may be required)', 'Limited wheelchair access (listed)', 'Hours listed: Mon-Fri 09:00-17:00']) assert.ok(c.includes(part), 'osm 9002 missing: ' + part);
     c = await cardText(page, 'osm:node/9003');
     for (const part of ['City Parks Fixture', 'Fee charged: 0.50 USD', 'Not wheelchair accessible (listed)', 'Hours not listed']) assert.ok(c.includes(part), 'osm 9003 missing: ' + part);
     c = await cardText(page, 'osm:node/9004');
@@ -323,7 +323,7 @@ try {
     assert.ok(hrefs.some(([h]) => h === 'https://www.openstreetmap.org/copyright'));
     assert.ok(hrefs.some(([h]) => h.startsWith('https://www.google.com/maps/dir/?api=1&destination=')));
     // Filters and source toggles with counts.
-    assert.equal(await text(page, '#filters [data-filter="free"]'), 'Free (fee=no) (2)');
+    assert.equal(await text(page, '#filters [data-filter="free"]'), 'Free (as listed) (2)');
     assert.equal(await text(page, '#filters [data-filter="all"]'), 'All (10)');
     assert.equal(await text(page, '#src-filters [data-source="refuge"]'), 'Refuge Restrooms (4)');
     assert.equal(await text(page, '#src-filters [data-source="osm"]'), 'OpenStreetMap (6)');
@@ -522,7 +522,7 @@ try {
     assert.ok((await page.evaluate(() => window.__pauses.some(ms => ms > 29000))), 'waits about 30 seconds after an Overpass HTTP error');
     assert.equal((await keys(page)).length, 4);
     assert.match(await text(page, '#results-summary'), /Unavailable: OpenStreetMap/);
-    assert.equal(await text(page, '#filters [data-filter="free"]'), 'Free (fee=no) (unavailable)');
+    assert.equal(await text(page, '#filters [data-filter="free"]'), 'Free (as listed) (unavailable)');
     assert.equal(await text(page, '#filters [data-filter="all"]'), 'All (4+)');
     const b = await bridge(page);
     assert.deepEqual([b.sources.osm.status, b.sources.osm.count], ['failed', null]);
@@ -551,7 +551,7 @@ try {
     assert.match(await text(page, '#status-osm'), /Unavailable/);
     assert.equal(await page.locator('#status [data-retry]').count(), 2);
     const summary = await text(page, '#results-summary');
-    assert.match(summary, /No restrooms can be shown: all 2 sources are unavailable\. This is not a zero/);
+    assert.match(summary, /No restrooms can be shown: both sources are unavailable\. This is not a zero/);
     assert.doesNotMatch(summary, /None listed|none listed|No restrooms are listed/);
     assert.equal(await page.locator('#results > li').count(), 0);
     for (const sel of ['#filters [data-filter="all"]', '#filters [data-filter="free"]', '#src-filters [data-source="refuge"]', '#src-filters [data-source="osm"]']) assert.match(await text(page, sel), /\(unavailable\)$/, sel);
@@ -601,7 +601,7 @@ try {
     await settled(page, 1);
     const b = await bridge(page);
     assert.deepEqual([b.sources.refuge.status, b.sources.refuge.count, b.sources.osm.status, b.sources.osm.count], ['failed', null, 'failed', null]);
-    assert.match(await text(page, '#results-summary'), /all 2 sources are unavailable\. This is not a zero/);
+    assert.match(await text(page, '#results-summary'), /both sources are unavailable\. This is not a zero/);
     await finish(t, 'hung listing sources');
   }
   {
@@ -639,8 +639,8 @@ try {
     const { page } = t;
     await search(page, CITY_QUERY, 1);
     assert.equal(await state(page, 'refuge'), 'ok', 'asking for the nearest 100 is not a failure of the source');
-    assert.match(await text(page, '#status-refuge'), /OK: this page asks for the nearest 100 listings, which reach 15\.3 mi\./);
-    assert.match(await text(page, '#results-summary'), /Refuge Restrooms: the nearest 100 listings only, out to 15\.3 mi/);
+    assert.match(await text(page, '#status-refuge'), /OK: this page asks for the nearest 100 listings, which reach 15\.4 mi\./);
+    assert.match(await text(page, '#results-summary'), /Refuge Restrooms: the nearest 100 listings only, out to 15\.4 mi/);
     assert.equal(await text(page, '#src-filters [data-source="refuge"]'), 'Refuge Restrooms (100)');
     assert.equal(await text(page, '#filters [data-filter="all"]'), 'All (106)');
     const b = await bridge(page);

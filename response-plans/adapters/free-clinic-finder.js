@@ -27,13 +27,13 @@
       ['Referral and handoff', 'Verified referral contacts, eligibility rules and hours for each place.', 'No referral network is observed; this console lists places only.', 'Call ahead to confirm cost and eligibility, or dial 2-1-1 for a local referral. In a mental health crisis call or text 988.', 'Keep a verified list with fees and eligibility; refer through 211 or the clinic.']
     ]
   };
-  var names = ['Population Balance','Wasserstein Shape Imbalance','Density Symmetry','Euler Contiguity','Persistence Gap','Spatial Mixing / Scale Stability','Variational Free Energy','Contamination AUC','Frontier Risk / Buffer Depth AUC','Mobility Network Leakage'];
+  var names = ['People reached','Differences between lists','Spacing of places','Connected areas','Close calls','Scale of the search','How access works','Coverage across lists','Places near the edge','Referral paths'];
   // Source status labels passed to the prioritizer so it can say why a source has no result.
   var STATUSES = ['idle','loading','ok','empty','partial','failed','not-run','not-used','invalid'];
   var MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
   function finite(v) { return typeof v === 'number' && Number.isFinite(v); }
   function fact(id,label,value,unit,date,source,quality,basis,note,checked) {
-    return { id:id,label:label,value:value,unit:unit || '',measuredAt:date || null,checkedAt:checked || null,source:source || cfg.source,
+    return { id:id,label:label,value:value,unit:value == null ? '' : unit || '',measuredAt:date || null,checkedAt:checked || null,source:source || cfg.source,
       quality:value == null ? 'missing' : quality || 'historical',basis:basis || 'modeled',note:note || '' };
   }
   // Source dates arrive as ISO text (HRSA load day, OpenStreetMap database timestamp).
@@ -54,7 +54,7 @@
     evidence.push(fact('reference-scope','Scope of this planning review',cfg.scope,'',null,cfg.source,'historical','interpretive','Public listings support confirmation and referral, not a validated transfer of all ten parameters.','2026-10-30'));
     var diagnostics = cfg.lenses.map(function (l,i) {
       var d = assess(i+1,l[0],'unknown',['reference-scope'],'Not assessable from the listing counts.',cfg.gap);
-      d.requiredInputs = l[1]; d.analyticalMitigation = l[2]; d.operationalMitigation = l[4]; return d;
+      d.requiredInputs = l[1]; d.analyticalMitigation = l[2]; d.operationalMitigation = l[4]; d.plainLabel = names[i]; return d;
     });
     var actions = [];
     diagnostics.forEach(function (d,i) {

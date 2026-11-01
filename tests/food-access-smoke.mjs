@@ -254,7 +254,7 @@ try {
     assert.equal(await page.locator('#results > li.fa-card').count(), 2);
     const pantry = await text(page, '#results > li.fa-card:first-child');
     assert.match(pantry, /Pantry <img src=x/);
-    assert.match(pantry, /Listed hours \(as tagged, may be out of date\): Tu,Th 10:00-14:00/);
+    assert.match(pantry, /Listed hours \(as tagged, may be out of date\): Tue,Thu 10:00-14:00/);
     assert.match(pantry, /place last edited 2024-05-01; OSM data as of October 30, 2026/);
     assert.match(await text(page, '#results > li.fa-card:nth-of-type(2)'), /Meal program \(soup kitchen\)/);
     await page.click('#filters [data-filter="market"]');
@@ -595,7 +595,7 @@ try {
     await settled(page, 1);
     assert.equal(await state(page, 'fara25'), 'notcovered');
     assert.equal(log.requests.filter(u => u.includes('gisportal')).length, 0, 'territory device point skips the Atlas');
-    assert.match(await text(page, '#place'), /your location is sent, rounded, to USDA, to ArcGIS Online and to the OpenStreetMap Overpass server/);
+    assert.match(await text(page, '#place'), /your location is sent, rounded, to the U.S. Census \(to check it is in the U\.S\.\), to USDA, to ArcGIS Online and to the OpenStreetMap Overpass server/);
     await page.evaluate(() => { navigator.geolocation.getCurrentPosition = (ok, err) => setTimeout(() => err({ code: 1, message: 'denied' }), 10); });
     await page.click('#loc');
     await settled(page, 2);

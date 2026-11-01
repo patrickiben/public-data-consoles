@@ -121,7 +121,7 @@ a{color:var(--sea);text-decoration:none}a:hover{text-decoration:underline}
 @media (max-width:640px){.pb-legend{padding:4px 8px;font-size:11px;line-height:1.45}.pb-legend .pb-mk{width:11px;height:11px;border-width:1.5px}}
 .pb-mk-wrap{background:none;border:none}
 .pb-mk{display:inline-block;width:14px;height:14px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);vertical-align:middle;flex:none}
-.pb-mk-wrap .pb-mk{display:block;margin:3px}
+.pb-mk-wrap .pb-mk{display:block;margin:5px}
 .pb-mk-hrsa{background:#1864ab;border-radius:3px}
 .pb-mk-free{background:#2b8a3e;border-radius:50%}
 .pb-mk-weak{background:#ffffff;border:3px solid #2b8a3e;border-radius:50%}
@@ -197,8 +197,13 @@ body{padding-bottom:72px}
 .pb-facts a[href^="tel:"]{display:inline-block;padding:9px 14px;margin:2px 0;border:1px solid var(--line2);border-radius:8px;font-size:15px;font-weight:650}
 html body .pb-privacy summary{display:list-item;min-height:0;padding:8px 0}
 html body #console-response-shortcut{position:static;display:block;width:max-content;margin:18px auto 0;box-shadow:none}
+@media (max-height:500px){#map{height:60vh}}
+@media (max-width:640px){.pb-legend-below{margin-top:8px;box-shadow:none}}
+.pb-btns{flex-wrap:wrap}#go,#loc{white-space:normal;max-width:100%}
+p a,li a,dd a,td a{text-decoration:underline;text-underline-offset:2px}
+.pb-dir{text-decoration:none}
 #noscript-note{margin:12px;padding:12px;border:1px solid var(--line2);border-radius:8px}
-@media print{html,body,.pb-wrap,.pb-wrap *{color:#111!important;background:transparent!important;box-shadow:none!important}#search-form,.pb-map-col,.pb-jump,.pb-btn,#console-response-shortcut{display:none!important}}
+@media print{h1,.fa-title,.pb-title{-webkit-text-fill-color:#111!important;background:none!important}#console-response{display:none!important}html,body,.pb-wrap,.pb-wrap *{color:#111!important;background:transparent!important;box-shadow:none!important}#search-form,.pb-map-col,.pb-jump,.pb-btn,#console-response-shortcut{display:none!important}}
 </style>
 <!-- CONSOLE_RESPONSE_HEAD_START -->
 <style>
@@ -457,7 +462,7 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
     el.scrollIntoView({ behavior: root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   }
   function metricLabel(d, label, actionContext, contextTitle) {
-    var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.canonicalLabel || d.label);
+    var value = label || (d.metricId ? '#' + d.metricId + ' ' : '') + (d.plainLabel || d.canonicalLabel || d.label);
     var context = d.label + (d.status === 'unknown' ? separator() + 'not assessable with the available inputs.' : d.scope === 'planning' ? separator() + 'planning comparison.' : '');
     return d.metricId && root.ConsoleMetricHelp ? root.ConsoleMetricHelp.label(d.metricId, value, actionContext || context, contextTitle) : esc(value);
   }
@@ -679,7 +684,9 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
       networkHTML += '<p>' + esc((net.limitations || []).join(' ')) + '</p>';
     }
     h += section('network', '4. Directed accounting and method limits', networkHTML, 'interpretive');
-    h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p><p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
+    h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p>';
+      // A finder page (it sets data-cr-after) leaves out the research links: they would mean nothing to someone looking for a clinic.
+      if (!doc.documentElement.hasAttribute('data-cr-after')) h += '<p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
     h += '</details>';
     panel.innerHTML = h;
     if (focused) {
@@ -1616,8 +1623,8 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
 <!-- CONSOLE_RESPONSE_MOUNT_END -->
 
 <noscript><p id="noscript-note">This page needs JavaScript to search. In an emergency, call 911. In a mental health crisis, call or text 988. To find care, dial 2-1-1.</p></noscript>
-<div id="disc"><b>Unofficial</b> listings from public and volunteer data. <b>Confirm before you go.</b></div>
-<div class="pb-wrap">
+<aside id="disc" aria-label="Notice"><b>Unofficial</b> listings from public and volunteer data. <b>Confirm before you go.</b></aside>
+<main class="pb-wrap">
   <header class="pb-header">
     <h1>Free Clinic Finder</h1>
     <div class="pb-sub">Search by address, ZIP code or your location. Lists HRSA health centers, which charge on a sliding fee (not necessarily free), nearest first. Separately, it lists the few clinics OpenStreetMap volunteers marked as free, which are not verified. For free clinics, also check the <a href="https://nafcclinics.org/find-clinic/" target="_blank" rel="noopener noreferrer">free and charitable clinic locator</a>.</div>
@@ -1730,7 +1737,7 @@ html body #console-response-shortcut{position:static;display:block;width:max-con
   <div id="foot">
     <div class="pb-about"><b>About.</b> A volunteer, <b>unofficial</b> tool that reads public listings from HRSA and OpenStreetMap for the place you search. It is <b>not</b> a complete directory, it gives no medical advice, and it does not know whether a clinic is open, free or right for you. Call to confirm hours, services, eligibility and cost before you go. In an emergency, call 911. In a mental health crisis, call or text 988.</div>
   </div>
-</div>
+</main>
 <script>
 (function(){
 'use strict';
@@ -1847,7 +1854,8 @@ function initMap(){
  layer=L.layerGroup().addTo(map);
  const legend=L.control({position:'bottomleft'});
  legend.onAdd=function(){const d=L.DomUtil.create('div','pb-legend');d.innerHTML='<span><i class="pb-mk pb-mk-hrsa"></i>HRSA health center (sliding fee)</span><span><i class="pb-mk pb-mk-weak"></i>Possibly free (not verified)</span><span><i class="pb-mk pb-mk-here"></i>Searched point</span>';return d;};
- legend.addTo(map);
+ // On a phone the legend would cover the markers, so it sits under the map.
+ if(PHONE){const below=legend.onAdd();below.classList.add('pb-legend-below');$('map').insertAdjacentElement('afterend',below);}else legend.addTo(map);
  hasMap=true;
  drawMap(lastDrawn);
 }
@@ -1883,7 +1891,7 @@ function retryMap(){
  loadLeaflet();
 }
 const kindOf=it=>it.src==='hrsa'?'hrsa':'weak';
-function markerIcon(L,it){return L.divIcon({className:'pb-mk-wrap',html:'<span class="pb-mk pb-mk-'+kindOf(it)+'"></span>',iconSize:[20,20],iconAnchor:[10,10],popupAnchor:[0,-10]});}
+function markerIcon(L,it){return L.divIcon({className:'pb-mk-wrap',html:'<span class="pb-mk pb-mk-'+kindOf(it)+'"></span>',iconSize:[24,24],iconAnchor:[12,12],popupAnchor:[0,-12]});}
 function popupHtml(it){return '<b>'+esc(it.name)+'</b><br>'+esc(it.tag)+'<br>'+esc(distText(it))+' straight-line<br>'+esc(it.dateText)+'<br><b>Confirm before you go.</b>';}
 function drawMap(list){
  lastDrawn=list;
@@ -1973,6 +1981,16 @@ async function zipArea(pt){
  const [county,state]=await Promise.all([ask(82,'NAME'),ask(80,'NAME,STUSAB')]);
  return {county:county&&county.NAME?clean(county.NAME,80):'',state:state&&state.NAME?clean(state.NAME,60):'',stateCode:state&&state.STUSAB?clean(state.STUSAB,4):''};
 }
+// A trailing country name would otherwise match a U.S. street: "Toronto, Canada" lands on a street in North Dakota.
+const NOT_US=/(?:^|,)\s*(canada|mexico|united kingdom|uk|england|scotland|wales|ireland|france|germany|spain|italy|portugal|netherlands|belgium|switzerland|austria|sweden|norway|denmark|finland|poland|greece|turkey|russia|ukraine|china|japan|south korea|korea|india|pakistan|bangladesh|philippines|indonesia|thailand|vietnam|australia|new zealand|brazil|argentina|colombia|peru|chile|venezuela|cuba|haiti|dominican republic|jamaica|nigeria|kenya|south africa|egypt|israel|saudi arabia|ontario|quebec|british columbia|alberta)\s*$/i;
+// The lists cover the United States and its territories. A device location outside them is told so, not given the nearest U.S. places as if they were local.
+async function outsideUS(pt){
+ const j=await fetchJSON(TIGER_LAYER+'80/query?'+qs({geometry:pt.lon+','+pt.lat,geometryType:'esriGeometryPoint',inSR:4326,spatialRel:'esriSpatialRelIntersects',outFields:'STUSAB',returnGeometry:'false',f:'json'}),{timeout:8000}).catch(()=>null);
+ return !!(j&&Array.isArray(j.features)&&!j.features.length);
+}
+// Opening hours as OpenStreetMap tags them, in words a visitor can read.
+const DAY_WORDS={Mo:'Mon',Tu:'Tue',We:'Wed',Th:'Thu',Fr:'Fri',Sa:'Sat',Su:'Sun',PH:'holidays'};
+function friendlyHours(h){const t=clean(h,120);if(/^24\/7$/.test(t))return 'open 24 hours, every day';return t.replace(/\b(Mo|Tu|We|Th|Fr|Sa|Su|PH)\b/g,d=>DAY_WORDS[d]).replace(/\boff\b/g,'closed').replace(/\s*;\s*/g,'; ');}
 async function geocode(text,zip,id){
  const key=zip?'zip:'+zip:'q:'+text.toLowerCase().replace(/\s+/g,' ');
  if(geoCache.has(key))return geoCache.get(key);
@@ -1996,7 +2014,9 @@ async function geocode(text,zip,id){
  const hit=j[0];let out=null;
  if(hit){
   const lat=+hit.lat,lon=+hit.lon;
-  if(Number.isFinite(lat)&&Number.isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180){
+  // A match with no usable point is a broken answer, not "no place found".
+  if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)throw new SourceError('the place search returned an unusable location');
+  {
    const isZip=hit.addresstype==='postcode'||hit.type==='postcode',isArea=!isZip&&AREA_TYPES.test(String(hit.addresstype||''));
    out={point:{lat:lat,lon:lon},name:clean(String(hit.display_name||'').replace(/^([^,;]*);[^,]*/,'$1'),300)||'an unnamed place',isZip:isZip,isArea:isArea,zip:(isZip&&hit.address&&/^\d{5}$/.test(String(hit.address.postcode||''))?String(hit.address.postcode):null)};
   }
@@ -2028,6 +2048,12 @@ async function search(){
   placeError('Type an address, city or ZIP code first, or use your location.');$('q').focus();
   endWithoutLocation();return;
  }
+ const abroad=NOT_US.exec(text);
+ if(abroad){
+  setSrc('geocoder',{state:'invalid',text:'Not sent: this page covers only the United States and its territories.'});
+  placeError(clean(abroad[1],40)+' is outside the United States, and this page covers only U.S. places. If you meant a U.S. place, add its state.');
+  endWithoutLocation();return;
+ }
  if(/^[\d\s-]+$/.test(text)&&!zipM){
   setSrc('geocoder',{state:'invalid',text:'Not sent: a ZIP code needs exactly 5 digits.'});
   placeError('That is not a valid ZIP code. A ZIP code has 5 digits, for example 60622. You can also type a street address or a city and state.');
@@ -2050,7 +2076,7 @@ async function search(){
   showPlace('<span class="pb-err">'+(zipM?'The U.S. Census has no ZIP code area for '+esc(zipM[1])+'. Check the digits. Some PO box and single-building ZIP codes have no area, so try a city and state instead.':'No place matched "'+esc(text)+'". Try a street address, or a city and state.')+'</span>');
   endWithoutLocation();return;
  }
- setSrc('geocoder',{state:'ok',text:'OK: 1 match. See the "Searching near" line below the search box.',checkedAt:new Date().toISOString()});
+ setSrc('geocoder',{state:'ok',text:'OK: used the best match. See the "Near" line below the search box.',checkedAt:new Date().toISOString()});
  let html='Near: <b>'+esc(res.name)+'</b>'+(res.isZip?' (center of the ZIP code area, approximate)':res.isArea?' (center of the area, approximate)':'')+'.';
  if(res.isZip)html+='<br><span class="pb-muted">Distances are measured from the approximate center of '+(res.zip?'ZIP code '+esc(res.zip):'that ZIP code')+'. Enter a street address or use your location for nearer results.</span>';
  if(res.isArea)html+='<br><span class="pb-muted">This is an area, so distances are measured from its approximate center, not from where you are. Enter a street address or use your location for nearer results.</span>';
@@ -2074,8 +2100,13 @@ function useLocation(){
   if(wasLate){searchState='loading';checkedAt=null;setSrc('geocoder',{state:'notused',text:'Not used: Use my location skips the text place search.'});}
   const lat=+p.coords.latitude,lon=+p.coords.longitude,acc=+p.coords.accuracy;
   if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){noFix();placeError('Your device returned an unusable location. Type an address, city or ZIP code instead.');endWithoutLocation();return;}
-  showPlace('Near: <b>your device location</b>'+(Number.isFinite(acc)&&acc>0?' (accuracy about '+esc(acc<1000?Math.round(acc)+' m':(acc/1609.344).toFixed(1)+' mi')+')':'')+'.<br><span class="pb-muted">To run this search, your location is sent to HRSA and to the OpenStreetMap Overpass server, rounded to about 100 meters. Map images for the area you view come from tile.openstreetmap.org.</span>');
-  runAll(id,{lat:lat,lon:lon});
+  showPlace('Near: <b>your device location</b>'+(Number.isFinite(acc)&&acc>0?' (accuracy about '+esc(acc<1000?Math.round(acc)+' m':(acc/1609.344).toFixed(1)+' mi')+')':'')+'.<br><span class="pb-muted">To run this search, your location is sent to the U.S. Census (to check it is in the U.S.), to HRSA and to the OpenStreetMap Overpass server, rounded to about 100 meters. Map images for the area you view come from tile.openstreetmap.org.</span>');
+  publish();
+  outsideUS(rounded({lat:lat,lon:lon})).then(out=>{
+   if(id!==searchRun)return;
+   if(out){placeError('That location is outside the United States and its territories, and this page covers only those places. Type a U.S. address, city or ZIP code.');endWithoutLocation();return;}
+   runAll(id,{lat:lat,lon:lon});
+  });
  },err=>{
   if(settled===true||id!==searchRun)return;settled=true;clearTimeout(guard);
   const code=err&&err.code;noFix();
@@ -2170,7 +2201,7 @@ function hrsaItem(f,pt){
  const oper=clean(a.HCC_OPER_SCHD_DESC,40),cal=clean(a.HCC_CLND_SCHD_DIM_DESC,40),sched=[unknownish(oper)?'':oper,unknownish(cal)?'':cal].filter(Boolean);
  if(sched.length)facts.push(['Schedule type (HRSA record): '+sched.join(', '),'']);
  const pos={lat:lat,lon:lon},dist=haversine(pt,pos);
- return {src:'hrsa',key:'hrsa:'+(Number.isInteger(oid)?oid:Math.round(lat*1e5)+','+Math.round(lon*1e5)+':'+name),name:name,lookalike:look,fixed:!(mobile||seasonal||school),permanent:!(mobile||seasonal),regular:!(mobile||seasonal||school||restricted),approx:approx,noDir:approx||withheld,hasPhone:!!ph,adminOnly:/^admin(istrative)?( office)?( only)?$/i.test(siteName)||/\badmin only\b/i.test(siteName),
+ return {src:'hrsa',key:'hrsa:'+(Number.isInteger(oid)?oid:Math.round(lat*1e5)+','+Math.round(lon*1e5)+':'+name),name:name,lookalike:look,fixed:!(mobile||seasonal||school),permanent:!(mobile||seasonal),regular:!(mobile||seasonal||school||restricted),phoneDigits:String(ph||'').replace(/\D/g,''),approx:approx,noDir:approx||withheld,hasPhone:!!ph,adminOnly:/^admin(istrative)?( office)?( only)?$/i.test(siteName)||/\badmin only\b/i.test(siteName),
   tag:'Sliding fee, not necessarily free',typeLabel:look?'Health center look-alike (meets HRSA program rules, not HRSA-funded)':'HRSA-funded health center',
   lat:lat,lon:lon,dist:dist,dir:dist>=0.01&&!approx?compass(pt,pos):'',address:[street,cityLine].filter(Boolean).join(', ')||'Address not listed',
   facts:facts,dupKey:[name,street,city].join('|').toLowerCase()};
@@ -2227,6 +2258,10 @@ async function runHrsa(id){
   const now=new Date().toISOString(),dtext=dateRes?hrsaDateText():DATE_PENDING;
   kept.sort((a,b)=>a.dist-b.dist);
   kept.forEach(it=>{it.dateText=dtext;if(it.alsoLookalike)it.facts.push(['HRSA also lists a look-alike record at this name and address. Hours may differ; call to confirm.','pb-caution']);if(it.alsoMobile)it.facts.push(['HRSA also lists a mobile or seasonal record at this name and address, with its own phone or hours.','']);});
+  // One organization with one phone at next-door addresses is one stop for someone looking for care.
+  const near=[];kept.slice().sort((x,y)=>x.dist-y.dist).forEach(it=>{const twin=it.phoneDigits&&near.find(o=>o.name.toLowerCase()===it.name.toLowerCase()&&o.phoneDigits===it.phoneDigits&&haversine(o,it)<0.3);if(twin){twin.nearbyTwins=(twin.nearbyTwins||0)+1;dupes++;}else near.push(it);});
+  near.forEach(o=>{if(o.nearbyTwins)o.facts.push(['Also listed at '+o.nearbyTwins+' nearby '+plural(o.nearbyTwins,'address','addresses')+' with the same phone number.','']);});
+  kept=near;
   items.hrsa=kept;
   $('src-date-hrsa').textContent=!dateRes?'still loading':hrsaDateMs!=null?'HRSA data warehouse last loaded '+fmtShort(hrsaDateMs)+' (related table)':'not available (the HRSA date check failed)';
   const mos=kept.filter(it=>!it.fixed).length,look=kept.filter(it=>it.lookalike).length;
@@ -2322,7 +2357,7 @@ async function overpass(pt,alive,retryNote){
    const r=await fetchJSON(OVERPASS_URL,{method:'POST',body:body,headers:{'Content-Type':'application/x-www-form-urlencoded'},timeout:OVERPASS_TIMEOUTS[i]});
    if(!r||typeof r!=='object'||!Array.isArray(r.elements))throw new SourceError('the response had no list of places');
    if(r.remark&&/error/i.test(String(r.remark))&&!r.elements.length)throw new SourceError('the server stopped the query');
-   if(r.elements.length&&!r.elements.some(el=>el&&typeof el==='object'&&/^(node|way|relation)$/.test(el.type)))throw new SourceError('the response had no usable places');
+   if(r.elements.length&&!r.elements.some(el=>el&&typeof el==='object'&&/^(node|way|relation)$/.test(el.type)&&Number.isFinite(+el.id)&&Number.isFinite(+(el.center?el.center.lat:el.lat))))throw new SourceError('the response had no usable places');
    overpassCache.set(body,r);return r;
   }catch(e){last=e;if(e.status)overpassPauseUntil=Date.now()+OVERPASS_PAUSE;if(!alive())throw STALE;}
  }
@@ -2710,13 +2745,13 @@ if(document.readyState==='complete')loadLeaflet();else window.addEventListener('
       ['Referral and handoff', 'Verified referral contacts, eligibility rules and hours for each place.', 'No referral network is observed; this console lists places only.', 'Call ahead to confirm cost and eligibility, or dial 2-1-1 for a local referral. In a mental health crisis call or text 988.', 'Keep a verified list with fees and eligibility; refer through 211 or the clinic.']
     ]
   };
-  var names = ['Population Balance','Wasserstein Shape Imbalance','Density Symmetry','Euler Contiguity','Persistence Gap','Spatial Mixing / Scale Stability','Variational Free Energy','Contamination AUC','Frontier Risk / Buffer Depth AUC','Mobility Network Leakage'];
+  var names = ['People reached','Differences between lists','Spacing of places','Connected areas','Close calls','Scale of the search','How access works','Coverage across lists','Places near the edge','Referral paths'];
   // Source status labels passed to the prioritizer so it can say why a source has no result.
   var STATUSES = ['idle','loading','ok','empty','partial','failed','not-run','not-used','invalid'];
   var MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
   function finite(v) { return typeof v === 'number' && Number.isFinite(v); }
   function fact(id,label,value,unit,date,source,quality,basis,note,checked) {
-    return { id:id,label:label,value:value,unit:unit || '',measuredAt:date || null,checkedAt:checked || null,source:source || cfg.source,
+    return { id:id,label:label,value:value,unit:value == null ? '' : unit || '',measuredAt:date || null,checkedAt:checked || null,source:source || cfg.source,
       quality:value == null ? 'missing' : quality || 'historical',basis:basis || 'modeled',note:note || '' };
   }
   // Source dates arrive as ISO text (HRSA load day, OpenStreetMap database timestamp).
@@ -2737,7 +2772,7 @@ if(document.readyState==='complete')loadLeaflet();else window.addEventListener('
     evidence.push(fact('reference-scope','Scope of this planning review',cfg.scope,'',null,cfg.source,'historical','interpretive','Public listings support confirmation and referral, not a validated transfer of all ten parameters.','2026-10-30'));
     var diagnostics = cfg.lenses.map(function (l,i) {
       var d = assess(i+1,l[0],'unknown',['reference-scope'],'Not assessable from the listing counts.',cfg.gap);
-      d.requiredInputs = l[1]; d.analyticalMitigation = l[2]; d.operationalMitigation = l[4]; return d;
+      d.requiredInputs = l[1]; d.analyticalMitigation = l[2]; d.operationalMitigation = l[4]; d.plainLabel = names[i]; return d;
     });
     var actions = [];
     diagnostics.forEach(function (d,i) {

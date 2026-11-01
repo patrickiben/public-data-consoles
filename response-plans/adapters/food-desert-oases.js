@@ -28,13 +28,13 @@
       ['Referral and handoff', 'Verified referral contacts, eligibility rules and hours for each place.', 'No referral network is observed; this console lists places only.', 'Call ahead to confirm hours, stock and eligibility, or dial 2-1-1 for a referral.', 'Keep a verified referral list with hours and eligibility; refer through 211 or the regional food bank network.']
     ]
   };
-  var names = ['Population Balance','Wasserstein Shape Imbalance','Density Symmetry','Euler Contiguity','Persistence Gap','Spatial Mixing / Scale Stability','Variational Free Energy','Contamination AUC','Frontier Risk / Buffer Depth AUC','Mobility Network Leakage'];
+  var names = ['People reached','Differences between lists','Spacing of places','Connected areas','Close calls','Scale of the search','How access works','Coverage across lists','Places near the edge','Referral paths'];
   // Source status labels passed to the prioritizer so it can say why a source has no result.
   var STATUSES = ['idle','loading','ok','empty','partial','failed','not-covered','no-tract'];
   var MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
   function finite(v) { return typeof v === 'number' && Number.isFinite(v); }
   function fact(id,label,value,unit,date,source,quality,basis,note,checked) {
-    return { id:id,label:label,value:value,unit:unit || '',measuredAt:date || null,checkedAt:checked || null,source:source || cfg.source,
+    return { id:id,label:label,value:value,unit:value == null ? '' : unit || '',measuredAt:date || null,checkedAt:checked || null,source:source || cfg.source,
       quality:value == null ? 'missing' : quality || 'historical',basis:basis || 'modeled',note:note || '' };
   }
   // Source dates arrive as ISO text (OpenStreetMap) or as 'October 21, 2026' (USDA layer metadata).
@@ -56,7 +56,7 @@
     evidence.push(fact('reference-scope','Scope of this planning review',cfg.scope,'',null,cfg.source,'historical','interpretive','Public tract flags and listing counts support review and referral, not a validated transfer of all ten parameters.','2026-10-30'));
     var diagnostics=cfg.lenses.map(function(l,i) {
       var d=Object.assign(assess(i+1,l[0],'unknown',['reference-scope'],'Not assessable from the tract flags and listing counts.',cfg.gap),overrides && overrides[i+1] || {});
-      d.requiredInputs=l[1]; d.analyticalMitigation=l[2]; d.operationalMitigation=l[4]; return d;
+      d.requiredInputs=l[1]; d.analyticalMitigation=l[2]; d.operationalMitigation=l[4]; d.plainLabel=names[i]; return d;
     });
     var actions=[];
     diagnostics.forEach(function(d,i) {
@@ -90,18 +90,18 @@
     var geoid = typeof t.geoid === 'string' && /^\d{11}$/.test(t.geoid) ? t.geoid : null;
     var ok = t.status === 'ok' && !!geoid && !!t.flags, flags = ok ? t.flags : null;
     var lila = flag(flags,'lila1and10'), urban = ok && (t.urban === 1 || t.urban === 0) ? t.urban : null;
-    var tractChecked = checkedIso(t.checkedAt), atlasDate = '2026-07';
+    var tractChecked = checkedIso(t.checkedAt), atlasDate = '2025-06';
     var tractNote = ok ? 'Census tract '+geoid+' (2020 boundaries). Describes the tract, not a household or current store access.' : t.status === 'not-covered' ? 'Not covered: the Atlas includes the 50 states and DC only.' : t.status === 'no-tract' ? 'No census tract was found at the searched point; no result is implied.' : t.status === 'failed' ? 'The Atlas query was unavailable at check time; this is not a "not low access" result.' : 'No census tract resolved yet.';
     var evidence = [];
-    evidence.push(fact('fara-method','USDA Food Access Research Atlas edition',typeof t.vintage === 'string' && t.vintage ? t.vintage : VINTAGE,'Atlas edition',atlasDate,ATLAS,'historical','interpretive','Low access is measured as straight-line distance to any SNAP-authorized store, including convenience stores; the older 2019 measure counted supermarkets and large grocery stores only.'));
+    evidence.push(fact('fara-method','USDA Food Access Research Atlas edition',typeof t.vintage === 'string' && t.vintage ? t.vintage : VINTAGE,'Atlas edition',atlasDate,ATLAS,'historical','interpretive','Low access is measured as straight-line distance to any SNAP-authorized store, including convenience stores; the older 2019 measure counted supermarkets, supercenters and large grocery stores only.'));
     var tractFact = fact('tract-lila','Low income and low access, 1 mile urban or 10 miles rural (2025 Atlas)',lila === 1 ? 'Flagged' : lila === 0 ? 'Not flagged' : null,'tract flag',atlasDate,ATLAS,'historical','modeled',tractNote,tractChecked);
     tractFact.sourceStatus = STATUSES.indexOf(t.status) >= 0 ? t.status : 'idle';
     evidence.push(tractFact);
     evidence.push(fact('tract-low-income','Low-income tract (2025 Atlas)',flag(flags,'lowIncome') === 1 ? 'Yes' : flag(flags,'lowIncome') === 0 ? 'No' : null,'tract flag',atlasDate,ATLAS,'historical','modeled','Poverty rate of at least 20%, or median family income at or below 80% of the state or metro median (2020-2024 ACS).',tractChecked));
     evidence.push(fact('tract-low-access','Low access, 1 mile urban or 10 miles rural, without the income test (2025 Atlas)',flag(flags,'la1and10') === 1 ? 'Yes' : flag(flags,'la1and10') === 0 ? 'No' : null,'tract flag',atlasDate,ATLAS,'historical','modeled','At least 500 people or a third of residents live beyond the distance from a SNAP-authorized store.',tractChecked));
-    evidence.push(fact('tract-urban','Tract urban or rural status (2025 Atlas)',urban === 1 ? 'Urban' : urban === 0 ? 'Rural' : null,'tract class',atlasDate,ATLAS,'historical','measured','Urban when the tract population-weighted centroid is in a 2025 Census urban area.',tractChecked));
+    evidence.push(fact('tract-urban','Tract urban or rural status (2025 Atlas)',urban === 1 ? 'Urban' : urban === 0 ? 'Rural' : null,'tract class',atlasDate,ATLAS,'historical','measured','Urban when the tract population-weighted centroid is in a 2020 Census urban area.',tractChecked));
     var ok19 = t19.status === 'ok' && !!t19.flags, lila19 = ok19 ? flag(t19.flags,'lila1and10') : null;
-    evidence.push(fact('tract-2019','Low income and low access, 1 mile urban or 10 miles rural (2019 Atlas, supermarkets only)',lila19 === 1 ? 'Flagged' : lila19 === 0 ? 'Not flagged' : null,'tract flag','2019',ATLAS,'historical','modeled','2010 census tracts and supermarkets or large grocery stores only; not comparable with the 2025 measure and not a trend.',checkedIso(t19.checkedAt)));
+    evidence.push(fact('tract-2019','Low income and low access, 1 mile urban or 10 miles rural (2019 Atlas, supermarkets, supercenters and large grocery stores)',lila19 === 1 ? 'Flagged' : lila19 === 0 ? 'Not flagged' : null,'tract flag','2019',ATLAS,'historical','modeled','2010 census tracts and supermarkets or large grocery stores only; not comparable with the 2025 measure and not a trend.',checkedIso(t19.checkedAt)));
 
     var counts = {};
     LISTS.forEach(function (cfgList) {
@@ -143,7 +143,7 @@
     LISTS.forEach(function (cfgList) { items.push(item(counts[cfgList.key], cfgList)); });
     items.push({id:'snap-nearest-distance',label:'Nearest listed SNAP-authorized store',value:typeof nearestValue === 'number' ? nearestValue : null,unit:'mi straight-line',kind:snap.day ? 'observed' : 'context',evidenceIds:['snap-nearest'],method:'Straight-line distance from the searched point to the nearest store in the SNAP retailer list.',note:'Not travel distance or time.'});
     var records = [{id:'fara-reference',label:'USDA Food Access Research Atlas edition',kind:'context',evidenceIds:['fara-method'],summary:VINTAGE+'. Low access is distance to any SNAP-authorized store, including convenience stores.'}];
-    if (lila19 != null) records.push({id:'fara-2019-reference',label:'2019 Atlas measure (older method)',kind:'context',evidenceIds:['tract-2019'],summary:'The 2019 measure on 2010 tracts, counting supermarkets and large grocery stores only, is '+(lila19 === 1 ? 'flagged' : 'not flagged')+' for this location. It is not comparable with the 2025 measure.'});
+    if (lila19 != null) records.push({id:'fara-2019-reference',label:'2019 Atlas measure (older method)',kind:'context',evidenceIds:['tract-2019'],summary:'The 2019 measure on 2010 tracts, counting supermarkets, supercenters and large grocery stores only, is '+(lila19 === 1 ? 'flagged' : 'not flagged')+' for this location. It is not comparable with the 2025 measure.'});
     payload.impacts = {title:'Tract food-access classification and nearby food listings',scope:'Census tract flags and listing counts only; the typed address and coordinates are excluded',
       summary:'The tract flag is a dated USDA classification, not current access. Listing counts come from the USDA SNAP retailer list and OpenStreetMap; a failed source is unknown, never zero, and a successful zero means none are listed in that source within its radius, not that none exist.',
       items:items,records:records,
