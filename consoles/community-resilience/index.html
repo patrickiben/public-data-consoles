@@ -186,7 +186,7 @@ main.rs-idle .rs-needs-place{display:none}
 .rs-checks li{margin:7px 0}
 .rs-checks label{display:flex;gap:9px;align-items:flex-start;cursor:pointer}
 .rs-checks input{width:20px;height:20px;flex:none;margin:1px 0 0}
-@media print{html.rs-printing-plan body *{visibility:hidden}html.rs-printing-plan #rs-plan,html.rs-printing-plan #rs-plan *{visibility:visible}html.rs-printing-plan #rs-plan{position:absolute;left:0;top:0;width:100%;color:#111;background:#fff}html.rs-printing-plan #rs-plan .rs-row,html.rs-printing-plan #rs-plan .rs-phases{display:none}}
+@media print{html.rs-printing-plan #disc,html.rs-printing-plan .rs-header,html.rs-printing-plan #rs-nav,html.rs-printing-plan #rs-main>*:not(#rs-plan),html.rs-printing-plan #rs-foot,html.rs-printing-plan #rs-plan .rs-row,html.rs-printing-plan #rs-plan .rs-phases{display:none!important}html.rs-printing-plan,html.rs-printing-plan body,html.rs-printing-plan #rs-plan,html.rs-printing-plan #rs-plan *{color:#111!important;background:#fff!important;box-shadow:none!important}}
 .rs-now-row{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}
 .rs-now{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:999px;padding:3px 10px;font-size:12.5px;color:var(--ink)}
 .rs-now i{width:9px;height:9px;border-radius:50%;background:var(--ink2);flex:none}
@@ -3284,7 +3284,7 @@ function renderPlan(){
  if(state.planRevision!==plan.revision){state.planRevision=plan.revision;state.planChecks=new Set();}
  const selected=plan.phases.find(x=>x.id===(state.planPhase||plan.suggestedPhase||'prepare'))||plan.phases[0];
  const nowLabel=(plan.phases.find(x=>x.suggested)||{}).label;
- let html='<p><span class="rs-phase rs-p-'+esc(ph.id)+'">'+esc(/^Phase/.test(ph.label)?ph.label:'Phase: '+ph.label)+'</span> <span class="rs-muted">'+esc(state.track==='public'?'Public track':'Operator track')+(state.track==='operator'?'; revision '+esc(plan.revision):'')+'</span></p><p class="rs-note">'+esc(ph.basis)+(ph.until?' Review at '+esc(when(ph.until))+'.':'')+'</p>';
+ let html='<p class="rs-note"><b>Plan for:</b> '+esc(state.place.label)+'</p><p><span class="rs-phase rs-p-'+esc(ph.id)+'">'+esc(/^Phase/.test(ph.label)?ph.label:'Phase: '+ph.label)+'</span> <span class="rs-muted">'+esc(state.track==='public'?'Public track':'Operator track')+(state.track==='operator'?'; revision '+esc(plan.revision):'')+'</span></p><p class="rs-note">'+esc(ph.basis)+(ph.until?' Review at '+esc(when(ph.until))+'.':'')+'</p>';
  if(!state.ranking)html+='<p class="rs-note rs-muted">The hazard ranking is still loading; the plan updates as data arrives.</p>';
  html+='<div class="rs-phases" role="group" aria-label="Plan phase">'+plan.phases.map(x=>'<button type="button" class="rs-btn rs-ph" data-plan-phase="'+esc(x.id)+'" data-focus="phase-'+esc(x.id)+'" aria-pressed="'+(x.id===selected.id)+'">'+esc(x.label)+(x.suggested?' <span class="rs-ph-now">now</span>':'')+'</button>').join('')+'</div>';
  html+='<p class="rs-note"><b>'+esc(selected.label)+':</b> '+esc(selected.when)+(nowLabel&&!selected.suggested?' The sources point to '+esc(nowLabel)+' right now.':'')+'</p>';
