@@ -120,7 +120,7 @@ try{
   }
  });
  await scenario('order-book freshness expires without a response, and hidden/backtest checks do not poll',async(page,state)=>{
-  state.books='valid';await page.evaluate(()=>pollOBI());const received=await page.evaluate(()=>OBI.BTC.receivedAt);await page.clock.setSystemTime(new Date(received+15001));await page.evaluate(()=>drawOBI());assert.match(await page.locator('#obi-body').textContent(),/Stale.*current ratio unavailable/);assert.doesNotMatch(await page.locator('#obi-body').textContent(),/of ±100 · balanced/);
+  state.books='valid';await page.evaluate(()=>pollOBI());const received=await page.evaluate(()=>Math.max(...Object.values(OBI).map(o=>o.receivedAt||0)));await page.clock.setSystemTime(new Date(received+15001));await page.evaluate(()=>drawOBI());assert.match(await page.locator('#obi-body').textContent(),/Stale.*current ratio unavailable/);assert.doesNotMatch(await page.locator('#obi-body').textContent(),/of ±100 · balanced/);
   const calls=state.requests.length;await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});});assert.equal(await page.evaluate(()=>pollOBI()),false);assert.equal(state.requests.length,calls);await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});MODE='backtest';});assert.equal(await page.evaluate(()=>pollOBI()),false);assert.equal(state.requests.length,calls);assert.match(await page.locator('#obi-body').textContent(),/no historical order book/);
  });
  await scenario('order-book polling coalesces and ignores superseded late responses',async(page,state)=>{
