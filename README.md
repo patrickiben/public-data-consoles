@@ -49,7 +49,7 @@ for each paper's draft, code/data archive and related applications.
 ## Ten-parameter response plans
 
 Every console includes a checklist organized around the same ten numbered research dimensions.
-The **Response plan** shortcut opens the shared checklist; Coastal has its own **Response plan** tab, and Community Resilience builds its own native plan for the searched place.
+The **Response plan** shortcut opens the shared checklist; Coastal has its own **Response plan** tab, and Community Resilience builds its own native plan for the searched place: Prepare, Watch, Warning, Impact and Recovery, each with public and operator checklists for the hazards that lead there.
 Each dimension shows the domain condition or numerical proxy, required inputs, analytical mitigation
 and practical next steps. Public and professional-operator tracks use the same evidence with different
 responsibilities, escalation routes and verify/prepare/respond/review phases.
