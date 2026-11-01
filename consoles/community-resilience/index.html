@@ -277,8 +277,8 @@ html .leaflet-container .leaflet-control-attribution{background:var(--panel);col
   },
   {
     "id": 8,
-    "name": "Contamination AUC",
-    "meaning": "Combines an exposure screen across a stated range of times, distances, thresholds or scenario levels into one summary: the area under the curve. It does not give the probability of contamination or damage."
+    "name": "Exposure AUC",
+    "meaning": "Combines an exposure screen across a stated range of times, distances, thresholds or scenario levels into one summary: the area under the curve. It does not give the probability of damage."
   },
   {
     "id": 9,
@@ -3145,7 +3145,7 @@ function currentPlan(){
 }
 function dimensionsHtml(dims){
  const help=window.ConsoleMetricHelp;
- return dims.map(dm=>'<div class="rs-dim" data-rs-dimension="'+dm.id+'" data-status="'+esc(dm.status)+'"><h4>'+dm.id+'. '+esc(dm.name)+' <span class="rs-muted">('+esc(dm.pillar)+')</span></h4><p>'+esc(dm.condition)+'</p><p><b>How it is used:</b> '+esc(dm.mitigation)+'</p><p><b>Next steps:</b> '+esc(dm.nextSteps)+'</p></div>').join('');
+ return dims.map(dm=>'<div class="rs-dim" data-rs-dimension="'+dm.id+'" data-status="'+esc(dm.status)+'"><h4>'+dm.id+'. '+(help?help.label(dm.id,dm.name,dm.condition):esc(dm.name))+' <span class="rs-muted">('+esc(dm.pillar)+')</span></h4><p>'+esc(dm.condition)+'</p><p><b>How it is used:</b> '+esc(dm.mitigation)+'</p><p><b>Next steps:</b> '+esc(dm.nextSteps)+'</p></div>').join('');
 }
 function renderPlan(){
  $('rs-track-public').setAttribute('aria-pressed',String(state.track==='public'));
