@@ -1749,8 +1749,8 @@ const HRSA_DATE_URL='https://gisportal.hrsa.gov/server/rest/services/HealthCareF
 const HRSA_FIELDS='OBJECTID,SITE_NM,GRANTEE_NM,FQHC_ORG_NM,GRANT_NUM,SITE_ADDRESS,SITE_CITY,SITE_STATE_ABBR,SITE_ZIP_CD,SITE_PHONE_NUM,SITE_URL,HCC_LOC_DESC,HCC_TYP_DESC,HCC_CLND_SCHD_DIM_DESC,HCC_OPER_SCHD_DESC,TOT_OPER_HR_PER_WEEK,SITE_DATA_SOURCE,FQHC_LAL_NUM,HCC_STATUS_DESC,HCC_LOC_SETTING_DESC,APPROX_VALUE_CD';
 const HRSA_RADII=[10,25,50,100],HRSA_MIN=5,HRSA_LIMIT=2000,HRSA_TIMEOUT=20000,HRSA_DATE_TIMEOUT=12000,HRSA_DATE_WAIT=1500;
 const OVERPASS_URL='https://overpass-api.de/api/interpreter';
-// The query may run for 60 seconds on the server, so the first try waits longer than that.
-const OVERPASS_TIMEOUTS=[75000,35000],OVERPASS_RETRY_WAIT=4000;
+// The query may run for 60 seconds on the server, so each try waits longer than that.
+const OVERPASS_TIMEOUTS=[75000,75000],OVERPASS_RETRY_WAIT=4000;
 const OSM_RADIUS_MI=15,KM_PER_MI=1.609344,SLOW_MS=8000;
 const PHONE=window.innerWidth<768,PAGE=PHONE?10:25;
 // Word boundaries keep "Carefree Medical" out; a leading care/pain/worry/stress/drug/smoke "-free" phrase is not a free clinic either.
@@ -2372,7 +2372,7 @@ async function runOsm(id){
  const exact=current.point,pt=rounded(exact);items.osm=[];renderResults();
  const alive=begin('osm','Loading from overpass-api.de: possibly free clinics within '+miles(OSM_RADIUS_MI)+'...');publish();
  let slowOn=false,base=src.osm.text;
- const paint=()=>{if(alive()&&src.osm.state==='loading')setSrc('osm',{text:(slowOn?'This source is often slow; it can take up to 2 minutes. ':'')+base});};
+ const paint=()=>{if(alive()&&src.osm.state==='loading')setSrc('osm',{text:(slowOn?'This source is often slow; it can take up to 3 minutes. ':'')+base});};
  const timer=setTimeout(()=>{slowOn=true;paint();},SLOW_MS);
  try{
   let j;
