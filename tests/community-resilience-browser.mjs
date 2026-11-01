@@ -137,7 +137,8 @@ async function settled(page,timeout=30000){
  await page.waitForFunction(()=>{const s=window.CRPage.state;return s.phase!=='geocoding'&&s.phase!=='locating'&&Object.keys(s.pending).length===0&&!document.querySelector('[data-status="loading"],.rs-spin');},null,{timeout});
  await page.waitForTimeout(120);
 }
-const text=(page,sel)=>page.locator(sel).innerText();
+// Reads a panel as a visitor who opened its folds would see it. Hazard cards stay as they are, because opening one loads its data.
+const text=async(page,sel)=>{await page.evaluate(()=>document.querySelectorAll('details.rs-more,details.rs-srcfold').forEach(d=>{d.open=true;}));return page.locator(sel).innerText();};
 const SECTIONS=['rs-geo','rs-ranking','rs-live','rs-modules','rs-local','rs-lifelines','rs-context','rs-metrics','rs-plan','rs-sources'];
 const STATUS_WORDS=/Source: |Unavailable|Not available|None listed|Not covered|Not applicable|Not run|Waiting|OK|Computed|Leading|Rated|None added/;
 async function everyPanelHasStatus(page){
@@ -363,7 +364,7 @@ try{
   assert.ok(!/Peak \d/.test(local));
   assert.match(await text(page,'#rs-context'),/Unavailable/);
   const plan=await text(page,'#rs-plan');
-  assert.match(plan,/Phase not set: hazard ranking unavailable/);assert.doesNotMatch(plan,/Phase: Prepare/);
+  assert.match(plan,/Phase not set: NWS alerts unavailable/);assert.doesNotMatch(plan,/Phase: Prepare/);
   assert.match(await text(page,'#rs-lifelines'),/Strain not assessed: hazard ranking unavailable/);
   assert.doesNotMatch(await text(page,'#rs-lifelines'),/Not strained by a leading hazard/);
   await noOverflow(page,390);

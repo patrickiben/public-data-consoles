@@ -7,6 +7,7 @@
  const NO_ANSWER='Data date unknown because the source did not answer';
  const NOMINATIM_GAP_MS=1050;
  const ATTRIBUTION='Address search: © OpenStreetMap contributors, via Nominatim';
+ const SPC_WORDS={TSTM:'general thunderstorms',MRGL:'marginal risk',SLGT:'slight risk',ENH:'enhanced risk',MDT:'moderate risk',HIGH:'high risk'};
  const NOMINATIM_POLICY='https://operations.osmfoundation.org/policies/nominatim/';
  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
  const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -177,7 +178,7 @@
   if(parts.length>1){
    const tail=/^(.*?)(?:\s+(\d{5})(?:-\d{4})?)?$/.exec(parts[parts.length-1]),state=stateOf(tail[1]);
    if(state)return {kind:'name',name:parts[0],stateAbbr:state.abbr,qualifier:parts.slice(1,-1).join(', ')||undefined,zip:tail[2]||undefined,raw};
-   return {kind:'name',name:parts[0],qualifier:parts.slice(1).join(', '),raw};
+   return {kind:'name',name:parts[0],qualifier:parts.slice(1).join(', '),notState:parts[parts.length-1],raw};
   }
   /* A whole state name is not split: "West Virginia" must not become West in Virginia. */
   if(stateOf(t)&&t.length>2)return {kind:'name',name:t,raw};
@@ -284,8 +285,8 @@
    if(!json||!Array.isArray(json.features))throw new SourceError('Missing feature list');
    return json;
   }
-  function arcPost(layer,params){
-   return request(layer+'/query',{method:'POST',body:qs({...params,f:'json'}),headers:{'Content-Type':'application/x-www-form-urlencoded'}}).then(({json})=>{if(!json||!Array.isArray(json.features))throw new SourceError('Missing feature list');return json.features;});
+  function arcPost(layer,params,opts){
+   return request(layer+'/query',{method:'POST',body:qs({...params,f:'json'}),headers:{'Content-Type':'application/x-www-form-urlencoded'},...(opts||{})}).then(({json})=>{if(!json||!Array.isArray(json.features))throw new SourceError('Missing feature list');return json.features;});
   }
   const pointParams=(lat,lon)=>({geometry:lon+','+lat,geometryType:'esriGeometryPoint',inSR:'4326',spatialRel:'esriSpatialRelIntersects',returnGeometry:'false'});
   const nearParams=(lat,lon,meters,unit)=>({geometry:lon+','+lat,geometryType:'esriGeometryPoint',inSR:'4326',spatialRel:'esriSpatialRelIntersects',distance:String(meters),units:unit||'esriSRUnit_Meter',returnGeometry:'true',outSR:'4326'});
@@ -438,7 +439,9 @@
     const pj=await arcQuery(TIGER+'/'+layer,{where:'GEOID='+sql(geoid),outFields:'GEOID',returnGeometry:'true',outSR:'4326',maxAllowableOffset:'0.002',geometryPrecision:'4'});
     const rings=pj.features[0]&&pj.features[0].geometry&&pj.features[0].geometry.rings;
     if(!Array.isArray(rings)||!rings.length)throw new SourceError('No boundary for this place');
-    const tj=await arcPost(TIGER2020+'/6',{geometry:JSON.stringify({rings,spatialReference:{wkid:4326}}),geometryType:'esriGeometryPolygon',inSR:'4326',spatialRel:'esriSpatialRelIntersects',outFields:'GEOID,POP100,INTPTLAT,INTPTLON',returnGeometry:'false',resultRecordCount:'3000'});
+    // Without this answer the search falls back to the Census internal point, which can be miles from where people live, so a stalled lookup gets one longer try.
+    const tractParams={geometry:JSON.stringify({rings,spatialReference:{wkid:4326}}),geometryType:'esriGeometryPolygon',inSR:'4326',spatialRel:'esriSpatialRelIntersects',outFields:'GEOID,POP100,INTPTLAT,INTPTLON',returnGeometry:'false',resultRecordCount:'3000'};
+    const tj=await arcPost(TIGER2020+'/6',tractParams).catch(e=>{if(e&&e.status)throw e;return arcPost(TIGER2020+'/6',tractParams,{timeout:slowTimeoutMs});});
     const geom={rings},tracts=[];
     for(const f of tj){const a=f&&f.attributes||{},lat=num(a.INTPTLAT),lon=num(a.INTPTLON),pop=num(a.POP100);
      if(lat==null||lon==null||!(pop>0))continue;if(!pointInGeometry(geom,lat,lon))continue;tracts.push({geoid:String(a.GEOID||''),lat,lon,pop});}
@@ -591,7 +594,7 @@
     const date=issued?fed(Date.parse(issued),'outlook ISSUE_ISO','Outlook issued'):fed(Date.parse(header('last-modified')||''),'Last-Modified header','File updated');
     if(!features.length)return {status:'empty',message:'No thunderstorm or severe weather risk areas in today\'s outlook.',data,...date};
     const top=features.reduce((a,b)=>b.rank>a.rank?b:a);
-    return {status:'ok',message:'Today\'s outlook has '+plural(features.length,'risk area')+'; the highest category anywhere is '+top.label+'.',data,...date};
+    return {status:'ok',message:'Today\'s outlook has '+plural(features.length,'risk area')+'; the highest category anywhere is '+(SPC_WORDS[top.label]||top.label)+'.',data,...date};
    });
   }
   async function heatCore(points,cap){
@@ -841,7 +844,9 @@
    return run('elevation',async()=>{
     checkPoint(lat,lon);
     const {json}=await request(EPQS+'?'+qs({x:String(lon),y:String(lat),wkid:'4326',units:'Feet',includeDate:'true'}));
-    const v=num(json&&json.value),acq=text(json&&json.attributes&&json.attributes.AcquisitionDate);
+    // An answer with no value field is a malformed answer, not a place with no elevation.
+    if(!json||typeof json!=='object'||!('value' in json))throw new SourceError('Unexpected answer');
+    const v=num(json.value),acq=text(json.attributes&&json.attributes.AcquisitionDate);
     const date=acq?(validAcq(acq)?{dataDate:null,dataDateText:'Elevation source acquired '+acq+' (as published by USGS)',dataDateBasis:'attributes.AcquisitionDate'}:{dataDate:null,dataDateText:'Acquisition date not stated in a valid form by USGS',dataDateBasis:'attributes.AcquisitionDate (invalid: '+acq.slice(0,40)+')'}):undated('No acquisition date in the response');
     if(v==null||v<-1e5)return {status:'empty',message:'USGS has no ground elevation value at this point.',data:null,...date};
     return {status:'ok',message:'Ground elevation about '+round(v,1)+' ft.',data:{feet:round(v,2),resolution:num(json.resolution),acquisitionDate:acq},...date};
