@@ -546,7 +546,13 @@ footer b{color:var(--ink2)}
       panel.dataset.mounted = 'true';
       // Keep the console's identity and navigation before the shared plan.
       var heading = doc.querySelector('h1'), nativeHeader = heading && heading.closest('header');
-      if (nativeHeader && !panel.contains(nativeHeader)) nativeHeader.insertAdjacentElement('afterend', panel);
+      // A finder page may set <html data-cr-after="#section"> so its own results come before the plan.
+      var afterSelector = doc.documentElement.getAttribute('data-cr-after'), afterNode = afterSelector ? doc.querySelector(afterSelector) : null;
+      if (afterNode && !panel.contains(afterNode)) {
+        afterNode.insertAdjacentElement('afterend', panel);
+        var planLink = doc.getElementById('console-response-shortcut');
+        if (planLink) panel.insertAdjacentElement('beforebegin', planLink);
+      } else if (nativeHeader && !panel.contains(nativeHeader)) nativeHeader.insertAdjacentElement('afterend', panel);
       panel.addEventListener('click', function (event) {
         var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact],[data-cr-open-priorities]');
         if (!button) return;

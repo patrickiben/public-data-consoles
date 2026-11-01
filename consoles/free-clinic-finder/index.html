@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" data-cr-separator=": ">
+<html lang="en" data-cr-separator=": " data-cr-after="#sources">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark light">
 <title>Free Clinic Finder</title>
-<meta name="description" content="Enter an address or ZIP code to find nearby clinics, nearest first: clinics that OpenStreetMap lists as free, and, separately, HRSA health centers that charge on a sliding fee (not necessarily free). Unofficial; call to confirm before you go. In an emergency, call 911.">
+<meta name="description" content="Enter an address or ZIP code to find nearby HRSA health centers, which charge on a sliding fee (not necessarily free), nearest first, and, separately, the few clinics OpenStreetMap volunteers marked as free. Unofficial; call to confirm before you go. In an emergency, call 911.">
 <style>
 :root{
  --bg:#0f1b2a;--panel:#16273d;--panel2:#1b3050;--panel-end:#14253b;--ink:#eaf1f8;--ink2:#b3c3d5;--dim:#91a5bd;
@@ -191,6 +191,14 @@ body{padding-bottom:72px}
  .pb-btns{flex:1 1 100%}
  #go,#loc{flex:1 1 0}
 }
+.pb-jump{margin:10px 0 0;padding:10px 12px;border:1px solid var(--line2);border-radius:8px;background:var(--panel2);font-size:14px;color:var(--ink);line-height:1.5}
+.pb-jump a{font-weight:650;white-space:nowrap;margin-right:12px}
+.pb-summary .pb-btn{margin-top:6px}
+.pb-facts a[href^="tel:"]{display:inline-block;padding:9px 14px;margin:2px 0;border:1px solid var(--line2);border-radius:8px;font-size:15px;font-weight:650}
+html body .pb-privacy summary{display:list-item;min-height:0;padding:8px 0}
+html body #console-response-shortcut{position:static;display:block;width:max-content;margin:18px auto 0;box-shadow:none}
+#noscript-note{margin:12px;padding:12px;border:1px solid var(--line2);border-radius:8px}
+@media print{html,body,.pb-wrap,.pb-wrap *{color:#111!important;background:transparent!important;box-shadow:none!important}#search-form,.pb-map-col,.pb-jump,.pb-btn,#console-response-shortcut{display:none!important}}
 </style>
 <!-- CONSOLE_RESPONSE_HEAD_START -->
 <style>
@@ -506,7 +514,13 @@ body{padding-bottom:72px}
       panel.dataset.mounted = 'true';
       // Keep the console's identity and navigation before the shared plan.
       var heading = doc.querySelector('h1'), nativeHeader = heading && heading.closest('header');
-      if (nativeHeader && !panel.contains(nativeHeader)) nativeHeader.insertAdjacentElement('afterend', panel);
+      // A finder page may set <html data-cr-after="#section"> so its own results come before the plan.
+      var afterSelector = doc.documentElement.getAttribute('data-cr-after'), afterNode = afterSelector ? doc.querySelector(afterSelector) : null;
+      if (afterNode && !panel.contains(afterNode)) {
+        afterNode.insertAdjacentElement('afterend', panel);
+        var planLink = doc.getElementById('console-response-shortcut');
+        if (planLink) panel.insertAdjacentElement('beforebegin', planLink);
+      } else if (nativeHeader && !panel.contains(nativeHeader)) nativeHeader.insertAdjacentElement('afterend', panel);
       panel.addEventListener('click', function (event) {
         var button = event.target.closest('[data-cr-track],[data-cr-export],[data-cr-print],[data-cr-open-impact],[data-cr-open-priorities]');
         if (!button) return;
@@ -1549,66 +1563,59 @@ body{padding-bottom:72px}
 <a id="console-response-shortcut" href="#console-response">Response plan</a>
 <!-- CONSOLE_RESPONSE_MOUNT_END -->
 
+<noscript><p id="noscript-note">This page needs JavaScript to search. In an emergency, call 911. In a mental health crisis, call or text 988. To find care, dial 2-1-1.</p></noscript>
 <div id="disc"><b>Unofficial</b> listings from public and volunteer data. <b>Confirm before you go.</b></div>
 <div class="pb-wrap">
   <header class="pb-header">
     <h1>Free Clinic Finder</h1>
-    <div class="pb-sub">Search by address, ZIP code or your location. Clinics that OpenStreetMap lists as free or possibly free are listed first, and separately, HRSA health centers that charge on a sliding fee (not necessarily free). Nearest first.</div>
+    <div class="pb-sub">Search by address, ZIP code or your location. Lists HRSA health centers, which charge on a sliding fee (not necessarily free), nearest first. Separately, it lists the few clinics OpenStreetMap volunteers marked as free, which are not verified. For free clinics, also check the <a href="https://nafcclinics.org/find-clinic/" target="_blank" rel="noopener noreferrer">free and charitable clinic locator</a>.</div>
     <div id="emergency" class="pb-emerg" role="note" aria-label="Emergency numbers">
       <p><b>In an emergency, call <a href="tel:911">911</a>. In a mental health crisis, <a href="tel:988">call</a> or <a href="sms:988">text</a> 988.</b></p>
       <p>This page lists places and does not give medical advice.</p>
     </div>
     <form id="search-form" class="pb-search" role="search" autocomplete="off" novalidate onsubmit="return false">
-      <label for="q">Address, city or ZIP code</label>
+      <label for="q">U.S. address, city or ZIP code</label>
       <div class="pb-bar">
-        <input id="q" type="search" placeholder="e.g. 233 S Wacker Dr, Chicago, IL or 60622" autocomplete="street-address" spellcheck="false" maxlength="200">
+        <input id="q" type="search" placeholder="e.g. 233 S Wacker Dr, Chicago, IL or 60622" autocomplete="off" spellcheck="false" maxlength="200">
         <div class="pb-btns">
           <button id="go" type="submit">Search</button>
           <button id="loc" type="button">Use my location</button>
         </div>
       </div>
       <div id="privacy" class="pb-privacy">
-        <p><b>Privacy:</b> Your device location stays in this browser. If you type an address, only that text is sent, to OpenStreetMap's place search. Nothing is saved (no cookies or browser storage), added to the page address, or sent to this site.</p>
-        <details><summary>What is sent, and to whom</summary>
-        <p>To search, your browser sends the text you type to OpenStreetMap Nominatim (nominatim.openstreetmap.org), and coordinates rounded to about 100 meters to HRSA (gisportal.hrsa.gov) and an OpenStreetMap Overpass server (overpass-api.de, or the maps.mail.ru mirror if it fails). Map images come from tile.openstreetmap.org and show the area you view. The map code (Leaflet) loads from unpkg.com; that request carries no location. Distances are calculated in your browser. Tip: a ZIP code or nearby intersection works if you prefer not to type a home address.</p></details>
+        <p><b>Privacy:</b> This page has no server of its own and saves nothing: no cookies, no browser storage, and your location is not added to the page address. Your location does leave this browser, because the search has to ask public services. They receive it rounded to about 100 meters, or as you typed it.</p>
+        <details><summary>Show what is sent, and to whom</summary>
+        <p>A ZIP code goes to the U.S. Census (tigerweb.geo.census.gov). Any other text you type goes, exactly as typed, to OpenStreetMap Nominatim (nominatim.openstreetmap.org). The searched point, rounded to about 100 meters, goes to HRSA (gisportal.hrsa.gov) and to an OpenStreetMap Overpass server (overpass-api.de, run by the German OpenStreetMap association FOSSGIS). Map images come from tile.openstreetmap.org and show the area you view. The map code (Leaflet) loads from unpkg.com; that request carries no location. Each of these services can also see your IP address, as any website can. A Directions link opens Google Maps only if you tap it, and Google then sees that destination. Distances are calculated in your browser. Tip: a ZIP code or nearby intersection works if you prefer not to type a home address.</p></details>
       </div>
     </form>
     <div id="place" role="status" aria-live="polite"><span class="pb-muted">Search for a place to begin.</span></div>
+    <p id="jump" class="pb-jump" hidden></p>
   </header>
 
-  <section id="status-panel" class="pb-section" aria-labelledby="status-title">
-    <h2 id="status-title">Source status</h2>
-    <p class="pb-lede">Each source is checked on its own. A source that fails is marked unavailable; it never counts as zero or as none listed.</p>
-    <ul id="status" class="pb-status">
-      <li id="status-geocoder" class="pb-st" data-state="idle"><span class="pb-st-name">Place search (OpenStreetMap Nominatim)</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
-      <li id="status-hrsa" class="pb-st" data-state="idle"><span class="pb-st-name">HRSA health center sites</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
-      <li id="status-osm" class="pb-st" data-state="idle"><span class="pb-st-name">OpenStreetMap free or possibly free clinics (Overpass)</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
-      <li id="status-map" class="pb-st" data-state="loading"><span class="pb-st-name">Map (OpenStreetMap tiles)</span><span class="pb-badge">Loading</span><span class="pb-st-text">Loading the map library...</span></li>
-    </ul>
-  </section>
+  
 
   <section id="places" class="pb-section" aria-labelledby="places-title">
-    <h2 id="places-title">Nearest clinics</h2>
+    <h2 id="places-title" tabindex="-1">Nearest clinics</h2>
     <p class="pb-lede">Two separate lists, each nearest first by straight-line distance from the searched point. Each source is searched to its own distance, stated in its list. Every listing needs a phone call to confirm.</p>
     <div class="pb-places">
       <div class="pb-list-col">
-        <div id="block-osm" class="pb-sub-sec">
-          <h3 id="h-osm">Free or possibly free (OpenStreetMap) <span id="count-osm" class="pb-count"></span></h3>
-          <p class="pb-lede">Free means OpenStreetMap tags the clinic fee=no with no charge or conditions. Possibly free means fee=no with conditions, or only a name that says free. Call to confirm cost. A small and partial set: many free clinics are not tagged here.</p>
-          <p id="summary-osm" class="pb-summary">Search for a place to list clinics that OpenStreetMap lists as free or possibly free.</p>
-          <ul id="results-osm" class="pb-results"></ul>
-          <button id="more-osm" type="button" class="pb-btn pb-more" hidden>Show more</button>
-          <p id="ways-osm" class="pb-ways" hidden></p>
-        </div>
         <div id="block-hrsa" class="pb-sub-sec">
           <h3 id="h-hrsa">Health centers: sliding fee, not necessarily free (HRSA) <span id="count-hrsa" class="pb-count"></span></h3>
           <p class="pb-lede">According to HRSA (the Health Resources and Services Administration), health centers in its Health Center Program, including look-alikes, charge on a sliding fee scale based on income and family size and provide care regardless of ability to pay. Cost may be reduced but is not necessarily zero. See <a href="https://findahealthcenter.hrsa.gov/" target="_blank" rel="noopener noreferrer">HRSA Find a Health Center</a>.</p>
           <div id="hrsa-filters" class="pb-chips" role="group" aria-label="Filter health centers" hidden>
-            <button type="button" class="pb-chip" id="fixed-only" aria-pressed="false"><span class="pb-dot pb-c-hrsa" aria-hidden="true"></span><span>Fixed sites only</span></button>
+            <button type="button" class="pb-chip" id="fixed-only" aria-pressed="false"><span class="pb-dot pb-c-hrsa" aria-hidden="true"></span><span>Regular sites only</span></button>
           </div>
           <p id="summary-hrsa" class="pb-summary">Search for a place to list HRSA health center sites.</p>
           <ul id="results-hrsa" class="pb-results"></ul>
           <button id="more-hrsa" type="button" class="pb-btn pb-more" hidden>Show more</button>
+        </div>
+        <div id="block-osm" class="pb-sub-sec">
+          <h3 id="h-osm">Possibly free clinics (OpenStreetMap, not verified) <span id="count-osm" class="pb-count"></span></h3>
+          <p class="pb-lede">Volunteers tagged these as free, or their name says free. None of them is verified, so call to confirm cost. This is a very small part of the free clinics in the U.S. For a fuller list, use the <a href="https://nafcclinics.org/find-clinic/" target="_blank" rel="noopener noreferrer">National Association of Free and Charitable Clinics locator</a>.</p>
+          <p id="summary-osm" class="pb-summary">Search for a place to list clinics that OpenStreetMap volunteers marked as free.</p>
+          <ul id="results-osm" class="pb-results"></ul>
+          <button id="more-osm" type="button" class="pb-btn pb-more" hidden>Show more</button>
+          <p id="ways-osm" class="pb-ways" hidden></p>
         </div>
         <div id="live" class="pb-sr" role="status" aria-live="polite"></div>
       </div>
@@ -1617,6 +1624,17 @@ body{padding-bottom:72px}
         <div id="map-status" class="pb-muted" role="status" hidden></div>
       </div>
     </div>
+  </section>
+
+<section id="status-panel" class="pb-section" aria-labelledby="status-title">
+    <h2 id="status-title">Source status</h2>
+    <p class="pb-lede">Each source is checked on its own. A source that fails is marked unavailable; it never counts as zero or as none listed.</p>
+    <ul id="status" class="pb-status">
+      <li id="status-geocoder" class="pb-st" data-state="idle"><span class="pb-st-name">Place search (U.S. Census for ZIP codes, OpenStreetMap Nominatim for the rest)</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
+      <li id="status-hrsa" class="pb-st" data-state="idle"><span class="pb-st-name">HRSA health center sites</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
+      <li id="status-osm" class="pb-st" data-state="idle"><span class="pb-st-name">OpenStreetMap possibly free clinics (Overpass)</span><span class="pb-badge">Waiting</span><span class="pb-st-text">Waiting for a search.</span></li>
+      <li id="status-map" class="pb-st" data-state="loading"><span class="pb-st-name">Map (OpenStreetMap tiles)</span><span class="pb-badge">Loading</span><span class="pb-st-text">Loading the map library...</span></li>
+    </ul>
   </section>
 
   <section id="ways" class="pb-section" aria-labelledby="ways-title">
@@ -1632,12 +1650,15 @@ body{padding-bottom:72px}
   <section id="coverage" class="pb-section" aria-labelledby="coverage-title">
     <h2 id="coverage-title">What this page does not cover</h2>
     <ul class="pb-list">
-      <li><b>Free clinics are only partly listed.</b> A clinic appears in the free or possibly free list only where OpenStreetMap volunteers tagged it or named it. That is a small and partial set. Many free clinics are missing, and a clinic that is missing here may still be free.</li>
-      <li><b>Name matches are not proof of cost.</b> A clinic whose name says "free clinic" but has no cost tag is labeled as a name match only. Confirm cost with the clinic.</li>
+      <li><b>Free clinics are mostly missing.</b> A clinic appears in the possibly free list only where OpenStreetMap volunteers tagged it or named it. That is a very small part of the free clinics in the U.S., and none of them is verified. A clinic that is missing here may still be free.</li>
+      <li><b>Tags and names are not proof of cost.</b> A fee=no tag can be wrong, and a name that says "free clinic" says nothing about what a visit costs. A record that is tagged fee=no but also lists payment methods is shown as unclear. Confirm cost with the clinic.</li>
       <li><b>HRSA lists only Health Center Program sites.</b> That means HRSA-funded health centers and look-alikes. It does not list hospitals, emergency rooms, urgent care, private practices, most free clinics, or VA or Indian Health Service facilities unless they are also program sites.</li>
       <li><b>Sliding fee is not free.</b> HRSA health centers charge on a sliding fee scale. Cost may be reduced but is not necessarily zero.</li>
       <li><b>No services or eligibility.</b> This page does not know which services, insurance, languages, appointment availability, wait times or eligibility rules apply, and it does not know whether a place is open or closed right now. Hours shown are only what a source lists.</li>
-      <li><b>Mobile, seasonal and school-based sites.</b> HRSA lists mobile vans at a base address, some sites that are seasonal, and some school-based sites that may serve students only. Call first.</li>
+      <li><b>Mobile, seasonal, school-based and special-program sites.</b> HRSA lists mobile vans at a base address, some seasonal sites, and some sites that may serve only students, shelter residents or people in a program. Call first.</li>
+      <li><b>Approximate locations.</b> HRSA marks some sites, especially in Alaska, as matched only to a ZIP code. Their distance and map point can be far off, so those cards say so and offer no directions.</li>
+      <li><b>Addresses and websites come from HRSA's records.</b> HRSA standardizes addresses by machine and some website links are out of date. Call to confirm the address.</li>
+      <li><b>United States and its territories only.</b> A place name from another country may match a U.S. place with the same name.</li>
       <li><b>Straight-line distances.</b> Distances are measured in a straight line from the searched point, not along a route.</li>
       <li><b>Empty means none listed.</b> When a list is empty, it means none are listed in that source within the distance searched. It does not mean none exist. A source that failed is shown as unavailable, never as none.</li>
     </ul>
@@ -1647,9 +1668,9 @@ body{padding-bottom:72px}
     <h2 id="sources-title">Sources and method</h2>
     <p class="pb-lede">Every listing shows its source and data date. Nothing on this page is cached from elsewhere or filled in when a source fails.</p>
     <div class="pb-sources">
-      <div class="pb-source"><h3>HRSA health center sites</h3><p><a href="https://data.hrsa.gov/" target="_blank" rel="noopener noreferrer">HRSA public data</a> from the HRSA Data Warehouse, read from gisportal.hrsa.gov (layer: Health Care Service Delivery Sites). Sites within 10 miles, widened to 25, 50 and then 100 miles only when fewer than 5 sites are found. Records at the same name and address are shown once. Distance is calculated in your browser.</p><p>HRSA data reloads daily; the date shown is the warehouse load date, not the date a site was last confirmed. The site list itself carries no date, so the date is read from HRSA's related Health Center Service Delivery Sites layer and may differ from when the site list loaded. Date: <span id="src-date-hrsa">shown after a search</span>.</p></div>
-      <div class="pb-source"><h3>Free clinics: OpenStreetMap via Overpass</h3><p><a href="https://overpass-api.de/" target="_blank" rel="noopener noreferrer">overpass-api.de</a>, with the <a href="https://maps.mail.ru/osm/tools/overpass/" target="_blank" rel="noopener noreferrer">maps.mail.ru</a> mirror as a fallback. Places tagged as a clinic or doctor within 15 miles that are tagged fee=no or have free clinic, free medical or free health in the name. Places tagged fee=yes are not shown in the free or possibly free list. Private and no-access places are hidden.</p><p>&copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a>. Date: <span id="src-date-osm">shown after a search, from the OpenStreetMap database timestamp</span>, plus each place's last edit date.</p></div>
-      <div class="pb-source"><h3>Place search: OpenStreetMap Nominatim</h3><p><a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">nominatim.openstreetmap.org</a>, used only when you press Search, at most one request per second (<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">usage policy</a>).</p><p>Data &copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a>. Date: live OpenStreetMap data, no release date.</p></div>
+      <div class="pb-source"><h3>HRSA health center sites</h3><p><a href="https://data.hrsa.gov/" target="_blank" rel="noopener noreferrer">HRSA public data</a> from the HRSA Data Warehouse, read from gisportal.hrsa.gov (layer: Health Care Service Delivery Sites). Sites within 10 miles, widened to 25, 50 and then 100 miles only when fewer than 5 regular sites are found (not mobile, seasonal or school-based). Records at the same name and address are shown once, preferring the permanent site. Records named administrative only are hidden. Distance is calculated in your browser.</p><p>HRSA data reloads daily; the date shown is the warehouse load date of a related HRSA table, not the date a site was last confirmed. The site list itself carries no date, so this date may differ from when the list loaded. Date: <span id="src-date-hrsa">shown after a search</span>.</p></div>
+      <div class="pb-source"><h3>Free clinics: OpenStreetMap via Overpass</h3><p><a href="https://overpass-api.de/" target="_blank" rel="noopener noreferrer">overpass-api.de</a>, tried twice if it does not answer. Places tagged as a clinic or doctor within 15 miles that are tagged fee=no or have free clinic, free medical or free health in the name. Places tagged fee=yes are not listed. Private and no-access places are hidden.</p><p>&copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a>. Date: <span id="src-date-osm">shown after a search, from the OpenStreetMap database timestamp</span>, plus each place's last edit date.</p></div>
+      <div class="pb-source"><h3>Place search: U.S. Census and OpenStreetMap Nominatim</h3><p>ZIP codes: <a href="https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html" target="_blank" rel="noopener noreferrer">Census TIGERweb</a> ZIP code areas, including the territories. A ZIP code with no Census area, such as many PO box ZIP codes, is reported as not found. Everything else: <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">nominatim.openstreetmap.org</a>, used only when you press Search, at most one request per second (<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">usage policy</a>).</p><p>Data &copy; OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a>. Date: live OpenStreetMap data, no release date.</p></div>
       <div class="pb-source"><h3>Map tiles and map library</h3><p>Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> from tile.openstreetmap.org. Map library: <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> 1.9.4 from unpkg.com.</p></div>
     </div>
   </section>
@@ -1666,20 +1687,20 @@ body{padding-bottom:72px}
 const GEOCODER_URL='https://nominatim.openstreetmap.org/search';
 const HRSA_SITES_URL='https://gisportal.hrsa.gov/server/rest/services/HealthCareFacilities/PrimaryHealthCareFacilities_FS/MapServer/0/query';
 const HRSA_DATE_URL='https://gisportal.hrsa.gov/server/rest/services/HealthCareFacilities/HealthCareFacilities/MapServer/18/query';
-const HRSA_FIELDS='OBJECTID,SITE_NM,GRANTEE_NM,FQHC_ORG_NM,GRANT_NUM,SITE_ADDRESS,SITE_CITY,SITE_STATE_ABBR,SITE_ZIP_CD,SITE_PHONE_NUM,SITE_URL,HCC_LOC_DESC,HCC_TYP_DESC,HCC_CLND_SCHD_DIM_DESC,HCC_OPER_SCHD_DESC,TOT_OPER_HR_PER_WEEK,SITE_DATA_SOURCE,FQHC_LAL_NUM,HCC_STATUS_DESC,HCC_LOC_SETTING_DESC';
+const HRSA_FIELDS='OBJECTID,SITE_NM,GRANTEE_NM,FQHC_ORG_NM,GRANT_NUM,SITE_ADDRESS,SITE_CITY,SITE_STATE_ABBR,SITE_ZIP_CD,SITE_PHONE_NUM,SITE_URL,HCC_LOC_DESC,HCC_TYP_DESC,HCC_CLND_SCHD_DIM_DESC,HCC_OPER_SCHD_DESC,TOT_OPER_HR_PER_WEEK,SITE_DATA_SOURCE,FQHC_LAL_NUM,HCC_STATUS_DESC,HCC_LOC_SETTING_DESC,APPROX_VALUE_CD';
 const HRSA_RADII=[10,25,50,100],HRSA_MIN=5,HRSA_LIMIT=2000,HRSA_TIMEOUT=20000,HRSA_DATE_TIMEOUT=12000,HRSA_DATE_WAIT=1500;
-const OVERPASS_URLS=['https://overpass-api.de/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
-const OVERPASS_TIMEOUTS=[50000,40000];
-const OSM_RADIUS_MI=15,KM_PER_MI=1.609344,PAGE=25,SLOW_MS=8000;
+const OVERPASS_URL='https://overpass-api.de/api/interpreter';
+const OVERPASS_TIMEOUTS=[45000,35000],OVERPASS_RETRY_WAIT=4000;
+const OSM_RADIUS_MI=15,KM_PER_MI=1.609344,SLOW_MS=8000;
+const PHONE=window.innerWidth<768,PAGE=PHONE?10:25;
 // Word boundaries keep "Carefree Medical" out; a leading care/pain/worry/stress/drug/smoke "-free" phrase is not a free clinic either.
 // "Health Care Free Clinic" and "Primary Care Free Clinic" still count; plural "Free Clinics" counts too.
 const OSM_FREE_RE=/\b(?:(care|pain|worry|stress|drug|smoke)[- ]?)?free (?:clinics?|medical|health)\b/ig;
 const OSM_FREE_NAME={test:n=>{OSM_FREE_RE.lastIndex=0;let m;while((m=OSM_FREE_RE.exec(n))){if(!m[1]||(/^care$/i.test(m[1])&&/\b(?:health|primary|medical) $/i.test(n.slice(0,m.index))))return true;}return false;}};
-const LABELS={geocoder:'Place search (OpenStreetMap Nominatim)',hrsa:'HRSA health center sites',osm:'OpenStreetMap free or possibly free clinics (Overpass)',map:'Map (OpenStreetMap tiles)'};
-const LIST_NAME={hrsa:'HRSA health centers',osm:'OpenStreetMap free or possibly free clinics'};
+const LABELS={geocoder:'Place search (U.S. Census for ZIP codes, OpenStreetMap Nominatim for the rest)',hrsa:'HRSA health center sites',osm:'OpenStreetMap possibly free clinics (Overpass)',map:'Map (OpenStreetMap tiles)'};
+const LIST_NAME={hrsa:'HRSA health centers',osm:'OpenStreetMap possibly free clinics'};
 const BADGE={idle:'Waiting',notrun:'Not run',notused:'Not used',invalid:'Not sent',loading:'Loading',ok:'OK',empty:'None listed',partial:'Partial',failed:'Unavailable'};
-const KEYS=Object.keys(LABELS),SEARCH_KEYS=['geocoder','hrsa','osm'],LIST_KEYS=['osm','hrsa'];
-const CONFIRM='Confirm before you go: call to check hours, services, eligibility and cost.';
+const KEYS=Object.keys(LABELS),SEARCH_KEYS=['geocoder','hrsa','osm'],LIST_KEYS=['hrsa','osm'];
 const WAYS_HTML='Other ways to look: <a href="https://findahealthcenter.hrsa.gov/" target="_blank" rel="noopener noreferrer">HRSA Find a Health Center</a>; the <a href="https://nafcclinics.org/find-clinic/" target="_blank" rel="noopener noreferrer">National Association of Free and Charitable Clinics locator</a>; or dial 2-1-1 (<a href="https://www.211.org/" target="_blank" rel="noopener noreferrer">211.org</a>) for local referrals.';
 
 const $=id=>document.getElementById(id);
@@ -1742,7 +1763,7 @@ async function fetchJSON(url,opt){
 }
 
 /* ---------- state (the searched point lives only in this closure) ---------- */
-let searchRun=0,selectionId=0,current=null,fixedOnly=false,revision=0,searchState='idle',checkedAt=null,locationType=null;
+let searchRun=0,selectionId=0,current=null,fixedOnly=false,revision=0,searchState='idle',checkedAt=null,locationType=null,lastQuery=null,scrolledFor=null;
 const shown={osm:PAGE,hrsa:PAGE};
 const src={};
 const items={hrsa:[],osm:[]};
@@ -1761,7 +1782,8 @@ function initMap(){
  if(hasMap||!(window.L&&typeof window.L.map==='function'))return;
  const L=window.L,el=$('map');leaf=L;
  el.style.height='';el.innerHTML='';
- map=L.map(el,{zoomControl:true,worldCopyJump:true}).setView([39.5,-98.35],4);
+ // On touch screens one finger scrolls the page; the zoom buttons still work.
+ map=L.map(el,{zoomControl:true,worldCopyJump:true,dragging:!window.matchMedia('(pointer:coarse)').matches,tap:false}).setView([39.5,-98.35],4);
  const basemap=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'});
  // Partial only after several tiles in a row fail; one later tile that loads clears it.
  basemap.on('tileerror',()=>{tileStreak++;if(tileFailed||tileStreak<3)return;tileFailed=true;$('map-status').hidden=false;$('map-status').textContent='Basemap tiles unavailable. Markers, the lists and the sources below still work.';setSrc('map',{state:'partial',text:'Basemap tiles from tile.openstreetmap.org did not load. Markers, the lists and the sources below still work.'});});
@@ -1770,7 +1792,7 @@ function initMap(){
  else{$('map-status').hidden=false;$('map-status').textContent='Map tiles load only over http or https. The lists and the sources below still work.';setSrc('map',{state:'partial',text:'Map tiles load only over http or https. The lists still work.'});}
  layer=L.layerGroup().addTo(map);
  const legend=L.control({position:'bottomleft'});
- legend.onAdd=function(){const d=L.DomUtil.create('div','pb-legend');d.innerHTML='<span><i class="pb-mk pb-mk-free"></i>Free (tagged fee=no)</span><span><i class="pb-mk pb-mk-weak"></i>Possibly free (conditions, or name only)</span><span><i class="pb-mk pb-mk-hrsa"></i>HRSA health center (sliding fee)</span><span><i class="pb-mk pb-mk-here"></i>Searched point</span>';return d;};
+ legend.onAdd=function(){const d=L.DomUtil.create('div','pb-legend');d.innerHTML='<span><i class="pb-mk pb-mk-hrsa"></i>HRSA health center (sliding fee)</span><span><i class="pb-mk pb-mk-weak"></i>Possibly free (not verified)</span><span><i class="pb-mk pb-mk-here"></i>Searched point</span>';return d;};
  legend.addTo(map);
  hasMap=true;
  drawMap(lastDrawn);
@@ -1795,7 +1817,8 @@ function loadLeaflet(){
 function retryMap(){
  if(hasMap)return;
  if(map){try{map.remove();}catch(e){}map=null;layer=null;}
- if(window.L&&typeof window.L.map==='function'){
+ const cssTag=document.querySelector('link[href*="leaflet@1.9.4"]');
+ if(window.L&&typeof window.L.map==='function'&&cssTag&&cssTag.sheet){
   setSrc('map',{state:'loading',text:'Starting the map...'});
   try{initMap();lastSig='';drawMap(lastDrawn);}catch(e){hasMap=false;if(map){try{map.remove();}catch(e2){}map=null;layer=null;}mapDown('The map library could not start.');}
   return;
@@ -1805,7 +1828,7 @@ function retryMap(){
  mapNote('<span class="pb-spin" aria-hidden="true"></span> Loading the map...');
  loadLeaflet();
 }
-const kindOf=it=>it.src==='hrsa'?'hrsa':it.cat==='free'?'free':'weak';
+const kindOf=it=>it.src==='hrsa'?'hrsa':'weak';
 function markerIcon(L,it){return L.divIcon({className:'pb-mk-wrap',html:'<span class="pb-mk pb-mk-'+kindOf(it)+'"></span>',iconSize:[20,20],iconAnchor:[10,10],popupAnchor:[0,-10]});}
 function popupHtml(it){return '<b>'+esc(it.name)+'</b><br>'+esc(it.tag)+'<br>'+esc(distText(it))+' straight-line<br>'+esc(it.dateText)+'<br><b>Confirm before you go.</b>';}
 function drawMap(list){
@@ -1849,6 +1872,7 @@ function renderStatus(k){
 function setSrc(k,patch){Object.assign(src[k],patch);renderStatus(k);}
 function renderAllStatus(){KEYS.forEach(renderStatus);}
 $('status').addEventListener('click',e=>{const b=e.target.closest('[data-retry]');if(b)retry(b.getAttribute('data-retry'));});
+$('places').addEventListener('click',e=>{const b=e.target.closest('[data-retry]');if(b)retry(b.getAttribute('data-retry'));});
 
 /* ---------- response-layer bridge: no address, query text, place names or coordinates ever ---------- */
 function bridgeStatus(s){return ({ok:'ok',empty:'empty',partial:'partial',failed:'failed',loading:'loading',notused:'not-used',invalid:'invalid',notrun:'not-run'})[s]||'idle';}
@@ -1878,9 +1902,32 @@ function placeError(msg){showPlace('<span class="pb-err">'+esc(msg)+'</span>');}
 // Matches that stand for a whole area; distances then run from a center point, not from the visitor.
 const AREA_TYPES=/^(city|town|village|hamlet|municipality|suburb|borough|quarter|neighbourhood|city_district|district|county|state_district|state|region|province|island|country)$/;
 const geoCache=new Map();let nextGeoSlot=0;
+const ZCTA_URL='https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/2/query';
+const TIGER_LAYER='https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/';
+// ZIP codes go to the Census ZIP code areas, not the place search, which can match phantom ZIP codes to unrelated places.
+async function lookupZip(zip){
+ const j=await fetchJSON(ZCTA_URL+'?'+qs({where:"ZCTA5='"+zip+"'",outFields:'ZCTA5,INTPTLAT,INTPTLON',returnGeometry:'false',f:'json'}),{timeout:15000});
+ if(!j||typeof j!=='object'||j.error||!Array.isArray(j.features))throw new SourceError('the Census ZIP code service did not return a list');
+ const a=j.features[0]&&j.features[0].attributes;if(!a)return null;
+ const lat=parseFloat(a.INTPTLAT),lon=parseFloat(a.INTPTLON);
+ if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)throw new SourceError('the Census ZIP code service returned an unusable point');
+ return {lat:lat,lon:lon};
+}
+// County and state names only make the place line easier to check; a failed name lookup never stops the search.
+async function zipArea(pt){
+ const ask=(id,fields)=>fetchJSON(TIGER_LAYER+id+'/query?'+qs({geometry:pt.lon+','+pt.lat,geometryType:'esriGeometryPoint',inSR:4326,spatialRel:'esriSpatialRelIntersects',outFields:fields,returnGeometry:'false',f:'json'}),{timeout:8000}).then(j=>j&&Array.isArray(j.features)&&j.features[0]&&j.features[0].attributes||null,()=>null);
+ const [county,state]=await Promise.all([ask(82,'NAME'),ask(80,'NAME,STUSAB')]);
+ return {county:county&&county.NAME?clean(county.NAME,80):'',state:state&&state.NAME?clean(state.NAME,60):'',stateCode:state&&state.STUSAB?clean(state.STUSAB,4):''};
+}
 async function geocode(text,zip,id){
  const key=zip?'zip:'+zip:'q:'+text.toLowerCase().replace(/\s+/g,' ');
  if(geoCache.has(key))return geoCache.get(key);
+ if(zip){
+  const pt=await lookupZip(zip);if(!pt){geoCache.set(key,null);return null;}
+  const area=await zipArea(pt);
+  const out={point:pt,name:'ZIP code '+zip+([area.county,area.state].filter(Boolean).length?', '+[area.county,area.state].filter(Boolean).join(', '):''),isZip:true,isArea:false,zip:zip};
+  geoCache.set(key,out);return out;
+ }
  // A slot is reserved only when this search is still current, so superseded searches never delay the live one.
  for(;;){
   if(id!==searchRun)throw STALE;
@@ -1889,15 +1936,15 @@ async function geocode(text,zip,id){
   await sleep(nextGeoSlot-now);
  }
  const p={format:'jsonv2',limit:1,addressdetails:1,countrycodes:'us,pr,gu,vi,as,mp'};
- if(zip)p.postalcode=zip;else p.q=text;
+ p.q=text;
  const j=await fetchJSON(GEOCODER_URL+'?'+qs(p),{timeout:15000});
  if(!Array.isArray(j))throw new SourceError('the response was not a list of places');
  const hit=j[0];let out=null;
  if(hit){
   const lat=+hit.lat,lon=+hit.lon;
   if(Number.isFinite(lat)&&Number.isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180){
-   const isZip=!!zip||hit.addresstype==='postcode'||hit.type==='postcode',isArea=!isZip&&AREA_TYPES.test(String(hit.addresstype||''));
-   out={point:{lat:lat,lon:lon},name:clean(String(hit.display_name||'').replace(/^([^,;]*);[^,]*/,'$1'),300)||'an unnamed place',isZip:isZip,isArea:isArea,zip:zip||(isZip&&hit.address&&/^\d{5}$/.test(String(hit.address.postcode||''))?String(hit.address.postcode):null)};
+   const isZip=hit.addresstype==='postcode'||hit.type==='postcode',isArea=!isZip&&AREA_TYPES.test(String(hit.addresstype||''));
+   out={point:{lat:lat,lon:lon},name:clean(String(hit.display_name||'').replace(/^([^,;]*);[^,]*/,'$1'),300)||'an unnamed place',isZip:isZip,isArea:isArea,zip:(isZip&&hit.address&&/^\d{5}$/.test(String(hit.address.postcode||''))?String(hit.address.postcode):null)};
   }
  }
  geoCache.set(key,out);
@@ -1905,7 +1952,7 @@ async function geocode(text,zip,id){
 }
 
 /* ---------- searches ---------- */
-function clearResults(){items.hrsa=[];items.osm=[];shown.hrsa=PAGE;shown.osm=PAGE;}
+function clearResults(){items.hrsa=[];items.osm=[];shown.hrsa=PAGE;shown.osm=PAGE;scrolledFor=null;}
 function beginSearch(type){
  inflight.forEach(c=>c.abort());inflight.clear();
  const id=++searchRun;selectionId++;current=null;locationType=type;searchState='loading';checkedAt=null;
@@ -1918,9 +1965,15 @@ function beginSearch(type){
 function endWithoutLocation(){searchState='settled';checkedAt=new Date().toISOString();renderResults();publish();announce();}
 async function search(){
  const text=clean($('q').value,200);
- if(!text){placeError('Type an address, city or ZIP code first, or use your location.');$('q').focus();return;}
- const zipM=/^(\d{5})(?:[-\s]?\d{4})?$/.exec(text);
+ if(text&&text===lastQuery&&searchState==='loading')return;
+ lastQuery=text;
+ const zipM=/^(?:zip(?:\s*code)?[\s:]*)?(\d{5})(?:[-\s]?\d{4})?$/i.exec(text);
  const id=beginSearch(zipM?'zip':'address');
+ if(!text){
+  setSrc('geocoder',{state:'invalid',text:'Not sent: nothing was typed.'});
+  placeError('Type an address, city or ZIP code first, or use your location.');$('q').focus();
+  endWithoutLocation();return;
+ }
  if(/^[\d\s-]+$/.test(text)&&!zipM){
   setSrc('geocoder',{state:'invalid',text:'Not sent: a ZIP code needs exactly 5 digits.'});
   placeError('That is not a valid ZIP code. A ZIP code has 5 digits, for example 60622. You can also type a street address or a city and state.');
@@ -1939,15 +1992,15 @@ async function search(){
  }
  if(id!==searchRun)return;
  if(!res){
-  setSrc('geocoder',{state:'empty',checkedAt:new Date().toISOString(),text:'No match found for that text in the United States or its territories. Nothing else was searched.'});
-  showPlace('<span class="pb-err">No place matched "'+esc(text)+'". Check the ZIP code or try a street address or city.</span>');
+  setSrc('geocoder',{state:'empty',checkedAt:new Date().toISOString(),text:zipM?'The U.S. Census has no ZIP code area for that ZIP code. Nothing else was searched.':'No match found for that text in the United States or its territories. Nothing else was searched.'});
+  showPlace('<span class="pb-err">'+(zipM?'The U.S. Census has no ZIP code area for '+esc(zipM[1])+'. Check the digits. Some PO box and single-building ZIP codes have no area, so try a city and state instead.':'No place matched "'+esc(text)+'". Try a street address, or a city and state.')+'</span>');
   endWithoutLocation();return;
  }
  setSrc('geocoder',{state:'ok',text:'OK: 1 match. See the "Searching near" line below the search box.',checkedAt:new Date().toISOString()});
- let html='Searching near: <b>'+esc(res.name)+'</b>'+(res.isZip?' (center of the ZIP code area, approximate)':res.isArea?' (center of the area, approximate)':'')+'.';
+ let html='Near: <b>'+esc(res.name)+'</b>'+(res.isZip?' (center of the ZIP code area, approximate)':res.isArea?' (center of the area, approximate)':'')+'.';
  if(res.isZip)html+='<br><span class="pb-muted">Distances are measured from the approximate center of '+(res.zip?'ZIP code '+esc(res.zip):'that ZIP code')+'. Enter a street address or use your location for nearer results.</span>';
  if(res.isArea)html+='<br><span class="pb-muted">This is an area, so distances are measured from its approximate center, not from where you are. Enter a street address or use your location for nearer results.</span>';
- html+='<br><span class="pb-muted">Not the place you meant? Add a city and state and search again.</span>';
+ html+='<br><span class="pb-muted">Not the place you meant? Add a city and state and search again. This page covers the United States and its territories.</span>';
  showPlace(html);
  runAll(id,res.point);
 }
@@ -1967,7 +2020,7 @@ function useLocation(){
   if(wasLate){searchState='loading';checkedAt=null;setSrc('geocoder',{state:'notused',text:'Not used: Use my location skips the text place search.'});}
   const lat=+p.coords.latitude,lon=+p.coords.longitude,acc=+p.coords.accuracy;
   if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){noFix();placeError('Your device returned an unusable location. Type an address, city or ZIP code instead.');endWithoutLocation();return;}
-  showPlace('Searching near: <b>your device location</b>'+(Number.isFinite(acc)&&acc>0?' (accuracy about '+esc(acc<1000?Math.round(acc)+' m':(acc/1609.344).toFixed(1)+' mi')+')':'')+'.<br><span class="pb-muted">Your exact location stays in this browser. Only coordinates rounded to about 100 meters are sent, to HRSA and OpenStreetMap Overpass. Map images for the area you view come from tile.openstreetmap.org.</span>');
+  showPlace('Near: <b>your device location</b>'+(Number.isFinite(acc)&&acc>0?' (accuracy about '+esc(acc<1000?Math.round(acc)+' m':(acc/1609.344).toFixed(1)+' mi')+')':'')+'.<br><span class="pb-muted">To run this search, your location is sent to HRSA and to the OpenStreetMap Overpass server, rounded to about 100 meters. Map images for the area you view come from tile.openstreetmap.org.</span>');
   runAll(id,{lat:lat,lon:lon});
  },err=>{
   if(settled===true||id!==searchRun)return;settled=true;clearTimeout(guard);
@@ -1999,7 +2052,7 @@ function announce(){
  // Each list is announced by its state, so an unavailable or unsearched source never sounds like zero.
  if(!current){$('live').textContent='Search stopped, no location. '+$('place').textContent.trim();return;}
  const say=(k,one,many)=>{const st=src[k].state,n=items[k].length;return st==='failed'?'unavailable, not zero':st==='partial'?(n?n+' '+plural(n,one,many):'none listed')+' (partial list, more may be missing)':!n?'none listed':n+' '+plural(n,one,many);};
- $('live').textContent='Search finished. Free or possibly free clinics in OpenStreetMap: '+say('osm','clinic','clinics')+'. Sliding-fee health centers in HRSA: '+say('hrsa','site','sites')+'.';
+ $('live').textContent='Search finished. Sliding-fee health centers in HRSA: '+say('hrsa','site','sites')+'. Possibly free clinics in OpenStreetMap: '+say('osm','clinic','clinics')+'.';
 }
 const scopeDist=x=>x<0.1?'under 0.1 mi':(Math.floor(x*10)/10).toFixed(1)+' mi';
 
@@ -2022,7 +2075,7 @@ function getHrsaDate(){
 }
 const DATE_MISSING='Data date not available (the HRSA date check failed)',DATE_PENDING='HRSA data date still loading';
 let hrsaDateMs=null;
-const hrsaDateText=()=>hrsaDateMs!=null?'HRSA Data Warehouse load date: '+fmtShort(hrsaDateMs):DATE_MISSING;
+const hrsaDateText=()=>hrsaDateMs!=null?'HRSA data warehouse last loaded '+fmtShort(hrsaDateMs)+' (related table)':DATE_MISSING;
 function hrsaUrl(pt,radius){
  return HRSA_SITES_URL+'?'+qs({f:'json',where:'1=1',geometry:r3(pt.lon)+','+r3(pt.lat),geometryType:'esriGeometryPoint',inSR:4326,spatialRel:'esriSpatialRelIntersects',distance:radius,units:'esriSRUnit_StatuteMile',outSR:4326,returnGeometry:'true',resultRecordCount:HRSA_LIMIT,outFields:HRSA_FIELDS});
 }
@@ -2038,33 +2091,40 @@ function hrsaItem(f,pt){
  const a=f.attributes,lat=+f.geometry.y,lon=+f.geometry.x,oid=+a.OBJECTID;
  if(f.geometry.x==null||f.geometry.y==null||!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return null;
  const look=String(a.SITE_DATA_SOURCE||'')==='FQHC_LKL'||!!clean(a.FQHC_LAL_NUM),locDesc=clean(a.HCC_LOC_DESC,40),setting=clean(a.HCC_LOC_SETTING_DESC,80);
- const mobile=/mobile/i.test(locDesc),seasonal=/seasonal/i.test(locDesc),school=/school/i.test(setting);
+ const siteName=clean(a.SITE_NM,140),mobile=/mobile/i.test(locDesc),seasonal=/seasonal/i.test(locDesc),school=/school/i.test(setting)||/\b(school|elementary|academy)\b/i.test(siteName);
+ const approx=String(a.APPROX_VALUE_CD||'').toUpperCase()==='Y';
  const org=look?(cleanPart(a.FQHC_ORG_NM,140)||cleanPart(a.GRANTEE_NM,140)):(cleanPart(a.GRANTEE_NM,140)||cleanPart(a.FQHC_ORG_NM,140));
- const street=cleanPart(a.SITE_ADDRESS,120),city=cleanPart(a.SITE_CITY,60),st=cleanPart(a.SITE_STATE_ABBR,10),zip=cleanPart(a.SITE_ZIP_CD,12);
+ const rawStreet=cleanPart(a.SITE_ADDRESS,120),withheld=/^anonymous\b/i.test(rawStreet),street=withheld?'':rawStreet,city=cleanPart(a.SITE_CITY,60),st=cleanPart(a.SITE_STATE_ABBR,10),zip=cleanPart(a.SITE_ZIP_CD,12);
  const cityLine=[city,[st,zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
- const name=clean(a.SITE_NM,140)||org||'Unnamed health center site';
+ const name=siteName||org||'Unnamed health center site';
  const facts=[];
  if(org)facts.push(['Organization: '+org,'']);
  const ph=phoneInfo(a.SITE_PHONE_NUM),web=webInfo(a.SITE_URL);
  if(ph)facts.push(['Phone: '+ph.text,'',ph.tel?'Phone: <a href="'+esc(ph.tel)+'">'+esc(ph.text)+'</a>':null]);
- if(web)facts.push(['Website: '+web.text,'','Website: '+extLink(web.url,web.text)]);
+ else facts.push(['Phone not listed','pb-caution']);
+ if(web)facts.push(['Website (from HRSA, may be out of date): '+web.text,'','Website (from HRSA, may be out of date): '+extLink(web.url,web.text)]);
+ if(withheld)facts.push(['Address withheld by the source. Call for the location.','pb-caution']);
+ if(approx)facts.push(['Approximate location: HRSA matched this site only roughly, so the distance and map point may be far off. Call for the address.','pb-caution']);
  if(mobile)facts.push(['Mobile van: the address is a base location. Call for stops and times.','pb-caution']);
  else if(seasonal)facts.push(['Seasonal site: may be closed part of the year.','pb-caution']);
  if(school)facts.push(['School-based site: may serve students only. Call first.','pb-caution']);
+ const restricted=/\b(shelter|mission|residential|detox|rehab|rehabilitation|recovery|domestic violence|correctional|jail|prison|pace)\b/i.test(siteName);
+ if(restricted)facts.push(['The name suggests a site for a specific group or program. Call to ask whether it serves the public.','pb-caution']);
+ if(/\bpharmacy\b/i.test(siteName))facts.push(['The name suggests a pharmacy, which may not see patients. Call first.','pb-caution']);
  const hrs=+a.TOT_OPER_HR_PER_WEEK;
- facts.push([Number.isFinite(hrs)&&hrs>0?'About '+(Number.isInteger(hrs)?hrs:hrs.toFixed(1))+' hours a week (HRSA record). Exact hours not listed.':'Hours not listed','']);
+ facts.push([Number.isFinite(hrs)&&hrs>=168?'HRSA lists 168 hours a week, which may not mean open around the clock. Call for hours.':Number.isFinite(hrs)&&hrs>0?'About '+(Number.isInteger(hrs)?hrs:hrs.toFixed(1))+' '+plural(hrs,'hour','hours')+' a week (HRSA record). Exact hours not listed.':'Hours not listed','']);
  const oper=clean(a.HCC_OPER_SCHD_DESC,40),cal=clean(a.HCC_CLND_SCHD_DIM_DESC,40),sched=[unknownish(oper)?'':oper,unknownish(cal)?'':cal].filter(Boolean);
  if(sched.length)facts.push(['Schedule type (HRSA record): '+sched.join(', '),'']);
  const pos={lat:lat,lon:lon},dist=haversine(pt,pos);
- return {src:'hrsa',key:'hrsa:'+(Number.isInteger(oid)?oid:Math.round(lat*1e5)+','+Math.round(lon*1e5)+':'+name),name:name,lookalike:look,fixed:!(mobile||seasonal),
+ return {src:'hrsa',key:'hrsa:'+(Number.isInteger(oid)?oid:Math.round(lat*1e5)+','+Math.round(lon*1e5)+':'+name),name:name,lookalike:look,fixed:!(mobile||seasonal||school),permanent:!(mobile||seasonal),regular:!(mobile||seasonal||school||restricted),approx:approx,noDir:approx||withheld,hasPhone:!!ph,adminOnly:/^admin(istrative)?( office)?( only)?$/i.test(siteName)||/\badmin only\b/i.test(siteName),
   tag:'Sliding fee, not necessarily free',typeLabel:look?'Health center look-alike (meets HRSA program rules, not HRSA-funded)':'HRSA-funded health center',
-  lat:lat,lon:lon,dist:dist,dir:dist>=0.01?compass(pt,pos):'',address:[street,cityLine].filter(Boolean).join(', ')||'Address not listed',
+  lat:lat,lon:lon,dist:dist,dir:dist>=0.01&&!approx?compass(pt,pos):'',address:[street,cityLine].filter(Boolean).join(', ')||'Address not listed',
   facts:facts,dupKey:[name,street,city].join('|').toLowerCase()};
 }
 function hrsaScopeText(){
  const s=src.hrsa,r=s.radiusMi;if(!Number.isFinite(r)||['ok','empty','partial'].indexOf(s.state)<0)return null;
  if(s.state==='empty')return 'HRSA: none listed within '+miles(r);
- const widened=r>HRSA_RADII[0]?' (widened from '+miles(HRSA_RADII[0])+' because fewer than '+HRSA_MIN+' sites were found closer)':'';
+ const widened=r>HRSA_RADII[0]?' (widened from '+miles(HRSA_RADII[0])+' because fewer than '+HRSA_MIN+' regular sites were found closer)':'';
  return s.reason==='the service reached its limit'?'HRSA: part of the sites within '+miles(r):'HRSA: all sites within '+miles(r)+widened;
 }
 async function runHrsa(id){
@@ -2076,28 +2136,33 @@ async function runHrsa(id){
  const paint=()=>{if(alive()&&src.hrsa.state==='loading')setSrc('hrsa',{text:(slowOn?'Still loading; this source can take up to 20 seconds per step. ':'')+base});};
  const timer=setTimeout(()=>{slowOn=true;paint();},SLOW_MS);
  try{
-  let kept=[],dupes=0,radius=HRSA_RADII[0],done=HRSA_RADII[0],exceeded=false,widenErr=null;
+  let kept=[],dupes=0,admin=0,radius=HRSA_RADII[0],done=HRSA_RADII[0],exceeded=false,widenErr=null;
   for(let i=0;i<HRSA_RADII.length;i++){
    radius=HRSA_RADII[i];
-   if(i){base='Fewer than '+HRSA_MIN+' sites within '+miles(HRSA_RADII[i-1])+'; looking within '+miles(radius)+'...';paint();}
+   if(i){base='Fewer than '+HRSA_MIN+' regular sites within '+miles(HRSA_RADII[i-1])+'; looking within '+miles(radius)+'...';paint();}
    let j;
    try{j=hrsaFeatures(await fetchJSON(hrsaUrl(pt,radius),{timeout:HRSA_TIMEOUT}));}
    catch(e){if(!alive())return;if(i===0)throw e;widenErr=e;break;}
    if(!alive())return;
    // Build this step's list aside, so an unusable wider answer cannot discard the results already found.
-   const seen=new Map(),got=[];let dup=0,usable=0;
+   const seen=new Map(),got=[];let dup=0,usable=0,adm=0;
    j.features.forEach(f=>{
     const it=hrsaItem(f,exact);if(!it)return;usable++;if(it.dist>radius)return;
+    if(it.adminOnly){adm++;return;}
     const ex=seen.get(it.dupKey);
     if(!ex){seen.set(it.dupKey,it);got.push(it);return;}
     dup++;
     // Same name and address under two record types: keep the HRSA-funded record and say the other exists.
     if(ex.lookalike&&!it.lookalike){got[got.indexOf(ex)]=it;seen.set(it.dupKey,it);it.alsoLookalike=true;}
     else if(!ex.lookalike&&it.lookalike)ex.alsoLookalike=true;
+    // Same name and address as a mobile or seasonal record: show the permanent site, with its own phone and hours.
+    else if(!ex.permanent&&it.permanent){got[got.indexOf(ex)]=it;seen.set(it.dupKey,it);it.alsoMobile=true;}
+    else if(ex.permanent&&!it.permanent)ex.alsoMobile=true;
    });
    if(j.features.length&&!usable){const ue=new SourceError('the response had no usable sites');if(i===0)throw ue;widenErr=ue;break;}
-   done=radius;exceeded=j.exceededTransferLimit===true;kept=got;dupes=dup;
-   if(kept.length>=HRSA_MIN||exceeded)break;
+   done=radius;exceeded=j.exceededTransferLimit===true;kept=got;dupes=dup;admin=adm;
+   // Six school clinics are not a town's clinic: keep widening until enough regular sites are found.
+   if(kept.filter(it=>it.regular).length>=HRSA_MIN||exceeded)break;
   }
   // The sites are shown without waiting long for the date; a date that is still pending is filled in when it arrives.
   const dateRes=await Promise.race([datePromise,sleep(HRSA_DATE_WAIT).then(()=>null)]);
@@ -2107,25 +2172,25 @@ async function runHrsa(id){
   radius=done;
   const now=new Date().toISOString(),dtext=dateRes?hrsaDateText():DATE_PENDING;
   kept.sort((a,b)=>a.dist-b.dist);
-  kept.forEach(it=>{it.dateText=dtext;if(it.alsoLookalike)it.facts.push(['HRSA also lists a look-alike record at this name and address. Hours may differ; call to confirm.','pb-caution']);});
+  kept.forEach(it=>{it.dateText=dtext;if(it.alsoLookalike)it.facts.push(['HRSA also lists a look-alike record at this name and address. Hours may differ; call to confirm.','pb-caution']);if(it.alsoMobile)it.facts.push(['HRSA also lists a mobile or seasonal record at this name and address, with its own phone or hours.','']);});
   items.hrsa=kept;
-  $('src-date-hrsa').textContent=!dateRes?'still loading':hrsaDateMs!=null?'HRSA Data Warehouse load date '+fmtShort(hrsaDateMs):'not available (the HRSA date check failed)';
+  $('src-date-hrsa').textContent=!dateRes?'still loading':hrsaDateMs!=null?'HRSA data warehouse last loaded '+fmtShort(hrsaDateMs)+' (related table)':'not available (the HRSA date check failed)';
   const mos=kept.filter(it=>!it.fixed).length,look=kept.filter(it=>it.lookalike).length;
   const b={count:kept.length,radiusMi:radius,nearestMi:kept.length?Math.round(kept[0].dist*100)/100:null,dataDate:hrsaDateMs!=null?isoDay(hrsaDateMs):null,checkedAt:now,lookalikeCount:look,mobileOrSeasonalCount:mos,datePending:!dateRes};
-  const dupText=dupes?' '+dupes+' duplicate '+plural(dupes,'record','records')+' at the same name and address shown once.':'';
-  const mosText=mos?' '+mos+' mobile or seasonal '+plural(mos,'site','sites')+' included.':'';
+  const dupText=(dupes?' '+dupes+' duplicate '+plural(dupes,'record','records')+' at the same name and address shown once.':'')+(admin?' '+admin+' administrative '+plural(admin,'record','records')+' hidden.':'');
+  const mosText=mos?' '+mos+' mobile, seasonal or school-based '+plural(mos,'site','sites')+' included.':'';
   const far=kept.length?kept[kept.length-1].dist:0;
   if(exceeded)setSrc('hrsa',Object.assign(b,{state:'partial',reason:'the service reached its limit',text:'Partial: the service returned its limit of '+HRSA_LIMIT+' records within '+miles(radius)+', so some sites in that area may be missing, including nearer ones. '+kept.length+' shown, out to '+scopeDist(far)+'.'+dupText+mosText+' '+dtext+'.'}));
-  else if(widenErr)setSrc('hrsa',Object.assign(b,{state:'partial',retry:true,reason:'the wider '+HRSA_RADII[HRSA_RADII.indexOf(done)+1]+'-mile search did not complete: '+widenErr.message,text:'Partial: '+(kept.length?kept.length+' '+plural(kept.length,'site','sites'):'none')+' within '+miles(radius)+'. Fewer than '+HRSA_MIN+' were found, and the wider search did not complete: '+widenErr.message+'. More may be listed farther out.'+dupText+mosText+' '+dtext+'.'}));
+  else if(widenErr)setSrc('hrsa',Object.assign(b,{state:'partial',retry:true,reason:'the wider '+HRSA_RADII[HRSA_RADII.indexOf(done)+1]+'-mile search did not complete: '+widenErr.message,text:'Partial: '+(kept.length?kept.length+' '+plural(kept.length,'site','sites'):'none')+' within '+miles(radius)+'. Fewer than '+HRSA_MIN+' regular sites were found, and the wider search did not complete: '+widenErr.message+'. More may be listed farther out.'+dupText+mosText+' '+dtext+'.'}));
   else if(!kept.length)setSrc('hrsa',Object.assign(b,{state:'empty',text:'None listed within '+HRSA_RADII[HRSA_RADII.length-1]+' mi. This does not mean none exist. '+dtext+'.'}));
-  else setSrc('hrsa',Object.assign(b,{state:'ok',text:'OK: '+kept.length+' '+plural(kept.length,'site','sites')+' within '+miles(radius)+(radius>HRSA_RADII[0]?' (widened from '+miles(HRSA_RADII[0])+' because fewer than '+HRSA_MIN+' were found closer)':'')+'. Sliding fee, not necessarily free.'+dupText+mosText+' '+dtext+'.'}));
+  else setSrc('hrsa',Object.assign(b,{state:'ok',text:'OK: '+kept.length+' '+plural(kept.length,'site','sites')+' within '+miles(radius)+(radius>HRSA_RADII[0]?' (widened from '+miles(HRSA_RADII[0])+' because fewer than '+HRSA_MIN+' regular sites were found closer)':'')+'. Sliding fee, not necessarily free.'+dupText+mosText+' '+dtext+'.'}));
   renderResults();publish();
   if(!dateRes)datePromise.then(late=>{
    if(!alive())return;
    hrsaDateMs=late.ok?late.ms:null;const nd=hrsaDateText();
    kept.forEach(it=>{it.dateText=nd;});
    src.hrsa.text=src.hrsa.text.replace(DATE_PENDING,nd);src.hrsa.dataDate=hrsaDateMs!=null?isoDay(hrsaDateMs):null;src.hrsa.datePending=false;
-   $('src-date-hrsa').textContent=hrsaDateMs!=null?'HRSA Data Warehouse load date '+fmtShort(hrsaDateMs):'not available (the HRSA date check failed)';
+   $('src-date-hrsa').textContent=hrsaDateMs!=null?'HRSA data warehouse last loaded '+fmtShort(hrsaDateMs)+' (related table)':'not available (the HRSA date check failed)';
    lastSig='';renderStatus('hrsa');renderResults();publish();
   });
  }catch(e){
@@ -2157,8 +2222,12 @@ function osmItem(el,pt){
  const access=low('access'),fee=low('fee'),charge=tag('charge'),cond=tag('fee:conditional'),name=clean(t.name,140);
  const nameFree=OSM_FREE_NAME.test(name);
  let cat=null,tagText='';
+ // A record that says fee=no but also lists payment methods or a private operator contradicts itself, so it is never called free.
+ const pays=Object.keys(t).filter(k=>/^payment:/.test(k)&&!/^payment:(none|free)$/.test(k)&&String(t[k]).toLowerCase()==='yes');
+ const conflict=pays.length>0||low('operator:type')==='private';
  if(fee==='yes')cat='feeyes';
- else if(fee==='no'&&!charge&&!cond){cat='free';tagText='Free (fee=no in OpenStreetMap)';}
+ else if(fee==='no'&&conflict){cat='cond';tagText='Unclear cost: tagged fee=no in OpenStreetMap, but the same record '+(pays.length?'lists payment methods':'lists a private operator')+'. Assume it charges until the clinic confirms.';}
+ else if(fee==='no'&&!charge&&!cond){cat='free';tagText='Tagged free in OpenStreetMap (fee=no). Not verified: call to confirm.';}
  else if(fee==='no'){cat='cond';tagText='Possibly free: fee=no with conditions in OpenStreetMap ('+[charge?'charge='+charge:'',cond?'fee:conditional='+cond:''].filter(Boolean).join('; ')+'). Confirm cost.';}
  else if(nameFree){cat='name';tagText='Name says free. Cost not tagged in OpenStreetMap.';}
  else return null;
@@ -2171,7 +2240,8 @@ function osmItem(el,pt){
  else if(access&&!['yes','permissive','public'].includes(access))facts.push(['Access listed as: '+access,'pb-caution']);
  const ph=phoneInfo(t.phone||t['contact:phone']),web=webInfo(t.website||t['contact:website']);
  if(ph)facts.push(['Phone: '+ph.text,'',ph.tel?'Phone: <a href="'+esc(ph.tel)+'">'+esc(ph.text)+'</a>':null]);
- if(web)facts.push(['Website: '+web.text,'','Website: '+extLink(web.url,web.text)]);
+ else facts.push(['Phone not listed','pb-caution']);
+ if(web)facts.push(['Website (from OpenStreetMap, may be out of date): '+web.text,'','Website (from OpenStreetMap, may be out of date): '+extLink(web.url,web.text)]);
  facts.push([hours?'Hours listed: '+hours:'Hours not listed','']);
  if(wheel==='yes')facts.push(['Wheelchair accessible (listed)','']);
  else if(wheel==='limited')facts.push(['Limited wheelchair access (listed)','']);
@@ -2181,32 +2251,33 @@ function osmItem(el,pt){
  const edited=Date.parse(el.timestamp),checked=tag('check_date')||tag('survey:date');
  const dateText=(Number.isFinite(edited)?'Last edited in OpenStreetMap '+fmtDate(edited):'Edit date not available')+(checked?'. Last checked by a mapper '+(/^\d{4}-\d{2}-\d{2}$/.test(checked)?(fmtDate(Date.parse(checked+'T00:00:00Z'))||checked):checked):'');
  return {src:'osm',cat:cat,key:'osm:'+el.type+'/'+(+el.id),osmType:el.type,osmId:+el.id,name:name||clean(t.operator,140)||'Unnamed clinic',tag:tagText,typeLabel:osmTypeLabel(t),lat:lat,lon:lon,dist:dist,dir:dist>=0.01?compass(pt,pos):'',
-  address:[street,cityLine].filter(Boolean).join(', ')||'No address tagged',facts:facts,dateText:dateText,hiddenAccess:access==='private'||access==='no'};
+  address:[street,cityLine].filter(Boolean).join(', ')||'No address tagged',facts:facts,dateText:dateText,hasPhone:!!ph,hiddenAccess:access==='private'||access==='no'};
 }
-async function overpass(pt,alive,mirrorNote){
+async function overpass(pt,alive,retryNote){
  const body='data='+encodeURIComponent(overpassQuery(pt));
  let last=null;
- for(let i=0;i<OVERPASS_URLS.length;i++){
-  if(i&&alive())mirrorNote(last);
+ for(let i=0;i<OVERPASS_TIMEOUTS.length;i++){
+  if(i){if(alive())retryNote(last);await sleep(OVERPASS_RETRY_WAIT);if(!alive())throw STALE;}
   try{
-   const r=await fetchJSON(OVERPASS_URLS[i],{method:'POST',body:body,headers:{'Content-Type':'application/x-www-form-urlencoded'},timeout:OVERPASS_TIMEOUTS[i]});
+   const r=await fetchJSON(OVERPASS_URL,{method:'POST',body:body,headers:{'Content-Type':'application/x-www-form-urlencoded'},timeout:OVERPASS_TIMEOUTS[i]});
    if(!r||typeof r!=='object'||!Array.isArray(r.elements))throw new SourceError('the response had no list of places');
    if(r.remark&&/error/i.test(String(r.remark))&&!r.elements.length)throw new SourceError('the server stopped the query');
+   if(r.elements.length&&!r.elements.some(el=>el&&typeof el==='object'&&/^(node|way|relation)$/.test(el.type)))throw new SourceError('the response had no usable places');
    return r;
   }catch(e){last=e;if(!alive())throw STALE;}
  }
- throw new SourceError(last.message+' (tried overpass-api.de and the maps.mail.ru mirror)');
+ throw new SourceError(last.message+' (tried overpass-api.de twice)');
 }
 async function runOsm(id){
  if(id!==searchRun||!current)return;
  const exact=current.point,pt=rounded(exact);items.osm=[];renderResults();
- const alive=begin('osm','Loading from overpass-api.de: free or possibly free clinics within '+miles(OSM_RADIUS_MI)+'...');publish();
+ const alive=begin('osm','Loading from overpass-api.de: possibly free clinics within '+miles(OSM_RADIUS_MI)+'...');publish();
  let slowOn=false,base=src.osm.text;
- const paint=()=>{if(alive()&&src.osm.state==='loading')setSrc('osm',{text:(slowOn?'OpenStreetMap servers are slow today; this can take up to 90 seconds. ':'')+base});};
+ const paint=()=>{if(alive()&&src.osm.state==='loading')setSrc('osm',{text:(slowOn?'This source is often slow; it can take up to 90 seconds. ':'')+base});};
  const timer=setTimeout(()=>{slowOn=true;paint();},SLOW_MS);
  try{
   let j;
-  try{j=await overpass(pt,alive,e=>{base='The main Overpass server did not answer ('+e.message+'); trying the maps.mail.ru mirror, which can take up to '+Math.round(OVERPASS_TIMEOUTS[1]/1000)+' more seconds...';paint();});}
+  try{j=await overpass(pt,alive,e=>{base='The Overpass server did not answer ('+e.message+'); trying once more, which can take up to '+Math.round(OVERPASS_TIMEOUTS[1]/1000)+' more seconds...';paint();});}
   catch(e){if(e===STALE||!alive())return;throw e;}
   clearTimeout(timer);
   if(!alive())return;
@@ -2220,9 +2291,9 @@ async function runOsm(id){
   $('src-date-osm').textContent=stamp?'database as of '+stamp:'database date unavailable';
   const nf=kept.filter(it=>it.cat==='free').length,nc=kept.filter(it=>it.cat==='cond').length,nn=kept.filter(it=>it.cat==='name').length;
   const b={count:kept.length,radiusMi:OSM_RADIUS_MI,nearestMi:kept.length?Math.round(kept[0].dist*100)/100:null,dataDate:baseTs&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(baseTs)?baseTs:null,checkedAt:now,hidden:hidden,feeYes:feeYes,freeCount:nf,conditionalCount:nc,nameCount:nn};
-  const split=nf+' tagged fee=no, '+nc+' possibly free (with conditions), '+nn+' name says free';
+  const split=nf+' tagged fee=no, '+nc+' unclear or with conditions, '+nn+' name says free';
   if(stopped)setSrc('osm',Object.assign(b,{state:'partial',retry:true,reason:'the server stopped the query early',text:'Partial: '+kept.length+' listed within '+miles(OSM_RADIUS_MI)+' ('+split+'), but the server stopped the query early, so some may be missing.'+hiddenText+' '+dateText}));
-  else if(!kept.length)setSrc('osm',Object.assign(b,{state:'empty',text:'None listed as free or possibly free in OpenStreetMap within '+miles(OSM_RADIUS_MI)+'. This does not mean none exist.'+hiddenText+' '+dateText}));
+  else if(!kept.length)setSrc('osm',Object.assign(b,{state:'empty',text:'None marked as free in OpenStreetMap within '+miles(OSM_RADIUS_MI)+'. This does not mean none exist.'+hiddenText+' '+dateText}));
   else setSrc('osm',Object.assign(b,{state:'ok',text:'OK: '+kept.length+' listed within '+miles(OSM_RADIUS_MI)+' ('+split+'). Volunteer-mapped: a small and partial set, and many free clinics are missing.'+hiddenText+' '+dateText}));
   renderResults();publish();
  }catch(e){
@@ -2235,10 +2306,11 @@ async function runOsm(id){
 }
 
 /* ---------- result lists ---------- */
-const distText=it=>fmtDist(it.dist)+(it.dir?' '+it.dir:'');
+const distText=it=>(it.approx?'about ':'')+fmtDist(it.dist)+(it.dir?' '+it.dir:'')+(it.approx?' (approximate)':'');
 function card(it){
- const dir='https://www.openstreetmap.org/directions?route='+encodeURIComponent(';'+it.lat.toFixed(5)+','+it.lon.toFixed(5));
- const kind=kindOf(it),tcls=it.src==='hrsa'?'pb-t-sliding':it.cat==='free'?'pb-t-free':'pb-t-caution';
+ // Google Maps opens directions on phones and computers alike; OpenStreetMap's directions page lands on a map of Europe on a phone.
+ const dir='https://www.google.com/maps/dir/?api=1&destination='+it.lat.toFixed(5)+','+it.lon.toFixed(5);
+ const kind=kindOf(it),tcls=it.src==='hrsa'?'pb-t-sliding':'pb-t-caution';
  const source=it.src==='hrsa'?'Source: <a href="https://data.hrsa.gov/" target="_blank" rel="noopener noreferrer">HRSA</a> Health Center Program site data. '+esc(it.dateText)+'.':'Source: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">&copy; OpenStreetMap contributors</a> (ODbL). '+esc(it.dateText)+(it.osmBase?'. Database as of '+esc(it.osmBase):'')+'.';
  const entry=it.src==='osm'?extLink('https://www.openstreetmap.org/'+it.osmType+'/'+it.osmId,'View on OpenStreetMap').replace('<a ','<a class="pb-dir" data-l="entry" '):'';
  return '<li class="pb-card pb-c-'+kind+'" data-k="'+esc(it.key)+'"><div class="pb-card-head"><h4>'+esc(it.name)+'</h4><span class="pb-dist">'+esc(distText(it))+' <small>straight-line</small></span></div>'+
@@ -2247,8 +2319,8 @@ function card(it){
   '<p class="pb-line">'+esc(it.address)+'</p>'+
   '<ul class="pb-facts">'+it.facts.map(x=>'<li'+(x[1]?' class="'+x[1]+'"':'')+'>'+(x[2]?x[2]:esc(x[0]))+'</li>').join('')+'</ul>'+
   '<p class="pb-src">'+source+'</p>'+
-  '<p class="pb-confirm"><b>Confirm before you go:</b> call to check hours, services, eligibility and cost.</p>'+
-  '<a class="pb-dir" data-l="dir" href="'+esc(dir)+'" target="_blank" rel="noopener noreferrer">Directions on OpenStreetMap</a>'+entry+'</li>';
+  '<p class="pb-confirm"><b>Confirm before you go:</b> '+(it.hasPhone?'call to check hours, services, eligibility and cost.':'no phone is listed, so try the website or dial 2-1-1 to check hours, services, eligibility and cost.')+'</p>'+
+  (it.noDir?'':'<a class="pb-dir" data-l="dir" href="'+esc(dir)+'" target="_blank" rel="noopener noreferrer">Directions (opens Google Maps)</a>')+entry+'</li>';
 }
 function listState(k){return current?src[k].state:'idle';}
 function countLabel(k){
@@ -2258,50 +2330,50 @@ function countLabel(k){
  if(st==='empty')return '(none listed)';
  if(st==='loading'||st==='idle'||st==='notrun')return '(loading)';
  const vis=k==='hrsa'&&fixedOnly?items.hrsa.filter(it=>it.fixed).length:n;
- if(vis!==n)return '('+vis+' of '+n+', fixed sites only'+(st==='partial'?', partial':'')+')';
+ if(vis!==n)return '('+vis+' of '+n+', regular sites only'+(st==='partial'?', partial':'')+')';
  return st==='partial'?'('+(n?n:'none listed')+', partial)':'('+n+')';
 }
 function listSummary(k){
  const s=src[k],st=listState(k),all=items[k],name=LIST_NAME[k],isOsm=k==='osm';
  const visibleAll=k==='hrsa'&&fixedOnly?all.filter(it=>it.fixed):all;
- const parts=[];let spin=false,ways=false;
+ const parts=[];let spin=false,ways=false,retryable=false;
  if(!current){
-  parts.push(searchState==='loading'?'Waiting for a location before listing clinics...':searchState==='settled'?'No location to search yet.':isOsm?'Search for a place to list clinics that OpenStreetMap lists as free or possibly free.':'Search for a place to list HRSA health center sites.');
+  parts.push(searchState==='loading'?'Waiting for a location before listing clinics...':searchState==='settled'?'No location to search yet.':isOsm?'Search for a place to list clinics that OpenStreetMap volunteers marked as free.':'Search for a place to list HRSA health center sites.');
   return {text:parts.join(' '),spin:false,ways:false,list:[]};
  }
- if(st==='loading'||st==='idle'||st==='notrun'){spin=true;parts.push('Loading '+(isOsm?'free or possibly free clinics from OpenStreetMap':'HRSA health center sites')+'...');}
+ if(st==='loading'||st==='idle'||st==='notrun'){spin=true;parts.push('Loading '+(isOsm?'possibly free clinics from OpenStreetMap':'HRSA health center sites')+'...');}
  else if(st==='failed'){
-  ways=true;
-  parts.push((isOsm?'Free or possibly free clinics from OpenStreetMap':'Health centers from HRSA')+' could not be retrieved: '+(s.reason||'unknown reason')+'. This is not a zero and does not mean none are listed. Use Try again in the source status above.');
+  ways=true;retryable=true;
+  parts.push((isOsm?'Possibly free clinics from OpenStreetMap':'Health centers from HRSA')+' could not be retrieved: '+(s.reason||'unknown reason')+'. This is not a zero and does not mean none are listed.');
  }
  else if(st==='empty'){
   ways=isOsm;
-  parts.push(isOsm?'None listed as free or possibly free in OpenStreetMap within '+miles(OSM_RADIUS_MI)+'. This does not mean none exist.':"None listed in HRSA's health center data within "+miles(HRSA_RADII[HRSA_RADII.length-1])+'. This does not mean none exist.');
+  parts.push(isOsm?'None marked as free in OpenStreetMap within '+miles(OSM_RADIUS_MI)+'. This does not mean none exist.':"None listed in HRSA's health center data within "+miles(HRSA_RADII[HRSA_RADII.length-1])+'. This does not mean none exist.');
  }
  else{
   ways=isOsm&&st==='partial';
   const vis=visibleAll.length,show=Math.min(shown[k],vis);
   if(vis)parts.push('Showing '+show+' of '+vis+' '+(isOsm?plural(vis,'clinic','clinics'):plural(vis,'health center site','health center sites'))+', nearest first. Distances are straight-line.');
-  else if(!isOsm&&fixedOnly&&all.length)parts.push('No fixed sites in this list. Turn off "Fixed sites only" to see mobile and seasonal sites.');
+  else if(!isOsm&&fixedOnly&&all.length)parts.push('No regular sites in this list. Turn off "Regular sites only" to see mobile, seasonal and school-based sites.');
   else parts.push('None listed within '+miles(isOsm?OSM_RADIUS_MI:(Number.isFinite(s.radiusMi)?s.radiusMi:HRSA_RADII[0]))+' so far. This does not mean none exist.');
   const sc=isOsm?'OpenStreetMap: '+(st==='partial'?'part of the clinics':'clinics')+' within '+miles(OSM_RADIUS_MI):hrsaScopeText();
   if(sc)parts.push('Searched: '+sc+'.');
-  if(isOsm)parts.push(s.freeCount+' tagged fee=no, '+s.conditionalCount+' possibly free (with conditions), '+s.nameCount+' name says free (cost not tagged).');
-  else if(fixedOnly&&all.length>visibleAll.length)parts.push((all.length-visibleAll.length)+' mobile or seasonal '+plural(all.length-visibleAll.length,'site','sites')+' hidden.');
+  if(isOsm)parts.push(s.freeCount+' tagged fee=no, '+s.conditionalCount+' unclear or with conditions, '+s.nameCount+' name says free (cost not tagged). None is verified.');
+  else if(fixedOnly&&all.length>visibleAll.length)parts.push((all.length-visibleAll.length)+' mobile, seasonal or school-based '+plural(all.length-visibleAll.length,'site','sites')+' hidden.');
   if(st==='partial')parts.push('Partial: '+(isOsm?(s.reason||'the search did not complete'):(s.reason==='the service reached its limit'?'the service reached its limit, so some sites may be missing':s.reason||'the search did not complete'))+'.');
  }
  if(isOsm&&(st==='ok'||st==='empty'||st==='partial')){
   if(s.feeYes)parts.push(s.feeYes+' '+plural(s.feeYes,'clinic','clinics')+' tagged fee=yes (charges a fee) not shown here.');
   if(s.hidden)parts.push(s.hidden+' private or no-access '+plural(s.hidden,'listing','listings')+' hidden.');
  }
- return {text:parts.join(' '),spin:spin,ways:ways,list:visibleAll};
+ return {text:parts.join(' '),spin:spin,ways:ways,retry:retryable,list:visibleAll};
 }
 function renderList(k){
  const sm=listSummary(k),visible=sm.list.slice(0,shown[k]);
  const box=$('results-'+k);let fk=null;
  const ae=document.activeElement;
  if(ae&&box.contains(ae)){const li=ae.closest('li[data-k]'),l=ae.getAttribute('data-l');if(li&&l)fk=[li.getAttribute('data-k'),l];}
- $('summary-'+k).innerHTML=(sm.spin?'<span class="pb-spin" aria-hidden="true"></span> ':'')+esc(sm.text);
+ $('summary-'+k).innerHTML=(sm.spin?'<span class="pb-spin" aria-hidden="true"></span> ':'')+esc(sm.text)+(sm.retry?'<br><button type="button" class="pb-btn" data-retry="'+k+'">Try again</button>':'');
  $('count-'+k).textContent=countLabel(k);
  box.innerHTML=visible.map(card).join('');
  if(fk){const li=[].find.call(box.querySelectorAll('li[data-k]'),x=>x.getAttribute('data-k')===fk[0]),t=li&&li.querySelector('[data-l="'+fk[1]+'"]');if(t)t.focus({preventScroll:true});}
@@ -2310,8 +2382,22 @@ function renderList(k){
  else{const f=$('hrsa-filters');f.hidden=!(current&&items.hrsa.some(it=>!it.fixed));$('fixed-only').setAttribute('aria-pressed',String(fixedOnly));}
  return visible;
 }
+// The first screen says what was found and links to it, so a phone visitor is not left guessing.
+function renderJump(){
+ const el=$('jump');
+ if(!current){el.hidden=true;el.textContent='';return;}
+ const say=(k,one,many)=>{const st=listState(k),n=items[k].length;return st==='failed'?many+': unavailable':st==='loading'||st==='idle'||st==='notrun'?many+': loading':!n?many+': none listed':n+' '+plural(n,one,many)+(k==='hrsa'?' (nearest '+distText(items.hrsa[0])+')':'');};
+ el.hidden=false;
+ el.innerHTML=esc(say('hrsa','sliding-fee health center','sliding-fee health centers'))+'. '+esc(say('osm','possibly free clinic','possibly free clinics'))+'.<br><a href="#places">Go to results</a><a href="#map">Go to map</a>';
+ if(PHONE&&scrolledFor!==current.id&&(items.hrsa.length||items.osm.length)&&window.scrollY<160){
+  scrolledFor=current.id;
+  $('places').scrollIntoView({block:'start'});
+  $('places-title').focus({preventScroll:true});
+ }
+}
 function renderResults(){
- const v=renderList('osm').concat(renderList('hrsa'));
+ const v=renderList('hrsa').concat(renderList('osm'));
+ renderJump();
  // A map drawing error must never mark a data source unavailable.
  try{drawMap(v);}catch(e){hasMap=false;if(map){try{map.remove();}catch(e2){}map=null;layer=null;}mapDown('The map could not be drawn.');}
 }
@@ -2557,13 +2643,13 @@ if(document.readyState==='complete')loadLeaflet();else window.addEventListener('
         });
       });
     });
-    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'Ten-dimension action checklist: '+cfg.title,context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
+    return {slug:cfg.slug,selectionKey:JSON.stringify([cfg.slug,'unselected']),title:'For planners: ten-part review of '+cfg.title.toLowerCase(),context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
       limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. Unavailable inputs never become an all-clear, and a failed source is unknown, never zero. No eligibility decision, availability forecast or travel-time estimate is produced.']};
   }
 
   var LISTS = [
     {key:'hrsa', id:'hrsa-count', label:'HRSA health center sites (sliding fee, not necessarily free)', noun:'HRSA health center sites', source:HRSA},
-    {key:'osm', id:'osm-count', label:'OpenStreetMap clinics listed as free or possibly free', noun:'OpenStreetMap clinics listed as free or possibly free', source:OSM}
+    {key:'osm', id:'osm-count', label:'OpenStreetMap clinics marked as free (not verified)', noun:'OpenStreetMap clinics marked as free (not verified)', source:OSM}
   ];
 
   function read() {

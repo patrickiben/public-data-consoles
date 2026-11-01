@@ -45,6 +45,7 @@ const PLACES = {
   empty: { lat: 39.5, lon: -117.0, name: 'Nowhere Flat, Nevada, United States', addresstype: 'town', address: { country_code: 'us', state: 'Nevada' } },
   slow: { lat: 40.25, lon: -80.25, name: 'Slow Town, Pennsylvania, United States', addresstype: 'town', address: { country_code: 'us', state: 'Pennsylvania' } },
 };
+const ZIP_PLACES = { 69201: 'rural' };
 const placeNear = (lat, lon) => Object.entries(PLACES).find(([, p]) => Math.abs(p.lat - lat) < 0.2 && Math.abs(p.lon - lon) < 0.2)?.[0] || null;
 const north = (p, miles, dLon = 0) => ({ lat: p.lat + miles / MI, lon: p.lon + dLon });
 const R_MI = 3958.7613;
@@ -66,6 +67,13 @@ function hrsaFeat(key, id, miles, attrs = {}) {
     },
     geometry: { x: pos.lon, y: pos.lat },
   };
+}
+// Six school clinics close by and five regular sites farther out: the search must keep widening for the regular sites.
+function schoolHrsa() {
+  const out = [];
+  for (let i = 0; i < 6; i++) out.push(hrsaFeat('rural', 1600 + i, 1 + i, { SITE_NM: `Healthy Kids Clinic ${i}`, HCC_LOC_SETTING_DESC: 'School' }));
+  for (let i = 0; i < 5; i++) out.push(hrsaFeat('rural', 1700 + i, 18 + i, { SITE_NM: `Town Health Center ${i}` }));
+  return out;
 }
 function cityHrsa() {
   const erie = { SITE_NM: 'Erie West Town Health Center', GRANTEE_NM: 'ERIE FAMILY HEALTH CENTER', SITE_ADDRESS: '1701 W Superior St', SITE_PHONE_NUM: '312-666-3494', SITE_URL: 'www.eriefamilyhealth.org', TOT_OPER_HR_PER_WEEK: 45.0 };
@@ -129,7 +137,7 @@ async function open(options = {}, contextOptions = {}) {
     try { const d = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie'); Object.defineProperty(Document.prototype, 'cookie', { configurable: true, get: d.get, set(v) { rec('document.cookie'); return d.set.call(this, v); } }); } catch (e) { /* ignore */ }
   });
   const page = await context.newPage();
-  const log = { requests: [], nominatim: [], nominatimTimes: [], hrsa: [], hrsaDate: [], overpass: [], bodies: [], referers: [], tiles: [], cookies: [], unexpected: [], errors: [], hung: [] };
+  const log = { requests: [], census: [], nominatim: [], nominatimTimes: [], hrsa: [], hrsaDate: [], overpass: [], bodies: [], referers: [], tiles: [], cookies: [], unexpected: [], errors: [], hung: [] };
   page.on('pageerror', e => log.errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) log.errors.push(m.text()); });
   const handle = async route => {
@@ -165,6 +173,16 @@ async function open(options = {}, contextOptions = {}) {
       return route.fulfill({ headers, contentType: js ? 'application/javascript' : 'text/css', body: js ? leafletJS : leafletCSS });
     }
     if (url.hostname === 'tile.openstreetmap.org') { log.tiles.push(url.href); if (opt.tileFail === 'all' || (opt.tileFail > 0 && log.tiles.length <= opt.tileFail)) return route.abort('failed'); return route.fulfill({ headers, contentType: 'image/png', body: pixel }); }
+    if (url.hostname === 'tigerweb.geo.census.gov') {
+      log.census.push(url.href); log.referers.push(request.headers().referer || '');
+      return reply('census', () => {
+        if (url.pathname.endsWith('/MapServer/2/query')) {
+          const zip = (/ZCTA5='(\d{5})'/.exec(url.searchParams.get('where') || '') || [])[1], key = ZIP_PLACES[zip];
+          return { features: key ? [{ attributes: { ZCTA5: zip, INTPTLAT: '+' + PLACES[key].lat, INTPTLON: String(PLACES[key].lon) } }] : [] };
+        }
+        return { features: [{ attributes: url.pathname.endsWith('/MapServer/82/query') ? { NAME: 'Cherry County' } : { NAME: 'Nebraska', STUSAB: 'NE' } }] };
+      });
+    }
     if (url.hostname === 'nominatim.openstreetmap.org') {
       log.nominatim.push(url.href); log.nominatimTimes.push(Date.now()); log.referers.push(request.headers().referer || '');
       return reply('nominatim', () => {
@@ -184,7 +202,7 @@ async function open(options = {}, contextOptions = {}) {
       const rec = { href: url.href, method: request.method(), body: request.postData() || '', lat, lon, radius, key: placeNear(lat, lon), params: Object.fromEntries(url.searchParams) };
       log.hrsa.push(rec); log.referers.push(request.headers().referer || '');
       return reply('hrsa', async () => {
-        let feats = rec.key === 'chicago' ? (opt.hrsaMode === 'big' ? bigHrsa() : cityHrsa().concat(opt.extraHrsa || [])) : rec.key === 'rural' ? ruralHrsa() : [];
+        let feats = rec.key === 'chicago' ? (opt.hrsaMode === 'big' ? bigHrsa() : cityHrsa().concat(opt.extraHrsa || [])) : rec.key === 'rural' ? (opt.hrsaMode === 'schools' ? schoolHrsa() : ruralHrsa()) : [];
         if (rec.key === 'slow') { await sleep(2500); feats = slowHrsa(); }
         const within = feats.filter(f => haversine({ lat, lon }, { lat: f.geometry.y, lon: f.geometry.x }) <= radius);
         const out = { displayFieldName: 'SITE_NM', geometryType: 'esriGeometryPoint', spatialReference: { wkid: 4326, latestWkid: 4326 }, fields: [], features: within };
@@ -193,7 +211,8 @@ async function open(options = {}, contextOptions = {}) {
       }, radius);
     }
     if (url.hostname === 'overpass-api.de' || url.hostname === 'maps.mail.ru') {
-      const main = url.hostname === 'overpass-api.de';
+      // The page tries overpass-api.de twice; a second try in a row is answered as the fallback attempt.
+      const main = !log.overpassRetry;log.overpassRetry = !log.overpassRetry;
       const q = decodeURIComponent((request.postData() || '').replace(/^data=/, '').replace(/\+/g, ' '));
       const m = /around:(\d+),([-\d.]+),([-\d.]+)/.exec(q);
       const rec = { host: url.hostname, method: request.method(), body: request.postData() || '', query: q, radiusM: m ? +m[1] : null, key: m ? placeNear(+m[2], +m[3]) : null };
@@ -251,8 +270,9 @@ async function assertNothingBlank(page, label) {
   await page.waitForFunction(() => document.getElementById('console-response').textContent.length > 100, null, { timeout: 8000 });
 }
 const CITY_QUERY = '233 S Wacker Dr, Chicago, IL';
-const HRSA_DATE = 'HRSA Data Warehouse load date: Oct 30, 2026';
+const HRSA_DATE = 'HRSA data warehouse last loaded Oct 30, 2026 (related table)';
 const CONFIRM = 'Confirm before you go: call to check hours, services, eligibility and cost.';
+const CONFIRM_NO_PHONE = 'no phone is listed, so try the website or dial 2-1-1';
 const CITY_HRSA_ORDER = ['hrsa:1001', 'hrsa:1002', 'hrsa:1004', 'hrsa:1005', 'hrsa:1006', 'hrsa:1007', 'hrsa:1008', 'hrsa:1009'];
 const CITY_OSM_ORDER = ['osm:node/9001', 'osm:node/9003', 'osm:way/9002', 'osm:node/9008', 'osm:node/9005'];
 
@@ -274,17 +294,17 @@ try {
     for (const k of ['geocoder', 'hrsa', 'osm']) assert.equal(idle.sources[k].status, 'idle', 'idle ' + k);
     for (const k of ['geocoder', 'hrsa', 'osm']) assert.match(await text(page, '#status-' + k), /Waiting for a search/);
     assert.ok(await page.isVisible('#privacy > p'), 'privacy lead is visible');
-    assert.match(await text(page, '#privacy > p'), /^Privacy: Your device location stays in this browser\. If you type an address, only that text is sent, to OpenStreetMap's place search\. Nothing is saved/);
+    assert.match(await text(page, '#privacy > p'), /^Privacy: This page has no server of its own and saves nothing: no cookies, no browser storage, and your location is not added to the page address\. Your location does leave this browser/);
     assert.equal(await page.evaluate(() => document.querySelector('#privacy details').open), false, 'host details start collapsed');
     const privacy = await page.locator('#privacy').textContent();
-    for (const part of [/Your device location stays in this browser/, /Nothing is saved \(no cookies or browser storage\), added to the page address, or sent to this site/, /rounded to about 100 meters/, /Nominatim/, /gisportal\.hrsa\.gov/, /overpass-api\.de/, /maps\.mail\.ru/, /tile\.openstreetmap\.org/, /unpkg\.com/, /Distances are calculated in your browser/]) assert.match(privacy, part);
+    for (const part of [/Your location does leave this browser/, /tigerweb\.geo\.census\.gov/, /IP address/, /FOSSGIS/, /rounded to about 100 meters/, /Nominatim/, /gisportal\.hrsa\.gov/, /overpass-api\.de/, /tile\.openstreetmap\.org/, /unpkg\.com/, /Distances are calculated in your browser/]) assert.match(privacy, part);
     assert.equal(await page.locator('#search-form [name]').count(), 0, 'no named field can reach a URL through a native submit');
     assert.equal(await page.getAttribute('#search-form', 'onsubmit'), 'return false');
-    assert.equal(await text(page, 'label[for="q"]'), 'Address, city or ZIP code');
+    assert.equal(await text(page, 'label[for="q"]'), 'U.S. address, city or ZIP code');
     await page.waitForFunction(() => document.getElementById('console-response').textContent.length > 100, null, { timeout: 8000 });
     assert.doesNotMatch(await text(page, '#console-response'), /Some lists are incomplete: check the sources directly/, 'idle response plan is neutral');
     const coverage = await text(page, '#coverage');
-    for (const part of [/only partly listed/, /Name matches are not proof of cost/, /HRSA lists only Health Center Program sites/, /Sliding fee is not free/, /No services or eligibility/, /Mobile, seasonal and school-based sites/, /Straight-line distances/, /does not mean none exist/]) assert.match(coverage, part);
+    for (const part of [/mostly missing/, /Tags and names are not proof of cost/, /HRSA lists only Health Center Program sites/, /Sliding fee is not free/, /No services or eligibility/, /Mobile, seasonal, school-based and special-program sites/, /Straight-line distances/, /does not mean none exist/]) assert.match(coverage, part);
     await page.waitForSelector('#map.leaflet-container');
     assert.equal(await state(page, 'map'), 'ok');
     assert.equal(log.requests.filter(u => !/unpkg\.com|tile\.openstreetmap\.org/.test(u)).length, 0, 'no data requests before a search');
@@ -296,13 +316,13 @@ try {
 
     await search(page, CITY_QUERY, 1);
     assert.equal(await state(page, 'geocoder'), 'ok');
-    assert.match(await text(page, '#place'), /Searching near: 233, South Wacker Drive/);
+    assert.match(await text(page, '#place'), /Near: 233, South Wacker Drive/);
     assert.doesNotMatch(await text(page, '#place'), /center of the ZIP code area/);
     assert.deepEqual([await state(page, 'hrsa'), await state(page, 'osm')], ['ok', 'ok']);
     const hrsaRow = await text(page, '#status-hrsa');
-    assert.match(hrsaRow, /OK: 8 sites within 10 miles\. Sliding fee, not necessarily free\. 1 duplicate record at the same name and address shown once\. 2 mobile or seasonal sites included\. HRSA Data Warehouse load date: Oct 30, 2026\./);
+    assert.match(hrsaRow, /OK: 8 sites within 10 miles\. Sliding fee, not necessarily free\. 1 duplicate record at the same name and address shown once\. 3 mobile, seasonal or school-based sites included\. HRSA data warehouse last loaded Oct 30, 2026 \(related table\)\./);
     const osmRow = await text(page, '#status-osm');
-    assert.match(osmRow, /OK: 5 listed within 15 miles \(2 tagged fee=no, 1 possibly free \(with conditions\), 2 name says free\)\./);
+    assert.match(osmRow, /OK: 5 listed within 15 miles \(2 tagged fee=no, 1 unclear or with conditions, 2 name says free\)\./);
     assert.match(osmRow, /1 private or no-access listing hidden\./);
     assert.match(osmRow, /1 clinic tagged fee=yes \(charges a fee\) not shown in this list\./);
     assert.match(osmRow, /Database as of October 30, 2026, 17:17 UTC/);
@@ -342,13 +362,13 @@ try {
     }
     assert.match(await text(page, '#results-osm > li.pb-card:first-child .pb-dist'), /^0\.2 mi N straight-line/);
     assert.match(await text(page, '#results-hrsa > li.pb-card:first-child .pb-dist'), /^0\.4 mi N straight-line/);
-    // The free list comes first in the page, each list has its own heading, count and scope.
+    // Health centers come first in the page, each list has its own heading, count and scope.
     const order = await page.$$eval('#h-osm, #h-hrsa', els => els.map(e => e.id));
-    assert.deepEqual(order, ['h-osm', 'h-hrsa']);
-    assert.match(await text(page, '#h-osm'), /^Free or possibly free \(OpenStreetMap\)\s+\(5\)$/);
-    assert.match(await text(page, '#block-osm .pb-lede'), /^Free means OpenStreetMap tags the clinic fee=no with no charge or conditions\. Possibly free means fee=no with conditions, or only a name that says free\. Call to confirm cost\./);
+    assert.deepEqual(order, ['h-hrsa', 'h-osm']);
+    assert.match(await text(page, '#h-osm'), /^Possibly free clinics \(OpenStreetMap, not verified\)\s+\(5\)$/);
+    assert.match(await text(page, '#block-osm .pb-lede'), /^Volunteers tagged these as free, or their name says free\. None of them is verified/);
     assert.match(await text(page, '#h-hrsa'), /^Health centers: sliding fee, not necessarily free \(HRSA\)\s+\(8\)$/);
-    assert.match(await text(page, '#summary-osm'), /Showing 5 of 5 clinics, nearest first\. Distances are straight-line\. Searched: OpenStreetMap: clinics within 15 miles\. 2 tagged fee=no, 1 possibly free \(with conditions\), 2 name says free \(cost not tagged\)\. 1 clinic tagged fee=yes \(charges a fee\) not shown here\. 1 private or no-access listing hidden\./);
+    assert.match(await text(page, '#summary-osm'), /Showing 5 of 5 clinics, nearest first\. Distances are straight-line\. Searched: OpenStreetMap: clinics within 15 miles\. 2 tagged fee=no, 1 unclear or with conditions, 2 name says free \(cost not tagged\)\. None is verified\. 1 clinic tagged fee=yes \(charges a fee\) not shown here\. 1 private or no-access listing hidden\./);
     assert.match(await text(page, '#summary-hrsa'), /Showing 8 of 8 health center sites, nearest first\. Distances are straight-line\. Searched: HRSA: all sites within 10 miles\./);
     assert.match(await text(page, '#block-hrsa .pb-lede'), /sliding fee scale based on income and family size[\s\S]*not necessarily zero/);
     assert.equal(await page.getAttribute('#block-hrsa .pb-lede a', 'href'), 'https://findahealthcenter.hrsa.gov/');
@@ -362,14 +382,14 @@ try {
       const c = await cardText(page, key);
       assert.ok(c.includes('Sliding fee, not necessarily free'), key + ' tag');
       assert.ok(c.includes(`Source: HRSA Health Center Program site data. ${HRSA_DATE}.`), key + ' source and data date: ' + c);
-      assert.ok(c.includes(CONFIRM), key + ' confirm note');
-      assert.ok(c.includes('Directions on OpenStreetMap'), key);
+      assert.ok((c.includes(CONFIRM) || c.includes(CONFIRM_NO_PHONE)), key + ' confirm note');
+      assert.ok(c.includes('Directions (opens Google Maps)'), key);
       assert.match(c, /(under 0\.1|\d+\.\d|\d+) mi [NESW]{1,2} straight-line/, key + ' distance and direction');
       assert.doesNotMatch(c, /\bFree\b/, key + ' must not say Free');
       assert.ok(c.includes(key === 'hrsa:1007' ? 'Health center look-alike (meets HRSA program rules, not HRSA-funded)' : 'HRSA-funded health center'), key + ' funded or look-alike label');
     }
     let c = await cardText(page, 'hrsa:1001');
-    for (const part of ['Erie West Town Health Center', 'Organization: ERIE FAMILY HEALTH CENTER', '1701 W Superior St, Chicago, IL 60622-5646', 'Phone: 312-666-3494', 'Website: www.eriefamilyhealth.org', 'About 45 hours a week (HRSA record). Exact hours not listed.', 'Schedule type (HRSA record): Full-Time, Year-Round']) assert.ok(c.includes(part), 'hrsa 1001 missing: ' + part);
+    for (const part of ['Erie West Town Health Center', 'Organization: ERIE FAMILY HEALTH CENTER', '1701 W Superior St, Chicago, IL 60622-5646', 'Phone: 312-666-3494', 'Website (from HRSA, may be out of date): www.eriefamilyhealth.org', 'About 45 hours a week (HRSA record). Exact hours not listed.', 'Schedule type (HRSA record): Full-Time, Year-Round']) assert.ok(c.includes(part), 'hrsa 1001 missing: ' + part);
     assert.equal(await page.getAttribute('li[data-k="hrsa:1001"] a[href^="tel:"]', 'href'), 'tel:3126663494', 'phone link holds digits only');
     assert.equal(await page.getAttribute('li[data-k="hrsa:1001"] a[href^="https://www.eriefamilyhealth"]', 'href'), 'https://www.eriefamilyhealth.org/', 'bare host gets https://');
     c = await cardText(page, 'hrsa:1002');
@@ -385,7 +405,7 @@ try {
     assert.ok(c.includes('Organization: LOOKALIKE ORG INC'), 'look-alike organization');
     c = await cardText(page, 'hrsa:1008');
     assert.ok(c.includes('Escape <img src=x onerror="window.__xss=1"> Clinic') && c.includes('Organization: ESCAPE <b>ORG</b>') && c.includes('1 <b>Main</b> St, Chicago, IL 60622') && c.includes('Hours not listed'), 'hrsa 1008 escaped text: ' + c);
-    assert.ok(!c.includes('Website:') && !c.includes('Phone:') && !c.includes('Schedule type'), 'javascript: website, N/A phone and Unknown schedule are dropped');
+    assert.ok(!c.includes('Website') && !c.includes('Phone:') && !c.includes('Schedule type'), 'javascript: website, N/A phone and Unknown schedule are dropped');
     c = await cardText(page, 'hrsa:1009');
     assert.ok(c.includes('Harbor Fixture - Clinic') && !c.includes(EM_DASH) && c.includes('About 39.5 hours a week'), 'hrsa 1009 em dash scrubbed');
     assert.equal(await page.getAttribute('li[data-k="hrsa:1009"] a[href^="http://harbor"]', 'href'), 'http://harbor.example.org/info');
@@ -394,23 +414,23 @@ try {
       const cc = await cardText(page, key);
       assert.match(cc, /Source: .*OpenStreetMap contributors \(ODbL\)\. (Last edited in OpenStreetMap|Edit date not available)/, key + ' source and date');
       assert.ok(cc.includes('Database as of October 30, 2026, 17:17 UTC'), key + ' database date');
-      assert.ok(cc.includes(CONFIRM), key + ' confirm note');
-      assert.ok(cc.includes('View on OpenStreetMap') && cc.includes('Directions on OpenStreetMap'), key);
+      assert.ok((cc.includes(CONFIRM) || cc.includes(CONFIRM_NO_PHONE)), key + ' confirm note');
+      assert.ok(cc.includes('View on OpenStreetMap') && cc.includes('Directions (opens Google Maps)'), key);
     }
     c = await cardText(page, 'osm:node/9001');
-    for (const part of ['Fixture Community Clinic', 'Free (fee=no in OpenStreetMap)', 'Clinic (OpenStreetMap)', '12 Elm <i>St</i>, Chicago, IL 60606', 'Phone: +1 312-555-0147', 'Website: fixtureclinic.org/visit', 'Hours listed: Mo-Fr 09:00-17:00', 'Wheelchair accessible (listed)', 'Last edited in OpenStreetMap August 14, 2025. Last checked by a mapper June 1, 2025']) assert.ok(c.includes(part), 'osm 9001 missing: ' + part);
+    for (const part of ['Fixture Community Clinic', 'Tagged free in OpenStreetMap (fee=no). Not verified: call to confirm.', 'Clinic (OpenStreetMap)', '12 Elm <i>St</i>, Chicago, IL 60606', 'Phone: +1 312-555-0147', 'Website (from OpenStreetMap, may be out of date): fixtureclinic.org/visit', 'Hours listed: Mo-Fr 09:00-17:00', 'Wheelchair accessible (listed)', 'Last edited in OpenStreetMap August 14, 2025. Last checked by a mapper June 1, 2025']) assert.ok(c.includes(part), 'osm 9001 missing: ' + part);
     assert.equal(await page.getAttribute('li[data-k="osm:node/9001"] a[href^="tel:"]', 'href'), 'tel:+13125550147');
     assert.equal(await page.getAttribute('li[data-k="osm:node/9001"] a[href^="https://fixtureclinic"]', 'href'), 'https://fixtureclinic.org/visit');
     c = await cardText(page, 'osm:way/9002');
-    assert.ok(c.includes('Possibly free: fee=no with conditions in OpenStreetMap (charge=5 USD; fee:conditional=no @ (income<20000)). Confirm cost.') && !c.includes('Free (fee=no') && !/Free with conditions/i.test(c), 'osm 9002 conditional label: ' + c);
+    assert.ok(c.includes('Possibly free: fee=no with conditions in OpenStreetMap (charge=5 USD; fee:conditional=no @ (income<20000)). Confirm cost.') && !c.includes('Tagged free') && !/Free with conditions/i.test(c), 'osm 9002 conditional label: ' + c);
     c = await cardText(page, 'osm:node/9003');
-    assert.ok(c.includes('Name says free. Cost not tagged in OpenStreetMap.') && c.includes('Neighborhood Free Clinic - North') && !c.includes(EM_DASH) && !c.includes('Free (fee=no') && c.includes('Hours not listed') && c.includes('No address tagged'), 'osm 9003 name match: ' + c);
+    assert.ok(c.includes('Name says free. Cost not tagged in OpenStreetMap.') && c.includes('Neighborhood Free Clinic - North') && !c.includes(EM_DASH) && !c.includes('Tagged free') && c.includes('Hours not listed') && c.includes('No address tagged'), 'osm 9003 name match: ' + c);
     c = await cardText(page, 'osm:node/9008');
-    assert.ok(c.includes('Free (fee=no in OpenStreetMap)') && c.includes('Phone: call the front desk') && !c.includes('Website:'), 'osm 9008: ' + c);
+    assert.ok(c.includes('Tagged free in OpenStreetMap (fee=no). Not verified: call to confirm.') && c.includes('Phone: call the front desk') && !c.includes('Website'), 'osm 9008: ' + c);
     assert.equal(await page.locator('li[data-k="osm:node/9008"] a[href^="tel:"]').count(), 0, 'a bad phone is shown but not linked');
     c = await cardText(page, 'osm:node/9005');
     assert.ok(c.includes('Free Health Fixture <b>Bold</b>') && c.includes('Name says free. Cost not tagged in OpenStreetMap.') && c.includes('Fee tag in OpenStreetMap: fee=donation. Confirm cost.') && c.includes("Doctor's office: general, pediatrics (OpenStreetMap)"), 'osm 9005 name match with fee tag shown: ' + c);
-    assert.ok(!c.includes('Free (fee=no'));
+    assert.ok(!c.includes('Tagged free'));
     // Escaping and link safety.
     assert.equal(await page.evaluate(() => window.__xss), undefined);
     assert.equal(await page.locator('#results-hrsa img, #results-osm img, #results-hrsa script, #results-osm script').count(), 0);
@@ -419,38 +439,38 @@ try {
     const hrefs = await page.$$eval('#results-hrsa a, #results-osm a', as => as.map(a => [a.getAttribute('href'), a.getAttribute('rel'), a.getAttribute('target')]));
     assert.ok(hrefs.every(([href, rel, target]) => /^(tel:\+?\d+|https?:\/\/)/.test(href) && (href.startsWith('tel:') || (rel === 'noopener noreferrer' && target === '_blank'))), 'link schemes and rel: ' + JSON.stringify(hrefs.filter(([x]) => !/^(tel:\+?\d+|https?:\/\/)/.test(x))));
     assert.ok(hrefs.some(([x]) => x === 'https://www.openstreetmap.org/node/9001') && hrefs.some(([x]) => x === 'https://www.openstreetmap.org/way/9002'));
-    assert.ok(hrefs.some(([x]) => x.startsWith('https://www.openstreetmap.org/directions?route=')));
+    assert.ok(hrefs.some(([x]) => x.startsWith('https://www.google.com/maps/dir/?api=1&destination=')));
     assert.ok(hrefs.some(([x]) => x === 'https://data.hrsa.gov/') && hrefs.some(([x]) => x === 'https://www.openstreetmap.org/copyright'));
-    // The Fixed sites only chip: hides mobile and seasonal sites and says how many.
+    // The Regular sites only chip: hides mobile and seasonal sites and says how many.
     assert.equal(await page.isVisible('#hrsa-filters'), true);
     assert.equal(await page.getAttribute('#fixed-only', 'aria-pressed'), 'false');
     await page.click('#fixed-only');
     assert.equal(await page.getAttribute('#fixed-only', 'aria-pressed'), 'true');
-    assert.deepEqual(await keys(page, 'hrsa'), CITY_HRSA_ORDER.filter(k => !['hrsa:1004', 'hrsa:1005'].includes(k)));
-    assert.match(await text(page, '#summary-hrsa'), /Showing 6 of 6 health center sites[\s\S]*2 mobile or seasonal sites hidden\./);
-    assert.match(await text(page, '#h-hrsa'), /\(6 of 8, fixed sites only\)$/, 'the count says it is filtered');
+    assert.deepEqual(await keys(page, 'hrsa'), CITY_HRSA_ORDER.filter(k => !['hrsa:1004', 'hrsa:1005', 'hrsa:1006'].includes(k)));
+    assert.match(await text(page, '#summary-hrsa'), /Showing 5 of 5 health center sites[\s\S]*3 mobile, seasonal or school-based sites hidden\./);
+    assert.match(await text(page, '#h-hrsa'), /\(5 of 8, regular sites only\)$/, 'the count says it is filtered');
     assert.deepEqual(await keys(page, 'osm'), CITY_OSM_ORDER, 'the chip leaves the free list alone');
     await page.click('#fixed-only');
     assert.equal((await keys(page, 'hrsa')).length, 8);
     assert.match(await text(page, '#h-hrsa'), /\(8\)$/);
     // Map: one marker per listing from both sources, distinct styles, legend, attribution.
-    assert.equal(await page.locator('#map .leaflet-marker-icon .pb-mk-free').count(), 2);
-    assert.equal(await page.locator('#map .leaflet-marker-icon .pb-mk-weak').count(), 3);
+    assert.equal(await page.locator('#map .leaflet-marker-icon .pb-mk-free').count(), 0, 'no marker claims free');
+    assert.equal(await page.locator('#map .leaflet-marker-icon .pb-mk-weak').count(), 5);
     assert.equal(await page.locator('#map .leaflet-marker-icon .pb-mk-hrsa').count(), 8);
     assert.equal(await page.locator('#map path.leaflet-interactive').count(), 1, 'one searched point');
     const legend = await text(page, '#map .pb-legend');
-    for (const part of [/Free \(tagged fee=no\)/, /Possibly free \(conditions, or name only\)/, /HRSA health center \(sliding fee\)/, /Searched point/]) assert.match(legend, part);
+    for (const part of [/Possibly free \(not verified\)/, /HRSA health center \(sliding fee\)/, /Searched point/]) assert.match(legend, part);
     assert.ok(await page.isVisible('.leaflet-control-attribution a[href="https://www.openstreetmap.org/copyright"]'));
     await until(() => log.tiles.length > 0, 'map tiles');
     assert.ok(log.tiles.every(u => /^https:\/\/tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png$/.test(u)));
     // Sources, live region, bridge, privacy.
-    assert.equal(await text(page, '#src-date-hrsa'), 'HRSA Data Warehouse load date Oct 30, 2026');
+    assert.equal(await text(page, '#src-date-hrsa'), 'HRSA data warehouse last loaded Oct 30, 2026 (related table)');
     assert.match(await text(page, '#src-date-osm'), /database as of October 30, 2026, 17:17 UTC/);
-    assert.equal(await text(page, '#live'), 'Search finished. Free or possibly free clinics in OpenStreetMap: 5 clinics. Sliding-fee health centers in HRSA: 8 sites.');
+    assert.equal(await text(page, '#live'), 'Search finished. Sliding-fee health centers in HRSA: 8 sites. Possibly free clinics in OpenStreetMap: 5 clinics.');
     const b = await bridge(page);
     assert.deepEqual([b.version, b.slug, b.state, b.selectionId, b.locationType], [1, 'free-clinic-finder', 'settled', 1, 'address']);
     assert.deepEqual([b.sources.geocoder.status, b.sources.hrsa.status, b.sources.osm.status], ['ok', 'ok', 'ok']);
-    assert.deepEqual([b.sources.hrsa.count, b.sources.hrsa.radiusMi, b.sources.hrsa.partial, b.sources.hrsa.dataDate, b.sources.hrsa.lookalikeCount, b.sources.hrsa.mobileOrSeasonalCount], [8, 10, false, '2026-10-30', 1, 2]);
+    assert.deepEqual([b.sources.hrsa.count, b.sources.hrsa.radiusMi, b.sources.hrsa.partial, b.sources.hrsa.dataDate, b.sources.hrsa.lookalikeCount, b.sources.hrsa.mobileOrSeasonalCount], [8, 10, false, '2026-10-30', 1, 3]);
     assert.deepEqual([b.sources.osm.count, b.sources.osm.radiusMi, b.sources.osm.partial, b.sources.osm.dataDate, b.sources.osm.freeCount, b.sources.osm.conditionalCount, b.sources.osm.nameCount], [5, 15, false, BASE_TS, 2, 1, 2]);
     assert.ok(Math.abs(b.sources.hrsa.nearestMi - 0.4) < 0.02 && Math.abs(b.sources.osm.nearestMi - 0.2) < 0.02);
     assert.ok(b.checkedAt && b.sources.hrsa.checkedAt && b.sources.osm.checkedAt);
@@ -472,15 +492,13 @@ try {
     assert.doesNotMatch(planAll, /real zero/);
     // Throttle, ZIP+4 and the in-memory geocoder cache; the HRSA date is fetched once per page view.
     await search(page, '69201-1234', 2);
-    const zipUrl = new URL(log.nominatim.at(-1));
-    assert.equal(zipUrl.searchParams.get('postalcode'), '69201');
-    assert.equal(zipUrl.searchParams.get('q'), null);
+    assert.equal(log.nominatim.length, 1, 'a ZIP code never goes to the place search');
+    assert.match(decodeURIComponent(log.census[0]), /ZCTA5='69201'/);
     assert.match(await text(page, '#place'), /\(center of the ZIP code area, approximate\)/);
     assert.equal((await bridge(page)).locationType, 'zip');
-    const gaps = log.nominatimTimes.slice(1).map((t0, i) => t0 - log.nominatimTimes[i]);
-    assert.ok(gaps.every(g => g >= 900), 'Nominatim spacing ' + gaps);
+    const censusCalls = log.census.length;
     await search(page, '69201', 3);
-    assert.equal(log.nominatim.length, 2, 'a repeated search uses the in-memory cache');
+    assert.equal(log.census.length, censusCalls, 'a repeated search uses the in-memory cache');
     assert.equal(log.hrsaDate.length, 1, 'the HRSA date call is cached for the page view');
     // No em dash anywhere, raw or rendered; no banned wording.
     assert.equal(rawPage.includes(EM_DASH), false, 'no em dash in the page source');
@@ -494,24 +512,24 @@ try {
     const t = await open();
     const { page, log } = t;
     await search(page, '69201', 1);
-    assert.equal(new URL(log.nominatim[0]).searchParams.get('postalcode'), '69201');
+    assert.equal(log.nominatim.length, 0, 'a ZIP code never goes to the place search');
     assert.deepEqual(log.hrsa.map(r => r.radius), [10, 25, 50], 'ladder of radii');
     assert.deepEqual(log.hrsa.map(r => r.params.geometry), ['-100.551,42.873', '-100.551,42.873', '-100.551,42.873']);
     assert.equal(await state(page, 'hrsa'), 'ok');
-    assert.match(await text(page, '#status-hrsa'), /OK: 6 sites within 50 miles \(widened from 10 miles because fewer than 5 were found closer\)\. Sliding fee, not necessarily free\. HRSA Data Warehouse load date: Oct 30, 2026\./);
-    assert.match(await text(page, '#summary-hrsa'), /Searched: HRSA: all sites within 50 miles \(widened from 10 miles because fewer than 5 sites were found closer\)\./);
+    assert.match(await text(page, '#status-hrsa'), /OK: 6 sites within 50 miles \(widened from 10 miles because fewer than 5 regular sites were found closer\)\. Sliding fee, not necessarily free\. HRSA data warehouse last loaded Oct 30, 2026 \(related table\)\./);
+    assert.match(await text(page, '#summary-hrsa'), /Searched: HRSA: all sites within 50 miles \(widened from 10 miles because fewer than 5 regular sites were found closer\)\./);
     assert.equal((await keys(page, 'hrsa')).length, 6);
     assert.match(await text(page, '#results-hrsa > li.pb-card:first-child .pb-dist'), /^17 mi N straight-line/);
     assert.equal(await state(page, 'osm'), 'empty');
-    assert.match(await text(page, '#status-osm'), /None listed as free or possibly free in OpenStreetMap within 15 miles\. This does not mean none exist\./);
-    assert.match(await text(page, '#summary-osm'), /None listed as free or possibly free in OpenStreetMap within 15 miles\. This does not mean none exist\./);
+    assert.match(await text(page, '#status-osm'), /None marked as free in OpenStreetMap within 15 miles\. This does not mean none exist\./);
+    assert.match(await text(page, '#summary-osm'), /None marked as free in OpenStreetMap within 15 miles\. This does not mean none exist\./);
     assert.equal(await page.locator('#results-osm > li').count(), 0);
     assert.equal(await page.isVisible('#ways-osm'), true, 'other ways to look under an empty free list');
     const ways = await text(page, '#ways-osm');
     assert.match(ways, /Other ways to look: HRSA Find a Health Center; the National Association of Free and Charitable Clinics locator; or dial 2-1-1/);
     assert.equal(await page.locator('#ways-osm a[href="https://nafcclinics.org/find-clinic/"]').count(), 1);
     assert.equal(await text(page, '#count-osm'), '(none listed)', 'an empty list is not shown as a zero count');
-    assert.match(await text(page, '#place'), /Searching near: 69201, Valentine.*\(center of the ZIP code area, approximate\)/);
+    assert.match(await text(page, '#place'), /Near: ZIP code 69201, Cherry County, Nebraska \(center of the ZIP code area, approximate\)/);
     const b = await bridge(page);
     assert.deepEqual([b.sources.osm.status, b.sources.osm.count, b.sources.osm.radiusMi, b.sources.osm.freeCount], ['empty', 0, 15, 0]);
     assert.deepEqual([b.sources.hrsa.status, b.sources.hrsa.count, b.sources.hrsa.radiusMi], ['ok', 6, 50]);
@@ -527,7 +545,7 @@ try {
     assert.deepEqual(log.hrsa.map(r => r.radius), [10, 25, 50, 100]);
     assert.equal(await state(page, 'hrsa'), 'empty');
     assert.equal(await text(page, '#status-hrsa .pb-badge'), 'None listed');
-    assert.match(await text(page, '#status-hrsa'), /None listed within 100 mi\. This does not mean none exist\. HRSA Data Warehouse load date: Oct 30, 2026\./);
+    assert.match(await text(page, '#status-hrsa'), /None listed within 100 mi\. This does not mean none exist\. HRSA data warehouse last loaded Oct 30, 2026 \(related table\)\./);
     assert.match(await text(page, '#summary-hrsa'), /None listed in HRSA's health center data within 100 miles\. This does not mean none exist\./);
     assert.equal(await page.locator('#results-hrsa > li').count(), 0);
     assert.equal(await page.isVisible('#hrsa-filters'), false);
@@ -557,12 +575,12 @@ try {
     assert.doesNotMatch(row, /None listed|OK:/, label);
     assert.equal(await text(page, '#status-hrsa .pb-badge'), 'Unavailable');
     assert.equal(await text(page, '#count-hrsa'), '(unavailable)');
-    assert.match(await text(page, '#summary-hrsa'), /Health centers from HRSA could not be retrieved: .* This is not a zero and does not mean none are listed\. Use Try again/, label);
+    assert.match(await text(page, '#summary-hrsa'), /Health centers from HRSA could not be retrieved: .* This is not a zero and does not mean none are listed\.\s*Try again/, label);
     assert.doesNotMatch(await text(page, '#summary-hrsa'), /None listed|none listed/, label);
     assert.equal(await page.locator('#results-hrsa > li').count(), 0);
     assert.equal(await page.isVisible('#hrsa-filters'), false);
     assert.deepEqual(await keys(page, 'osm'), CITY_OSM_ORDER, 'the free list is unaffected: ' + label);
-    assert.equal(await text(page, '#live'), 'Search finished. Free or possibly free clinics in OpenStreetMap: 5 clinics. Sliding-fee health centers in HRSA: unavailable, not zero.');
+    assert.equal(await text(page, '#live'), 'Search finished. Sliding-fee health centers in HRSA: unavailable, not zero. Possibly free clinics in OpenStreetMap: 5 clinics.');
     const b = await bridge(page);
     assert.deepEqual([b.state, b.sources.hrsa.status, b.sources.hrsa.count, b.sources.hrsa.radiusMi, b.sources.hrsa.partial], ['settled', 'failed', null, null, false], label);
     assert.ok(b.sources.hrsa.reason, label + ': reason is carried');
@@ -597,7 +615,7 @@ try {
     assert.equal(await text(page, '#count-hrsa'), '(loading)');
     await page.clock.fastForward(8500);
     assert.match(await text(page, '#status-hrsa'), /Still loading; this source can take up to 20 seconds per step\./);
-    assert.match(await text(page, '#status-osm'), /OpenStreetMap servers are slow today; this can take up to 90 seconds\./);
+    assert.match(await text(page, '#status-osm'), /This source is often slow; it can take up to 90 seconds\./);
     await page.clock.fastForward(12000);
     await until(async () => (await state(page, 'hrsa')) === 'failed', 'HRSA timeout');
     const row = await text(page, '#status-hrsa');
@@ -606,12 +624,14 @@ try {
     assert.doesNotMatch(row, /None listed/);
     assert.equal(await state(page, 'osm'), 'loading');
     assert.equal((await bridge(page)).state, 'loading');
-    await page.clock.fastForward(30000);
-    await until(() => log.overpass.length === 2, 'mirror request');
-    assert.match(await text(page, '#status-osm'), /trying the maps\.mail\.ru mirror/);
-    await page.clock.fastForward(41000);
+    await page.clock.fastForward(25000);
+    await until(async () => /trying once more/.test(await text(page, '#status-osm')), 'retry note');
+    await page.clock.fastForward(4500);
+    await until(() => log.overpass.length === 2, 'second request');
+    assert.match(await text(page, '#status-osm'), /trying once more/);
+    await page.clock.fastForward(36000);
     await until(async () => (await state(page, 'osm')) === 'failed', 'OSM timeout');
-    assert.match(await text(page, '#status-osm'), /Unavailable: no answer within 40 seconds \(tried overpass-api\.de and the maps\.mail\.ru mirror\)/);
+    assert.match(await text(page, '#status-osm'), /Unavailable: no answer within 35 seconds \(tried overpass-api\.de twice\)/);
     await settled(page, 1);
     const b = await bridge(page);
     assert.deepEqual([b.sources.hrsa.status, b.sources.hrsa.count, b.sources.osm.status, b.sources.osm.count], ['failed', null, 'failed', null]);
@@ -640,17 +660,17 @@ try {
     await search(page, '69201', 1);
     assert.equal(await state(page, 'hrsa'), 'partial', 'fail at ' + failAt);
     const row = await text(page, '#status-hrsa');
-    assert.match(row, new RegExp(`Partial: ${expectCount ? expectCount + ' sites' : 'none'} within ${expectRadius} miles\\. Fewer than 5 were found, and the wider search did not complete: the service answered with HTTP 503\\. More may be listed farther out\\.`));
+    assert.match(row, new RegExp(`Partial: ${expectCount ? expectCount + ' sites' : 'none'} within ${expectRadius} miles\\. Fewer than 5 regular sites were found, and the wider search did not complete: the service answered with HTTP 503\\. More may be listed farther out\\.`));
     assert.match(row, /Try again/);
     assert.doesNotMatch(row, /None listed|OK:/);
     assert.equal(await text(page, '#status-hrsa .pb-badge'), 'Partial');
     assert.equal((await keys(page, 'hrsa')).length, expectCount);
     assert.equal(await text(page, '#count-hrsa'), `(${expectCount || 'none listed'}, partial)`);
-    assert.match(await text(page, '#live'), expectCount ? /HRSA: \d+ sites? \(partial list, more may be missing\)\.$/ : /HRSA: none listed \(partial list, more may be missing\)\.$/, 'a partial list is announced as partial');
+    assert.match(await text(page, '#live'), expectCount ? /HRSA: \d+ sites? \(partial list, more may be missing\)\./ : /HRSA: none listed \(partial list, more may be missing\)\./, 'a partial list is announced as partial');
     assert.match((await bridge(page)).sources.hrsa.reason, /^the wider \d+-mile search did not complete/);
     const summary = await text(page, '#summary-hrsa');
     assert.match(summary, /Partial: the wider \d+-mile search did not complete: the service answered with HTTP 503\./);
-    assert.doesNotMatch(summary, /Turn off "Fixed sites only"|No fixed sites/, 'an empty partial list is not blamed on the Fixed sites only chip');
+    assert.doesNotMatch(summary, /Turn off "Regular sites only"|No regular sites/, 'an empty partial list is not blamed on the Regular sites only chip');
     if (!expectCount) assert.match(summary, /None listed within 10 miles so far\. This does not mean none exist\./);
     assert.equal(await page.isVisible('#hrsa-filters'), false, 'no mobile or seasonal site, so no chip');
     const b = await bridge(page);
@@ -710,11 +730,11 @@ try {
     const row = await text(page, '#status-hrsa');
     assert.match(row, /OK: 8 sites within 10 miles\./, label);
     assert.ok(row.includes('Data date not available (the HRSA date check failed)'), label + ': status row says the date is missing');
-    assert.doesNotMatch(row, /load date: /, label);
+    assert.doesNotMatch(row, /last loaded /, label);
     for (const key of CITY_HRSA_ORDER) {
       const c = await cardText(page, key);
       assert.ok(c.includes('Source: HRSA Health Center Program site data. Data date not available (the HRSA date check failed).'), `${label} ${key}: ${c}`);
-      assert.doesNotMatch(c, /2026|load date/, `${label} ${key}: no invented date`);
+      assert.doesNotMatch(c, /2026|last loaded/, `${label} ${key}: no invented date`);
     }
     assert.match(await text(page, '#src-date-hrsa'), /not available \(the HRSA date check failed\)/);
     const b = await bridge(page);
@@ -740,14 +760,14 @@ try {
     assert.equal(await state(page, 'osm'), 'failed');
     assert.equal(await state(page, 'hrsa'), 'ok');
     const row = await text(page, '#status-osm');
-    assert.match(row, /Unavailable: the service answered with HTTP 504 \(tried overpass-api\.de and the maps\.mail\.ru mirror\)\. No OpenStreetMap listings are shown; this is not a zero\./);
+    assert.match(row, /Unavailable: the service answered with HTTP 504 \(tried overpass-api\.de twice\)\. No OpenStreetMap listings are shown; this is not a zero\./);
     assert.match(row, /Try again/);
     assert.doesNotMatch(row, /None listed/);
-    assert.deepEqual(log.overpass.map(o => o.host), ['overpass-api.de', 'maps.mail.ru']);
+    assert.deepEqual(log.overpass.map(o => o.host), ['overpass-api.de', 'overpass-api.de']);
     assert.equal((await keys(page, 'osm')).length, 0);
     assert.deepEqual(await keys(page, 'hrsa'), CITY_HRSA_ORDER);
     assert.equal(await text(page, '#count-osm'), '(unavailable)');
-    assert.match(await text(page, '#summary-osm'), /Free or possibly free clinics from OpenStreetMap could not be retrieved: .* This is not a zero and does not mean none are listed\./);
+    assert.match(await text(page, '#summary-osm'), /Possibly free clinics from OpenStreetMap could not be retrieved: .* This is not a zero and does not mean none are listed\./);
     assert.doesNotMatch(await text(page, '#summary-osm'), /None listed|none listed/);
     assert.equal(await page.isVisible('#ways-osm'), true, 'other ways to look under a failed free list');
     const b = await bridge(page);
@@ -772,7 +792,7 @@ try {
     const { page, log } = t;
     await search(page, CITY_QUERY, 1);
     assert.equal(await state(page, 'osm'), 'ok');
-    assert.deepEqual(log.overpass.map(o => o.host), ['overpass-api.de', 'maps.mail.ru']);
+    assert.deepEqual(log.overpass.map(o => o.host), ['overpass-api.de', 'overpass-api.de']);
     assert.equal(log.overpass[1].method, 'POST');
     assert.deepEqual(await keys(page, 'osm'), CITY_OSM_ORDER);
     assert.match(await text(page, '#status-osm'), /OK: 5 listed within 15 miles/);
@@ -783,7 +803,7 @@ try {
     const { page } = t;
     await search(page, CITY_QUERY, 1);
     assert.equal(await state(page, 'osm'), 'failed');
-    assert.match(await text(page, '#status-osm'), /Unavailable: the response had no list of places \(tried overpass-api\.de and the maps\.mail\.ru mirror\)/);
+    assert.match(await text(page, '#status-osm'), /Unavailable: the response had no list of places \(tried overpass-api\.de twice\)/);
     assert.equal(await page.locator('#results-osm > li').count(), 0);
     assert.doesNotMatch(await text(page, '#summary-osm'), /None listed|none listed/);
     await finish(t, 'malformed overpass');
@@ -798,7 +818,7 @@ try {
     assert.equal(await page.locator('#status [data-retry]').count(), 3, 'HRSA, OpenStreetMap and the map each offer Try again');
     assert.equal(await page.locator('#results-hrsa > li, #results-osm > li').count(), 0);
     assert.doesNotMatch(await page.evaluate(() => document.getElementById('places').innerText), /None listed|none listed|\(0\)/);
-    assert.equal(await text(page, '#live'), 'Search finished. Free or possibly free clinics in OpenStreetMap: unavailable, not zero. Sliding-fee health centers in HRSA: unavailable, not zero.');
+    assert.equal(await text(page, '#live'), 'Search finished. Sliding-fee health centers in HRSA: unavailable, not zero. Possibly free clinics in OpenStreetMap: unavailable, not zero.');
     assert.match(await text(page, '#map'), /Map unavailable; the lists still work\./);
     const b = await bridge(page);
     assert.equal(b.state, 'settled');
@@ -837,13 +857,13 @@ try {
     const t = await open();
     const { page, log } = t;
     await search(page, '00000', 1);
-    assert.match(await text(page, '#place'), /No place matched "00000"\. Check the ZIP code or try a street address or city\./);
+    assert.match(await text(page, '#place'), /The U\.S\. Census has no ZIP code area for 00000\. Check the digits\./);
     assert.equal(await state(page, 'geocoder'), 'empty');
     assert.equal(await text(page, '#status-geocoder .pb-badge'), 'No match');
     assert.deepEqual([await state(page, 'hrsa'), await state(page, 'osm')], ['notrun', 'notrun']);
     assert.match(await text(page, '#status-hrsa'), /Not run: no location to check yet/);
     assert.equal(log.hrsa.length + log.hrsaDate.length + log.overpass.length, 0, 'nothing requested without a place');
-    assert.equal(new URL(log.nominatim[0]).searchParams.get('postalcode'), '00000');
+    assert.equal(log.nominatim.length, 0, 'an unknown ZIP code never reaches the place search');
     let b = await bridge(page);
     assert.deepEqual([b.state, b.sources.geocoder.status, b.sources.hrsa.status, b.sources.osm.status], ['settled', 'empty', 'not-run', 'not-run']);
     assert.match(await text(page, '#summary-hrsa'), /No location to search yet/);
@@ -852,13 +872,13 @@ try {
     assert.match(await text(page, '#place'), /That is not a valid ZIP code\. A ZIP code has 5 digits/);
     assert.equal(await state(page, 'geocoder'), 'invalid');
     assert.match(await text(page, '#status-geocoder'), /Not sent: a ZIP code needs exactly 5 digits/);
-    assert.equal(log.nominatim.length, 1, 'an invalid ZIP is never sent');
+    assert.equal(log.nominatim.length + log.census.length, 1, 'an invalid ZIP is never sent');
     b = await bridge(page);
     assert.deepEqual([b.sources.geocoder.status, b.sources.hrsa.status], ['invalid', 'not-run']);
     await page.fill('#q', '   ');
     await page.click('#go');
     assert.match(await text(page, '#place'), /Type an address, city or ZIP code first/);
-    assert.equal(log.nominatim.length, 1);
+    assert.equal(log.nominatim.length + log.census.length, 1);
     await finish(t, 'no match and invalid input');
   }
   {
@@ -886,7 +906,7 @@ try {
     const { page, log } = t;
     await page.click('#loc');
     await settled(page, 1);
-    assert.match(await text(page, '#place'), /Searching near: your device location \(accuracy about 35 m\)/);
+    assert.match(await text(page, '#place'), /Near: your device location \(accuracy about 35 m\)/);
     assert.match(await text(page, '#place'), /Map images for the area you view come from tile\.openstreetmap\.org\./);
     assert.equal(log.nominatim.length, 0, 'no place search for a device location');
     assert.equal(await state(page, 'geocoder'), 'notused');
@@ -961,7 +981,7 @@ try {
     await settled(page, 2);
     assert.equal((await keys(page, 'hrsa')).length, 8);
     assert.equal((await keys(page, 'osm')).length, 5);
-    assert.match(await text(page, '#place'), /Searching near: 233, South Wacker Drive/);
+    assert.match(await text(page, '#place'), /Near: 233, South Wacker Drive/);
     await sleep(3000); // the slow answers would land here
     assert.deepEqual(await keys(page, 'hrsa'), CITY_HRSA_ORDER);
     assert.deepEqual(await keys(page, 'osm'), CITY_OSM_ORDER);
@@ -997,7 +1017,7 @@ try {
     const { page } = t;
     await page.click('#loc');
     await settled(page, 1);
-    assert.match(await text(page, '#place'), /Searching near: your device location\./);
+    assert.match(await text(page, '#place'), /Near: your device location\./);
     assert.doesNotMatch(await text(page, '#place'), /accuracy/);
     await finish(t, 'zero accuracy');
   }
@@ -1007,9 +1027,9 @@ try {
     const t = await open({});
     const { page } = t;
     const priv = await text(page, '#privacy > p');
-    assert.match(priv, /Your device location stays in this browser\. If you type an address, only that text is sent, to OpenStreetMap's place search\./);
-    assert.doesNotMatch(priv, /Your exact location/);
-    assert.match(await text(page, '#block-osm > .pb-lede'), /Free means OpenStreetMap tags the clinic fee=no with no charge or conditions\. Possibly free means fee=no with conditions/);
+    assert.match(priv, /Your location does leave this browser/);
+    assert.doesNotMatch(priv, /stays in this browser/);
+    assert.match(await text(page, '#block-osm > .pb-lede'), /None of them is verified, so call to confirm cost\./);
     await finish(t, 'privacy and lede');
   }
 
@@ -1031,7 +1051,7 @@ try {
     const t = await open({}, { viewport: { width: 1280, height: 900 } });
     const { page, opt } = t;
     await search(page, 'Nowhere Flat, NV', 1);
-    assert.equal(await text(page, '#live'), 'Search finished. Free or possibly free clinics in OpenStreetMap: none listed. Sliding-fee health centers in HRSA: none listed.');
+    assert.equal(await text(page, '#live'), 'Search finished. Sliding-fee health centers in HRSA: none listed. Possibly free clinics in OpenStreetMap: none listed.');
     await finish(t, 'announce empty');
   }
 
@@ -1061,12 +1081,12 @@ try {
     assert.match(await cardText(page, 'hrsa:1001'), /HRSA data date still loading/);
     assert.equal((await bridge(page)).sources.hrsa.dataDate, null);
     assert.equal((await bridge(page)).sources.hrsa.datePending, true, 'the bridge says the date is still loading');
-    await until(async () => /HRSA Data Warehouse load date: Oct 30, 2026\./.test(await text(page, '#status-hrsa')), 'late date', 6000);
+    await until(async () => /HRSA data warehouse last loaded Oct 30, 2026 \(related table\)\./.test(await text(page, '#status-hrsa')), 'late date', 6000);
     assert.doesNotMatch(await text(page, '#status-hrsa'), /still loading/);
-    assert.match(await cardText(page, 'hrsa:1001'), /HRSA Data Warehouse load date: Oct 30, 2026/);
+    assert.match(await cardText(page, 'hrsa:1001'), /HRSA data warehouse last loaded Oct 30, 2026 \(related table\)/);
     assert.equal((await bridge(page)).sources.hrsa.dataDate, '2026-10-30');
     assert.equal((await bridge(page)).sources.hrsa.datePending, false);
-    assert.equal(await text(page, '#src-date-hrsa'), 'HRSA Data Warehouse load date Oct 30, 2026');
+    assert.equal(await text(page, '#src-date-hrsa'), 'HRSA data warehouse last loaded Oct 30, 2026 (related table)');
     await finish(t, 'late HRSA date');
   }
 
@@ -1076,7 +1096,7 @@ try {
     const { page, opt } = t;
     await search(page, '69201', 1);
     assert.equal(await state(page, 'hrsa'), 'partial');
-    assert.match(await text(page, '#status-hrsa'), /Partial: 2 sites within 25 miles\. Fewer than 5 were found, and the wider search did not complete: the response had no usable sites\./);
+    assert.match(await text(page, '#status-hrsa'), /Partial: 2 sites within 25 miles\. Fewer than 5 regular sites were found, and the wider search did not complete: the response had no usable sites\./);
     assert.equal((await keys(page, 'hrsa')).length, 2);
     delete opt.badRadius;
     await page.click('#status-hrsa [data-retry="hrsa"]');
@@ -1115,7 +1135,7 @@ try {
     const snap = await page.evaluate(() => { window.__geoOk({ coords: { latitude: 41.88219, longitude: -87.63087, accuracy: 35 } }); return [window.ClinicResponse.state, window.ClinicResponse.checkedAt]; });
     assert.deepEqual(snap, ['loading', null], 'the notice time is not reused when the late fix restarts the search');
     await settledWith(page, 'hrsa', 'ok');
-    assert.match(await text(page, '#place'), /Searching near: your device location/);
+    assert.match(await text(page, '#place'), /Near: your device location/);
     assert.equal(await state(page, 'geocoder'), 'notused');
     assert.match(await text(page, '#status-geocoder'), /Use my location skips the text place search/);
     assert.equal((await keys(page, 'hrsa')).length, 8);
@@ -1198,6 +1218,46 @@ try {
       }
     }
     await finish(t, `layout ${width} ${colorScheme}`);
+  }
+  // QC fixes: contradictory free tags, hidden admin records, marked sites, phantom ZIP codes, widening past school clinics.
+  {
+    const extraOsm = [osmEl('chicago', 'way', 9901, 1.2, { name: 'Family Health Center', amenity: 'clinic', fee: 'no', 'payment:cash': 'yes', 'payment:credit_cards': 'yes', 'operator:type': 'private' })];
+    const extraHrsa = [
+      hrsaFeat('chicago', 1901, 0.6, { SITE_NM: 'Admin Only' }),
+      hrsaFeat('chicago', 1902, 0.7, { SITE_NM: 'Far Village Clinic', APPROX_VALUE_CD: 'Y' }),
+      hrsaFeat('chicago', 1903, 0.8, { SITE_NM: 'City Mission Clinic', SITE_ADDRESS: 'ANONYMOUS', SITE_PHONE_NUM: '' }),
+      hrsaFeat('chicago', 1904, 0.9, { SITE_NM: 'Twin Site', SITE_ADDRESS: '9 Twin St', HCC_LOC_DESC: 'Mobile Van', SITE_PHONE_NUM: '312-555-0171' }),
+      hrsaFeat('chicago', 1905, 0.9, { SITE_NM: 'Twin Site', SITE_ADDRESS: '9 Twin St', SITE_PHONE_NUM: '312-555-0172' }),
+    ];
+    const t = await open({ extraOsm, extraHrsa });
+    const { page, log } = t;
+    await search(page, CITY_QUERY, 1);
+    let c = await cardText(page, 'osm:way/9901');
+    assert.ok(c.includes('Unclear cost') && !c.includes('Tagged free'), 'a fee=no record with payment tags is never called free: ' + c);
+    assert.equal(await page.locator('#results-hrsa li[data-k="hrsa:1901"]').count(), 0, 'an administrative record is hidden');
+    assert.match(await text(page, '#status-hrsa'), /1 administrative record hidden/);
+    c = await cardText(page, 'hrsa:1902');
+    assert.ok(c.includes('Approximate location') && c.includes('(approximate)') && !c.includes('Directions'), 'approximate site: ' + c);
+    c = await cardText(page, 'hrsa:1903');
+    assert.ok(c.includes('Address withheld') && c.includes('Phone not listed') && c.includes('no phone is listed') && c.includes('specific group or program') && !c.includes('ANONYMOUS') && !c.includes('Directions'), 'withheld site: ' + c);
+    assert.equal(await page.locator('#results-hrsa li[data-k="hrsa:1904"]').count(), 0, 'the mobile twin of a permanent site is folded in');
+    c = await cardText(page, 'hrsa:1905');
+    assert.ok(c.includes('312-555-0172') && c.includes('also lists a mobile or seasonal record'), 'the permanent record wins: ' + c);
+    assert.ok(log.overpass.every(o => o.host === 'overpass-api.de'), 'no other Overpass host is used');
+    const before = log.hrsa.length;
+    await search(page, '99999', 2);
+    assert.match(await text(page, '#place'), /The U\.S\. Census has no ZIP code area for 99999/);
+    assert.equal(log.hrsa.length, before, 'a phantom ZIP code searches nothing');
+    assert.equal(log.nominatim.length, 1, 'a phantom ZIP code never reaches the place search');
+    await finish(t, 'qc fixes');
+  }
+  {
+    const t = await open({ hrsaMode: 'schools' });
+    const { page, log } = t;
+    await search(page, 'zip 69201', 1);
+    assert.deepEqual(log.hrsa.map(r => r.radius), [10, 25], 'keeps widening past school clinics');
+    assert.match(await text(page, '#status-hrsa'), /widened from 10 miles because fewer than 5 regular sites were found closer/);
+    await finish(t, 'qc widening');
   }
 
   console.log(`PASS ${passed} clinic finder smoke scenarios`);
