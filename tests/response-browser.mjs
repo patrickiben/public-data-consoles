@@ -144,10 +144,10 @@ try{
           assert.equal(await page.locator('#rs-export-plan').count(),1);
           assert.equal(await page.evaluate(()=>window.CRPage.exportPlan()),null,'No plan is exported before a place is found');
         }else if(entry.native){
-          await page.waitForFunction(()=>document.querySelector('#tm')?.textContent.includes('Mobility Network Leakage'),{timeout:45000});
-          assert.equal(await page.locator('#console-response').count(),0,'Native Coastal must not have a duplicate panel');
-          assert.equal(await page.locator('#tm [data-metric-help]').count(),10,'All ten native exercise labels offer help');
           await page.locator('[data-tab="plan"]').click();
+          await page.waitForFunction(()=>document.querySelectorAll('[data-cwr-metric] [data-metric-help]').length===10,{timeout:45000});
+          assert.equal(await page.locator('#console-response').count(),0,'Native Coastal must not have a duplicate panel');
+          assert.equal(await page.locator('[data-cwr-metric] [data-metric-help]').count(),10,'All ten real-data parameter labels offer help');
           await page.locator('#cwr-operator-track').click();assert.equal(await page.locator('#cwr-operator-track').getAttribute('aria-pressed'),'true');
           assert.equal(await page.locator('#cwr-export-plan').count(),1);
         }else{

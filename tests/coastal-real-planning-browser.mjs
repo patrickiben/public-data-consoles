@@ -137,9 +137,9 @@ try {
     assert.equal(plan.waterSource, 'selected');
     checkSharedEvidence(plan, await projection(page), expectedCounts(inventory, 'city', 4.52), 6, 4.52);
     assert.match(await page.locator('#cwr-plan-summary').textContent(), /scenario|selected|ladder/i);
-    await page.locator('#plan-data-scope').selectOption('synthetic');
-    assert.equal(await page.locator('#impact-scope').inputValue(), 'synthetic');
-    assert.equal((await current(page)).stationIds.length, 130);
+    assert.equal(await page.locator('#plan-data-scope option[value="synthetic"]').count(), 0, 'no synthetic dataset choice');
+    await page.locator('#plan-data-scope').selectOption('all');
+    assert.equal(await page.locator('#impact-scope').inputValue(), 'all');
     await page.evaluate(() => CWR.setPage('impact'));
     await page.locator('#impact-scope').selectOption('city');
     assert.equal(await page.locator('#plan-data-scope').inputValue(), 'city');

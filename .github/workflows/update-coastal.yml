@@ -45,6 +45,7 @@ jobs:
       # The built-in token's data commit does not start push CI or Pages itself.
       - run: python scripts/refresh_coastal_impact.py --check
       - run: python scripts/embed_coastal_runtime.py --check
+      - run: python scripts/embed_coastal_storms.py --check
       - run: python scripts/refresh_nhs.py --check
       - run: python scripts/check_catalog.py
       - run: python scripts/embed_response_plans.py --check
