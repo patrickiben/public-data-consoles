@@ -207,26 +207,6 @@ try {
     await popup(page).waitFor({state: 'hidden'});
   });
 
-  await scenario('Coastal exercise: ten summary labels explain without expanding their rows', {slug: 'coastal-water-resilience'}, async page => {
-    await page.evaluate(() => CWR.setPage('exercise'));
-    assert.equal(await page.locator('#tm details.tm').count(), 10);
-    for (let id = 1; id <= 10; id++) {
-      const row = page.locator('#tm details.tm[data-n="' + id + '"]'), before = await row.getAttribute('open');
-      const button = row.locator('summary [data-metric-help="' + id + '"]');
-      await button.click();
-      await shown(page, id, /Fictional calibration exercise/);
-      assert.equal(await row.getAttribute('open'), before, 'help button must not toggle native details row');
-      if (id === 2) await proof(page, 'coastal-exercise-desktop');
-      await close(page);
-    }
-    const first = page.locator('#tm details.tm[data-n="1"]');
-    await first.locator('[data-metric-term] > span').hover();
-    await shown(page, 1);
-    await close(page);
-    await first.locator('summary .n').click();
-    assert.equal(await first.getAttribute('open'), '', 'ordinary summary interaction still expands the row');
-  });
-
   await scenario('Coastal real planning: ten domain explanations and checklist help preserve acknowledgments', {slug: 'coastal-water-resilience'}, async page => {
     await page.evaluate(() => CWR.setPage('plan'));
     assert.equal(await page.locator('#plan-data-scope').inputValue(), 'city');
@@ -252,14 +232,7 @@ try {
     assert.equal(await ack.isChecked(), true);
   });
 
-  await scenario('Coastal mobile: real and fictional help remains scoped and does not toggle controls', {slug: 'coastal-water-resilience', width: 320, touch: true}, async page => {
-    await page.evaluate(() => CWR.setPage('exercise'));
-    const exercise = page.locator('#tm details.tm[data-n="9"]'), exerciseButton = exercise.locator('[data-metric-help="9"]');
-    await exerciseButton.tap();
-    await shown(page, 9, /Fictional calibration exercise/);
-    assert.equal(await exercise.getAttribute('open'), null);
-    await proof(page, 'coastal-exercise-320');
-    await close(page);
+  await scenario('Coastal mobile: real help remains scoped and does not toggle controls', {slug: 'coastal-water-resilience', width: 320, touch: true}, async page => {
     await page.evaluate(() => CWR.setPage('plan'));
     await page.locator('#cwr-ten-register > summary').click();
     const before = await controlState(page, '#c-check');
@@ -380,38 +353,16 @@ try {
     await close(page);
   });
 
-  await scenario('Coastal timeline: dataset and audience changes replace real unknowns with explicitly fictional criteria', {slug: 'coastal-water-resilience'}, async page => {
+  await scenario('Coastal timeline: dataset and audience changes keep real-data help', {slug: 'coastal-water-resilience'}, async page => {
     await coastalPlan(page);
+    assert.equal(await page.locator('#plan-data-scope option[value="synthetic"]').count(), 0, 'no synthetic dataset choice');
     await coastalButton(page, 'rec', 7).click();
-    const realReason = await timelineReason(coastalRow(page, 'rec', 7));
     await phaseHelp(page, 'rec', 7, /Currently not assessable/, /Public \/ local review:/);
-    const dataset = page.locator('#plan-data-scope');
-    // selectOption alone does not move the pointer or focus like opening this
-    // control. A layout change under the old metric pointer may legitimately
-    // open newly scoped hover help, so model the actual control interaction.
-    await dataset.hover();
-    await dataset.focus();
-    await dataset.selectOption('synthetic');
-    await popup(page).waitFor({state: 'hidden'});
-    // A post-render pointer event must describe the replacement dataset, not
-    // retain the formerly pinned real/unknown explanation.
-    await coastalRow(page, 'rec', 7).locator('[data-metric-term] > span').hover();
-    const replacementHelp = await phaseHelp(page, 'rec', 7, /Fictional calibration exercise/, /Public \/ local review:/);
-    assert.doesNotMatch(replacementHelp, /Real public station planning screen/);
     await close(page);
-    const exercisePlan = await page.evaluate(() => CWR.exportPlan());
-    assert.equal(await page.locator('#timeline [data-timeline-metric]').count(), 17);
-    for (const [phase, ids] of coastalTimeline) for (const id of ids) {
-      const metric = exercisePlan.metrics.find(metric => metric.metricId === id);
-      assert.equal(await coastalRow(page, phase, id).locator('.timeline-status').textContent(), metric.status === 'unknown'
-        ? 'Not assessable' : metric.status === 'triggered' ? 'Scenario criterion flagged' : 'Within scenario criterion');
-    }
-    assert.notEqual(await timelineReason(coastalRow(page, 'rec', 7)), realReason);
     await page.locator('#cwr-operator-track').click();
     await coastalButton(page, 'rec', 7).click();
-    const exerciseHelp = await phaseHelp(page, 'rec', 7, /Fictional calibration exercise/, /Operator review:/);
-    assert.match(exerciseHelp, /toy edges crossing fictional basin boundaries/);
-    assert.doesNotMatch(exerciseHelp, /Public \/ local review:/);
+    const operatorHelp = await phaseHelp(page, 'rec', 7, /Real public station planning screen/, /Operator review:/);
+    assert.doesNotMatch(operatorHelp, /Public \/ local review:/);
     await close(page);
     await page.locator('#plan-data-scope').selectOption('all');
     assert.equal(await coastalRow(page, 'rec', 7).locator('.timeline-status').textContent(), 'Not assessable');
@@ -472,10 +423,6 @@ try {
       await close(page);
     }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'timeline and tooltip create no horizontal page overflow');
-    await page.locator('#plan-data-scope').selectOption('synthetic');
-    await coastalButton(page, 'land', 9).tap();
-    await phaseHelp(page, 'land', 9, /Fictional calibration exercise/);
-    await close(page);
   });
 
   await scenario('standalone field guide: all ten names have keyboard and narrow-screen help', {guide: true, width: 320, touch: true}, async page => {
