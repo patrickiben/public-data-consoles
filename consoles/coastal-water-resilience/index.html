@@ -62,6 +62,7 @@ header .s{color:var(--ink2);font-size:14.5px;margin-top:7px;max-width:860px}
 .tbl.fit th{white-space:normal}
 @media(max-width:640px){.stk thead{display:none}.stk,.stk tbody,.stk tr,.stk td{display:block;width:100%}.stk tr{border-bottom:1px solid var(--line2);padding:6px 0}.stk td{border:0;padding:3px 8px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}.stk td>span{text-align:right}.stk td::before{content:attr(data-l);color:var(--ink2);font-weight:650;flex:0 0 auto}.stk td:first-child{font-size:14px}.stk td:first-child::before{content:none}}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:13px}
+.wtiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0 12px}.wtile{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:rgba(255,255,255,.02)}.wtile .n{font-size:28px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--ink)}.wtile .n small{font-size:13px;color:var(--ink2);font-weight:600}.wtile .l{font-size:12px;color:var(--ink2)}
 #context-map svg{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line2);background:#102b3b}.ctx-recs{display:grid;gap:6px;margin-top:6px}.ctx-rec{border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:rgba(255,255,255,.02)}.ctx-t{font-weight:650}.ctx-v{color:var(--ink)}.ctx-rec details.dt{margin-top:4px}
 @media(min-width:981px){section[data-page="context"].grid{grid-template-columns:minmax(280px,1fr) minmax(0,2fr)}}.kv dt{color:var(--ink2)}.kv dd{margin:0;font-weight:600}
 .sys{border-left:3px solid var(--dim);background:rgba(255,255,255,.03);border-radius:9px;padding:8px 11px;margin-bottom:8px}
@@ -324,6 +325,15 @@ section.grid[data-page="inventory"]{grid-template-columns:minmax(0,1.5fr) minmax
 
 <!-- ======================= MONITOR ======================= -->
 <div class="note" data-page="monitor"><b>Real public data first.</b> Explore the <a href="#inventory">official station map</a>, <a href="#impact">public-data impact screening</a>, or <a href="#plan">response checklist</a>.</div>
+<section class="grid" data-page="monitor">
+ <div class="card" data-page="monitor" id="c-water">
+  <div class="ch"><h2>Water level at St. Petersburg</h2><div class="hbs"><span class="hb ms" title="NOAA CO-OPS 8726520 observed water level and tide prediction">MEASURED · NOAA 8726520</span><span class="hb md" title="NOAA Operational Forecast System guidance">MODELED · NOAA OFS forecast</span></div></div>
+  <div class="sub">The last 48 hours observed, the predicted tide, and the NOAA forecast for the next 48 hours, in feet above MLLW.</div>
+  <div class="wtiles" id="w-tiles"></div>
+  <div class="chart" id="w-chart"></div>
+  <div class="legend"><span><span class="k" style="border-color:var(--obs)"></span>Observed</span><span><span class="k" style="border-color:var(--pred);border-top-style:dashed"></span>Predicted tide</span><span><span class="k" style="border-color:var(--up)"></span>OFS forecast</span><span><span class="k" style="border-color:var(--ring);border-top-style:dashed"></span>3 ft scenario level</span></div>
+ </div>
+</section>
 <section class="grid g4" data-page="monitor">
  <div class="card" data-page="monitor" id="c-gauge">
   <div class="ch"><h2>Gauge now</h2><div class="hbs"><span class="hb ms" title="Live public feed">MEASURED · NOAA CO-OPS 8726520</span></div></div>
@@ -796,6 +806,7 @@ function lineChart(host,cfg){
  var hstep=cfg.hstep||12*3600e3;if((W-m.l-m.r)/((x1-x0)/hstep)<44)hstep=24*3600e3;for(var t=Math.ceil(x0/hstep)*hstep;t<=x1;t+=hstep){var xx=X(t).toFixed(1),td=new Date(t),tl=td.getUTCHours()===0?MON[td.getUTCMonth()]+' '+td.getUTCDate():p2(td.getUTCHours())+'Z';s+='<line x1="'+xx+'" x2="'+xx+'" y1="'+(H-m.b)+'" y2="'+(H-m.b+4)+'" stroke="var(--axis)"/><text x="'+xx+'" y="'+(H-6)+'" fill="var(--dim)" font-size="10.5" text-anchor="middle">'+tl+'</text>';}
  s+='<line x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+(H-m.b)+'" y2="'+(H-m.b)+'" stroke="var(--axis)"/>';
  (cfg.refs||[]).forEach(function(r){if(r.v<lo||r.v>hi)return;var y=Y(r.v).toFixed(1);s+='<line x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+y+'" y2="'+y+'" stroke="'+r.color+'" stroke-width="1" stroke-dasharray="4 4" opacity=".8"/><text x="'+(m.l+4)+'" y="'+(Y(r.v)-4).toFixed(1)+'" fill="var(--ink2)" font-size="10.5">'+esc(r.label)+'</text>';});
+ (cfg.vlines||[]).forEach(function(vl){if(vl.t<x0||vl.t>x1)return;var vx=X(vl.t);s+='<line x1="'+vx.toFixed(1)+'" x2="'+vx.toFixed(1)+'" y1="'+m.t+'" y2="'+(H-m.b)+'" stroke="'+(vl.color||'var(--ink2)')+'" stroke-width="1.2" stroke-dasharray="3 3"/><text x="'+(vx+5).toFixed(1)+'" y="'+(H-m.b-6)+'" fill="var(--ink2)" font-size="11" font-weight="650">'+esc(vl.label)+'</text>';});
  cfg.series.forEach(function(se){var d='',pen=false;se.pts.forEach(function(p){if(p.v==null){pen=false;return;}d+=(pen?'L':'M')+X(p.t).toFixed(1)+','+Y(p.v).toFixed(1);pen=true;});
   s+='<path d="'+d+'" fill="none" stroke="'+se.color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"'+(se.dash?' stroke-dasharray="'+se.dash+'"':'')+'/>';});
  cfg.series.forEach(function(se){var last=null;se.pts.forEach(function(p){if(p.v!=null)last=p;});if(last&&se.endDot)s+='<circle cx="'+X(last.t).toFixed(1)+'" cy="'+Y(last.v).toFixed(1)+'" r="4.5" fill="'+se.color+'" stroke="var(--panel)" stroke-width="2"/>';});
@@ -804,7 +815,7 @@ function lineChart(host,cfg){
  s+='<rect class="ov" x="'+m.l+'" y="'+m.t+'" width="'+(W-m.l-m.r)+'" height="'+(H-m.t-m.b)+'" fill="transparent" tabindex="0" aria-label="'+esc(cfg.label)+': use arrow keys to read values"/></svg><div class="tip" hidden></div>';
  host.innerHTML=s;
  var svg=host.querySelector('svg'),xh=host.querySelector('.xh'),ov=host.querySelector('.ov'),tip=host.querySelector('.tip');
- var grid=(cfg.series.filter(function(se){return se.pts.length;})[0]||{pts:[]}).pts,idx=-1;
+ var grid=cfg.grid||(cfg.series.filter(function(se){return se.pts.length;})[0]||{pts:[]}).pts,idx=-1;
  function near(pts,t){var b=null,bd=Infinity;for(var i=0;i<pts.length;i++){var d=Math.abs(pts[i].t-t);if(d<bd){bd=d;b=pts[i];}}return bd<=(cfg.snapMs||7*60e3)?b:null;}
  function show(t){var xx=X(t);xh.setAttribute('x1',xx);xh.setAttribute('x2',xx);xh.setAttribute('visibility','visible');
   var rows=cfg.series.map(function(se){var p=near(se.pts,t);return '<div><span class="kk" style="border-color:'+se.color+'"></span><b>'+(p&&p.v!=null?p.v.toFixed(2)+' ft':'n/a')+'</b> '+esc(se.name)+'</div>';}).join('');
@@ -824,7 +835,7 @@ function loadWL(){var request=startFeed('wl');return getJSON(CO+'?range=48&stati
   if(!latestFeed('wl',request))return;var rows=sourceRows(j,'data'),valid=rows.filter(function(r){return r.v!=null;});if(!valid.length)throw new Error('No valid observed readings');
   var last=valid[valid.length-1];if(last.t>Date.now()||last.t<Date.now()-48*3600e3)throw new Error('Observed timestamp is future or outside the requested window');if(WL&&last.t<WL.last.t)throw new Error('Observed source time regressed; retaining last good');WL={rows:rows,last:last};
   acceptedFeed('wl',Date.now()-last.t>WL_STALE_MIN*60000?'stale':'live',last.t);}).catch(function(e){if(latestFeed('wl',request))failedFeed('wl',e,!!WL);});}
-function loadPred(){var request=startFeed('pred'),now=new Date();var url=CO+'?station=8726520&product=predictions&interval=6&datum=MLLW&units=english&time_zone=gmt&format=json&begin_date='+ymd(new Date(now-48*3600e3))+'&end_date='+ymd(new Date(now.getTime()+24*3600e3));
+function loadPred(){var request=startFeed('pred'),now=new Date();var url=CO+'?station=8726520&product=predictions&interval=6&datum=MLLW&units=english&time_zone=gmt&format=json&begin_date='+ymd(new Date(now-48*3600e3))+'&end_date='+ymd(new Date(now.getTime()+48*3600e3));
  return getJSON(url).then(function(j){if(!latestFeed('pred',request))return;var rows=sourceRows(j,'predictions').filter(function(r){return r.v!=null;});if(!rows.length)throw new Error('No valid predictions returned');
   var lastT=rows[rows.length-1].t,firstT=rows[0].t,nowT=Date.now();if(lastT>nowT+3*864e5)throw new Error('Prediction outside requested date range');if(PRED&&lastT<PRED.last)throw new Error('Prediction horizon regressed; retaining last good');PRED={rows:rows,last:lastT,first:firstT};var covers=firstT<=nowT&&lastT>=nowT;
   acceptedFeed('pred',covers?'live':'stale',covers?null:(firstT>nowT?firstT:lastT),covers?'covers now':(firstT>nowT?'starts after now':'ends before now'));})
@@ -832,7 +843,7 @@ function loadPred(){var request=startFeed('pred'),now=new Date();var url=CO+'?st
 function predAt(t){if(!PRED)return null;var b=null,bd=Infinity;PRED.rows.forEach(function(r){var d=Math.abs(r.t-t);if(d<bd){bd=d;b=r;}});return bd<=6*60e3?b.v:null;}
 function predCell(pv){var f=FEEDS.pred;if(pv!=null)return pv.toFixed(2)+' ft MLLW';if(f.state==='loading')return 'loading';if(f.state==='stale'&&PRED)return PRED.first>Date.now()?'stale: predictions start '+esc(fmtUTC(PRED.first)):'stale: predictions end '+esc(fmtUTC(PRED.last));return 'unavailable';}
 function predNote(){var f=FEEDS.pred;if(f.retained)return retainedNote('pred');return f.state==='unavailable'?'<div class="muted">Tide predictions could not be loaded'+(f.err?' ('+esc(f.err)+')':'')+'. Checked '+esc(fmtUTC(f.checked))+'.</div>':'';}
-function renderGauge(){keepFocus(function(){var d=$('gauge').querySelector('details.dt'),o=d&&d.open;renderGauge_();d=$('gauge').querySelector('details.dt');if(o&&d)d.open=true;});}
+function renderGauge(){keepFocus(function(){var d=$('gauge').querySelector('details.dt'),o=d&&d.open;renderGauge_();d=$('gauge').querySelector('details.dt');if(o&&d)d.open=true;});renderWaterTiles();drawWaterChart();}
 function renderGauge_(){var el=$('gauge');
  if(!WL&&FEEDS.wl.state==='loading')return;
  if(!WL){unavailable(el,'wl','The observed water level at gauge 8726520');
@@ -846,19 +857,12 @@ function renderGauge_(){var el=$('gauge');
   '<div class="row"><span class="l">Surge anomaly (observed minus predicted)</span><span class="v">'+(an!=null?sgn(an)+' ft':'unavailable')+'</span></div>'+
   '<div class="row"><span class="l">Plane now (ft NAVD88)</span><span class="v">'+plane.toFixed(2)+'</span></div>'+
   '<div class="row"><span class="l">Nearest scenario level</span><span class="v">'+(step?step+' ft':'below the 3 ft level')+'</span></div>';
- h+='<div class="chart" id="g-chart"></div><div class="legend"><span><span class="k" style="border-color:var(--obs)"></span>Observed</span>'+(PRED?'<span><span class="k" style="border-color:var(--pred);border-top-style:dashed"></span>Predicted tide</span>':'<span class="muted">Predicted tide not plotted ('+esc(FEEDS.pred.state)+')</span>')+'</div>';
+ 
  h+='<details class="dt"><summary>Hourly data table</summary><div class="tblw" id="g-table"></div></details>';
- el.innerHTML=h;drawGaugeChart();
+ el.innerHTML=h;
  var hours=WL.rows.filter(function(r){return r.t%3600e3===0;}).slice(-48).reverse();
  $('g-table').innerHTML='<table class="tbl"><thead><tr><th>Time (UTC)</th><th>Observed</th><th>Predicted</th><th>Anomaly</th></tr></thead><tbody>'+hours.map(function(r){var p=predAt(r.t);return '<tr><td>'+esc(fmtUTC(r.t))+'</td><td>'+f2(r.v)+'</td><td>'+f2(p)+'</td><td>'+(r.v!=null&&p!=null?sgn(r.v-p):'n/a')+'</td></tr>';}).join('')+'</tbody></table>';
 }
-function drawGaugeChart(){var host=$('g-chart');if(!host||!WL||!host.offsetParent)return;var now=Date.now();
- var series=[{name:'Observed',color:'var(--obs)',pts:WL.rows,endDot:true}];
- if(PRED)series.push({name:'Predicted tide',color:'var(--pred)',dash:'5 4',pts:PRED.rows.filter(function(r){return r.t>=now-48*3600e3&&r.t<=now;})});
- lineChart(host,{label:'Observed and predicted water level at gauge 8726520, last 48 hours, ft MLLW',series:series,x0:now-48*3600e3,x1:now,height:150,
-  refs:[{v:3,label:'3 ft level',color:'var(--ring)'}],
-  extra:function(t,near){var o=near(WL.rows,t),p=PRED?near(PRED.rows,t):null;return o&&p&&o.v!=null&&p.v!=null?'<div>anomaly <b>'+sgn(o.v-p.v)+' ft</b></div>':'';}});}
-
 /* ===================== OFS FORECAST ===================== */
 var OFS=null;
 function usableOFSWindow(at){
@@ -876,7 +880,7 @@ function loadOFS(){var request=startFeed('ofs'),now=new Date();var url=CO+'?stat
  return getJSON(url).then(function(j){if(!latestFeed('ofs',request))return;var rows=sourceRows(j,'data').filter(function(r){return r.v!=null;});if(!rows.length)throw new Error('No valid forecast values returned');var last=rows[rows.length-1].t;if(last>Date.now()+4*864e5)throw new Error('Forecast outside requested date range');if(OFS&&last<OFS.last)throw new Error('Forecast horizon regressed; retaining last good');
   FEEDS.ofs.retained=false;OFS={rows:rows};var window=refreshOFSClock();if(window)acceptedFeed('ofs','live',null,'peak '+fmtStamp(window.peak.t)+' · runs to '+fmtStamp(OFS.last));else acceptedFeed('ofs','stale',OFS.last,'no remaining next48hforecast samples');})
   .catch(function(e){if(latestFeed('ofs',request))failedFeed('ofs',e,!!OFS);}).then(function(){if(latestFeed('ofs',request))applyDefaultSurge();});}
-function renderOFS(){keepFocus(function(){var d=$('ofs').querySelector('details.dt'),o=d&&d.open;renderOFS_();d=$('ofs').querySelector('details.dt');if(o&&d)d.open=true;});}
+function renderOFS(){keepFocus(function(){var d=$('ofs').querySelector('details.dt'),o=d&&d.open;renderOFS_();d=$('ofs').querySelector('details.dt');if(o&&d)d.open=true;});renderWaterTiles();drawWaterChart();}
 function renderOFS_(){refreshOFSClock();renderStrip();var el=$('ofs');if(FEEDS.ofs.state==='loading')return;
  if(!OFS){unavailable(el,'ofs','The OFS water-level forecast');el.innerHTML+='<div class="muted" style="margin-top:6px">With no fresh forecast, the default scenario level is 6 ft.</div>';return;}
  var pk=OFS.peak,plane=planeOf(pk.v),step=nearestStep(pk.v),h='';
@@ -889,11 +893,26 @@ function renderOFS_(){refreshOFSClock();renderStrip();var el=$('ofs');if(FEEDS.o
  if(OFS.fresh)h+='<div class="row" style="margin-top:8px"><span class="l">Peak plane (ft NAVD88)</span><span class="v">'+plane.toFixed(2)+'</span></div>'+
   '<div class="row"><span class="l">Nearest scenario level</span><span class="v">'+step+' ft</span></div>';
  var hrs2=OFS.rows.filter(function(r){return r.t%3600e3===0&&(!OFS.fresh||(r.t>Date.now()&&r.t<=Date.now()+48*3600e3));});
- h+='<div class="chart" id="o-chart"></div><details class="dt"><summary>Hourly data table</summary><div class="tblw"><table class="tbl"><thead><tr><th>Time (UTC)</th><th>'+(OFS.fresh?'OFS forecast':FEEDS.ofs.retained?'Retained OFS context':'OFS (nowcast)')+' (ft MLLW)</th></tr></thead><tbody>'+hrs2.map(function(r){return '<tr><td>'+esc(fmtUTC(r.t))+'</td><td>'+f2(r.v)+'</td></tr>';}).join('')+'</tbody></table></div></details>';el.innerHTML=h;drawOFSChart();}
-function drawOFSChart(){var host=$('o-chart');if(!host||!OFS||!host.offsetParent)return;var x0=OFS.fresh?Date.now():OFS.rows[0].t,x1=OFS.fresh?Date.now()+48*3600e3:OFS.last;
- var pts=OFS.rows.filter(function(r){return r.t>=x0&&r.t<=x1;});if(pts.length<2)pts=OFS.rows;
- lineChart(host,{label:'OFS total water level forecast at gauge 8726520, ft MLLW',series:[{name:OFS.fresh?'OFS forecast':FEEDS.ofs.retained?'Retained OFS context':'OFS (nowcast)',color:'var(--obs)',pts:pts}],x0:pts[0].t,x1:pts[pts.length-1].t,height:120,snapMs:40*60e3,
-  marks:OFS.fresh?[{t:OFS.peak.t,v:OFS.peak.v,color:'var(--obs)',label:'peak '+OFS.peak.v.toFixed(2)}]:[],refs:[{v:3,label:'3 ft level',color:'var(--ring)'}]});}
+ h+='<details class="dt"><summary>Hourly data table</summary><div class="tblw"><table class="tbl"><thead><tr><th>Time (UTC)</th><th>'+(OFS.fresh?'OFS forecast':FEEDS.ofs.retained?'Retained OFS context':'OFS (nowcast)')+' (ft MLLW)</th></tr></thead><tbody>'+hrs2.map(function(r){return '<tr><td>'+esc(fmtUTC(r.t))+'</td><td>'+f2(r.v)+'</td></tr>';}).join('')+'</tbody></table></div></details>';el.innerHTML=h;}
+/* ===================== WATER LEVEL: last 48 h observed and predicted, next 48 h of OFS ===================== */
+function renderWaterTiles(){var el=$('w-tiles');if(!el)return;var o=WL&&WL.last,pv=o?predAt(o.t):null,t=[];
+ t.push(['Observed now',o?o.v.toFixed(2)+' <small>ft</small>':'—',o?esc(fmtUTC(o.t))+' · '+esc(fmtAgo(o.t)):esc(FEEDS.wl.state||'loading')]);
+ t.push(['Predicted tide now',pv!=null?pv.toFixed(2)+' <small>ft</small>':'—','NOAA tide prediction']);
+ t.push(['Surge now',o&&pv!=null?sgn(o.v-pv)+' <small>ft</small>':'—','observed minus predicted']);
+ t.push(['Forecast peak (48 h)',OFS&&OFS.fresh?OFS.peak.v.toFixed(2)+' <small>ft</small>':'—',OFS&&OFS.fresh?esc(fmtUTC(OFS.peak.t)):(OFS?'no future forecast samples':esc(FEEDS.ofs.state||'loading'))]);
+ if(OFS&&OFS.fresh)t.push(['Nearest scenario level',nearestStep(OFS.peak.v)+' <small>ft</small>','for the forecast peak']);
+ el.innerHTML=t.map(function(x){return '<div class="wtile"><div class="l">'+x[0]+'</div><div class="n">'+x[1]+'</div><div class="l">'+x[2]+'</div></div>';}).join('');}
+function drawWaterChart(){var host=$('w-chart');if(!host||!host.offsetParent||(!WL&&!PRED&&!OFS))return;var now=Date.now(),x0=now-48*3600e3,x1=now+48*3600e3,series=[];
+ if(WL)series.push({name:'Observed',color:'var(--obs)',pts:WL.rows.filter(function(r){return r.t>=x0&&r.t<=now;}),endDot:true});
+ if(PRED)series.push({name:'Predicted tide',color:'var(--pred)',dash:'5 4',pts:PRED.rows.filter(function(r){return r.t>=x0&&r.t<=x1;})});
+ if(OFS)series.push({name:OFS.fresh?'OFS forecast':'OFS (nowcast)',color:'var(--up)',pts:OFS.rows.filter(function(r){return r.t>=(OFS.fresh?now:x0)&&r.t<=x1;})});
+ series=series.filter(function(se){return se.pts.length;});if(!series.length)return;
+ var grid=[];for(var t=Math.ceil(x0/3600e3)*3600e3;t<=x1;t+=3600e3)grid.push({t:t});
+ var narrow=host.clientWidth<600;
+ lineChart(host,{label:'Water level at NOAA gauge 8726520: observed and predicted tide over the last 48 hours and the NOAA OFS forecast for the next 48 hours, ft MLLW',series:series,x0:x0,x1:x1,height:narrow?230:310,snapMs:35*60e3,grid:grid,
+  refs:[{v:3,label:narrow?'3 ft':'3 ft scenario level',color:'var(--ring)'}],vlines:[{t:now,label:'now'}],
+  marks:OFS&&OFS.fresh?[{t:OFS.peak.t,v:OFS.peak.v,color:'var(--up)',label:(narrow?'peak ':'forecast peak ')+OFS.peak.v.toFixed(2)+' ft'}]:[],
+  extra:function(t,near){var o=WL?near(WL.rows,t):null,p=PRED?near(PRED.rows,t):null,f=OFS&&OFS.fresh&&t>Date.now()?near(OFS.rows,t):null;if(o&&p&&o.v!=null&&p.v!=null)return '<div>surge <b>'+sgn(o.v-p.v)+' ft</b></div>';if(f&&p&&f.v!=null&&p.v!=null)return '<div>forecast above tide <b>'+sgn(f.v-p.v)+' ft</b></div>';return '';}});}
 
 /* ===================== DEFAULT SURGE ===================== */
 var surgeUser=false,surgeNote='Defaults to 6 ft while the OFS forecast loads.';
@@ -1534,13 +1553,13 @@ var PAGES=['inventory','monitor','context','impact','plan','backtest','about'];
 function setPage(p){if(PAGES.indexOf(p)<0)p='inventory';document.querySelectorAll('[data-page]').forEach(function(el){el.hidden=el.getAttribute('data-page')!==p;});
  document.querySelectorAll('.tab').forEach(function(b){b.setAttribute('aria-selected',String(b.getAttribute('data-tab')===p));});
  try{if(location.hash!=='#'+p)history.replaceState(null,'','#'+p);}catch(e){}
- if(p==='monitor'){drawGaugeChart();drawOFSChart();}if(p==='inventory')renderPublicInventory();if(p==='impact')renderProjectedImpact();if(p==='plan'){renderCheck();renderTimeline();}if(p==='backtest')drawStormChart();if(p==='context'&&!$('context-map').innerHTML)contextMap([],{name:'loaded records'},function(){return '';});}
+ if(p==='monitor'){renderWaterTiles();drawWaterChart();}if(p==='inventory')renderPublicInventory();if(p==='impact')renderProjectedImpact();if(p==='plan'){renderCheck();renderTimeline();}if(p==='backtest')drawStormChart();if(p==='context'&&!$('context-map').innerHTML)contextMap([],{name:'loaded records'},function(){return '';});}
 window.setPage=setPage;
 document.querySelectorAll('.tab').forEach(function(b){b.addEventListener('click',function(){setPage(b.getAttribute('data-tab'));});});
 document.addEventListener('click',function(e){var b=e.target.closest('.lv');if(b){if(b.closest('[data-page="plan"]')||b.closest('[data-page="impact"]')){$('impact-water-source').value='selected';$('plan-water-source').value='selected';}setSurge(+b.getAttribute('data-lv'),true);return;}
  var ph=e.target.closest('.ph');if(ph){phaseSel=ph.getAttribute('data-ph');phaseUser=true;renderPhase();}});
 document.addEventListener('change',function(e){var t=e.target;if(t&&t.id&&t.id.indexOf('ck-')===0)CHECKED[t.id]=t.checked;});
-var rz=null;window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){drawGaugeChart();drawOFSChart();},150);});
+var rz=null;window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){drawWaterChart();},150);});
 
 var feedRefreshRun=0,lastFeedRefresh=0;
 function refreshAll(){var run=++feedRefreshRun;lastFeedRefresh=Date.now();$('refreshed').textContent='Refreshing feeds...';
