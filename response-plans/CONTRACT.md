@@ -48,7 +48,7 @@ Safety/meaning rules:
   render an explicit practice/scenario label. Actions remain interpretive, with official authority links.
 - Triggered actions match any listed triggered diagnostic. Unknown actions match unknown diagnostics.
   Always actions are baseline preparation/review, not claims an incident exists.
-- Comparison/structure/spillover are adaptations of research principles. Do not claim a fitted CRT
+- Comparison/structure/spillover are adaptations of research principles. Do not claim a fitted
   estimand, validated ten-metric transfer, causal contagion, or VAR/FEVD unless actually implemented.
 - No invented graph: declare unavailable directed information where no observed edge set exists.
   State edge direction, period alignment, duplicates, boundary coverage and unit for accounting.
@@ -69,7 +69,7 @@ and map tiles; verify all consoles offline plus fixture-driven changes, audience
 ## Ten canonical dimensions and checklist chain
 
 Every console renders all ten numbered dimensions within the three pillars. The dimension names
-identify research adaptations, not a claim that the original CRT estimator/metric has been fitted:
+identify research adaptations, not a claim that a fitted estimator or metric is reported:
 
 1. Population Balance (comparison)
 2. Wasserstein Distance / Shape Imbalance (comparison)
@@ -241,7 +241,7 @@ inline markup for a canonical parameter and its help button. General meaning and
 used in this view remain separate. The help never changes source data, scores, cutoffs or applicability.
 Coastal supplies distinct exercise and public-station explanations, including when a quantity is a
 geometric proxy or cannot be assessed. The inherited free-energy name does not turn a link share into
-a fitted model; the reference CRT implementation documents its BIC proxy.
+a fitted model.
 
 The entire label supports hover; the button also supports focus and tap. The single floating tooltip
 is hoverable, viewport-bounded, associated through `aria-describedby`, dismissible with Escape or an

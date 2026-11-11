@@ -7,7 +7,7 @@
   "source": "https://data.cdc.gov/resource/vutn-jzwm.json",
   "authority": "https://www.cdc.gov/respiratory-viruses/prevention/index.html",
   "scope": "National surveillance supports verification and preparedness review, not a diagnosis, individual risk prediction or an automatic local incident declaration.",
-  "gap": "No verified local catchment graph, person-level exposures or fitted CRT probability model is supplied.",
+  "gap": "No verified local catchment graph, person-level exposures or fitted probability model is supplied.",
   "escalate": "Escalate stale, revised or discordant surveillance to the public-health/data lead. Current symptoms or immediate safety concerns require appropriate local care or emergency services, irrespective of this national trend. Professional operators must use current healthcare-specific guidance and their own SOP.",
   "limit": "Incomplete, lagged or preliminary reporting can change estimates. Do not add overlapping drug classes, different viruses or different surveillance measures.",
   "lenses": [
@@ -95,7 +95,7 @@
   function assess(number,label,status,ids,rule,explanation) { return {metricId:number,id:'dimension-'+number,label:label,status:status,evidenceIds:ids,rule:rule,explanation:explanation,scope:'planning'}; }
   function plan(context,evidence,overrides) {
     evidence=evidence.slice();
-    evidence.push(fact('reference-scope','Scope of this planning review',cfg.scope,'',null,cfg.source,'historical','interpretive','Official resources support review and handoff, not a validated transfer of all ten CRT parameters.','2026-10-23'));
+    evidence.push(fact('reference-scope','Scope of this planning review',cfg.scope,'',null,cfg.source,'historical','interpretive','Official resources support review and handoff; they do not validate all ten parameters.','2026-10-23'));
     var diagnostics=cfg.lenses.map(function(l,i) {
       var d=Object.assign(assess(i+1,l[0],'unknown',['reference-scope'],'Not assessable from this console’s supplied inputs.',cfg.gap),overrides && overrides[i+1] || {});
       d.requiredInputs=l[1]; d.analyticalMitigation=l[2]; d.operationalMitigation=l[4]; return d;
@@ -117,7 +117,7 @@
       });
     });
     return {slug:cfg.slug,title:'Ten-dimension action checklist · '+cfg.title,context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
-      limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. A domain proxy is labeled explicitly; unavailable inputs never become an all-clear. No fitted CRT causal effect, validated clinical score or intervention benefit is estimated.']};
+      limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. A domain proxy is labeled explicitly; unavailable inputs never become an all-clear. No causal effect, validated clinical score or intervention benefit is estimated.']};
   }
 
   function freshness(date,days) { var t=Date.parse(date); return Number.isFinite(t) && t<=Date.now() && Date.now()-t<=days*86400000?'current':'stale'; }
@@ -143,7 +143,7 @@
     var ov={5:assess(5,'Four-week ED direction (temporal persistence proxy)',delta==null?'unknown':delta>0?'triggered':'clear',['ed','four-week-change'],'A positive four-week change prompts verification and preparedness review; flat/decreasing does not establish safety.','National weekly direction is not local persistence, individual risk or an automatic clinical operation.')};
     var tail=ed.slice(-8), contiguous=tail.length===8 && tail.every(function(p,i){return !i || Date.parse(p[0]+'T00:00:00Z')-Date.parse(tail[i-1][0]+'T00:00:00Z')===7*86400000;}), shape=contiguous?w1(tail.slice(0,4).map(function(p){return p[1];}),tail.slice(4).map(function(p){return p[1];})):null;
     evidence.push(fact('shape-w1','ED-share empirical W1 · previous four versus latest four weeks',round(shape),'percentage points',last && last[0],cfg.source,q,'interpretive','Equal weight per week in two declared time windows; not independent treatment groups. Requires eight consecutive weeks.',checked));
-    ov[2]=assess(2,'Four-versus-four weekly ED distribution W1 (temporal adaptation)',shape==null?'unknown':shape>1e-10?'triggered':'clear',['ed','shape-w1'],'A nonzero descriptive W1 prompts source and trend review, with no risk or clinical cutoff.','This compares ED-share distributions in consecutive windows, not CRT arms or patient-level disease severity.');
+    ov[2]=assess(2,'Four-versus-four weekly ED distribution W1 (temporal adaptation)',shape==null?'unknown':shape>1e-10?'triggered':'clear',['ed','shape-w1'],'A nonzero descriptive W1 prompts source and trend review, with no risk or clinical cutoff.','This compares ED-share distributions in consecutive windows, not patient-level disease severity.');
     var wwEnd=w && w[0],wwStart=wwEnd?new Date(Date.parse(wwEnd+'T00:00:00Z')-28*86400000).toISOString().slice(0,10):'',stateRows={};
     (snap.wval_state_expected && snap.wval_state_expected[key] || []).forEach(function(state){stateRows[state]=[];});
     Object.entries(snap.wval_state_series || {}).forEach(function(entry){if(entry[1] && entry[1][key])stateRows[entry[0]]=entry[1][key];});

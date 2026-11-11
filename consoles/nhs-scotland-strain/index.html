@@ -535,7 +535,6 @@ a{color:var(--nhs)}svg{display:block;width:100%;height:auto}
     h += section('network', '4. Directed accounting and method limits', networkHTML, 'interpretive');
     h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p>';
       // A finder page (it sets data-cr-after) leaves out the research links: they would mean nothing to someone looking for a clinic.
-      if (!doc.documentElement.hasAttribute('data-cr-after')) h += '<p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
     h += '</details>';
     panel.innerHTML = h;
     if (focused) {
@@ -702,7 +701,7 @@ a{color:var(--nhs)}svg{display:block;width:100%;height:auto}
   });
 
   // Entries explain the maintained adapter's actual estimand or input gap. They do
-  // not transfer Coastal thresholds, claim a fitted CRT model, or select actions.
+  // not transfer Coastal thresholds, claim a fitted model, or select actions.
   const reasons = {
     restroom: [
       'Counts in {subject} come from two sources around one searched point; they show where restrooms are listed, not how many people need one or who may use them.',
@@ -2111,7 +2110,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now(
         8:override('auc',auc,'Review a persistent positive gap over the packaged 30-week window.','Normalized trapezoidal standard-gap AUC; not contamination, treatment effect or a harm estimate.'),
         10:override('care-outside',outsideShare,'Review any published outside-board care use for cross-board service planning; no clinical risk cutoff is fitted.','Cross-board status is computed as HBR != HBT, independently of contradictory source-flag wording. Denominator is reported numeric stays for 14 territorial residence boards, including published special-provider treatment codes; not unique patients or actual transfers.')},
       network:{label:'Historical residence-to-treatment care use',basis:'measured',semantics:'Direction is board of residence to board of treatment; weights are reported inpatient/day-case stays, not observed patient transfers or causal capacity flow.',period:q||'unavailable',coverage:flowKnown?flow.cohortCellCount+' reported cells for 14 territorial-origin boards; '+flow.unreportedCohortCells+' unreported cells remain unknown':'Published cross-boundary matrix unavailable',roles:flowKnown?flow.providerCodes.map(id=>{const incoming=cohort.filter(r=>r.treatment===id),outgoing=cohort.filter(r=>r.residence===id);return {id,label:SNAP.occupancy.find(r=>r.hb===id)?.board||'Published provider '+id,role:boards.includes(id)?'residence and treatment board':'source-coded treatment provider; outside territorial-origin cohort',inbound:incoming.length?incoming.reduce((s,r)=>s+r.stays,0):null,outbound:boards.includes(id)&&outgoing.length?outgoing.reduce((s,r)=>s+r.stays,0):null,unit:'reported stays'};}):[],limitations:['Unpublished cells are not zero. This is published care-use accounting, not transfers, geographic adjacency, current bed-flow or service availability.','The care-use quarter is independent of the A&E week, bed quarter and delayed-discharge month; they are not joined into a contemporaneous flow model.']},
-      limitations:['All calculations above use the dated baseline; a selected what-if changes the original national scenario display, not these historical site measurements.','These are adaptations of the ten diagnostic questions, with supported calculations and explicit input gaps; no CRT treatment effect is estimated.'],
+      limitations:['All calculations above use the dated baseline; a selected what-if changes the original national scenario display, not these historical site measurements.','These are the ten diagnostic questions, with supported calculations and explicit input gaps; no treatment effect is estimated.'],
       baseline:[{id:'care-pathway',track:'public',phase:'verify',when:'always',title:'Find current care guidance',nextStep:'Use NHS inform for current service guidance. Do not delay urgent care because a historical dashboard shows pressure.',escalateWhen:'Follow current clinical and emergency-service guidance for your situation.',authorityUrl:care}]
     });
   },['#scenout','#feeds','#eds']);
