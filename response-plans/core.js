@@ -438,7 +438,6 @@
     h += section('network', '4. Directed accounting and method limits', networkHTML, 'interpretive');
     h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p>';
       // A finder page (it sets data-cr-after) leaves out the research links: they would mean nothing to someone looking for a clinic.
-      if (!doc.documentElement.hasAttribute('data-cr-after')) h += '<p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
     h += '</details>';
     panel.innerHTML = h;
     if (focused) {
