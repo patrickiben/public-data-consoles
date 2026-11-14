@@ -684,7 +684,6 @@
     h += section('network', '4. Directed accounting and method limits', networkHTML, 'interpretive');
     h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p>';
       // A finder page (it sets data-cr-after) leaves out the research links: they would mean nothing to someone looking for a clinic.
-      if (!doc.documentElement.hasAttribute('data-cr-after')) h += '<p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
     h += '</details>';
     panel.innerHTML = h;
     if (focused) {
@@ -851,7 +850,7 @@
   });
 
   // Entries explain the maintained adapter's actual estimand or input gap. They do
-  // not transfer Coastal thresholds, claim a fitted CRT model, or select actions.
+  // not transfer Coastal thresholds, claim a fitted model, or select actions.
   const reasons = {
     restroom: [
       'Counts in {subject} come from two sources around one searched point; they show where restrooms are listed, not how many people need one or who may use them.',
@@ -1717,7 +1716,7 @@
     </div>
     <div class="card" id="fragcard">
       <h2>Program exposure ranking <span class="bdg MODELED">MODELED — relative triage</span></h2>
-      <div class="cap">Relative exposure = how deeply each program was cut × how many depend on it. For prioritization, not absolute prediction; inherits the wide CIs of the source models.</div>
+      <div class="cap">Ranked by each program's reported cut, the percentage on the bar. The line under each bar adds context on scale or dependence from separate published sources, several of them modeled with wide uncertainty; it does not affect the order.</div>
       <div id="frag"></div>
     </div>
     <div class="card" id="geocard">

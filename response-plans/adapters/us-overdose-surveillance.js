@@ -7,7 +7,7 @@
   "source": "https://www.cdc.gov/nchs/nvss/vsrr/drug-overdose-data.htm",
   "authority": "https://www.cdc.gov/overdose-prevention/",
   "scope": "National surveillance supports verification and preparedness review, not a diagnosis, individual risk prediction or an automatic local incident declaration.",
-  "gap": "No verified local catchment graph, person-level exposures or fitted CRT probability model is supplied.",
+  "gap": "No verified local catchment graph, person-level exposures or fitted probability model is supplied.",
   "escalate": "Escalate stale, revised or discordant surveillance to the public-health/data lead. Current symptoms or immediate safety concerns require appropriate local care or emergency services, irrespective of this national trend. Professional operators must use current healthcare-specific guidance and their own SOP.",
   "limit": "Incomplete, lagged or preliminary reporting can change estimates. Do not add overlapping drug classes, different viruses or different surveillance measures.",
   "lenses": [
@@ -95,7 +95,7 @@
   function assess(number,label,status,ids,rule,explanation) { return {metricId:number,id:'dimension-'+number,label:label,status:status,evidenceIds:ids,rule:rule,explanation:explanation,scope:'planning'}; }
   function plan(context,evidence,overrides) {
     evidence=evidence.slice();
-    evidence.push(fact('reference-scope','Scope of this planning review',cfg.scope,'',null,cfg.source,'historical','interpretive','Official resources support review and handoff, not a validated transfer of all ten CRT parameters.','2026-10-23'));
+    evidence.push(fact('reference-scope','Scope of this planning review',cfg.scope,'',null,cfg.source,'historical','interpretive','Official resources support review and handoff; they do not validate all ten parameters.','2026-10-23'));
     var diagnostics=cfg.lenses.map(function(l,i) {
       var d=Object.assign(assess(i+1,l[0],'unknown',['reference-scope'],'Not assessable from this console’s supplied inputs.',cfg.gap),overrides && overrides[i+1] || {});
       d.requiredInputs=l[1]; d.analyticalMitigation=l[2]; d.operationalMitigation=l[4]; return d;
@@ -117,7 +117,7 @@
       });
     });
     return {slug:cfg.slug,title:'Ten-dimension action checklist · '+cfg.title,context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
-      limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. A domain proxy is labeled explicitly; unavailable inputs never become an all-clear. No fitted CRT causal effect, validated clinical score or intervention benefit is estimated.']};
+      limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. A domain proxy is labeled explicitly; unavailable inputs never become an all-clear. No causal effect, validated clinical score or intervention benefit is estimated.']};
   }
 
   function freshness(date,days) { var t=Date.parse(date); return Number.isFinite(t) && t<=Date.now() && Date.now()-t<=days*86400000?'current':'stale'; }
@@ -141,7 +141,7 @@
     var ov={5:assess(5,'Year-on-year rolling-burden change (temporal proxy)',change==null?'unknown':change>0?'triggered':'clear',['selected-total','year-change'],'A positive change prompts a planning/data-quality review; nonpositive does not establish safety.','Exact ending-month alignment is required. This is not topological persistence, statistical significance or a local outbreak test.')};
     var tail=pairs.slice(-12), contiguous=tail.length===12 && tail.every(function(p,i){if(!i)return true;var a=tail[i-1][0].split('-').map(Number),b=p[0].split('-').map(Number);return b[0]*12+b[1]===a[0]*12+a[1]+1;}), shape=contiguous?w1(tail.slice(0,6).map(function(p){return p[1];}),tail.slice(6).map(function(p){return p[1];})):null;
     evidence.push(fact('shape-w1','Temporal empirical W1 · previous six versus latest six monthly rolling totals',round(shape),'deaths in rolling 12-month totals',period,cfg.source,q,'interpretive','The windows contain serially overlapping 12-month totals, not independent observations or different populations. An empirical descriptive shape comparison only.',checked));
-    ov[2]=assess(2,'Six-versus-six rolling-total distribution W1 (temporal adaptation)',shape==null?'unknown':shape>1e-10?'triggered':'clear',['selected-total','shape-w1'],'A nonzero W1 prompts review of changing burden and reporting; twelve consecutive monthly estimates are required.','The metric has no clinical cutoff, independent-sample significance or CRT arm interpretation.');
+    ov[2]=assess(2,'Six-versus-six rolling-total distribution W1 (temporal adaptation)',shape==null?'unknown':shape>1e-10?'triggered':'clear',['selected-total','shape-w1'],'A nonzero W1 prompts review of changing burden and reporting; twelve consecutive monthly estimates are required.','The metric has no clinical cutoff or independent-sample significance.');
     var stateRows={};if(['total','syn'].includes(key))(snap.stateHistoryExpectedJurisdictions || []).forEach(function(code){stateRows[code]=[];});if(['total','syn'].includes(key))Object.entries(snap.stateMonthly || {}).forEach(function(entry){if(entry[1] && entry[1][key])stateRows[entry[0]]=entry[1][key];});
     var scale=typeof HealthPublicData==='object' && HealthPublicData.directionAgreement?HealthPublicData.directionAgreement(pairs,stateRows,prevPeriod,period):null;
     var scaleNote='Exactly matched rolling-12-month ending periods '+prevPeriod+' and '+(period || 'unavailable')+' for '+label+'. '+(scale?'Paired '+scale.paired+' of '+scale.observed+' downloaded jurisdictions; missing pairs: '+(scale.missing.join(', ')||'none within downloaded coverage')+'. National predicted counts '+scale.nationalStart+'→'+scale.nationalEnd+'. ':'State history is downloaded for all-drug totals and synthetic opioids only. ')+'Jurisdictions are compared separately, never summed; New York excludes NYC and YC is New York City. This is unweighted jurisdiction-direction sensitivity, not a resident-weighted rate, a current-month incident, causal spillover or a complete population coverage claim. Retained display-only latest counts do not replace missing source-history endpoints. '+(scale?scale.rows.map(function(r){return r.id+': '+r.start+'→'+r.end;}).join('; '):'');

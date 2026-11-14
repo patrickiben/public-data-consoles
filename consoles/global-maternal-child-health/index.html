@@ -709,7 +709,6 @@ footer b{color:var(--ink2)}
     h += section('network', '4. Directed accounting and method limits', networkHTML, 'interpretive');
     h += '<p class="cr-note">' + esc(plan.limitations.join(' ')) + '</p>';
       // A finder page (it sets data-cr-after) leaves out the research links: they would mean nothing to someone looking for a clinic.
-      if (!doc.documentElement.hasAttribute('data-cr-after')) h += '<p class="cr-note">Research adaptations: <a href="https://github.com/patrickiben/crt-design-demo" target="_blank" rel="noopener">Contamination-resilient CRT design</a> · <a href="https://github.com/patrickiben/directed-asymmetry-contagion" target="_blank" rel="noopener">Directed asymmetry and contagion</a>. These planning diagnostics do not establish a fitted CRT estimand, validated ten-metric transfer, causal contagion or intervention benefit.</p>';
     h += '</details>';
     panel.innerHTML = h;
     if (focused) {
@@ -876,7 +875,7 @@ footer b{color:var(--ink2)}
   });
 
   // Entries explain the maintained adapter's actual estimand or input gap. They do
-  // not transfer Coastal thresholds, claim a fitted CRT model, or select actions.
+  // not transfer Coastal thresholds, claim a fitted model, or select actions.
   const reasons = {
     restroom: [
       'Counts in {subject} come from two sources around one searched point; they show where restrooms are listed, not how many people need one or who may use them.',
@@ -2407,7 +2406,7 @@ WorldBankPublicData.installContext({countries:COUNTRIES,getSnapshot:()=>SNAP,set
   function assess(number,label,status,ids,rule,explanation) { return {metricId:number,id:'dimension-'+number,label:label,status:status,evidenceIds:ids,rule:rule,explanation:explanation,scope:'planning'}; }
   function plan(context,evidence,overrides) {
     evidence=evidence.slice();
-    evidence.push(fact('reference-scope','Scope of this planning review',cfg.scope,'',null,cfg.source,'historical','interpretive','Official resources support review and handoff, not a validated transfer of all ten CRT parameters.','2026-10-23'));
+    evidence.push(fact('reference-scope','Scope of this planning review',cfg.scope,'',null,cfg.source,'historical','interpretive','Official resources support review and handoff; they do not validate all ten parameters.','2026-10-23'));
     var diagnostics=cfg.lenses.map(function(l,i) {
       var d=Object.assign(assess(i+1,l[0],'unknown',['reference-scope'],'Not assessable from this console’s supplied inputs.',cfg.gap),overrides && overrides[i+1] || {});
       d.requiredInputs=l[1]; d.analyticalMitigation=l[2]; d.operationalMitigation=l[4]; return d;
@@ -2429,7 +2428,7 @@ WorldBankPublicData.installContext({countries:COUNTRIES,getSnapshot:()=>SNAP,set
       });
     });
     return {slug:cfg.slug,title:'Ten-dimension action checklist · '+cfg.title,context:context,evidence:evidence,diagnostics:diagnostics,actions:actions,
-      limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. A domain proxy is labeled explicitly; unavailable inputs never become an all-clear. No fitted CRT causal effect, validated clinical score or intervention benefit is estimated.']};
+      limitations:[cfg.scope,cfg.limit,'All ten dimensions are review lenses. A domain proxy is labeled explicitly; unavailable inputs never become an all-clear. No causal effect, validated clinical score or intervention benefit is estimated.']};
   }
 
   function read() {
@@ -2444,7 +2443,7 @@ WorldBankPublicData.installContext({countries:COUNTRIES,getSnapshot:()=>SNAP,set
     var group=country && country.income, a=rows.filter(function(c){return c.income===group;}).map(function(c){return c.latest[key].v;}), b=rows.filter(function(c){return c.income!==group;}).map(function(c){return c.latest[key].v;});
     var shape=known.includes(group) && a.length>=2 && b.length>=2?w1(a,b):null;
     evidence.push(fact('shape-w1','Equal-country empirical W1 · '+(country && country.incomeName || 'selected income group')+' (n='+a.length+') vs other known-income displayed countries (n='+b.length+')',round(shape),meta && meta.unit,valid?year:null,src,'historical','interpretive','Only selected-year values and displayed countries enter; no imputation, population weights, risk threshold or causal estimand. Unknown-income countries excluded; displayed income classifications need not match the historical observation-year classification.',checked));
-    ov[2]=assess(2,'Same-year income-group distribution W1',shape==null?'unknown':shape>1e-10?'triggered':'clear',['shape-w1'],'A nonzero descriptive W1 prompts a comparability review; zero means equal empirical distributions only. At least two countries per group.','Selected-country income group versus all other known-income countries in this atlas, each country equally weighted. This is a descriptive adaptation, not a CRT treatment/control comparison or clinical cutoff.');
+    ov[2]=assess(2,'Same-year income-group distribution W1',shape==null?'unknown':shape>1e-10?'triggered':'clear',['shape-w1'],'A nonzero descriptive W1 prompts a comparability review; zero means equal empirical distributions only. At least two countries per group.','Selected-country income group versus all other known-income countries in this atlas, each country equally weighted. This is a descriptive comparison, not a treatment/control comparison or clinical cutoff.');
     var world=snap.agg && snap.agg.WLD && snap.agg.WLD.s && snap.agg.WLD.s[key] || [], lastWorld=-1;
     world.forEach(function(v,i){if(finite(v) && /^\d{4}$/.test(String(years[i])) && Number(years[i])<=new Date().getUTCFullYear() && (lastWorld<0 || Number(years[i])>Number(years[lastWorld])))lastWorld=i;});
     var gap=valid && lastWorld>=0?Math.abs(Number(year)-Number(years[lastWorld])):null;
@@ -2463,7 +2462,7 @@ WorldBankPublicData.installContext({countries:COUNTRIES,getSnapshot:()=>SNAP,set
     evidence.push(fact('population-a','Resident population · selected income comparison stratum',pop?pop.a:null,'people',year,popSource,'historical','modeled',comparisonNote,contextChecked));
     evidence.push(fact('population-b','Resident population · other known-income comparison countries',pop?pop.b:null,'people',year,popSource,'historical','modeled',comparisonNote,contextChecked));
     evidence.push(fact('population-balance','Resident-total symmetry between displayed comparison strata',pop?round(pop.score):null,'0–1; 1 means equal resident totals',year,popSource,'historical','interpretive','2 × min(Pa, Pb) / (Pa + Pb). '+comparisonNote+' Missing same-year population: '+(geography && geography.missingPopulation.join(', ')||'none / context unavailable')+'.',contextChecked));
-    ov[1]=Object.assign(assess(1,'Resident population balance of the actual comparison strata (geographic proxy)',pop?(pop.score<1-1e-10?'triggered':'clear'):'unknown',['population-a','population-b','population-balance'],'Unequal resident totals prompt review of the equal-country comparison and population weighting. Equality only describes these resident totals; it does not establish needs, service equity or balanced CRT arms.','The exact included comparator countries, observation year and strata are unchanged. Resident totals do not measure eligible cohorts, service catchments or beneficiaries.'),{value:pop?round(pop.score):null,unit:'0–1 resident-total symmetry'});
+    ov[1]=Object.assign(assess(1,'Resident population balance of the actual comparison strata (geographic proxy)',pop?(pop.score<1-1e-10?'triggered':'clear'):'unknown',['population-a','population-b','population-balance'],'Unequal resident totals prompt review of the equal-country comparison and population weighting. Equality only describes these resident totals; it does not establish needs or service equity.','The exact included comparator countries, observation year and strata are unchanged. Resident totals do not measure eligible cohorts, service catchments or beneficiaries.'),{value:pop?round(pop.score):null,unit:'0–1 resident-total symmetry'});
     evidence.push(fact('land-a','Pooled land area · selected income comparison stratum',density?density.aArea:null,'km²',year,areaSource,'historical','measured','Official country land area excludes inland waters. '+comparisonNote,contextChecked));
     evidence.push(fact('land-b','Pooled land area · other known-income comparison countries',density?density.bArea:null,'km²',year,areaSource,'historical','measured','Same included countries; no substitution of a different land-area year. '+comparisonNote,contextChecked));
     evidence.push(fact('density-a','Pooled resident density · selected comparison stratum',density?round(density.a):null,'people/km²',year,popSource,'historical','interpretive','Pa / pooled land km². '+comparisonNote,contextChecked));

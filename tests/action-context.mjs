@@ -30,7 +30,7 @@ test('all 34 consoles, ten canonical IDs and both tracks have bounded explanatio
     assert.deepEqual(Object.keys(result).sort(), ['metricId', 'why', 'whyNow']);
   }
 });
-test('domain contrasts follow actual different estimands, rather than universal CRT thresholds', () => {
+test('domain contrasts follow actual different estimands, rather than universal thresholds', () => {
   assert.match(read('free-clinic-finder', 3).why, /nearby clinic and health center listings/);
   assert.match(read('free-clinic-finder', 7).why, /Call to confirm/);
   assert.match(read('nhs-scotland-strain', 2).why, /weekly attendance.*service size or case mix/);

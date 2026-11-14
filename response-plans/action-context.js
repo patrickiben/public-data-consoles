@@ -47,7 +47,7 @@
   });
 
   // Entries explain the maintained adapter's actual estimand or input gap. They do
-  // not transfer Coastal thresholds, claim a fitted CRT model, or select actions.
+  // not transfer Coastal thresholds, claim a fitted model, or select actions.
   const reasons = {
     restroom: [
       'Counts in {subject} come from two sources around one searched point; they show where restrooms are listed, not how many people need one or who may use them.',

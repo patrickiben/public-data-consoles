@@ -19,7 +19,7 @@ function plan(value=80, quality='current') {
       {id:'watch',track:'public',phase:'prepare',when:'triggered',metricIds:[1],title:'Review the workload trigger',nextStep:'Review the measured report and local instructions.',escalateWhen:'If the responsible authority issues instructions.',authorityUrl:'https://www.eia.gov/'},
       {id:'unknown',track:'public',phase:'verify',when:'unknown',metricIds:[1],title:'Acquire missing workload evidence',nextStep:'Check the source and reporting time.'},
       {id:'operator',track:'operator',phase:'prepare',when:'triggered',metricIds:[1],title:'Review operator capacity',nextStep:'Confirm telemetry against the approved SOP.',authorityUrl:'https://www.eia.gov/'},
-    ],limitations:['Fixture conditions are not a validated CRT transfer.']};
+    ],limitations:['Fixture conditions are not a validated transfer.']};
 }
 async function offline(context){
   await context.route('**/*', async route=>{

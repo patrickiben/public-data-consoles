@@ -12,35 +12,26 @@ no unsupported outcome forecast is inferred. Each console labels its data as
 *measured* (public observations, with timestamps), *modeled* (published estimates, cited), or *demo* (clearly-labeled
 placeholder data). Nothing in this repository contains protected health information or proprietary data.
 
-## Featured: research engineering and systems architecture
+## Featured
 
 **[Coastal Water Resilience — open the console](https://patrickiben.github.io/public-data-consoles/consoles/coastal-water-resilience/)**
-combines live NOAA/NHC/NWS coastal information with a ten-metric diagnostic suite adapted from the
-[contamination-resilient CRT design](https://github.com/patrickiben/crt-design-demo)
-([preprint](https://doi.org/10.5281/zenodo.23486177)) and directed source/sink topology accounting
-informed by [directed-asymmetry contagion research](https://github.com/patrickiben/directed-asymmetry-contagion).
-It demonstrates translating methods across domains, integrating data sources, and building an interactive
-explanation with explicit provenance. Its default **real public-station register** shows 131 officially
-published locations, including 82 City-owned/maintained stations, County evacuation-zone intersections
-and USGS NAVD88 terrain estimates. Projected impacts and response plans share this real station scope
-and the exact remaining NOAA forecast peak (or an explicitly selected scenario level). Eight of the ten
-planning dimensions can use public geographic data when coverage is complete; probabilistic free-energy
-and hydraulic leakage remain unknown. Real diagnostics use their own descriptive methods and review
-criteria, without importing thresholds from the separate synthetic calibration exercise.
-Projected impacts automatically combine the remaining NOAA
-forecast, public terrain, source-defined sewer basins, Census block populations and published annual
-treatment flows. Population is geographic context, and throughput remains a whole-facility historical
-reference. Optional local scenarios expose their duration, population, flow, repair-cost and funding
-assumptions. Terrain screening does not establish flooding, pump failure
-or service loss. Live observations, dated public inventories, synthetic computations and interpretive
-guidance carry separate labels. The directed component is source/sink accounting, not a port of the
-contagion paper's VAR/FEVD estimation.
+follows the St. Petersburg tide gauge, the NOAA water-level forecast, NHC storms and NWS alerts, and
+connects them to 131 officially published lift-station locations, including 82 City-owned/maintained
+stations, with County evacuation-zone matches and USGS NAVD88 terrain estimates. Projected impacts and
+ten-parameter response plans share this real station scope and the remaining NOAA forecast peak, or a
+scenario level the user selects. Eight of the ten planning dimensions can use public geographic data when
+coverage is complete; probabilistic free-energy and hydraulic leakage remain unknown. Projected impacts
+combine the remaining NOAA forecast, public terrain, source-defined sewer basins, Census block populations
+and published annual treatment flows; population is geographic context, and throughput remains a
+whole-facility historical reference. Public context layers (flood zones, wastewater facilities, river
+gauges, red-tide samples and others) load onto a street map with the tide gauge marked. The backtest
+replays Idalia, Helene and Milton from recorded NOAA gauge data, the NHC best track and archived NWS
+alerts, and shows which gauge's surge led the others. Terrain screening does not establish flooding,
+pump failure or service loss.
 
 [Resilience Telemetry](https://patrickiben.github.io/public-data-consoles/consoles/resilience-telemetry/)
-also adapts the directed-contagion work; its [research guide](https://patrickiben.github.io/public-data-consoles/consoles/resilience-telemetry/wiki.html#s8b)
-explains the methodological correspondence and differences.
-See the [manuscript → code → demo map](https://github.com/patrickiben/patrickiben/blob/main/RESEARCH_MAP.md)
-for each paper's draft, code/data archive and related applications.
+has a [guide](https://patrickiben.github.io/public-data-consoles/consoles/resilience-telemetry/wiki.html)
+that explains its methods.
 
 ## Live demo
 
@@ -68,8 +59,8 @@ an exact-year population with the right definition; missing inputs remain unesti
 reports and elapsed forecast benchmarks are context, not future impact forecasts.
 
 Unsupported dimensions are **unknown**, with the inputs needed to assess them. Historical reports
-support planning; synthetic exercises remain practice. A proxy is labeled with its units and limits,
-and does not establish the original CRT estimand or a validated cross-domain metric. Acknowledgments
+support planning. A proxy is labeled with its units and limits,
+and is not a validated cross-domain metric. Acknowledgments
 are local planning notes, reset when evidence changes; exports and printing are local browser actions.
 The checklist labels conditions as **Review**, **Context · condition not met**, or **Unknown**; none is an all-clear.
 See the [field guide](https://patrickiben.github.io/public-data-consoles/response-plans/guide.html) for interpretation and the
@@ -377,13 +368,12 @@ The [response-plan field guide](response-plans/guide.html) documents the new sup
 calculations: population/land-area comparisons, NHS residence-to-treatment stays,
 river observation histories, grid demand windows, PAGER country exposure, market
 return-density comparisons and matched-period CDC scale checks. Missing or incomplete
-comparisons remain unknown; none supplies a causal CRT effect or an operational clearance.
+comparisons remain unknown; none supplies a causal effect or an operational clearance.
 
 Coastal now opens on its **real public station map** and defaults its checklist to
 City-owned public terrain. Online OpenStreetMap street tiles need no visitor key;
 public-domain Natural Earth 5.1.1 land geometry is embedded for offline orientation.
-The generalized coastline is not a local survey. The separate **Synthetic exercise**
-tab preserves the fictional network, calibration and diagnostic demonstration.
+The generalized coastline is not a local survey.
 Map points are official published locations; no real pipe connections are inferred.
 
 Real station review links connect the map, impact screen and ten-parameter plan. Each future NOAA
