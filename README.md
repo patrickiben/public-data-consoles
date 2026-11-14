@@ -80,7 +80,7 @@ See the [field guide](https://patrickiben.github.io/public-data-consoles/respons
 | [Coastal Water Resilience](consoles/coastal-water-resilience/) | Live feeds + dated real-station register + modeled exercises | NOAA/NHC/NWS; City public wastewater GIS; County evacuation zones; USGS 3DEP terrain |
 | [Community Resilience](consoles/community-resilience/) | Live feeds + dated federal inventories, U.S. and Puerto Rico | FEMA NRI / OpenFEMA / NFHL / NSS, NWS (alerts, experimental HeatRisk), NOAA SPC/NHC/CO-OPS/NWPS, USGS, NIFC, AirNow, Census TIGERweb / ACS, CDC/ATSDR SVI, EPA SDWIS, ORNL ODIN, EIA, CMS, HRSA, BTS NBI; Nominatim for street addresses |
 | [U.S. Grid Strain](consoles/us-grid-strain/) | Automatically updated public reports, U.S. | Official keyless EIA-930 downloads; source timestamps and offline fallback |
-| [Global Outbreak & Emerging-Threat Tracker](consoles/global-outbreak-tracker/) | Live + snapshot | OWID (mpox), CDC (measles), disease.sh, curated WHO / Africa CDC watch |
+| [Global Outbreak & Emerging-Threat Tracker](consoles/global-outbreak-tracker/) | Live + snapshot | WHO (mpox), CDC measles page and NNDSS weekly table (measles), disease.sh, curated WHO / Africa CDC watch |
 
 **Health-System Strain & Consequence**
 

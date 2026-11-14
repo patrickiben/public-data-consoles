@@ -17,23 +17,20 @@ let passed=0;
 async function scenario(slug,options,verify){
  const context=await browser.newContext({serviceWorkers:'block',acceptDownloads:true}),errors=[];
  let html=await readFile(new URL('consoles/'+slug+'/index.html',root),'utf8');
- let outbreakCSV=null,outbreakNow=now,outbreakCountryCount=null;
+ let outbreakWHO=null,outbreakNNDSS=null,outbreakNow=now,outbreakCountryCount=null;
  if(slug==='global-outbreak-tracker'){
-  const baseline=vm.runInNewContext('('+html.match(/let SNAP=([\s\S]*?);\s*\n/)[1]+')').mpox;
-  outbreakNow=Math.max(now,Date.parse(baseline.asof)+4*86400000,...baseline.countries.map(c=>Date.parse(c.asof)+4*86400000),...Object.values(baseline.sourceCountryDates||{}).map(date=>Date.parse(date)+4*86400000));
-  const day=offset=>new Date(outbreakNow-offset*86400000).toISOString().slice(0,10),worldDay=day(1),months=new Map(baseline.monthsLabels.map((m,i)=>[m,baseline.monthsCases[i]])),rows=[['location','date','iso_code','total_cases','total_deaths']];
-  // A successful response must preserve the retained country identities and full
-  // World monthly history. Only the COD death field is deliberately blank.
-  let value=baseline.monthsCases[0];
-  for(let d=new Date(baseline.monthsLabels[0]+'-01T00:00:00Z');d.toISOString().slice(0,7)<=worldDay.slice(0,7);d.setUTCMonth(d.getUTCMonth()+1)){
-   const month=d.toISOString().slice(0,7);if(months.has(month))value=months.get(month);
-   rows.push(['World',month===worldDay.slice(0,7)?worldDay:month+'-01','',month===worldDay.slice(0,7)?baseline.worldCases+10:value,baseline.worldDeaths]);
-  }
+  const snap=vm.runInNewContext('('+html.match(/let SNAP=([\s\S]*?);\s*\n/)[1]+')'),baseline=snap.mpox,weekEnds=(snap.measles.nndss||[]).map(r=>Date.parse(r.weekEnding)+4*86400000);
+  outbreakNow=Math.max(now,Date.parse(baseline.asof)+4*86400000,...baseline.countries.map(c=>Date.parse(c.asof)+4*86400000),...Object.values(baseline.sourceCountryDates||{}).map(date=>Date.parse(date)+4*86400000),...weekEnds,Date.parse(snap.embedded)+86400000);
+  const day=offset=>new Date(outbreakNow-offset*86400000).toISOString().slice(0,10);
+  // A successful WHO response must keep the retained country identities and reach back
+  // before 2024 for the monthly world series. Only the COD death field is deliberately blank.
   const countries=new Map(baseline.countries.map(c=>[c.iso,c]));
   for(const [iso,date]of Object.entries(baseline.sourceCountryDates||{}))if(!countries.has(iso))countries.set(iso,{iso,n:'Fixture country '+iso,cases:0,deaths:null,asof:date});
-  for(const c of countries.values())rows.push([c.n,c.iso==='COD'?day(2):c.iso==='USA'?day(3):c.asof,c.iso,c.cases,c.iso==='COD'?null:c.deaths]);
-  outbreakCountryCount=countries.size;
-  outbreakCSV=rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const rows=[];
+  for(const c of countries.values())rows.push({ISO3:c.iso,COUNTRY:c.n,DATE:'2023-12-01',TOTAL_CONF_CASES:0,TOTAL_CONF_DEATHS:0},{ISO3:c.iso,COUNTRY:c.n,DATE:c.iso==='COD'?day(2):c.iso==='USA'?day(3):c.asof,TOTAL_CONF_CASES:c.cases,TOTAL_CONF_DEATHS:c.iso==='COD'?null:c.deaths});
+  outbreakCountryCount=countries.size;outbreakWHO={'@odata.context':'fixture',value:rows};
+  // NNDSS: each retained year at its retained week, split across the two national measles labels.
+  outbreakNNDSS=(snap.measles.nndss||[]).flatMap(r=>[{year:r.y,week:String(r.week),label:'Measles, Indigenous',m3:(r.cases-1).toFixed(1)},{year:r.y,week:String(r.week),label:'Measles, Imported',m3:'1.0'}]);
  }
  html=html.replace(/<!-- CONSOLE_RESPONSE_(HEAD|MOUNT|ADAPTER)_START -->[\s\S]*?<!-- CONSOLE_RESPONSE_\1_END -->\n?/g,'');
  if(slug!=='coastal-water-resilience'){
@@ -54,7 +51,8 @@ async function scenario(slug,options,verify){
     if(u.pathname.includes('budgetary_resources'))return json({agency_data_by_year:[{fiscal_year:2023,agency_total_obligated:38180000000},{fiscal_year:2025,agency_total_obligated:15000000000},{fiscal_year:2026,agency_total_obligated:6000000000}]});
     return options.budgetFailure?route.fulfill({status:503,body:'fixture incomplete refresh'}):json({results:[{abbreviation:'USAID',active_fy:2026,active_fq:3,obligated_amount:6000000000,budget_authority_amount:16000000000}]});
    }
-   if(u.hostname==='raw.githubusercontent.com'&&u.pathname.includes('monkeypox'))return options.outbreakFailure?route.fulfill({status:503,body:'fixture failed download'}):route.fulfill({contentType:'text/csv',body:outbreakCSV});
+   if(u.hostname==='xmart-api-public.who.int'&&u.pathname.includes('V_MPX_VALIDATED_DAILY'))return options.outbreakFailure?route.fulfill({status:503,body:'fixture failed download'}):json(outbreakWHO);
+   if(u.hostname==='data.cdc.gov'&&u.pathname.includes('x9gk-5huc'))return options.outbreakFailure?route.fulfill({status:503,body:'fixture failed download'}):json(outbreakNNDSS);
    if(u.hostname==='disease.sh')return route.fulfill({status:503,body:'fixture historical source unavailable'});
    if(u.hostname==='api.water.noaa.gov'){
     const g=gauges.find(g=>u.pathname.toUpperCase().includes(g.lid));
@@ -89,7 +87,7 @@ async function scenario(slug,options,verify){
   if(slug==='usaid-consequence')await page.waitForFunction(()=>['live','unavailable'].includes(feedStatus.USAspending));
   if(slug==='global-outbreak-tracker'){
    await page.waitForFunction(()=>outbreakRefreshInFlight===null&&Object.values(OUTBREAK_STATUS).every(s=>['downloaded','unavailable'].includes(s.state)));
-   if(!options.outbreakFailure){assert.equal(await page.evaluate(()=>OUTBREAK_STATUS.mpox.state),'downloaded','complete mpox fixture must be accepted');assert.equal(await page.evaluate(()=>SNAP.mpox.sourceCountryCount),outbreakCountryCount);}
+   if(!options.outbreakFailure){assert.equal(await page.evaluate(()=>OUTBREAK_STATUS.mpox.state),'downloaded','complete mpox fixture must be accepted');assert.equal(await page.evaluate(()=>SNAP.mpox.sourceCountryCount),outbreakCountryCount);assert.equal(await page.evaluate(()=>OUTBREAK_STATUS.measles.state),'downloaded','complete NNDSS fixture must be accepted');}
   }
   if(slug!=='coastal-water-resilience')await page.waitForFunction(slug=>{const plan=ConsoleResponse.exportPlan().plan;return slug==='river-flood-propagation'?plan.evidence.some(e=>e.id==='gauge-TESTA'):slug==='river-flood-network'?plan.evidence.some(e=>e.id==='branch-TESTA'):slug==='us-local-hazards'?plan.evidence.some(e=>e.id==='air'&&e.quality!=='missing'):slug==='usaid-consequence'?plan.evidence.some(e=>e.id==='budget-window'&&e.value.includes(feedStatus.USAspending==='live'?'downloaded':'fallback')):slug==='global-outbreak-tracker'?plan.context.includes(SNAP.mpox.asof):plan.evidence.some(e=>e.id.startsWith('ba-'));},slug);
   if(slug!=='coastal-water-resilience')await page.locator('#console-response-shortcut').click();
@@ -114,6 +112,7 @@ try{
  await scenario('us-grid-strain',{},async page=>{const p=await page.evaluate(()=>ConsoleResponse.exportPlan().plan);ten(p);assert.equal(p.diagnostics.find(d=>d.id==='metric-4').status,'unknown');assert.ok(p.network.roles.some(r=>r.inbound>0));assert.ok(p.actions.some(a=>a.track==='operator'));});
  await scenario('global-outbreak-tracker',{},async page=>{
   const p=await page.evaluate(()=>ConsoleResponse.exportPlan().plan);ten(p);assert.equal(p.diagnostics.find(d=>d.id==='metric-2').status,'triggered');assert.equal(p.diagnostics.find(d=>d.id==='metric-5').status,'triggered');assert.equal(await page.evaluate(()=>SNAP.mpox.countries.find(c=>c.iso==='COD').deaths),null);assert.match(await page.locator('#mpCaveat').textContent(),/not active cases/);assert.equal(p.actions.some(a=>a.selected&&a.phase==='respond'),false);
+  const ytd=p.evidence.find(e=>e.id==='measles-ytd'),week=await page.evaluate(()=>SNAP.measles.nndss.at(-1));assert.equal(ytd.value,week.cases);assert.equal(ytd.measuredAt,week.weekEnding);assert.ok(p.diagnostics.find(d=>d.id==='metric-5').evidenceIds.includes('measles-ytd'));assert.equal(p.evidence.find(e=>e.id==='mpox-worldDeaths').quality,'missing','a blank country death count leaves the world death sum unknown');
  });
  await scenario('global-outbreak-tracker',{outbreakFailure:true},async page=>{const p=await page.evaluate(()=>ConsoleResponse.exportPlan().plan);ten(p);assert.match(await page.locator('#srcchip').textContent(),/unavailable/);assert.ok(p.evidence.every(e=>e.quality!=='current'));});
  await scenario('usaid-consequence',{},async page=>{const p=await page.evaluate(()=>ConsoleResponse.exportPlan().plan);ten(p);assert.equal(p.diagnostics.find(d=>d.id==='metric-5').status,'triggered');assert.match(await page.locator('#fundkv').textContent(),/no matched-period percent change/);assert.doesNotMatch(await page.locator('#readout').textContent(),/fallen about|down90|down 90/);assert.doesNotMatch(await page.locator('#banner').textContent(),/cuts are.*live/);assert.ok(p.evidence.every(e=>e.quality!=='current'));});
