@@ -45,7 +45,7 @@ async function scenario(name,run){
    if(state.market==='bad-fx')delete values.CHF;
    body={base:'USD',rates:{[new Date(Date.UTC(2000,0,1)+day*86400000).toISOString().slice(0,10)]:values}};
   }else{
-   const b=state.baselines[id],times=[b.ms,b.ms+86400000],closes=[b.close,b.close*state.factor];
+   const b=state.baselines[id],times=[b.ms,b.ms+86400000],closes=[b.close,b.close*state.factor];if(state.market==='dividend')closes[1]*=0.99;
    if(state.market==='empty'){times.length=0;closes.length=0;}
    if(state.market==='zero')closes[1]=0;
    if(state.market==='negative')closes[1]=-1;
@@ -53,7 +53,7 @@ async function scenario(name,run){
    if(state.market==='duplicate')times[1]=times[0];
    if(type==='crypto')body=times.map((ms,i)=>[ms,'1','1','1',state.market==='bad-crypto'?'12oops':String(closes[i]),'1',ms+86400000-1]);
    else{
-    const response={chart:{error:null,result:[{meta:{symbol:state.market==='wrong-symbol'?'WRONG':symbol},timestamp:times.map(t=>t/1000),indicators:{quote:[{close:closes}]}}]}};
+    const response={chart:{error:null,result:[{meta:{symbol:state.market==='wrong-symbol'?'WRONG':symbol},timestamp:times.map(t=>t/1000),indicators:{quote:[{close:closes}],adjclose:[{adjclose:state.market==='dividend'?[closes[0]*0.99,closes[1]]:closes}]}}]}};
     if(state.market==='length')response.chart.result[0].indicators.quote[0].close.pop();
     body={contents:JSON.stringify(response)};
    }
@@ -88,7 +88,7 @@ try{
  await scenario('actual equity loader rejects bad identity/shape/prices and labels empty responses honestly',async(page,state)=>{
   const good=await store(page);
   for(const mode of ['zero','negative','duplicate','length','wrong-symbol','null','empty']){state.market=mode;await page.evaluate(()=>loadEquity('SPY'));assert.equal(await store(page),good,mode);const status=await page.evaluate(()=>MARKET_STATE.results.SPY.status);assert.equal(status,['null','empty'].includes(mode)?'empty':'unavailable');}
-  state.market='valid';await page.evaluate(()=>loadEquity('SPY'));assert.notEqual(await store(page),good);assert.match(await page.locator('#feeds').textContent(),/partial download|validated download/);assert.doesNotMatch(await page.locator('#feeds').textContent(),/Yahoo via proxy\) live/);
+  state.market='valid';await page.evaluate(()=>loadEquity('SPY'));assert.notEqual(await store(page),good);assert.match(await page.locator('#feeds').textContent(),/partial download|validated download/);assert.doesNotMatch(await page.locator('#feeds').textContent(),/Yahoo via proxy\) live/);state.market='dividend';await page.evaluate(()=>loadEquity('XLV'));{const x=await page.evaluate(()=>STORE.XLV.close.at(-1)),want=state.baselines.XLV.close*state.factor;assert.ok(Math.abs(x/want-1)<1e-9,'adjusted live tail keeps the payout: '+x+' vs '+want);}
  });
  await scenario('actual crypto and four-currency loaders validate atomically',async(page,state)=>{
   const btc=await store(page,'BTC');state.market='bad-crypto';await page.evaluate(()=>loadBinance('BTCUSDT','BTC'));assert.equal(await store(page,'BTC'),btc);
