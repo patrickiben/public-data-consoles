@@ -235,6 +235,16 @@ for(const slug of all){
   });
   coverage.push({slug,public:actions.filter(a=>a.track==='public').map(a=>({id:a.id,rank:a.position,target:a.target,priority:a.priority,signal:a.signal,evidenceIds:a.evidenceIds})),operatorCount:actions.filter(a=>a.track==='operator').length});
 }
+{
+  const {raw}=await adapterFixture('global-outbreak-tracker');
+  check('global-outbreak-tracker real page: the measles priority names CDC’s archived full year, and the NNDSS count keeps its stated week',()=>{
+    const m=has(raw,'measles-window');assert.ok(m,'measles priority present');
+    assert.match(m.reason,/archived confirmed cases in \d{4}; this dated annual total is not a current local count/);assert.doesNotMatch(m.reason,/cutoff is not supplied/);
+    const e=raw.evidence.find(x=>x.id==='measles-ytd'),end=e?.note.match(/MMWR week \d+ \(week ending (\d{4}-\d{2}-\d{2})\)/);
+    assert.ok(e&&Number.isSafeInteger(e.value)&&e.value>0&&end&&e.measuredAt===end[1],'NNDSS evidence states its week and is dated by it');
+    assert.ok(raw.evidence.filter(x=>x.id.startsWith('mpox-')).every(x=>!/owid/i.test(x.source)),'mpox evidence cites WHO, not the retired OWID copy');
+  });
+}
 check('all 19 wholly missing public payloads keep two named verification steps per audience',()=>{
   for(const slug of all){const p=input(slug);for(const track of ['public','operator']){const a=audience(p,track);assert.ok(a.length>=2&&a.length<=5,slug);assert.ok(a.every(x=>!x.requiresCurrent));}}
 });

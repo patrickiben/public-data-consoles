@@ -60,46 +60,65 @@ try{
  });
  await fixture('global-outbreak-tracker',async page=>{
   await page.waitForFunction(()=>!outbreakRefreshInFlight&&Object.values(OUTBREAK_STATUS).every(s=>s.state==='unavailable'));
+  await check('blocked feeds keep each embedded dataset under its own snapshot date',async()=>{
+   const r=await page.evaluate(()=>({source:document.querySelector('#srcchip').textContent,dates:EMBEDDED_AT,keys:Object.keys(OUTBREAK_STATUS)}));
+   assert.deepEqual(r.keys,['mpox','measles','covid']);
+   for(const key of r.keys)assert.match(r.source,new RegExp(key+': unavailable \\([^)]*\\); retaining embedded snapshot '+r.dates[key]));
+  });
   await page.evaluate(now=>{
    window.__outbreakBaseline=JSON.stringify(SNAP);
-   const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
-   const csv=(mpox)=>[['location','date','iso_code','total_cases','total_deaths'],...mpox.monthsLabels.map((m,i)=>['World',i===mpox.monthsLabels.length-1?mpox.asof:m+'-01','',mpox.monthsCases[i],mpox.worldDeaths]),...mpox.countries.map(c=>[c.n,c.asof,c.iso,c.cases,c.deaths])].map(row=>row.map(quote).join(',')).join('\n');
-   window.__mpoxCSV=csv(SNAP.mpox);window.__validMpoxCSV=__mpoxCSV;
+   // WHO table fixture: every retained country reported before 2024 and again on its retained date.
+   const who=mpox=>({'@odata.context':'fixture',value:mpox.countries.flatMap(c=>[{ISO3:c.iso,COUNTRY:c.n,DATE:'2023-12-01',TOTAL_CONF_CASES:Math.floor(c.cases/2),TOTAL_CONF_DEATHS:0},{ISO3:c.iso,COUNTRY:c.n,DATE:c.asof,TOTAL_CONF_CASES:c.cases,TOTAL_CONF_DEATHS:c.deaths}])});
+   // NNDSS fixture: the retained year at the week before and at its retained week (7 more cases than retained).
+   const r=SNAP.measles.nndss.at(-1),nn=(week,ind,imp)=>[{year:r.y,week:String(week),label:'Measles, Indigenous',m3:ind.toFixed(1)},{year:r.y,week:String(week),label:'Measles, Imported',m3:imp.toFixed(1)}];
+   window.__mpox=who(SNAP.mpox);window.__validMpox=structuredClone(__mpox);
+   window.__measles=[...nn(r.week-1,r.cases-40,12),...nn(r.week,r.cases+7-12,12)];window.__validMeasles=structuredClone(__measles);
    window.__covidAll={...SNAP.covid.all,updated:now-1000,affectedCountries:SNAP.covid.countries.length};window.__covidCountries=SNAP.covid.countries.map(c=>({country:c.n,cases:c.cases,deaths:c.deaths,updated:now-1000}));
    window.__validCovidAll=structuredClone(__covidAll);window.__validCovidCountries=structuredClone(__covidCountries);window.__requestCount=0;window.__failure=null;
-   window.fetch=async url=>{__requestCount++;if(__failure==='hang')return new Promise(()=>{});if(__failure==='http')return {ok:false,status:503};if(String(url)===OWID_CSV)return {ok:true,text:async()=>__mpoxCSV};return {ok:true,json:async()=>structuredClone(String(url)===COVID_ALL?__covidAll:__covidCountries)};};
+   window.fetch=async url=>{__requestCount++;if(__failure==='hang')return new Promise(()=>{});if(__failure==='http')return {ok:false,status:503};const u=String(url);if(u===WHO_MPOX)return {ok:true,json:async()=>structuredClone(__mpox)};if(u===NNDSS_MEASLES)return {ok:true,json:async()=>structuredClone(__measles)};return {ok:true,json:async()=>structuredClone(u===COVID_ALL?__covidAll:__covidCountries)};};
   },now);
   const state=()=>page.evaluate(()=>({snapshot:JSON.stringify(SNAP),status:structuredClone(OUTBREAK_STATUS),source:document.querySelector('#srcchip').textContent}));
   await check('complete valid public responses commit only after validation with distinct source status',async()=>{
-   await page.evaluate(()=>refresh());const r=await state();assert.ok(Object.values(r.status).every(s=>s.state==='downloaded'&&s.downloadedAt&&!s.error));assert.match(r.source,/mpox: downloaded.*covid: downloaded/);evidence.push({case:'outbreak valid refresh',status:r.status});
+   await page.evaluate(()=>refresh());const r=await state();assert.ok(Object.values(r.status).every(s=>s.state==='downloaded'&&s.downloadedAt&&!s.error));assert.match(r.source,/mpox: downloaded.*measles: downloaded.*covid: downloaded/);evidence.push({case:'outbreak valid refresh',status:r.status});
+   const shown=await page.evaluate(()=>{const r=SNAP.measles.nndss.at(-1);return {r,base:JSON.parse(__outbreakBaseline).measles.nndss.at(-1).cases,text:document.querySelector('#msCtxSub').textContent,bars:document.querySelector('#msBars').textContent};});
+   assert.equal(shown.r.cases,shown.base+7);
+   assert.ok(shown.text.includes(shown.r.cases.toLocaleString()+' reported through MMWR week '+shown.r.week+' (week ending '+shown.r.weekEnding+'), CDC NNDSS provisional'),shown.text);
+   assert.ok(shown.bars.includes(shown.r.cases.toLocaleString()));
   });
   const good=await state();
-  async function reset(){await page.evaluate(good=>{SNAP=JSON.parse(good.snapshot);window.__mpoxCSV=__validMpoxCSV;window.__covidAll=structuredClone(__validCovidAll);window.__covidCountries=structuredClone(__validCovidCountries);window.__failure=null;},good);}
+  async function reset(){await page.evaluate(good=>{SNAP=JSON.parse(good.snapshot);window.__mpox=structuredClone(__validMpox);window.__measles=structuredClone(__validMeasles);window.__covidAll=structuredClone(__validCovidAll);window.__covidCountries=structuredClone(__validCovidCountries);window.__failure=null;},good);}
   await check('future/invalid calendar dates and per-country date regression retain last good mpox',async()=>{
    for(const mode of ['future','calendar','country-regression']){
     await reset();const before=await page.evaluate(()=>JSON.stringify(SNAP.mpox));
-    await page.evaluate(mode=>{if(mode==='future')__mpoxCSV=__validMpoxCSV.replaceAll(SNAP.mpox.asof,'2099-01-01');if(mode==='calendar')__mpoxCSV=__validMpoxCSV.replaceAll(SNAP.mpox.asof,'2026-02-30');if(mode==='country-regression'){const c=SNAP.mpox.countries[0];__mpoxCSV=__validMpoxCSV.split('\n').map(line=>line.includes('"'+c.iso+'"')?line.replace(c.asof,'2022-01-01'):line).join('\n');}},mode);
+    await page.evaluate(mode=>{const iso=SNAP.mpox.countries[0].iso;__mpox.value=__mpox.value.map(r=>mode==='future'&&r.DATE===SNAP.mpox.asof?{...r,DATE:'2099-01-01'}:mode==='calendar'&&r.DATE===SNAP.mpox.asof?{...r,DATE:'2026-02-30'}:mode==='country-regression'&&r.ISO3===iso&&r.DATE!=='2023-12-01'?{...r,DATE:'2022-01-01'}:r);},mode);
     await page.evaluate(()=>refresh());assert.equal(await page.evaluate(()=>JSON.stringify(SNAP.mpox)),before);assert.equal((await state()).status.mpox.state,'unavailable');
    }
   });
-  await check('missing country coverage, duplicate identities and truncated history fail atomically',async()=>{
-   for(const mode of ['coverage','duplicate','history']){
+  await check('missing country coverage, duplicate identities, paging and truncated history fail atomically',async()=>{
+   for(const mode of ['coverage','duplicate','history','paged']){
     await reset();const before=await page.evaluate(()=>JSON.stringify(SNAP.mpox));
-    await page.evaluate(mode=>{const lines=__validMpoxCSV.split('\n');if(mode==='coverage')lines.pop();if(mode==='duplicate')lines.push(lines.at(-1));if(mode==='history')lines.splice(1,1);__mpoxCSV=lines.join('\n');},mode);
+    await page.evaluate(mode=>{const rows=__mpox.value;if(mode==='coverage'){const iso=rows.at(-1).ISO3;__mpox.value=rows.filter(r=>r.ISO3!==iso);}if(mode==='duplicate')rows.push({...rows.at(-1)});if(mode==='history')__mpox.value=rows.filter(r=>r.DATE>='2024-01-01');if(mode==='paged')__mpox['@odata.nextLink']='next';},mode);
     await page.evaluate(()=>refresh());assert.equal(await page.evaluate(()=>JSON.stringify(SNAP.mpox)),before);assert.equal((await state()).status.mpox.state,'unavailable');
    }
   });
   await check('invalid, fractional and overflow counts fail; blank deaths remain unknown and zero remains zero',async()=>{
-   for(const value of ['-1','1.5','Infinity','9007199254740992']){
+   for(const value of [-1,1.5,Infinity,9007199254740992,'1.5','x',null]){
     await reset();const before=await page.evaluate(()=>JSON.stringify(SNAP.mpox));
-    await page.evaluate(value=>{const lines=__validMpoxCSV.split('\n'),parts=splitCSVLine(lines.at(-1));parts[3]=value;lines[lines.length-1]=parts.map(v=>'"'+v+'"').join(',');__mpoxCSV=lines.join('\n');},value);
+    await page.evaluate(value=>{__mpox.value.at(-1).TOTAL_CONF_CASES=value;},value);
     await page.evaluate(()=>refresh());assert.equal(await page.evaluate(()=>JSON.stringify(SNAP.mpox)),before);
    }
-   await reset();const r=await page.evaluate(()=>{const prior=JSON.parse(__outbreakBaseline).mpox,lines=__validMpoxCSV.split('\n'),parts=splitCSVLine(lines.at(-1));parts[3]='0';parts[4]='';lines[lines.length-1]=parts.map(v=>'"'+v+'"').join(',');const parsed=parseMpoxSnapshot(lines.join('\n'),prior);return {count:parsed.sourceCountryCount,date:parsed.sourceCountryDates[parts[2]],allFinite:parsed.countries.every(c=>Number.isFinite(c.cases)),zero:outbreakCount('0'),blank:outbreakCount('',true)};});
-   assert.equal(r.zero,0);assert.equal(r.blank,null);assert.ok(r.allFinite&&r.count>0&&r.date);
+   await reset();const r=await page.evaluate(()=>{const prior=JSON.parse(__outbreakBaseline).mpox,data=structuredClone(__validMpox),last=data.value.at(-1);last.TOTAL_CONF_CASES=0;last.TOTAL_CONF_DEATHS=null;const parsed=parseMpoxSnapshot(data,prior);return {count:parsed.sourceCountryCount,date:parsed.sourceCountryDates[last.ISO3],allFinite:parsed.countries.every(c=>Number.isFinite(c.cases)),worldDeaths:parsed.worldDeaths,zero:outbreakCount('0'),blank:outbreakCount('',true)};});
+   assert.equal(r.zero,0);assert.equal(r.blank,null);assert.equal(r.worldDeaths,null);assert.ok(r.allFinite&&r.count>0&&r.date);
   });
   await check('retrospective count revisions are allowed without weakening period and identity guards',async()=>{
-   await reset();const r=await page.evaluate(()=>{const prior=SNAP.mpox,lines=__validMpoxCSV.split('\n'),parts=splitCSVLine(lines[prior.monthsLabels.length]);parts[3]=String(prior.worldCases-1);lines[prior.monthsLabels.length]=parts.map(v=>'"'+v+'"').join(',');return parseMpoxSnapshot(lines.join('\n'),prior).worldCases;});assert.equal(r,JSON.parse(good.snapshot).mpox.worldCases-1);
+   await reset();const r=await page.evaluate(()=>{const prior=SNAP.mpox,data=structuredClone(__validMpox);data.value.at(-1).TOTAL_CONF_CASES-=1;return parseMpoxSnapshot(data,prior).worldCases;});assert.equal(r,JSON.parse(good.snapshot).mpox.worldCases-1);
+  });
+  await check('flagged, incomplete, regressed, duplicate and malformed NNDSS responses retain last good measles',async()=>{
+   for(const mode of ['flagged','incomplete','regressed','duplicate','malformed','negative']){
+    await reset();const before=await page.evaluate(()=>JSON.stringify(SNAP.measles));
+    await page.evaluate(mode=>{const top=String(SNAP.measles.nndss.at(-1).week),last=__measles.filter(r=>r.week===top);if(mode==='flagged'){delete last[0].m3;last[0].m3_flag='U';}if(mode==='incomplete')__measles=__measles.filter(r=>r!==last[1]);if(mode==='regressed')__measles=__measles.filter(r=>r.week!==top);if(mode==='duplicate')__measles.push({...last[1]});if(mode==='malformed')__measles={};if(mode==='negative')last[1].m3='-1.0';},mode);
+    await page.evaluate(()=>refresh());assert.equal(await page.evaluate(()=>JSON.stringify(SNAP.measles)),before,mode);assert.equal((await state()).status.measles.state,'unavailable',mode);
+   }
   });
   await check('malformed/truncated COVID response and timestamp regression cannot erase last good data',async()=>{
    for(const mode of ['missing-count','boolean','duplicate','coverage','future','regression']){
@@ -109,7 +128,7 @@ try{
    }
   });
   await check('simultaneous Refresh calls share one transaction and cannot race a newer result',async()=>{
-   await reset();const r=await page.evaluate(async()=>{__requestCount=0;const first=refresh(),second=refresh(),same=first===second;await Promise.all([first,second]);return {same,requests:__requestCount};});assert.equal(r.same,true);assert.equal(r.requests,3);
+   await reset();const r=await page.evaluate(async()=>{__requestCount=0;const first=refresh(),second=refresh(),same=first===second;await Promise.all([first,second]);return {same,requests:__requestCount};});assert.equal(r.same,true);assert.equal(r.requests,4);
   });
   await check('HTTP failure retains successful downloads and labels their retained vintage',async()=>{
    await reset();const before=(await state()).snapshot;await page.evaluate(()=>{__failure='http';return refresh();});const r=await state();assert.equal(r.snapshot,before);assert.match(r.source,/unavailable.*retaining download/);assert.ok(Object.values(r.status).every(s=>s.error.includes('HTTP503')||s.error.includes('HTTP 503')));

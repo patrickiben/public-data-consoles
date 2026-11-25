@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Global Outbreak &amp; Emerging-Threat Tracker</title>
-<meta name="description" content="Descriptive surveillance of active global outbreaks — mpox (incl. clade I in central/east Africa), the U.S. measles resurgence, and a curated WHO/CDC/Africa CDC emerging-threat watch list, with still-circulating COVID-19 context. Built on OWID, CDC and disease.sh public data. Unofficial, descriptive, not a forecast.">
+<meta name="description" content="Descriptive surveillance of active global outbreaks — mpox (incl. clade I in central/east Africa), the U.S. measles resurgence, and a curated WHO/CDC/Africa CDC emerging-threat watch list, with still-circulating COVID-19 context. Built on WHO, CDC and disease.sh public data. Unofficial, descriptive, not a forecast.">
 <style>
 :root{--bg:#081319;--surf:#10222b;--surf2:#0c1b22;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
  --ink:#e8f1f4;--ink2:#9fb4bd;--dim:#6b8290;--teal:#26c6da;--green:#3ddc97;--amber:#f5b945;--orange:#f3833b;--red:#ef5466;--purple:#b08ef0;
@@ -1503,7 +1503,7 @@ footer b{color:var(--ink2)}
   <details class="card" open id="c-mpox">
     <summary><span class="ico">●</span> Active outbreak — mpox (monkeypox), global <span class="badge b-meas">measured</span></summary>
     <div class="body">
-      <div class="small muted" style="margin-bottom:8px">Cumulative confirmed cases and deaths since the 2022 multi-country outbreak, with the current clade I outbreak centred on the <b>Democratic Republic of the Congo</b> and neighbouring central/east Africa. Source: Our World in Data mpox dataset (compiled from WHO &amp; national reports).</div>
+      <div class="small muted" style="margin-bottom:8px">Cumulative confirmed cases and deaths since the 2022 multi-country outbreak, with the current clade I outbreak centred on the <b>Democratic Republic of the Congo</b> and neighbouring central/east Africa. Source: WHO's validated mpox table (confirmed cases and deaths reported by each country).</div>
       <div class="grid2">
         <div class="stat">
           <div class="l">Cumulative confirmed cases · as of <span id="mpAsof">—</span></div>
@@ -1531,7 +1531,7 @@ footer b{color:var(--ink2)}
   <details class="card" open id="c-meas">
     <summary><span class="ico">▦</span> Dated U.S. measles surveillance <span class="badge b-meas">measured</span></summary>
     <div class="body">
-      <div class="small muted" style="margin-bottom:6px">Confirmed U.S. measles cases reported per year. After elimination was declared in 2000, 2025 saw the largest annual case count in decades, driven by under-vaccinated communities. Source: CDC measles surveillance (annual confirmed-case totals).</div>
+      <div class="small muted" style="margin-bottom:6px">U.S. measles cases reported per year. After elimination was declared in 2000, case counts in 2025 and 2026 were the highest in decades, driven by under-vaccinated communities. Sources: CDC's annual confirmed-case counts for past years, and CDC's weekly NNDSS tables for the current year.</div>
       <div class="grid2">
         <div class="stat">
           <div class="l">Confirmed cases · <span id="msYr">—</span> <span class="badge b-meas">measured</span></div>
@@ -1553,7 +1553,7 @@ footer b{color:var(--ink2)}
   <details class="card" open id="c-watch">
     <summary><span class="ico">⚠</span> Emerging-threat watch list <span class="badge b-int">interpretive</span></summary>
     <div class="body">
-      <div class="small muted" style="margin-bottom:4px">An archived curated set of outbreak / health-emergency topics tracked by WHO Disease Outbreak News, CDC and Africa CDC. This is qualitative early-warning context — <b>not</b> a live count — and reflects status as of the embed date below.</div>
+      <div class="small muted" style="margin-bottom:4px">An archived curated set of outbreak / health-emergency topics tracked by WHO Disease Outbreak News, CDC and Africa CDC. This is qualitative early-warning context — <b>not</b> a live count — and reflects status as of the curation date shown on each entry.</div>
       <div id="watch"></div>
       <div class="caveat">Compiled from public outbreak bulletins: WHO Disease Outbreak News (DON), CDC travel/health notices, Africa CDC, and PAHO. There is <b>no</b> single CORS-open live API for these, so entries are curated and dated, not streamed. Status labels (e.g. "active", "expanding", "watch") are editorial summaries of the cited authorities, not formal risk ratings. <b>Reporting lags are large and absence of data is not absence of disease</b> — surveillance is weakest exactly where outbreaks are often largest.</div>
     </div>
@@ -1586,8 +1586,8 @@ footer b{color:var(--ink2)}
 
   <footer>
     <div><b>Data &amp; method.</b>
-      <b>Mpox:</b> <a href="https://github.com/owid/monkeypox" target="_blank" rel="noopener">Our World in Data mpox dataset</a> (CSV, compiled from WHO &amp; national surveillance), pulled live in-browser when reachable, else from an embedded snapshot whose vintage is shown above; cumulative confirmed cases/deaths.
-      <b>Measles:</b> CDC measles surveillance annual confirmed-case totals (<a href="https://www.cdc.gov/measles/data-research/index.html" target="_blank" rel="noopener">cdc.gov/measles</a>) — embedded MEASURED snapshot (the per-year rollup has no clean CORS-open live API; the weekly NNDSS tables are split by year and lag).
+      <b>Mpox:</b> <a href="https://xmart-api-public.who.int/MPX/V_MPX_VALIDATED_DAILY" target="_blank" rel="noopener">WHO's validated mpox table</a> (confirmed cases and deaths by country and report date), pulled live in-browser when reachable, else from an embedded snapshot whose vintage is shown below. The world total is the sum of each country's latest cumulative report.
+      <b>Measles:</b> past years are CDC's annual confirmed-case counts from its measles page (<a href="https://www.cdc.gov/measles/data-research/index.html" target="_blank" rel="noopener">cdc.gov/measles</a>), embedded because that page has no open data feed. The current year is pulled live from CDC's <a href="https://data.cdc.gov/NNDSS/NNDSS-Weekly-Data/x9gk-5huc" target="_blank" rel="noopener">NNDSS weekly table</a>: provisional notifications for U.S. residents, year to date at the latest published MMWR week.
       <b>COVID-19:</b> <a href="https://disease.sh/" target="_blank" rel="noopener">disease.sh</a> aggregator (<code>/v3/covid-19/all</code> and <code>/countries</code>), live when reachable; cumulative pandemic totals, not current incidence.
       <b>Watch list:</b> curated from WHO DON, CDC, Africa CDC &amp; PAHO bulletins.
     </div>
@@ -1598,7 +1598,10 @@ footer b{color:var(--ink2)}
 
 <script>
 const $=id=>document.getElementById(id);
-const OWID_CSV='https://raw.githubusercontent.com/owid/monkeypox/main/owid-monkeypox-data.csv';
+// WHO's validated mpox table: only the five fields the page uses (about 160 KB compressed).
+const WHO_MPOX='https://xmart-api-public.who.int/MPX/V_MPX_VALIDATED_DAILY?$select=ISO3,COUNTRY,DATE,TOTAL_CONF_CASES,TOTAL_CONF_DEATHS';
+// CDC NNDSS weekly table: national measles rows only (year, MMWR week, label, year-to-date count).
+const NNDSS_MEASLES='https://data.cdc.gov/resource/x9gk-5huc.json?$select=year,week,label,m3,m3_flag&$where='+encodeURIComponent("states='U.S. Residents' AND label in('Measles, Indigenous','Measles, Imported')")+'&$limit=5000';
 const COVID_ALL='https://disease.sh/v3/covid-19/all';
 const COVID_CTY='https://disease.sh/v3/covid-19/countries?sort=cases';
 
@@ -1606,33 +1609,36 @@ const COVID_CTY='https://disease.sh/v3/covid-19/countries?sort=cases';
 const epochDays=()=>Math.floor(Date.now()/1000/86400)-10957;
 
 // ---------- EMBEDDED DATED SNAPSHOT (offline fallback) ----------
-// Pulled 2026-06-27 via curl from OWID mpox CSV, CDC measles surveillance, disease.sh.
+// Mpox and measles pulled 2026-11-14: WHO validated mpox table, CDC measles page (yearly table), CDC NNDSS weekly table.
+// COVID-19 (disease.sh) and the watch list are older; their own dates are in EMBEDDED_AT and WATCH_CURATED.
 let SNAP={
-  embedded:"2026-06-27",
+  embedded:"2026-11-14",
   mpox:{
-    asof:"2026-04-27",          // World latest date in OWID
-    worldCases:180545, worldDeaths:506,
-    // monthly cumulative World cases, 2024-01 .. 2026-04 (end of month)
-    monthsLabels:["2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04"],
-    monthsCases:[95690,96718,97675,98695,99955,101436,103634,105950,109719,113099,116994,120907,125789,130142,135025,140102,147508,153635,158265,162926,167288,170533,173160,174793,176520,178051,179577,180545],
-    // top countries by cumulative cases (latest per-country in OWID), iso, asof, clade flag
+    asof:"2026-09-27",          // latest report date in WHO's table
+    worldCases:189303, worldDeaths:538,   // sum of each country's latest cumulative report
+    // monthly world cumulative cases, 2024-01 .. 2026-09: each country's latest report carried to month end
+    monthsLabels:["2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09"],
+    monthsCases:[95653,96694,97382,98664,99948,101201,103606,105951,109689,113090,116996,120924,125786,130137,135010,140082,147507,153600,158255,162602,167212,170534,172915,174836,176738,178397,180161,181798,183850,185472,187153,189020,189303],
+    // top countries by cumulative cases (latest report per country in WHO's table), iso, asof, clade flag
     countries:[
-      {n:"United States",iso:"USA",cases:37789,deaths:63,asof:"2026-04-27",clade1:false},
-      {n:"DR Congo",iso:"COD",cases:34054,deaths:80,asof:"2026-04-26",clade1:true},
-      {n:"Brazil",iso:"BRA",cases:15027,deaths:19,asof:"2026-04-27",clade1:false},
-      {n:"Spain",iso:"ESP",cases:9517,deaths:5,asof:"2026-04-15",clade1:false},
+      {n:"United States",iso:"USA",cases:37929,deaths:63,asof:"2026-08-31",clade1:false},
+      {n:"DR Congo",iso:"COD",cases:36037,deaths:80,asof:"2026-09-27",clade1:true},
+      {n:"Brazil",iso:"BRA",cases:15027,deaths:19,asof:"2026-08-31",clade1:false},
+      {n:"Spain",iso:"ESP",cases:10125,deaths:6,asof:"2026-08-15",clade1:false},
       {n:"Uganda",iso:"UGA",cases:8512,deaths:52,asof:"2026-04-05",clade1:true},
       {n:"Sierra Leone",iso:"SLE",cases:5442,deaths:60,asof:"2025-12-14",clade1:false},
-      {n:"Mexico",iso:"MEX",cases:5039,deaths:41,asof:"2026-04-27",clade1:false},
-      {n:"Colombia",iso:"COL",cases:4832,deaths:0,asof:"2026-04-27",clade1:false},
-      {n:"Germany",iso:"DEU",cases:4789,deaths:0,asof:"2026-04-15",clade1:false},
-      {n:"United Kingdom",iso:"GBR",cases:4754,deaths:0,asof:"2026-04-15",clade1:false},
-      {n:"Burundi",iso:"BDI",cases:4693,deaths:1,asof:"2026-04-05",clade1:true},
-      {n:"France",iso:"FRA",cases:4626,deaths:0,asof:"2026-04-15",clade1:false}
-    ]
+      {n:"Mexico",iso:"MEX",cases:5069,deaths:42,asof:"2026-08-31",clade1:false},
+      {n:"Germany",iso:"DEU",cases:4993,deaths:0,asof:"2026-08-15",clade1:false},
+      {n:"United Kingdom",iso:"GBR",cases:4926,deaths:0,asof:"2026-08-15",clade1:false},
+      {n:"France",iso:"FRA",cases:4912,deaths:0,asof:"2026-08-15",clade1:false},
+      {n:"Colombia",iso:"COL",cases:4837,deaths:0,asof:"2026-08-31",clade1:false},
+      {n:"Burundi",iso:"BDI",cases:4743,deaths:1,asof:"2026-07-19",clade1:true}
+    ],
+    // WHO rows without a report date are left out of every total (they cannot be placed in time)
+    undated:[{iso:"COD",n:"DR Congo",cases:40026}]
   },
   measles:{
-    // CDC measles surveillance — confirmed U.S. cases per year. 2026 is partial (year to date).
+    // CDC's annual confirmed U.S. cases (measles page yearly table, as of 2026-11-12). CDC marks 2025 preliminary.
     years:[
       {y:"2019",cases:1274},
       {y:"2020",cases:13},
@@ -1640,8 +1646,11 @@ let SNAP={
       {y:"2022",cases:121},
       {y:"2023",cases:59},
       {y:"2024",cases:285},
-      {y:"2025",cases:1319},
-      {y:"2026",cases:189,partial:true}
+      {y:"2025",cases:2289,prelim:true}
+    ],
+    // CDC NNDSS weekly table, U.S. residents: provisional notifications, year to date at the latest MMWR week
+    nndss:[
+      {y:"2026",cases:5073,week:44,weekEnding:"2026-11-07",partial:true}
     ]
   },
   covid:{
@@ -1656,10 +1665,13 @@ let SNAP={
     ]
   }
 };
-let LIVE={mpox:false,covid:false};
-const OUTBREAK_STATUS={mpox:{state:'embedded',checkedAt:null,downloadedAt:null,error:null},covid:{state:'embedded',checkedAt:null,downloadedAt:null,error:null}};
+let LIVE={mpox:false,measles:false,covid:false};
+const OUTBREAK_STATUS={mpox:{state:'embedded',checkedAt:null,downloadedAt:null,error:null},measles:{state:'embedded',checkedAt:null,downloadedAt:null,error:null},covid:{state:'embedded',checkedAt:null,downloadedAt:null,error:null}};
+// Date each embedded dataset was pulled (the COVID-19 figures were not refreshed with mpox and measles).
+const EMBEDDED_AT={mpox:'2026-11-14',measles:'2026-11-14',covid:'2026-06-27'};
 
 // ---------- WATCH LIST (INTERPRETIVE, curated 2026-06-27) ----------
+const WATCH_CURATED='2026-06-27';
 const WATCH=[
  {n:'Clade I mpox (MPXV clade Ib)', cls:'Orthopoxvirus · sexual & household transmission', st:'active', col:'#ef5466',
   note:'A more transmissible clade I lineage spreading from eastern DR Congo into Burundi, Uganda, Kenya, Rwanda and beyond, with exported cases on several continents. WHO has maintained its Public Health Emergency of International Concern (PHEIC) determination for the upsurge.',
@@ -1711,7 +1723,7 @@ let MPSORT='cases';
 function render(){
  const S=SNAP;
  $('vintchip').innerHTML='<b>snapshot '+S.embedded+'</b>';
- $('vintfoot').textContent=S.embedded;
+ $('vintfoot').textContent='mpox '+EMBEDDED_AT.mpox+' · measles '+EMBEDDED_AT.measles+' · COVID-19 '+EMBEDDED_AT.covid+' · watch list curated '+WATCH_CURATED;
  $('srcchip').textContent=outbreakSourceText();
 
  // --- mpox ---
@@ -1719,7 +1731,7 @@ function render(){
  $('mpAsof').textContent=M.asof;
  $('mpCases').innerHTML=fmt(M.worldCases);
  const mpCh=pctChangeArr(M.monthsCases,12);
- $('mpCasesSub').innerHTML='global cumulative since 2022 · 12-mo cumulative change (not incidence) '+chgHtml(mpCh)+' '+staleFlag(M.asof);
+ $('mpCasesSub').innerHTML='global cumulative since 2022, summed over each country\'s latest report · 12-mo cumulative change (not incidence) '+chgHtml(mpCh)+' '+staleFlag(M.asof);
  $('mpDeaths').innerHTML=fmt(M.worldDeaths);
  const cfr=M.worldCases&&M.worldDeaths!=null?(100*M.worldDeaths/M.worldCases):null;
  $('mpDeathsSub').innerHTML='apparent crude case-fatality ~'+(cfr!=null?cfr.toFixed(2):'—')+'% <span class="muted">(reported deaths ÷ reported cases — not a true CFR)</span>';
@@ -1727,26 +1739,30 @@ function render(){
  renderMpCountries();
  const clade=M.countries.filter(c=>c.clade1);
  const cladeCases=clade.reduce((a,c)=>a+c.cases,0);
- $('mpCaveat').innerHTML='These are cumulative reported cases, not active cases or a present transmission ranking. Changes can include retrospective revisions and differences in testing. Countries marked for clade-I context total '+fmt(cladeCases)+' cumulative cases across all reported clades; country membership is not genomic confirmation of those cases. Per-country dates differ and must be aligned before comparison. Absence of data is not absence of disease.';
+ const und=(M.undated||[]).filter(u=>u&&Number.isSafeInteger(u.cases));
+ const undTxt=und.length?' WHO\'s table also has '+und.length+' row'+(und.length===1?'':'s')+' without a report date ('+und.map(u=>outbreakEscape(u.n)+': '+fmt(u.cases)+' cumulative cases').join('; ')+'); '+(und.length===1?'it is':'they are')+' left out of every total here because '+(und.length===1?'it':'they')+' cannot be placed in time.':'';
+ $('mpCaveat').innerHTML='These are cumulative reported cases, not active cases or a present transmission ranking. Changes can include retrospective revisions and differences in testing. Countries marked for clade-I context total '+fmt(cladeCases)+' cumulative cases across all reported clades; country membership is not genomic confirmation of those cases. Per-country dates differ and must be aligned before comparison. Absence of data is not absence of disease.'+undTxt;
 
 
  // --- measles ---
- const ME=S.measles, ys=ME.years;
- const cur=ys[ys.length-1], prev=ys.slice().reverse().find(y=>!y.partial && y!==cur) || ys[ys.length-2];
+ // CDC's annual archive, then NNDSS provisional year-to-date entries for later years
+ const ME=S.measles, arch=ME.years||[], recent=ME.nndss||[], ys=arch.concat(recent);
+ const cur=ys[ys.length-1];
  const peakHist=Math.max(...ys.filter(y=>+y.y<2025).map(y=>y.cases));
  // headline = most recent FULL year if current is partial, else current
  const headline = cur.partial ? ys[ys.length-2] : cur;
- $('msYr').innerHTML=headline.y+(headline.partial?' <span class="demoflag">partial / YTD</span>':'');
+ $('msYr').innerHTML=headline.y+(headline.partial?' <span class="demoflag">partial / YTD</span>':'')+(headline.prelim?' <span class="muted">(preliminary)</span>':'')+(headline.week?' <span class="muted">(NNDSS provisional)</span>':'');
  $('msCases').innerHTML=fmt(headline.cases);
  const y2024=ys.find(y=>y.y==='2024');
  $('msSub').innerHTML=(y2024?('vs '+fmt(y2024.cases)+' in 2024 · '+chgHtml((headline.cases-y2024.cases)/y2024.cases)):'')+' <span class="badge b-meas">measured</span>';
  $('msCtx').innerHTML='× '+(peakHist?(headline.cases/peakHist).toFixed(1):'—')+' the 2019 spike';
- $('msCtxSub').innerHTML='2019 ('+fmt(peakHist)+') had been the post-elimination high; '+headline.y+' '+(headline.cases>peakHist?'exceeded it':'is below it')+'. '+(cur.partial?'<b>'+cur.y+'</b> shown as year-to-date ('+fmt(cur.cases)+').':'');
+ $('msCtxSub').innerHTML='2019 ('+fmt(peakHist)+') had been the post-elimination high; '+headline.y+' '+(headline.cases>peakHist?'exceeded it':'is below it')+'. '+(cur.partial?'<b>'+cur.y+'</b> year to date: '+fmt(cur.cases)+(cur.week?' reported through MMWR week '+cur.week+' (week ending '+cur.weekEnding+'), CDC NNDSS provisional.':'.'):'');
  renderMeaslesBars();
- $('msCaveat').innerHTML='The U.S. declared measles eliminated (no continuous transmission) in 2000. The displayed annual series is archived context, not a current local outbreak assessment. Counts are confirmed cases reported to CDC and revise as investigations close. Any year marked <span class="demoflag">partial / YTD</span> is incomplete. <span class="badge b-meas">measured</span> from CDC measles surveillance.';
+ const prelim=arch.filter(y=>y.prelim).map(y=>y.y);
+ $('msCaveat').innerHTML='The U.S. declared measles eliminated (no continuous transmission) in 2000. '+(arch.length?'Bars for '+arch[0].y+'–'+arch[arch.length-1].y+' are CDC\'s annual counts of confirmed cases from its measles page'+(prelim.length?' (CDC marks '+prelim.join(', ')+' as preliminary)':'')+'. ':'')+recent.map(r=>'The '+r.y+' bar is CDC\'s NNDSS count of provisional notifications for U.S. residents, '+(r.partial?'year to date':'full year')+' through MMWR week '+r.week+' (week ending '+r.weekEnding+'). ').join('')+'NNDSS counts are revised as reports arrive and can differ a little from CDC\'s measles page, which counts confirmed cases (visitors included) at its own weekly cutoff. Any year marked <span class="demoflag">partial / YTD</span> is incomplete. These are national counts, not a local outbreak assessment. <span class="badge b-meas">measured</span> from CDC.';
 
  // --- watch list ---
- $('watch').innerHTML=WATCH.map(w=>'<div class="em"><div class="dot" style="background:'+w.col+'"></div><div><div class="nm">'+w.n+' <span class="st" style="background:'+hex2rgba(STCOL[w.st]||'#6b8290',.16)+';color:'+(STCOL[w.st]||'#9fb4bd')+'">'+w.st+'</span></div><div class="cls">'+w.cls+'</div><div class="note">Archived editorial summary (curated '+SNAP.embedded+'): '+w.note+'</div><div class="src">authorities: '+w.src+'</div></div></div>').join('');
+ $('watch').innerHTML=WATCH.map(w=>'<div class="em"><div class="dot" style="background:'+w.col+'"></div><div><div class="nm">'+w.n+' <span class="st" style="background:'+hex2rgba(STCOL[w.st]||'#6b8290',.16)+';color:'+(STCOL[w.st]||'#9fb4bd')+'">'+w.st+'</span></div><div class="cls">'+w.cls+'</div><div class="note">Archived editorial summary (curated '+WATCH_CURATED+'): '+w.note+'</div><div class="src">authorities: '+w.src+'</div></div></div>').join('');
 
  // --- covid ---
  const C=S.covid;
@@ -1776,7 +1792,7 @@ function renderMpCountries(){
 [...document.querySelectorAll('#mpsort button')].forEach(b=>b.onclick=()=>{MPSORT=b.dataset.k;[...document.querySelectorAll('#mpsort button')].forEach(x=>x.classList.toggle('on',x===b));renderMpCountries();});
 
 function renderMeaslesBars(){
- const ys=SNAP.measles.years;
+ const ys=(SNAP.measles.years||[]).concat(SNAP.measles.nndss||[]);
  const mx=Math.max(...ys.map(y=>y.cases),1);
  $('msBars').innerHTML=ys.map(y=>{
   const h=Math.max(2,Math.round(100*y.cases/mx));
@@ -1787,26 +1803,10 @@ function renderMeaslesBars(){
 }
 
 // ---------- live fetch (graceful) ----------
-function parseCSV(text){
- // OWID uses one record per line; quoted commas and doubled quotes are retained.
- const lines=text.split(/\r?\n/).filter(l=>l.length);
- if(lines.length<2)throw Error('Empty mpox source');
- const head=splitCSVLine(lines[0]);
- if(new Set(head).size!==head.length)throw Error('Duplicate mpox columns');
- const idx={};head.forEach((h,i)=>idx[h.trim()]=i);
- const out=[];
- for(let i=1;i<lines.length;i++){const c=splitCSVLine(lines[i]);if(c.length!==head.length)throw Error('Malformed mpox row');out.push(c);}
- return {idx,rows:out};
-}
-function splitCSVLine(line){
- const res=[];let cur='',q=false;
- for(let i=0;i<line.length;i++){const ch=line[i];
-  if(q){if(ch==='"'){if(line[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}
-  else{if(ch===','){res.push(cur);cur='';}else if(ch==='"')q=true;else cur+=ch;}}
- if(q)throw Error('Unclosed CSV field');res.push(cur);return res;
-}
-const AGG=new Set(['World','Africa','Asia','Europe','North America','South America','Oceania','European Union (27)','High-income countries','Low-income countries','Lower-middle-income countries','Upper-middle-income countries']);
 const CLADE1=new Set(['COD','BDI','UGA','KEN','RWA','CAF','TZA','ZMB','COG']);
+// Display names for long WHO country names (display only; identity is ISO3).
+const WHO_SHORT={COD:'DR Congo',USA:'United States',GBR:'United Kingdom',IRN:'Iran',TZA:'Tanzania',BOL:'Bolivia',LAO:'Laos',VEN:'Venezuela',MDA:'Moldova'};
+const NNDSS_LABELS=['Measles, Indigenous','Measles, Imported'];
 const OUTBREAK_TIMEOUT_MS=15000,OUTBREAK_REFRESH_MS=6*3600000;
 function outbreakEscape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function outbreakDate(value){
@@ -1826,34 +1826,76 @@ async function outbreakRequest(url,format){
  try{return await Promise.race([(async()=>{const r=await fetch(url,{signal:controller.signal});if(!r.ok)throw Error('Public source HTTP '+r.status);return format==='text'?r.text():r.json();})(),deadline]);}
  finally{clearTimeout(timer);}
 }
-function parseMpoxSnapshot(txt,previous){
- const {idx,rows}=parseCSV(txt);
- const iL=idx['location'],iD=idx['date'],iIso=idx['iso_code'],iC=idx['total_cases'],iDe=idx['total_deaths'];
- if([iL,iD,iIso,iC,iDe].some(x=>x==null))throw new Error('Missing mpox columns');
- const latest={},worldMonthly={},seen=new Set();let world=null;
- rows.forEach(c=>{const loc=c[iL].trim(),d=outbreakDate(c[iD]),iso=c[iIso].trim(),cases=outbreakCount(c[iC],true),deaths=outbreakCount(c[iDe],true),identity=loc+'|'+d;
-  if(!loc||seen.has(identity))throw Error('Missing or duplicate mpox record identity');seen.add(identity);
-  if(loc==='World'){if(!world||d>world.asof)world={asof:d,cases,deaths};if(cases!=null){const ym=d.slice(0,7);if(!worldMonthly[ym]||d>worldMonthly[ym].d)worldMonthly[ym]={d,cases};}return;}
-  if(AGG.has(loc)||iso.startsWith('OWID'))return;
-  // A historical source row with no counts/ISO conveys no numerical observation.
-  if(!iso&&cases==null&&deaths==null)return;
+// WHO's table holds one row per country and report date with cumulative counts; it has no World row.
+// The world figure is the sum of each country's latest cumulative report, and each month-end value
+// carries every country's latest report up to that day. Rows without a report date are listed, not counted.
+function parseMpoxSnapshot(data,previous){
+ if(!data||typeof data!=='object'||Array.isArray(data)||!Array.isArray(data.value))throw Error('Invalid WHO mpox response');
+ if(data['@odata.nextLink'])throw Error('WHO mpox response is paged');
+ const byIso={},seen=new Set(),undated=[];let earliest=null,newest=null;
+ for(const r of data.value){
+  if(!r||typeof r!=='object')throw Error('Invalid WHO mpox row');
+  const iso=typeof r.ISO3==='string'?r.ISO3.trim():'';
   if(!/^[A-Z]{3}$/.test(iso))throw Error('Invalid mpox country identity');
-  if(cases==null)return;
-  if(latest[iso]?.asof===d)throw Error('Duplicate mpox country/date');
-  if(!latest[iso]||d>latest[iso].asof)latest[iso]={n:loc==='Democratic Republic of Congo'?'DR Congo':loc,iso,cases,deaths,asof:d,clade1:CLADE1.has(iso)};
- });
- if(!world||world.cases==null)throw Error('No usable World cumulative row');
- if(previous?.asof&&world.asof<previous.asof)throw Error('World reporting date regressed');
+  const name=WHO_SHORT[iso]||(typeof r.COUNTRY==='string'&&r.COUNTRY.trim()?r.COUNTRY.trim():iso);
+  const cases=outbreakCount(r.TOTAL_CONF_CASES),deaths=outbreakCount(r.TOTAL_CONF_DEATHS,true);
+  if(r.DATE==null){undated.push({iso,n:name,cases});continue;}
+  const d=outbreakDate(r.DATE),identity=iso+'|'+d;
+  if(seen.has(identity))throw Error('Duplicate mpox country/date');seen.add(identity);
+  (byIso[iso]||(byIso[iso]={n:name,rows:[]})).rows.push({d,cases,deaths});
+  if(!earliest||d<earliest)earliest=d;if(!newest||d>newest)newest=d;
+ }
+ const isos=Object.keys(byIso);
+ if(!isos.length)throw Error('Empty WHO mpox table');
+ // The 2024 monthly series needs every country's earlier reports, so the history must start before 2024.
+ if(earliest>='2024-01-01')throw Error('WHO mpox history is truncated');
+ const latest={};let worldCases=0,worldDeaths=0;
+ for(const iso of isos){const c=byIso[iso];c.rows.sort((a,b)=>a.d<b.d?-1:1);const last=c.rows[c.rows.length-1];
+  latest[iso]={n:c.n,iso,cases:last.cases,deaths:last.deaths,asof:last.d,clade1:CLADE1.has(iso)};
+  worldCases+=last.cases;worldDeaths=worldDeaths==null||last.deaths==null?null:worldDeaths+last.deaths;}
+ if(!Number.isSafeInteger(worldCases))throw Error('Invalid mpox world total');
+ if(previous?.asof&&newest<previous.asof)throw Error('World reporting date regressed');
  const priorDates=previous?.sourceCountryDates||Object.fromEntries((previous?.countries||[]).map(c=>[c.iso,c.asof]));
  for(const [iso,date]of Object.entries(priorDates))if(!latest[iso]||latest[iso].asof<date)throw Error('Country coverage/date regressed: '+iso);
- if(Object.keys(latest).length<(previous?.sourceCountryCount||previous?.countries?.length||1))throw Error('Mpox country coverage decreased');
- const mKeys=Object.keys(worldMonthly).filter(k=>k>='2024-01').sort();
- if(!mKeys.length||(previous?.monthsLabels||[]).some((m,i)=>Number.isFinite(previous.monthsCases?.[i])&&!worldMonthly[m]))throw Error('World monthly history is truncated');
- const monthsCases=mKeys.map(k=>worldMonthly[k].cases),countries=Object.values(latest);
- countries.sort((a,b)=>b.cases-a.cases);
- return {asof:world.asof,worldCases:world.cases,worldDeaths:world.deaths,monthsLabels:mKeys,monthsCases,countries:countries.slice(0,12),sourceCountryCount:countries.length,sourceCountryDates:Object.fromEntries(countries.map(c=>[c.iso,c.asof]))};
+ if(isos.length<(previous?.sourceCountryCount||previous?.countries?.length||1))throw Error('Mpox country coverage decreased');
+ const months=[];for(let y=2024,m=1;;){const k=y+'-'+String(m).padStart(2,'0');if(k>newest.slice(0,7))break;months.push(k);if(++m>12){m=1;y++;}}
+ const at={};const monthsCases=months.map(k=>{const end=new Date(Date.UTC(+k.slice(0,4),+k.slice(5,7),0)).toISOString().slice(0,10);let sum=0;
+  for(const iso of isos){const rows=byIso[iso].rows;let i=at[iso]??-1;while(i+1<rows.length&&rows[i+1].d<=end)i++;at[iso]=i;if(i>=0)sum+=rows[i].cases;}return sum;});
+ if((previous?.monthsLabels||[]).some((m,i)=>Number.isFinite(previous.monthsCases?.[i])&&!months.includes(m)))throw Error('World monthly history is truncated');
+ const countries=Object.values(latest).sort((a,b)=>b.cases-a.cases||(a.iso<b.iso?-1:1));
+ return {asof:newest,worldCases,worldDeaths,monthsLabels:months,monthsCases,countries:countries.slice(0,12),sourceCountryCount:countries.length,sourceCountryDates:Object.fromEntries(countries.map(c=>[c.iso,c.asof])),undated};
 }
-async function fetchMpox(){return parseMpoxSnapshot(await outbreakRequest(OWID_CSV,'text'),SNAP.mpox);}
+async function fetchMpox(){return parseMpoxSnapshot(await outbreakRequest(WHO_MPOX,'json'),SNAP.mpox);}
+// MMWR weeks run Sunday to Saturday; week 1 is the week that contains 4 January.
+function mmwrWeek1Start(year){const jan4=Date.UTC(year,0,4);return jan4-new Date(jan4).getUTCDay()*86400000;}
+function mmwrWeekCount(year){return Math.round((mmwrWeek1Start(year+1)-mmwrWeek1Start(year))/604800000);}
+function mmwrWeekEnding(year,week){return new Date(mmwrWeek1Start(year)+(7*week-1)*86400000).toISOString().slice(0,10);}
+// NNDSS national rows: m3 is the year-to-date count; a blank m3 flagged '-' means no reported cases.
+// Only years after CDC's annual archive are taken, each at its latest published week.
+function parseMeaslesSnapshot(rows,previous){
+ if(!Array.isArray(rows))throw Error('Invalid NNDSS measles response');
+ const cells=new Map(),seen=new Set();
+ for(const r of rows){
+  if(!r||typeof r!=='object')throw Error('Invalid NNDSS measles row');
+  const year=String(r.year??'').trim(),week=Number(r.week),label=r.label;
+  if(!/^\d{4}$/.test(year)||!Number.isInteger(week)||week<1||week>mmwrWeekCount(+year)||!NNDSS_LABELS.includes(label))throw Error('Invalid NNDSS measles identity');
+  const key=year+'|'+week,identity=key+'|'+label;
+  if(seen.has(identity))throw Error('Duplicate NNDSS measles row');seen.add(identity);
+  let ytd;if(r.m3==null||r.m3===''){if(r.m3_flag!=='-')throw Error('NNDSS measles count unavailable');ytd=0;}else ytd=outbreakCount(r.m3);
+  if(!cells.has(key))cells.set(key,{year:+year,week,parts:{}});cells.get(key).parts[label]=ytd;
+ }
+ const archived=(previous?.years||[]).map(y=>+y.y).filter(Number.isFinite),lastArchived=archived.length?Math.max(...archived):-Infinity;
+ const years=[...new Set([...cells.values()].map(c=>c.year))].filter(y=>y>lastArchived).sort((a,b)=>a-b);
+ if(!years.length)throw Error('No NNDSS measles year after the CDC archive');
+ const nndss=years.map(y=>{
+  const top=[...cells.values()].filter(c=>c.year===y).reduce((a,b)=>b.week>a.week?b:a);
+  if(!NNDSS_LABELS.every(l=>Number.isSafeInteger(top.parts[l])))throw Error('Latest NNDSS measles week is incomplete');
+  return {y:String(y),cases:NNDSS_LABELS.reduce((s,l)=>s+top.parts[l],0),week:top.week,weekEnding:outbreakDate(mmwrWeekEnding(y,top.week)),partial:top.week<mmwrWeekCount(y)};
+ });
+ for(const p of previous?.nndss||[]){const n=nndss.find(x=>x.y===p.y);if(!n||n.week<p.week)throw Error('NNDSS measles week regressed: '+p.y);}
+ return {...previous,nndss};
+}
+async function fetchMeasles(){return parseMeaslesSnapshot(await outbreakRequest(NNDSS_MEASLES,'json'),SNAP.measles);}
 function parseCovidSnapshot(all,cty,previous){
  const updated=value=>{if(!Number.isSafeInteger(value)||value<=0||value>Date.now())throw Error('Invalid COVID provider timestamp');return new Date(value).toISOString();};
  if(!all||typeof all!=='object'||Array.isArray(all)||!Array.isArray(cty))throw Error('Invalid COVID response');
@@ -1868,14 +1910,14 @@ function parseCovidSnapshot(all,cty,previous){
 }
 async function fetchCovid(){const [all,cty]=await Promise.all([outbreakRequest(COVID_ALL,'json'),outbreakRequest(COVID_CTY,'json')]);return parseCovidSnapshot(all,cty,SNAP.covid);}
 function outbreakSourceText(){return Object.entries(OUTBREAK_STATUS).map(([key,status])=>{
- const retained=status.downloadedAt?'download '+status.downloadedAt:'embedded snapshot '+SNAP.embedded;
+ const retained=status.downloadedAt?'download '+status.downloadedAt:'embedded snapshot '+EMBEDDED_AT[key];
  return key+': '+(status.state==='checking'?'checking; retaining '+retained:status.state==='downloaded'?'downloaded '+status.downloadedAt:status.state==='unavailable'?'unavailable ('+status.error+'); retaining '+retained:retained);
 }).join(' · ');}
 let outbreakRefreshInFlight=null,lastOutbreakCheck=0;
 function refresh(){
  if(outbreakRefreshInFlight)return outbreakRefreshInFlight;
  lastOutbreakCheck=Date.now();Object.values(OUTBREAK_STATUS).forEach(s=>{s.state='checking';s.checkedAt=new Date().toISOString();});render();
- outbreakRefreshInFlight=Promise.all([['mpox',fetchMpox],['covid',fetchCovid]].map(async([key,read])=>{
+ outbreakRefreshInFlight=Promise.all([['mpox',fetchMpox],['measles',fetchMeasles],['covid',fetchCovid]].map(async([key,read])=>{
   const status=OUTBREAK_STATUS[key];
   try{const replacement=await read();SNAP={...SNAP,[key]:replacement};LIVE[key]=true;status.state='downloaded';status.downloadedAt=new Date().toISOString();status.error=null;}
   catch(error){LIVE[key]=false;status.state='unavailable';status.error=error.message||'Public source unavailable';}
@@ -2191,27 +2233,32 @@ if(document.readyState!=='loading')boot();else document.addEventListener('DOMCon
 (function(){
  'use strict';
  const authority='https://www.who.int/emergencies/disease-outbreak-news';
+ const mpoxSource='https://xmart-api-public.who.int/MPX/V_MPX_VALIDATED_DAILY',measlesPage='https://www.cdc.gov/measles/data-research/index.html',nndssSource='https://data.cdc.gov/NNDSS/NNDSS-Weekly-Data/x9gk-5huc';
  function reportDate(value){var stamp=Date.parse(String(value)+'T00:00:00Z');return /^\d{4}-\d{2}-\d{2}$/.test(value||'')&&Number.isFinite(stamp)&&new Date(stamp).toISOString().slice(0,10)===value&&stamp<=Date.now()+86400000;}
  function read(){
-  const data=typeof SNAP==='object'?SNAP:{},m=data.mpox||{},countries=m.countries||[],years=data.measles?.years||[],last=years.at(-1),stamps=countries.map(c=>Date.parse(c.asof+'T00:00:00Z')),validDates=countries.length>0&&countries.every(c=>reportDate(c.asof)),range=validDates?(Math.max(...stamps)-Math.min(...stamps))/86400000:null;
+  const data=typeof SNAP==='object'?SNAP:{},m=data.mpox||{},countries=m.countries||[],years=data.measles?.years||[],last=years.at(-1),ytd=(data.measles?.nndss||[]).at(-1),stamps=countries.map(c=>Date.parse(c.asof+'T00:00:00Z')),validDates=countries.length>0&&countries.every(c=>reportDate(c.asof)),range=validDates?(Math.max(...stamps)-Math.min(...stamps))/86400000:null;
   const origin=Number.isFinite(Date.parse(m.asof))?Date.parse(m.asof):Date.now(),groupAge=flag=>countries.filter(c=>!!c.clade1===flag&&reportDate(c.asof)).map(c=>(origin-Date.parse(c.asof+'T00:00:00Z'))/86400000).filter(Number.isFinite),a=groupAge(true),b=groupAge(false),w=a.length&&b.length?ConsoleResponse.math.wasserstein1(a,b):null;
-  const evidence=[{id:'mpox-dates',label:'Selected mpox country reporting dates',value:validDates?new Date(Math.min(...stamps)).toISOString().slice(0,10)+' to '+new Date(Math.max(...stamps)).toISOString().slice(0,10)+' ('+range+' days apart)':'Unavailable',measuredAt:m.asof,checkedAt:typeof OUTBREAK_STATUS==='object'?OUTBREAK_STATUS.mpox.checkedAt:null,basis:'measured',quality:validDates?'historical':'missing',source:'https://github.com/owid/monkeypox',note:'Per-country latest dates differ; cumulative counts and a successful download cannot establish present incidence.'},
-   {id:'age-shape',label:'Reporting-age distribution gap',value:w??'Unavailable',unit:'days W1',measuredAt:m.asof,basis:'interpretive',quality:w!=null?'historical':'missing',source:'https://github.com/owid/monkeypox',note:'Exact empirical Wasserstein distance between reporting-age distributions of country-context groups. This is a reporting-comparability proxy, not a disease-severity or transmission estimate.'},
-   {id:'annual',label:'Latest measles reporting window',value:last?last.y+' · '+(last.partial?'partial / year to date':'annual total'):'Unavailable',measuredAt:data.embedded,basis:'measured',quality:last?'historical':'missing',source:'https://www.cdc.gov/measles/data-research/index.html',note:'Archived annual confirmed-case context; no matched year-to-date denominator or present local incidence is supplied.'}];
-  const impactItems=[],impactRecords=[],mpoxSource='https://github.com/owid/monkeypox';
-  for(const [key,label]of [['worldCases','Cumulative reported mpox cases'],['worldDeaths','Cumulative reported mpox deaths']]){const id='mpox-'+key,value=Number.isSafeInteger(m[key])&&m[key]>=0?m[key]:null;evidence.push({id,label,value,unit:key==='worldCases'?'reported cases':'reported deaths',measuredAt:m.asof||null,basis:'measured',quality:value!=null&&reportDate(m.asof)?'historical':'missing',source:mpoxSource,note:'Source-published cumulative World row at its own date; not active cases, current incidence or a sum of unequal-date country rows.'});impactItems.push({id,label,value,unit:key==='worldCases'?'reported cases':'reported deaths',kind:'context',evidenceIds:[id],method:'Use the source World cumulative row and its stated report date directly.',note:'Cumulative deaths and cases are not a case-fatality/survival cohort; no ratio is inferred.'});}
+  const evidence=[{id:'mpox-dates',label:'Selected mpox country reporting dates',value:validDates?new Date(Math.min(...stamps)).toISOString().slice(0,10)+' to '+new Date(Math.max(...stamps)).toISOString().slice(0,10)+' ('+range+' days apart)':'Unavailable',measuredAt:m.asof,checkedAt:typeof OUTBREAK_STATUS==='object'?OUTBREAK_STATUS.mpox.checkedAt:null,basis:'measured',quality:validDates?'historical':'missing',source:mpoxSource,note:'Per-country latest dates differ; cumulative counts and a successful download cannot establish present incidence.'},
+   {id:'age-shape',label:'Reporting-age distribution gap',value:w??'Unavailable',unit:'days W1',measuredAt:m.asof,basis:'interpretive',quality:w!=null?'historical':'missing',source:mpoxSource,note:'Exact empirical Wasserstein distance between reporting-age distributions of country-context groups. This is a reporting-comparability proxy, not a disease-severity or transmission estimate.'},
+   {id:'annual',label:'Latest archived measles year (CDC)',value:last?last.y+' · '+(last.partial?'partial / year to date':'annual total'):'Unavailable',measuredAt:data.embedded,basis:'measured',quality:last?'historical':'missing',source:measlesPage,note:'Archived annual confirmed-case context; no matched year-to-date denominator or present local incidence is supplied.'}];
+  const impactItems=[],impactRecords=[];
+  for(const [key,label]of [['worldCases','Cumulative reported mpox cases'],['worldDeaths','Cumulative reported mpox deaths']]){const id='mpox-'+key,value=Number.isSafeInteger(m[key])&&m[key]>=0?m[key]:null;evidence.push({id,label,value,unit:key==='worldCases'?'reported cases':'reported deaths',measuredAt:m.asof||null,basis:'measured',quality:value!=null&&reportDate(m.asof)?'historical':'missing',source:mpoxSource,note:'Sum of each country’s latest cumulative report in WHO’s table, dated by the latest report; countries report on different dates, so this is not active cases, current incidence or a same-day total.'});impactItems.push({id,label,value,unit:key==='worldCases'?'reported cases':'reported deaths',kind:'context',evidenceIds:[id],method:'Sum each country’s latest cumulative report in WHO’s table; the stated date is the latest report date.',note:'Cumulative deaths and cases are not a case-fatality/survival cohort; no ratio is inferred.'});}
   countries.forEach(c=>{const ids=[];for(const key of ['cases','deaths']){const id='mpox-country-'+c.iso+'-'+key,good=Number.isSafeInteger(c[key])&&c[key]>=0&&reportDate(c.asof);ids.push(id);evidence.push({id,label:c.n+' · cumulative mpox '+key,value:good?c[key]:null,unit:'reported '+key,measuredAt:c.asof||null,basis:'measured',quality:good?'historical':'missing',source:mpoxSource,note:'Country-specific cumulative report; no latest-date substitution, incidence estimate, clade attribution or transmission inference.'});}impactRecords.push({id:'mpox-'+c.iso,label:c.n,kind:'context',evidenceIds:ids,summary:c.asof+' · '+c.cases+' cumulative reported cases and '+c.deaths+' cumulative reported deaths. Country report dates differ; no current incidence is inferred.'});});
   const measlesKnown=last&&Number.isSafeInteger(last.cases)&&last.cases>=0;
-  evidence.push({id:'measles-count',label:'Archived U.S. confirmed measles cases',value:measlesKnown?last.cases:null,unit:'confirmed cases',measuredAt:measlesKnown?String(last.y):null,basis:'measured',quality:measlesKnown?'historical':'missing',source:'https://www.cdc.gov/measles/data-research/index.html',note:'Archived '+(last?.partial?'partial/year-to-date':'full annual')+' reference; compiled '+data.embedded+'. Exact partial-year epidemiological cutoff is not supplied, and later reports may revise it.'});
+  evidence.push({id:'measles-count',label:'Archived U.S. confirmed measles cases',value:measlesKnown?last.cases:null,unit:'confirmed cases',measuredAt:measlesKnown?String(last.y):null,basis:'measured',quality:measlesKnown?'historical':'missing',source:measlesPage,note:last?.partial?'Archived partial/year-to-date reference; compiled '+data.embedded+'. Exact partial-year epidemiological cutoff is not supplied, and later reports may revise it.':'Archived full-year count from CDC’s measles page; compiled '+data.embedded+'.'+(last?.prelim?' CDC marks this year preliminary and may revise it.':'')});
   impactItems.push({id:'measles-archive',label:'Archived U.S. measles cases · '+(last?.y||'year unknown')+(last?.partial?' (partial)':''),value:measlesKnown?last.cases:null,unit:'confirmed cases',kind:'context',evidenceIds:['measles-count'],method:'Retain the source annual/partial-window flag; do not compare a partial total against a full-year total.',note:'An archived figure, not a live local case count.'});
+  // Years after CDC's archive come from NNDSS: provisional notifications for U.S. residents at a stated MMWR week.
+  if(ytd){const good=Number.isSafeInteger(ytd.cases)&&ytd.cases>=0&&Number.isInteger(ytd.week)&&reportDate(ytd.weekEnding),span=ytd.partial?'year to date':'full year';
+   evidence.push({id:'measles-ytd',label:'U.S. measles notifications to NNDSS · '+ytd.y+' '+span,value:good?ytd.cases:null,unit:'provisional reported cases',measuredAt:good?ytd.weekEnding:null,checkedAt:typeof OUTBREAK_STATUS==='object'?OUTBREAK_STATUS.measles?.checkedAt||null:null,basis:'measured',quality:good?'historical':'missing',source:nndssSource,note:'CDC NNDSS weekly table, U.S. residents, '+span+' through MMWR week '+ytd.week+' (week ending '+ytd.weekEnding+'). Provisional notifications are revised as reports arrive and can differ from CDC’s confirmed-case count; '+(ytd.partial?'a partial year is not comparable with full-year totals.':'this year is not yet in CDC’s annual archive.')});
+   impactItems.push({id:'measles-ytd',label:'U.S. measles notifications · '+ytd.y+' '+span+' (provisional)',value:good?ytd.cases:null,unit:'provisional reported cases',kind:'context',evidenceIds:['measles-ytd'],method:'Use the NNDSS count at its stated MMWR week; do not compare a partial year against full-year totals.',note:'A national provisional count, not a local case count.'});}
   impactItems.push({id:'future-burden',label:'Future infections, active burden or avoided cases',value:null,unit:'not estimated',kind:'context',evidenceIds:['mpox-dates'],method:'No aligned incident-case history, ascertainment denominator or calibrated transmission/forecast model is supplied.',note:'Cumulative country rankings do not establish present risk, source/sink roles or intervention benefits.'});
-  const impacts={title:'Dated reported outbreak counts',scope:'Each country and disease retains its own source reporting period',summary:'Reported cumulative counts and archived annual figures are available as dated context. They are not projected active infections or present local risk.',items:impactItems,records:impactRecords,limitations:['Do not sum unequal-date selected countries or derive incidence/case-fatality from cumulative cases and deaths.','Country-context clade flags are not genotypes for these cumulative cases.','The measles archive is not automatically refreshed and partial-year cutoff is not supplied; use current authority notices for present conditions.']};
+  const impacts={title:'Dated reported outbreak counts',scope:'Each country and disease retains its own source reporting period',summary:'Reported cumulative counts and archived annual figures are available as dated context. They are not projected active infections or present local risk.',items:impactItems,records:impactRecords,limitations:['Do not sum unequal-date selected countries or derive incidence/case-fatality from cumulative cases and deaths.','Country-context clade flags are not genotypes for these cumulative cases.','Past measles years are CDC’s archived annual counts and are not refreshed automatically; the current year is a provisional NNDSS notification count at its stated MMWR week. Use current authority notices for present conditions.']};
   const specs=[
    [1,'comparison','Countries do not supply population balance','unknown',[],'Cumulative selected-country counts do not measure affected population, ascertainment or active burden.','Obtain population denominators and testing/reporting coverage before comparing burden or allocating response resources.','Aligned population denominators, surveillance coverage and current incidence'],
    [2,'comparison','Reporting-age shape imbalance',w!=null?(w>0?'triggered':'clear'):'unknown',['age-shape'],'A nonzero W1 of reporting-age distributions indicates unequal reporting timeliness between country-context groups. No clinical threshold is implied.','Align dates or stratify by reporting vintage before comparing case distributions; do not interpret reporting-age imbalance as outbreak severity.','Valid per-country report dates and explicit comparison groups'],
    [3,'comparison','Surveillance density symmetry is unavailable','unknown',[],'Country totals do not locate monitors, tested populations or unreported areas.','Audit surveillance catchments and case ascertainment before interpreting sparse counts.','Surveillance catchments, tested populations and geographic coverage'],
    [4,'structure','Outbreak contiguity is unestablished','unknown',[],'Country membership does not provide connected transmission clusters.','Obtain compatible geocoded incidence/catchment data and a documented adjacency model before counting components.','Geocoded current incidence and validated adjacency/catchment definitions'],
-   [5,'structure','Reporting-window persistence and alignment',validDates&&last?(range>0||last.partial?'triggered':'clear'):'unknown',['mpox-dates','annual'],'Unequal country dates or a partial annual measles total require an alignment review. This is a timing proxy, not persistent homology.','Compare matched epidemiological weeks and complete versus partial windows separately; refresh source data before interpreting change.','Explicit report dates and complete/partial annual-window flags'],
+   [5,'structure','Reporting-window persistence and alignment',validDates&&last?(range>0||last.partial||ytd?.partial?'triggered':'clear'):'unknown',['mpox-dates','annual'].concat(ytd?['measles-ytd']:[]),'Unequal country dates or a partial annual measles total require an alignment review. This is a timing proxy, not persistent homology.','Compare matched epidemiological weeks and complete versus partial windows separately; refresh source data before interpreting change.','Explicit report dates and complete/partial annual-window flags'],
    [6,'structure','Geographic scale stability is untested','unknown',[],'Selected cumulative countries cannot establish robustness to subnational aggregation or reporting filters.','Repeat a defined incidence comparison at nested geographic levels using matched weeks.','Complete matched subnational/national incidence and stable denominators'],
    [7,'structure','Cross-surveillance dependence is not fitted','unknown',[],'Differences in testing, definitions and ascertainment are not an estimated free-energy model.','Document definition changes and surveillance systems; avoid treating reports as independent observations.','Case definitions, ascertainment model and aligned time series'],
    [8,'spillover','Cumulative cases are not a contamination AUC','unknown',[],'A cumulative total is not integrated current exposure over a documented scenario ladder.','Use incident cases over matched intervals with population/exposure denominators before integration.','Aligned incidence histories, exposure denominator and defined integration range'],
